@@ -9,38 +9,348 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrainerRouteImport } from './routes/trainer'
+import { Route as StaffRouteImport } from './routes/staff'
+import { Route as RetailerRouteImport } from './routes/retailer'
+import { Route as DistributorRouteImport } from './routes/distributor'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TrainerIndexRouteImport } from './routes/trainer.index'
+import { Route as StaffIndexRouteImport } from './routes/staff.index'
+import { Route as RetailerIndexRouteImport } from './routes/retailer.index'
+import { Route as DistributorIndexRouteImport } from './routes/distributor.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
+import { Route as StaffServicesRouteImport } from './routes/staff.services'
+import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
+import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
+import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
+import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
+import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
+import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
+import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 
+const TrainerRoute = TrainerRouteImport.update({
+  id: '/trainer',
+  path: '/trainer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffRoute = StaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetailerRoute = RetailerRouteImport.update({
+  id: '/retailer',
+  path: '/retailer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorRoute = DistributorRouteImport.update({
+  id: '/distributor',
+  path: '/distributor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrainerIndexRoute = TrainerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TrainerRoute,
+} as any)
+const StaffIndexRoute = StaffIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StaffRoute,
+} as any)
+const RetailerIndexRoute = RetailerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const DistributorIndexRoute = DistributorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DistributorRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const TrainerTrainingsRoute = TrainerTrainingsRouteImport.update({
+  id: '/trainings',
+  path: '/trainings',
+  getParentRoute: () => TrainerRoute,
+} as any)
+const StaffServicesRoute = StaffServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => StaffRoute,
+} as any)
+const RetailerWalletRoute = RetailerWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerTrainingsRoute = RetailerTrainingsRouteImport.update({
+  id: '/trainings',
+  path: '/trainings',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerServicesRoute = RetailerServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerKycRoute = RetailerKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const DistributorWalletRoute = DistributorWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => DistributorRoute,
+} as any)
+const AdminWalletsRoute = AdminWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingsRoute = AdminTrainingsRouteImport.update({
+  id: '/trainings',
+  path: '/trainings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminServicesRoute = AdminServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFormsRoute = AdminFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/distributor': typeof DistributorRouteWithChildren
+  '/retailer': typeof RetailerRouteWithChildren
+  '/staff': typeof StaffRouteWithChildren
+  '/trainer': typeof TrainerRouteWithChildren
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/services': typeof StaffServicesRoute
+  '/trainer/trainings': typeof TrainerTrainingsRoute
+  '/admin/': typeof AdminIndexRoute
+  '/distributor/': typeof DistributorIndexRoute
+  '/retailer/': typeof RetailerIndexRoute
+  '/staff/': typeof StaffIndexRoute
+  '/trainer/': typeof TrainerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/services': typeof StaffServicesRoute
+  '/trainer/trainings': typeof TrainerTrainingsRoute
+  '/admin': typeof AdminIndexRoute
+  '/distributor': typeof DistributorIndexRoute
+  '/retailer': typeof RetailerIndexRoute
+  '/staff': typeof StaffIndexRoute
+  '/trainer': typeof TrainerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/distributor': typeof DistributorRouteWithChildren
+  '/retailer': typeof RetailerRouteWithChildren
+  '/staff': typeof StaffRouteWithChildren
+  '/trainer': typeof TrainerRouteWithChildren
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/services': typeof StaffServicesRoute
+  '/trainer/trainings': typeof TrainerTrainingsRoute
+  '/admin/': typeof AdminIndexRoute
+  '/distributor/': typeof DistributorIndexRoute
+  '/retailer/': typeof RetailerIndexRoute
+  '/staff/': typeof StaffIndexRoute
+  '/trainer/': typeof TrainerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/distributor'
+    | '/retailer'
+    | '/staff'
+    | '/trainer'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/distributor/wallet'
+    | '/retailer/kyc'
+    | '/retailer/services'
+    | '/retailer/trainings'
+    | '/retailer/wallet'
+    | '/staff/services'
+    | '/trainer/trainings'
+    | '/admin/'
+    | '/distributor/'
+    | '/retailer/'
+    | '/staff/'
+    | '/trainer/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/distributor/wallet'
+    | '/retailer/kyc'
+    | '/retailer/services'
+    | '/retailer/trainings'
+    | '/retailer/wallet'
+    | '/staff/services'
+    | '/trainer/trainings'
+    | '/admin'
+    | '/distributor'
+    | '/retailer'
+    | '/staff'
+    | '/trainer'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/distributor'
+    | '/retailer'
+    | '/staff'
+    | '/trainer'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/distributor/wallet'
+    | '/retailer/kyc'
+    | '/retailer/services'
+    | '/retailer/trainings'
+    | '/retailer/wallet'
+    | '/staff/services'
+    | '/trainer/trainings'
+    | '/admin/'
+    | '/distributor/'
+    | '/retailer/'
+    | '/staff/'
+    | '/trainer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  DistributorRoute: typeof DistributorRouteWithChildren
+  RetailerRoute: typeof RetailerRouteWithChildren
+  StaffRoute: typeof StaffRouteWithChildren
+  TrainerRoute: typeof TrainerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trainer': {
+      id: '/trainer'
+      path: '/trainer'
+      fullPath: '/trainer'
+      preLoaderRoute: typeof TrainerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff': {
+      id: '/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retailer': {
+      id: '/retailer'
+      path: '/retailer'
+      fullPath: '/retailer'
+      preLoaderRoute: typeof RetailerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor': {
+      id: '/distributor'
+      path: '/distributor'
+      fullPath: '/distributor'
+      preLoaderRoute: typeof DistributorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +358,223 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trainer/': {
+      id: '/trainer/'
+      path: '/'
+      fullPath: '/trainer/'
+      preLoaderRoute: typeof TrainerIndexRouteImport
+      parentRoute: typeof TrainerRoute
+    }
+    '/staff/': {
+      id: '/staff/'
+      path: '/'
+      fullPath: '/staff/'
+      preLoaderRoute: typeof StaffIndexRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/retailer/': {
+      id: '/retailer/'
+      path: '/'
+      fullPath: '/retailer/'
+      preLoaderRoute: typeof RetailerIndexRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/distributor/': {
+      id: '/distributor/'
+      path: '/'
+      fullPath: '/distributor/'
+      preLoaderRoute: typeof DistributorIndexRouteImport
+      parentRoute: typeof DistributorRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/trainer/trainings': {
+      id: '/trainer/trainings'
+      path: '/trainings'
+      fullPath: '/trainer/trainings'
+      preLoaderRoute: typeof TrainerTrainingsRouteImport
+      parentRoute: typeof TrainerRoute
+    }
+    '/staff/services': {
+      id: '/staff/services'
+      path: '/services'
+      fullPath: '/staff/services'
+      preLoaderRoute: typeof StaffServicesRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/retailer/wallet': {
+      id: '/retailer/wallet'
+      path: '/wallet'
+      fullPath: '/retailer/wallet'
+      preLoaderRoute: typeof RetailerWalletRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/trainings': {
+      id: '/retailer/trainings'
+      path: '/trainings'
+      fullPath: '/retailer/trainings'
+      preLoaderRoute: typeof RetailerTrainingsRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/services': {
+      id: '/retailer/services'
+      path: '/services'
+      fullPath: '/retailer/services'
+      preLoaderRoute: typeof RetailerServicesRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/kyc': {
+      id: '/retailer/kyc'
+      path: '/kyc'
+      fullPath: '/retailer/kyc'
+      preLoaderRoute: typeof RetailerKycRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/distributor/wallet': {
+      id: '/distributor/wallet'
+      path: '/wallet'
+      fullPath: '/distributor/wallet'
+      preLoaderRoute: typeof DistributorWalletRouteImport
+      parentRoute: typeof DistributorRoute
+    }
+    '/admin/wallets': {
+      id: '/admin/wallets'
+      path: '/wallets'
+      fullPath: '/admin/wallets'
+      preLoaderRoute: typeof AdminWalletsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/trainings': {
+      id: '/admin/trainings'
+      path: '/trainings'
+      fullPath: '/admin/trainings'
+      preLoaderRoute: typeof AdminTrainingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/services': {
+      id: '/admin/services'
+      path: '/services'
+      fullPath: '/admin/services'
+      preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/forms': {
+      id: '/admin/forms'
+      path: '/forms'
+      fullPath: '/admin/forms'
+      preLoaderRoute: typeof AdminFormsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminFormsRoute: typeof AdminFormsRoute
+  AdminKycRoute: typeof AdminKycRoute
+  AdminServicesRoute: typeof AdminServicesRoute
+  AdminTrainingsRoute: typeof AdminTrainingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletsRoute: typeof AdminWalletsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminFormsRoute: AdminFormsRoute,
+  AdminKycRoute: AdminKycRoute,
+  AdminServicesRoute: AdminServicesRoute,
+  AdminTrainingsRoute: AdminTrainingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminWalletsRoute: AdminWalletsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface DistributorRouteChildren {
+  DistributorWalletRoute: typeof DistributorWalletRoute
+  DistributorIndexRoute: typeof DistributorIndexRoute
+}
+
+const DistributorRouteChildren: DistributorRouteChildren = {
+  DistributorWalletRoute: DistributorWalletRoute,
+  DistributorIndexRoute: DistributorIndexRoute,
+}
+
+const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
+  DistributorRouteChildren,
+)
+
+interface RetailerRouteChildren {
+  RetailerKycRoute: typeof RetailerKycRoute
+  RetailerServicesRoute: typeof RetailerServicesRoute
+  RetailerTrainingsRoute: typeof RetailerTrainingsRoute
+  RetailerWalletRoute: typeof RetailerWalletRoute
+  RetailerIndexRoute: typeof RetailerIndexRoute
+}
+
+const RetailerRouteChildren: RetailerRouteChildren = {
+  RetailerKycRoute: RetailerKycRoute,
+  RetailerServicesRoute: RetailerServicesRoute,
+  RetailerTrainingsRoute: RetailerTrainingsRoute,
+  RetailerWalletRoute: RetailerWalletRoute,
+  RetailerIndexRoute: RetailerIndexRoute,
+}
+
+const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
+  RetailerRouteChildren,
+)
+
+interface StaffRouteChildren {
+  StaffServicesRoute: typeof StaffServicesRoute
+  StaffIndexRoute: typeof StaffIndexRoute
+}
+
+const StaffRouteChildren: StaffRouteChildren = {
+  StaffServicesRoute: StaffServicesRoute,
+  StaffIndexRoute: StaffIndexRoute,
+}
+
+const StaffRouteWithChildren = StaffRoute._addFileChildren(StaffRouteChildren)
+
+interface TrainerRouteChildren {
+  TrainerTrainingsRoute: typeof TrainerTrainingsRoute
+  TrainerIndexRoute: typeof TrainerIndexRoute
+}
+
+const TrainerRouteChildren: TrainerRouteChildren = {
+  TrainerTrainingsRoute: TrainerTrainingsRoute,
+  TrainerIndexRoute: TrainerIndexRoute,
+}
+
+const TrainerRouteWithChildren =
+  TrainerRoute._addFileChildren(TrainerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  DistributorRoute: DistributorRouteWithChildren,
+  RetailerRoute: RetailerRouteWithChildren,
+  StaffRoute: StaffRouteWithChildren,
+  TrainerRoute: TrainerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
