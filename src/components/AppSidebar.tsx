@@ -2,6 +2,9 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth, type UserRole } from "@/lib/auth-context";
 import {
   LayoutDashboard,
+  ArrowLeftRight,
+  FileText as CVIcon,
+  Banknote,
   Users,
   Wallet,
   Settings,
