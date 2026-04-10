@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { doc, onSnapshot, collection, query, where, orderBy, getDocs, addDoc } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, orderBy, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -48,31 +48,29 @@ function RetailerWallet() {
 
   useEffect(() => {
     if (!appUser) return;
-    const unsub = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
+    const unsub1 = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
       if (snap.exists()) setBalance(snap.data().balance || 0);
     });
 
-    getDocs(query(
-      collection(db, "transactions"),
-      where("userId", "==", appUser.uid),
-      orderBy("createdAt", "desc")
-    )).then((snap) => {
-      const list: Transaction[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Transaction));
-      setTransactions(list);
-    });
+    const unsub2 = onSnapshot(
+      query(collection(db, "transactions"), where("userId", "==", appUser.uid), orderBy("createdAt", "desc")),
+      (snap) => {
+        const list: Transaction[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Transaction));
+        setTransactions(list);
+      }
+    );
 
-    getDocs(query(
-      collection(db, "walletRequests"),
-      where("userId", "==", appUser.uid),
-      orderBy("createdAt", "desc")
-    )).then((snap) => {
-      const list: WalletRequest[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WalletRequest));
-      setWalletRequests(list);
-    });
+    const unsub3 = onSnapshot(
+      query(collection(db, "walletRequests"), where("userId", "==", appUser.uid), orderBy("createdAt", "desc")),
+      (snap) => {
+        const list: WalletRequest[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WalletRequest));
+        setWalletRequests(list);
+      }
+    );
 
-    return unsub;
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [appUser]);
 
   const submitRequest = async (e: FormEvent) => {
