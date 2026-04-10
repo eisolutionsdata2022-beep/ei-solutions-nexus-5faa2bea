@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { doc, onSnapshot, collection, query, where, orderBy, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/wallet")({
@@ -45,6 +45,7 @@ function RetailerWallet() {
   const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (!appUser) return;
@@ -75,7 +76,8 @@ function RetailerWallet() {
 
   const submitRequest = async (e: FormEvent) => {
     e.preventDefault();
-    if (!appUser) return;
+    if (!appUser || submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       let screenshotUrl = "";
@@ -101,6 +103,7 @@ function RetailerWallet() {
       toast.error("Failed to submit request.");
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -138,7 +141,11 @@ function RetailerWallet() {
                 <Input type="file" accept="image/*" onChange={(e) => setScreenshot(e.target.files?.[0] || null)} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Submitting..." : "Submit Request"}
+                {submitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
+                ) : (
+                  "Submit Request"
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -146,13 +153,16 @@ function RetailerWallet() {
       </div>
 
       {/* Balance Card */}
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Wallet className="w-8 h-8 text-primary" />
+      <Card className="overflow-hidden">
+        <CardContent className="p-8 text-center relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Wallet className="w-8 h-8 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">Available Balance</p>
+            <p className="text-4xl font-bold text-foreground mt-1">₹{balance.toFixed(2)}</p>
           </div>
-          <p className="text-sm text-muted-foreground">Available Balance</p>
-          <p className="text-4xl font-bold text-foreground mt-1">₹{balance.toFixed(2)}</p>
         </CardContent>
       </Card>
 
@@ -193,12 +203,12 @@ function RetailerWallet() {
                 <div key={tx.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div className="flex items-center gap-3">
                     {tx.type === "credit" ? (
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <ArrowDownLeft className="w-4 h-4 text-green-600" />
+                      <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                        <ArrowDownLeft className="w-4 h-4 text-success" />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <ArrowUpRight className="w-4 h-4 text-red-600" />
+                      <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                        <ArrowUpRight className="w-4 h-4 text-destructive" />
                       </div>
                     )}
                     <div>
@@ -206,7 +216,7 @@ function RetailerWallet() {
                       <p className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
-                  <span className={`font-semibold ${tx.type === "credit" ? "text-green-600" : "text-red-600"}`}>
+                  <span className={`font-semibold ${tx.type === "credit" ? "text-success" : "text-destructive"}`}>
                     {tx.type === "credit" ? "+" : "-"}₹{tx.amount}
                   </span>
                 </div>
