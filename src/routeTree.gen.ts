@@ -24,11 +24,15 @@ import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
+import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
+import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
+import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
+import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
@@ -111,6 +115,11 @@ const RetailerWalletRoute = RetailerWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerTransactionsRoute = RetailerTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerTrainingsRoute = RetailerTrainingsRouteImport.update({
   id: '/trainings',
   path: '/trainings',
@@ -121,9 +130,19 @@ const RetailerServicesRoute = RetailerServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
+  id: '/money-transfer',
+  path: '/money-transfer',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerKycRoute = RetailerKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
+  id: '/cv-builder',
+  path: '/cv-builder',
   getParentRoute: () => RetailerRoute,
 } as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
@@ -134,6 +153,11 @@ const DistributorWalletRoute = DistributorWalletRouteImport.update({
 const AdminWalletsRoute = AdminWalletsRouteImport.update({
   id: '/wallets',
   path: '/wallets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWalletRequestsRoute = AdminWalletRequestsRouteImport.update({
+  id: '/wallet-requests',
+  path: '/wallet-requests',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -180,11 +204,15 @@ export interface FileRoutesByFullPath {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -203,11 +231,15 @@ export interface FileRoutesByTo {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -232,11 +264,15 @@ export interface FileRoutesById {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
+  '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -262,11 +298,15 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/distributor/wallet'
+    | '/retailer/cv-builder'
     | '/retailer/kyc'
+    | '/retailer/money-transfer'
     | '/retailer/services'
     | '/retailer/trainings'
+    | '/retailer/transactions'
     | '/retailer/wallet'
     | '/staff/services'
     | '/trainer/trainings'
@@ -285,11 +325,15 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/distributor/wallet'
+    | '/retailer/cv-builder'
     | '/retailer/kyc'
+    | '/retailer/money-transfer'
     | '/retailer/services'
     | '/retailer/trainings'
+    | '/retailer/transactions'
     | '/retailer/wallet'
     | '/staff/services'
     | '/trainer/trainings'
@@ -313,11 +357,15 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/distributor/wallet'
+    | '/retailer/cv-builder'
     | '/retailer/kyc'
+    | '/retailer/money-transfer'
     | '/retailer/services'
     | '/retailer/trainings'
+    | '/retailer/transactions'
     | '/retailer/wallet'
     | '/staff/services'
     | '/trainer/trainings'
@@ -445,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerWalletRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/transactions': {
+      id: '/retailer/transactions'
+      path: '/transactions'
+      fullPath: '/retailer/transactions'
+      preLoaderRoute: typeof RetailerTransactionsRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/trainings': {
       id: '/retailer/trainings'
       path: '/trainings'
@@ -459,11 +514,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerServicesRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/money-transfer': {
+      id: '/retailer/money-transfer'
+      path: '/money-transfer'
+      fullPath: '/retailer/money-transfer'
+      preLoaderRoute: typeof RetailerMoneyTransferRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/kyc': {
       id: '/retailer/kyc'
       path: '/kyc'
       fullPath: '/retailer/kyc'
       preLoaderRoute: typeof RetailerKycRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/cv-builder': {
+      id: '/retailer/cv-builder'
+      path: '/cv-builder'
+      fullPath: '/retailer/cv-builder'
+      preLoaderRoute: typeof RetailerCvBuilderRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/distributor/wallet': {
@@ -478,6 +547,13 @@ declare module '@tanstack/react-router' {
       path: '/wallets'
       fullPath: '/admin/wallets'
       preLoaderRoute: typeof AdminWalletsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/wallet-requests': {
+      id: '/admin/wallet-requests'
+      path: '/wallet-requests'
+      fullPath: '/admin/wallet-requests'
+      preLoaderRoute: typeof AdminWalletRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/users': {
@@ -532,6 +608,7 @@ interface AdminRouteChildren {
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
   AdminTrainingsRoute: typeof AdminTrainingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletRequestsRoute: typeof AdminWalletRequestsRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -543,6 +620,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
   AdminTrainingsRoute: AdminTrainingsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWalletRequestsRoute: AdminWalletRequestsRoute,
   AdminWalletsRoute: AdminWalletsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -564,17 +642,23 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
 )
 
 interface RetailerRouteChildren {
+  RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerKycRoute: typeof RetailerKycRoute
+  RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
+  RetailerTransactionsRoute: typeof RetailerTransactionsRoute
   RetailerWalletRoute: typeof RetailerWalletRoute
   RetailerIndexRoute: typeof RetailerIndexRoute
 }
 
 const RetailerRouteChildren: RetailerRouteChildren = {
+  RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerKycRoute: RetailerKycRoute,
+  RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerServicesRoute: RetailerServicesRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
+  RetailerTransactionsRoute: RetailerTransactionsRoute,
   RetailerWalletRoute: RetailerWalletRoute,
   RetailerIndexRoute: RetailerIndexRoute,
 }
