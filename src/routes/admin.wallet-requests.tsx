@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc, getDoc, addDoc, query, orderBy } from "firebase/firestore";
+import { collection, doc, updateDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { atomicCredit } from "@/lib/firebase-transactions";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallet-requests")({
   component: AdminWalletRequests,
@@ -30,14 +32,17 @@ function AdminWalletRequests() {
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const fetchRequests = async () => {
-    const snap = await getDocs(query(collection(db, "walletRequests"), orderBy("createdAt", "desc")));
-    const list: WalletRequest[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WalletRequest));
-    setRequests(list);
-  };
-
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(collection(db, "walletRequests"), orderBy("createdAt", "desc")),
+      (snap) => {
+        const list: WalletRequest[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WalletRequest));
+        setRequests(list);
+      }
+    );
+    return unsub;
+  }, []);
 
   const handleAction = async (req: WalletRequest, action: "approved" | "rejected") => {
     setProcessing(req.id);
@@ -49,30 +54,17 @@ function AdminWalletRequests() {
       });
 
       if (action === "approved") {
-        const walletRef = doc(db, "wallets", req.userId);
-        const walletSnap = await getDoc(walletRef);
-        const currentBalance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
-        await updateDoc(walletRef, { balance: currentBalance + req.amount });
-
-        await addDoc(collection(db, "transactions"), {
-          userId: req.userId,
-          amount: req.amount,
-          type: "credit",
+        await atomicCredit(req.userId, req.amount, {
           source: "wallet_topup",
           description: `Wallet top-up approved (${req.paymentMethod})`,
-          createdAt: new Date().toISOString(),
         });
       }
-      fetchRequests();
+      toast.success(`Request ${action}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to process request");
     } finally {
       setProcessing(null);
     }
-  };
-
-  const statusColors: Record<string, string> = {
-    pending: "secondary",
-    approved: "default",
-    rejected: "destructive",
   };
 
   return (
@@ -106,7 +98,10 @@ function AdminWalletRequests() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 min-w-[200px]">
-                    <Badge variant={statusColors[req.status] as any} className="capitalize w-fit">
+                    <Badge variant={
+                      req.status === "approved" ? "default" :
+                      req.status === "rejected" ? "destructive" : "secondary"
+                    } className="capitalize w-fit">
                       {req.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
                       {req.status === "approved" && <CheckCircle className="w-3 h-3 mr-1" />}
                       {req.status === "rejected" && <XCircle className="w-3 h-3 mr-1" />}
