@@ -9,38 +9,144 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
+import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWalletsRoute = AdminWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingsRoute = AdminTrainingsRouteImport.update({
+  id: '/trainings',
+  path: '/trainings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminServicesRoute = AdminServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFormsRoute = AdminFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/admin/forms': typeof AdminFormsRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/services': typeof AdminServicesRoute
+  '/admin/trainings': typeof AdminTrainingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/admin/forms'
+    | '/admin/kyc'
+    | '/admin/services'
+    | '/admin/trainings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +154,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/wallets': {
+      id: '/admin/wallets'
+      path: '/wallets'
+      fullPath: '/admin/wallets'
+      preLoaderRoute: typeof AdminWalletsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/trainings': {
+      id: '/admin/trainings'
+      path: '/trainings'
+      fullPath: '/admin/trainings'
+      preLoaderRoute: typeof AdminTrainingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/services': {
+      id: '/admin/services'
+      path: '/services'
+      fullPath: '/admin/services'
+      preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/forms': {
+      id: '/admin/forms'
+      path: '/forms'
+      fullPath: '/admin/forms'
+      preLoaderRoute: typeof AdminFormsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminFormsRoute: typeof AdminFormsRoute
+  AdminKycRoute: typeof AdminKycRoute
+  AdminServicesRoute: typeof AdminServicesRoute
+  AdminTrainingsRoute: typeof AdminTrainingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletsRoute: typeof AdminWalletsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminFormsRoute: AdminFormsRoute,
+  AdminKycRoute: AdminKycRoute,
+  AdminServicesRoute: AdminServicesRoute,
+  AdminTrainingsRoute: AdminTrainingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminWalletsRoute: AdminWalletsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
