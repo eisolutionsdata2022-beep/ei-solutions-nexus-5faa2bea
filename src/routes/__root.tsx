@@ -34,6 +34,14 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "EI Solutions CSC Platform" },
       { name: "description", content: "EI Solutions Janasevana Kendram — CSC Platform for Admin, Distributor, Retailer, Trainer, and Staff" },
+      { property: "og:title", content: "EI Solutions CSC Platform" },
+      { name: "twitter:title", content: "EI Solutions CSC Platform" },
+      { property: "og:description", content: "EI Solutions Janasevana Kendram — CSC Platform for Admin, Distributor, Retailer, Trainer, and Staff" },
+      { name: "twitter:description", content: "EI Solutions Janasevana Kendram — CSC Platform for Admin, Distributor, Retailer, Trainer, and Staff" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c49fa732-a1b1-47f4-9267-5c442166df3f/id-preview-7f2b9bf7--299471fd-065d-4c0e-a1df-ff8978b6d0b4.lovable.app-1775846769942.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c49fa732-a1b1-47f4-9267-5c442166df3f/id-preview-7f2b9bf7--299471fd-065d-4c0e-a1df-ff8978b6d0b4.lovable.app-1775846769942.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
