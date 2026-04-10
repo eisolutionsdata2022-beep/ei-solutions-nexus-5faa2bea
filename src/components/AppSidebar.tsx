@@ -6,6 +6,7 @@ import {
   FileText as CVIcon,
   Banknote,
   Users,
+  UserPlus,
   Wallet,
   Settings,
   FileText,
@@ -30,6 +31,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
     { label: "Users", to: "/admin/users", icon: Users },
+    { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
     { label: "Services", to: "/admin/services", icon: ShoppingBag },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
