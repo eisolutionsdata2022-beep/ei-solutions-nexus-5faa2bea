@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,6 +147,11 @@ export function LoginForm() {
                 >
                   Forgot password?
                 </button>
+                <div className="text-center">
+                  <Link to="/register" className="text-sm text-primary hover:underline">
+                    Don't have an account? Register
+                  </Link>
+                </div>
               </form>
             )}
           </CardContent>
