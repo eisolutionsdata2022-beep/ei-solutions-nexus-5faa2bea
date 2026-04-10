@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShoppingBag, Send, AlertCircle } from "lucide-react";
@@ -45,13 +45,11 @@ function RetailerServices() {
 
   useEffect(() => {
     if (!appUser) return;
-    // Real-time services
     const unsub1 = onSnapshot(collection(db, "services"), (snap) => {
       const list: ServiceData[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ServiceData));
       setServices(list.filter((s) => s.enabled !== false));
     });
-    // Real-time wallet
     const unsub2 = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
       if (snap.exists()) setBalance(snap.data().balance || 0);
     });
@@ -60,6 +58,10 @@ function RetailerServices() {
 
   const useService = async (service: ServiceData) => {
     if (!appUser) return;
+    if (service.price <= 0) {
+      toast.error("Invalid service price.");
+      return;
+    }
     if (service.transactionType !== "credit" && balance < service.price) {
       toast.error("Insufficient wallet balance!");
       return;
@@ -81,25 +83,20 @@ function RetailerServices() {
         }
       }
 
-      // Deduct/credit wallet
-      const walletRef = doc(db, "wallets", appUser.uid);
-      const walletSnap = await getDoc(walletRef);
-      const currentBalance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
-      const newBalance = service.transactionType === "credit"
-        ? currentBalance + service.price
-        : currentBalance - service.price;
-      await updateDoc(walletRef, { balance: newBalance });
-
-      // Save transaction
-      await addDoc(collection(db, "transactions"), {
-        userId: appUser.uid,
-        amount: service.price,
-        type: service.transactionType || "debit",
-        source: "service",
-        serviceId: service.id,
-        description: `Service: ${service.name}`,
-        createdAt: new Date().toISOString(),
-      });
+      // Atomic wallet update
+      if (service.transactionType === "credit") {
+        await atomicCredit(appUser.uid, service.price, {
+          source: "service",
+          serviceId: service.id,
+          description: `Service: ${service.name}`,
+        });
+      } else {
+        await atomicDebit(appUser.uid, service.price, {
+          source: "service",
+          serviceId: service.id,
+          description: `Service: ${service.name}`,
+        });
+      }
 
       // Save service request
       await addDoc(collection(db, "serviceRequests"), {
@@ -116,8 +113,8 @@ function RetailerServices() {
       toast.success(`${service.name} completed successfully!`);
       setSelectedService(null);
       setApiInputs({});
-    } catch (err) {
-      toast.error("Service request failed.");
+    } catch (err: any) {
+      toast.error(err?.message || "Service request failed.");
     } finally {
       setProcessing(false);
     }
