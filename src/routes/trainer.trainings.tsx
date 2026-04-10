@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, GraduationCap, ExternalLink, Trash2, Edit, Users, IndianRupee } from "lucide-react";
+import { Plus, GraduationCap, ExternalLink, Trash2, Edit, Users, IndianRupee, Video } from "lucide-react";
 import { toast } from "sonner";
+import { VideoRoom } from "@/components/VideoRoom";
 
 export const Route = createFileRoute("/trainer/trainings")({
   component: TrainerTrainings,
@@ -41,6 +42,7 @@ function TrainerTrainings() {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewAttendanceId, setViewAttendanceId] = useState<string | null>(null);
   const [settings, setSettings] = useState({ pricePerHour: 300, trainerEarningPerHour: 150 });
+  const [liveTrainingId, setLiveTrainingId] = useState<string | null>(null);
 
   const fetchAll = async () => {
     if (!appUser) return;
@@ -119,6 +121,18 @@ function TrainerTrainings() {
   };
 
   const viewingAttendance = viewAttendanceId ? attendance[viewAttendanceId] || [] : [];
+  const liveTraining = liveTrainingId ? trainings.find((t) => t.id === liveTrainingId) : null;
+
+  if (liveTraining) {
+    return (
+      <VideoRoom
+        trainingId={liveTraining.id}
+        trainingTitle={liveTraining.title}
+        role="trainer"
+        onLeave={() => setLiveTrainingId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,6 +225,9 @@ function TrainerTrainings() {
                       <Button variant="outline" size="sm"><ExternalLink className="w-4 h-4" /></Button>
                     </a>
                   )}
+                  <Button variant="default" size="sm" onClick={() => setLiveTrainingId(t.id)} className="bg-green-600 hover:bg-green-700">
+                    <Video className="w-4 h-4 mr-1" /> Go Live
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(t)}>
                     <Edit className="w-4 h-4" />
                   </Button>

@@ -7,8 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { GraduationCap, ExternalLink, IndianRupee, MessageCircle, Send } from "lucide-react";
+import { GraduationCap, ExternalLink, IndianRupee, MessageCircle, Send, Video } from "lucide-react";
 import { toast } from "sonner";
+import { VideoRoom } from "@/components/VideoRoom";
 
 export const Route = createFileRoute("/retailer/trainings")({
   component: RetailerTrainings,
@@ -22,6 +23,7 @@ function RetailerTrainings() {
   const [chatTrainingId, setChatTrainingId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatMsg, setChatMsg] = useState("");
+  const [liveTrainingId, setLiveTrainingId] = useState<string | null>(null);
 
   const fetchTrainings = async () => {
     if (!appUser) return;
@@ -165,6 +167,19 @@ function RetailerTrainings() {
     }
   };
 
+  const liveTraining = liveTrainingId ? trainings.find((t) => t.id === liveTrainingId) : null;
+
+  if (liveTraining) {
+    return (
+      <VideoRoom
+        trainingId={liveTraining.id}
+        trainingTitle={liveTraining.title}
+        role="retailer"
+        onLeave={() => setLiveTrainingId(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -229,6 +244,9 @@ function RetailerTrainings() {
                           </a>
                         )}
                         <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-medium">Joined</span>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setLiveTrainingId(t.id)}>
+                          <Video className="w-4 h-4 mr-1" /> Join Live
+                        </Button>
                       </>
                     ) : (
                       <Button
