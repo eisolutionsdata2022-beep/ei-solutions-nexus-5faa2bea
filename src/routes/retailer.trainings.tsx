@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,29 +26,24 @@ function RetailerTrainings() {
   const [chatMsg, setChatMsg] = useState("");
   const [liveTrainingId, setLiveTrainingId] = useState<string | null>(null);
 
-  const fetchTrainings = async () => {
+  useEffect(() => {
     if (!appUser) return;
-    try {
-      const snap = await getDocs(collection(db, "trainings"));
+    // Real-time trainings
+    const unsub = onSnapshot(collection(db, "trainings"), (snap) => {
       const list: any[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
       list.sort((a, b) => a.date.localeCompare(b.date));
       setTrainings(list);
-
-      // Check which ones user already joined
-      const attSnap = await getDocs(collection(db, "attendance"));
-      const joined = new Set<string>();
-      attSnap.forEach((d) => {
-        const data = d.data();
-        if (data.userId === appUser.uid) joined.add(data.trainingId);
+    });
+    // Check joined
+    getDocs(query(collection(db, "attendance"), where("userId", "==", appUser.uid)))
+      .then((snap) => {
+        const joined = new Set<string>();
+        snap.forEach((d) => joined.add(d.data().trainingId));
+        setJoinedIds(joined);
       });
-      setJoinedIds(joined);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => { fetchTrainings(); }, [appUser]);
+    return unsub;
+  }, [appUser]);
 
   // Live chat listener
   useEffect(() => {
@@ -63,70 +59,51 @@ function RetailerTrainings() {
 
   const handleJoin = async (training: any) => {
     if (!appUser) return;
+
+    // Prevent duplicate join
+    if (joinedIds.has(training.id)) {
+      toast.info("You have already joined this training.");
+      return;
+    }
+
     setJoining(training.id);
     try {
-      // Check wallet balance
-      const walletSnap = await getDoc(doc(db, "wallets", appUser.uid));
-      const wallet = walletSnap.exists() ? walletSnap.data() : { balance: 0 };
       const price = training.price || 0;
+      const trainerEarning = training.trainerEarning || 0;
+      const commission = price - trainerEarning;
 
-      if (wallet.balance < price) {
-        toast.error(`Insufficient balance! You need ₹${price} but have ₹${wallet.balance}`);
-        setJoining(null);
-        return;
+      // Atomic debit retailer
+      if (price > 0) {
+        await atomicDebit(appUser.uid, price, {
+          source: "training",
+          trainingId: training.id,
+          description: `Training: ${training.title}`,
+        });
       }
 
-      // Deduct from retailer wallet
-      await updateDoc(doc(db, "wallets", appUser.uid), {
-        balance: wallet.balance - price,
-      });
-
-      // Credit trainer wallet
-      const trainerEarning = training.trainerEarning || 0;
-      const trainerWalletSnap = await getDoc(doc(db, "wallets", training.trainerId));
-      if (trainerWalletSnap.exists()) {
-        const tw = trainerWalletSnap.data();
-        await updateDoc(doc(db, "wallets", training.trainerId), {
-          balance: (tw.balance || 0) + trainerEarning,
+      // Atomic credit trainer
+      if (trainerEarning > 0) {
+        await atomicCredit(training.trainerId, trainerEarning, {
+          source: "training",
+          trainingId: training.id,
+          description: `Earning: ${training.title}`,
         });
       }
 
       // Credit admin commission
-      const commission = price - trainerEarning;
-      // Find admin user
-      const usersSnap = await getDocs(collection(db, "users"));
-      let adminId: string | null = null;
-      usersSnap.forEach((d) => {
-        if (d.data().role === "admin" && !adminId) adminId = d.id;
-      });
-      if (adminId) {
-        const adminWalletSnap = await getDoc(doc(db, "wallets", adminId));
-        if (adminWalletSnap.exists()) {
-          const aw = adminWalletSnap.data();
-          await updateDoc(doc(db, "wallets", adminId), {
-            balance: (aw.balance || 0) + commission,
+      if (commission > 0) {
+        const usersSnap = await getDocs(collection(db, "users"));
+        let adminId: string | null = null;
+        usersSnap.forEach((d) => {
+          if (d.data().role === "admin" && !adminId) adminId = d.id;
+        });
+        if (adminId) {
+          await atomicCredit(adminId, commission, {
+            source: "training_commission",
+            trainingId: training.id,
+            description: `Commission: ${training.title}`,
           });
         }
-      }
-
-      // Create transactions
-      const now = new Date().toISOString();
-      await addDoc(collection(db, "transactions"), {
-        userId: appUser.uid, amount: price, type: "debit",
-        source: "training", trainingId: training.id, createdAt: now,
-        description: `Training: ${training.title}`,
-      });
-      await addDoc(collection(db, "transactions"), {
-        userId: training.trainerId, amount: trainerEarning, type: "credit",
-        source: "training", trainingId: training.id, createdAt: now,
-        description: `Earning: ${training.title}`,
-      });
-      if (adminId) {
-        await addDoc(collection(db, "transactions"), {
-          userId: adminId, amount: commission, type: "credit",
-          source: "training_commission", trainingId: training.id, createdAt: now,
-          description: `Commission: ${training.title}`,
-        });
       }
 
       // Create attendance record
@@ -134,20 +111,18 @@ function RetailerTrainings() {
         userId: appUser.uid,
         userName: appUser.name || appUser.email,
         trainingId: training.id,
-        joinTime: now,
+        joinTime: new Date().toISOString(),
         leaveTime: null,
         duration: 0,
       });
 
-      toast.success("Successfully joined! Opening meeting link...");
+      toast.success("Successfully joined!");
       setJoinedIds((prev) => new Set(prev).add(training.id));
       if (training.meetingLink) {
         window.open(training.meetingLink, "_blank");
       }
-      fetchTrainings();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to join training");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to join training");
     }
     setJoining(null);
   };
@@ -162,7 +137,7 @@ function RetailerTrainings() {
         createdAt: new Date().toISOString(),
       });
       setChatMsg("");
-    } catch (err) {
+    } catch {
       toast.error("Failed to send message");
     }
   };
@@ -243,8 +218,8 @@ function RetailerTrainings() {
                             <Button size="sm"><ExternalLink className="w-4 h-4 mr-1" /> Rejoin</Button>
                           </a>
                         )}
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-medium">Joined</span>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setLiveTrainingId(t.id)}>
+                        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Joined</span>
+                        <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => setLiveTrainingId(t.id)}>
                           <Video className="w-4 h-4 mr-1" /> Join Live
                         </Button>
                       </>

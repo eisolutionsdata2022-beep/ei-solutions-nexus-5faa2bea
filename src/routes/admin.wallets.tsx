@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc } from "firebase/firestore";
+import { collection, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { atomicCredit, atomicDebit } from "@/lib/firebase-transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wallet, Plus, Minus } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallets")({
@@ -31,20 +32,29 @@ function AdminWallets() {
   const [processing, setProcessing] = useState(false);
 
   const fetchWallets = async () => {
-    const usersSnap = await getDocs(collection(db, "users"));
-    const list: UserWallet[] = [];
-    for (const userDoc of usersSnap.docs) {
-      const u = userDoc.data();
-      const walletSnap = await getDoc(doc(db, "wallets", userDoc.id));
-      list.push({
-        userId: userDoc.id,
-        email: u.email || "",
-        name: u.name || "",
-        role: u.role || "",
-        balance: walletSnap.exists() ? (walletSnap.data().balance || 0) : 0,
+    try {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const list: UserWallet[] = [];
+      const promises = usersSnap.docs.map(async (userDoc) => {
+        const u = userDoc.data();
+        return new Promise<UserWallet>((resolve) => {
+          const unsub = onSnapshot(doc(db, "wallets", userDoc.id), (snap) => {
+            unsub(); // one-time read via onSnapshot
+            resolve({
+              userId: userDoc.id,
+              email: u.email || "",
+              name: u.name || "",
+              role: u.role || "",
+              balance: snap.exists() ? (snap.data().balance || 0) : 0,
+            });
+          });
+        });
       });
+      const results = await Promise.all(promises);
+      setWallets(results);
+    } catch (err) {
+      console.error("Error fetching wallets:", err);
     }
-    setWallets(list);
   };
 
   useEffect(() => { fetchWallets(); }, []);
@@ -52,27 +62,29 @@ function AdminWallets() {
   const handleTransaction = async () => {
     if (!selected) return;
     const amt = parseFloat(amount);
-    if (amt <= 0) return;
+    if (!amt || amt <= 0) {
+      toast.error("Enter a valid positive amount.");
+      return;
+    }
     setProcessing(true);
     try {
-      const walletRef = doc(db, "wallets", selected.userId);
-      const walletSnap = await getDoc(walletRef);
-      const currentBalance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
-      const newBalance = txType === "credit" ? currentBalance + amt : currentBalance - amt;
-      if (newBalance < 0) { toast.error("Balance cannot go negative."); setProcessing(false); return; }
-      await updateDoc(walletRef, { balance: newBalance });
-      await addDoc(collection(db, "transactions"), {
-        userId: selected.userId,
-        amount: amt,
-        type: txType,
-        source: "admin_manual",
-        description: `Admin ${txType} adjustment`,
-        createdAt: new Date().toISOString(),
-      });
+      if (txType === "credit") {
+        await atomicCredit(selected.userId, amt, {
+          source: "admin_manual",
+          description: "Admin credit adjustment",
+        });
+      } else {
+        await atomicDebit(selected.userId, amt, {
+          source: "admin_manual",
+          description: "Admin debit adjustment",
+        });
+      }
       toast.success(`₹${amt} ${txType}ed to ${selected.email}`);
       setSelected(null);
       setAmount("");
       fetchWallets();
+    } catch (err: any) {
+      toast.error(err?.message || "Transaction failed.");
     } finally {
       setProcessing(false);
     }

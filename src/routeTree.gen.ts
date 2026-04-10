@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrainerRouteImport } from './routes/trainer'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as DistributorRouteImport } from './routes/distributor'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -39,6 +40,7 @@ import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.traini
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
+import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 
 const TrainerRoute = TrainerRouteImport.update({
   id: '/trainer',
@@ -53,6 +55,11 @@ const StaffRoute = StaffRouteImport.update({
 const RetailerRoute = RetailerRouteImport.update({
   id: '/retailer',
   path: '/retailer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DistributorRoute = DistributorRouteImport.update({
@@ -190,14 +197,21 @@ const AdminFormsRoute = AdminFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
+  id: '/create-user',
+  path: '/create-user',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/services': typeof AdminServicesRoute
@@ -225,6 +239,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/register': typeof RegisterRoute
+  '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/services': typeof AdminServicesRoute
@@ -255,9 +271,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/services': typeof AdminServicesRoute
@@ -289,9 +307,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/register'
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/services'
@@ -319,6 +339,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/register'
+    | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/services'
@@ -348,9 +370,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/register'
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/services'
@@ -381,6 +405,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   DistributorRoute: typeof DistributorRouteWithChildren
+  RegisterRoute: typeof RegisterRoute
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
   TrainerRoute: typeof TrainerRouteWithChildren
@@ -407,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/retailer'
       fullPath: '/retailer'
       preLoaderRoute: typeof RetailerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/distributor': {
@@ -598,10 +630,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/create-user': {
+      id: '/admin/create-user'
+      path: '/create-user'
+      fullPath: '/admin/create-user'
+      preLoaderRoute: typeof AdminCreateUserRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminServicesRoute: typeof AdminServicesRoute
@@ -614,6 +654,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCreateUserRoute: AdminCreateUserRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminServicesRoute: AdminServicesRoute,
@@ -698,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DistributorRoute: DistributorRouteWithChildren,
+  RegisterRoute: RegisterRoute,
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
   TrainerRoute: TrainerRouteWithChildren,

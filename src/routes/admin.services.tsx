@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, ShoppingBag, Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/services")({
   component: AdminServices,
@@ -56,18 +57,28 @@ function AdminServices() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    await addDoc(collection(db, "services"), {
-      name,
-      price: parseFloat(price),
-      category,
-      transactionType,
-      apiUrl,
-      enabled: true,
-      createdAt: new Date().toISOString(),
-    });
-    resetForm();
-    setOpen(false);
-    fetchServices();
+    const parsedPrice = parseFloat(price);
+    if (!parsedPrice || parsedPrice < 0) {
+      toast.error("Price must be a positive value.");
+      return;
+    }
+    try {
+      await addDoc(collection(db, "services"), {
+        name,
+        price: parsedPrice,
+        category,
+        transactionType,
+        apiUrl,
+        enabled: true,
+        createdAt: new Date().toISOString(),
+      });
+      resetForm();
+      setOpen(false);
+      fetchServices();
+      toast.success("Service created!");
+    } catch {
+      toast.error("Failed to create service.");
+    }
   };
 
   const handleEdit = async (e: FormEvent) => {

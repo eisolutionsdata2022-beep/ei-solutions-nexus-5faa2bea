@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent, useEffect } from "react";
-import { doc, onSnapshot, getDoc, updateDoc, addDoc, collection } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { atomicDebit } from "@/lib/firebase-transactions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle, Send } from "lucide-react";
 import { toast } from "sonner";
+import { collection, addDoc } from "firebase/firestore";
 
 export const Route = createFileRoute("/retailer/money-transfer")({
   component: MoneyTransfer,
@@ -37,30 +39,30 @@ function MoneyTransfer() {
       return;
     }
     const amount = parseFloat(form.amount);
-    if (amount <= 0) { toast.error("Invalid amount."); return; }
+    if (!amount || amount <= 0) { toast.error("Enter a valid positive amount."); return; }
     if (balance < amount) { toast.error("Insufficient balance!"); return; }
 
     setProcessing(true);
     try {
-      const walletRef = doc(db, "wallets", appUser.uid);
-      const walletSnap = await getDoc(walletRef);
-      const currentBalance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
-      await updateDoc(walletRef, { balance: currentBalance - amount });
-
-      await addDoc(collection(db, "transactions"), {
-        userId: appUser.uid,
-        amount,
-        type: "debit",
+      await atomicDebit(appUser.uid, amount, {
         source: "money_transfer",
         description: `Transfer to A/C ${form.accountNumber} (${form.name})`,
-        metadata: { accountNumber: form.accountNumber, ifsc: form.ifsc, beneficiaryName: form.name },
+      });
+
+      // Store transfer metadata
+      await addDoc(collection(db, "transfers"), {
+        userId: appUser.uid,
+        accountNumber: form.accountNumber,
+        ifsc: form.ifsc,
+        beneficiaryName: form.name,
+        amount,
         createdAt: new Date().toISOString(),
       });
 
       setSuccess(true);
       toast.success("Money transfer successful!");
-    } catch {
-      toast.error("Transfer failed.");
+    } catch (err: any) {
+      toast.error(err?.message || "Transfer failed.");
     } finally {
       setProcessing(false);
     }
@@ -71,7 +73,7 @@ function MoneyTransfer() {
       <div className="max-w-lg mx-auto">
         <Card>
           <CardContent className="p-8 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
             <h2 className="text-xl font-bold text-foreground mb-2">Transfer Successful!</h2>
             <p className="text-muted-foreground mb-1">₹{form.amount} sent to {form.name}</p>
             <p className="text-sm text-muted-foreground">A/C: {form.accountNumber} | IFSC: {form.ifsc}</p>
