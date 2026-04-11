@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { StatsCard } from "@/components/StatsCard";
-import { Users, Wallet, ShoppingBag, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Wallet, ShoppingBag, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -45,64 +45,98 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's your platform overview.</p>
+    <div className="space-y-5">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={Users} label="Total Users" value={stats.users} borderColor="border-gov-blue" bgColor="bg-gov-blue/10" textColor="text-gov-blue" />
+        <StatCard icon={TrendingUp} label="Revenue" value={`₹${stats.revenue.toLocaleString()}`} borderColor="border-success" bgColor="bg-success/10" textColor="text-success" />
+        <StatCard icon={ShoppingBag} label="Services" value={stats.services} borderColor="border-gov-saffron" bgColor="bg-gov-saffron/10" textColor="text-gov-saffron" />
+        <StatCard icon={Wallet} label="Transactions" value={stats.transactions} borderColor="border-warning" bgColor="bg-warning/10" textColor="text-warning" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Total Users" value={stats.users} icon={Users} description="Registered users" />
-        <StatsCard title="Revenue" value={`₹${stats.revenue.toLocaleString()}`} icon={TrendingUp} description="From services" />
-        <StatsCard title="Services" value={stats.services} icon={ShoppingBag} description="Active services" />
-        <StatsCard title="Transactions" value={stats.transactions} icon={Wallet} description="Total transactions" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentUsers.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No users found. Create the admin account first.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">Name</th>
-                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">Email</th>
-                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">Role</th>
-                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">KYC</th>
+      {/* Recent Users Table */}
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="bg-gov-blue-light border-b border-border px-5 py-3">
+          <h2 className="text-base font-bold text-gov-blue">Recent Users</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted">
+                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Name</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Email</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Role</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">KYC Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentUsers.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No users found.</td></tr>
+              ) : (
+                recentUsers.map((u) => (
+                  <tr key={u.id} className="border-b border-border/50 hover:bg-muted/50">
+                    <td className="px-4 py-2.5">{u.name || "—"}</td>
+                    <td className="px-4 py-2.5">{u.email}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gov-blue/10 text-gov-blue">{u.role}</span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        u.kycStatus === "approved" ? "bg-success/10 text-success" :
+                        u.kycStatus === "rejected" ? "bg-destructive/10 text-destructive" :
+                        "bg-warning/10 text-warning"
+                      }`}>{u.kycStatus || "N/A"}</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {recentUsers.map((u) => (
-                    <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-3 px-2 text-foreground">{u.name || "—"}</td>
-                      <td className="py-3 px-2 text-foreground">{u.email}</td>
-                      <td className="py-3 px-2">
-                        <span className="capitalize px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2">
-                        <span className={`capitalize px-2 py-1 rounded-full text-xs ${
-                          u.kycStatus === "approved" ? "bg-success/10 text-success" :
-                          u.kycStatus === "rejected" ? "bg-destructive/10 text-destructive" :
-                          "bg-warning/10 text-warning"
-                        }`}>
-                          {u.kycStatus || "N/A"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="text-center py-3 border-t border-border">
+          <Link to="/admin/users">
+            <Button variant="outline" size="sm" className="text-xs border-gov-blue text-gov-blue">View All Users</Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
+            <h2 className="text-base font-bold text-gov-blue">Quick Actions</h2>
+          </div>
+          <div className="p-5 space-y-3">
+            <Link to="/admin/create-user"><Button className="w-full bg-gov-blue hover:opacity-90 text-white font-bold">+ Create New User</Button></Link>
+            <Link to="/admin/kyc"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Review KYC Requests</Button></Link>
+            <Link to="/admin/wallet-requests"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Wallet Requests</Button></Link>
+          </div>
+        </div>
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
+            <h2 className="text-base font-bold text-gov-blue">Platform Overview</h2>
+          </div>
+          <div className="p-5 space-y-3 text-sm text-muted-foreground">
+            <div className="flex justify-between"><span>Active Services</span><span className="font-bold text-foreground">{stats.services}</span></div>
+            <div className="flex justify-between border-t border-border/50 pt-3"><span>Total Transactions</span><span className="font-bold text-foreground">{stats.transactions}</span></div>
+            <div className="flex justify-between border-t border-border/50 pt-3"><span>Total Revenue</span><span className="font-bold text-success">₹{stats.revenue.toLocaleString()}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, borderColor, bgColor, textColor }: {
+  icon: React.ElementType; label: string; value: number | string; borderColor: string; bgColor: string; textColor: string;
+}) {
+  return (
+    <div className={`rounded-lg border-2 p-4 text-center ${borderColor} ${bgColor}`}>
+      <div className="flex items-center justify-center gap-1.5 mb-1">
+        <Icon className={`w-4 h-4 ${textColor}`} />
+        <span className={`text-xs font-bold ${textColor}`}>{label}</span>
+      </div>
+      <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
     </div>
   );
 }
