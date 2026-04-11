@@ -14,17 +14,17 @@ import {
   ShoppingBag,
   ClipboardList,
   LogOut,
-  Shield,
-  Menu,
-  X,
+  User,
+  BarChart3,
+  Download,
+  CheckCircle,
 } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 interface NavItem {
   label: string;
   to: string;
   icon: React.ElementType;
+  badge?: number;
 }
 
 const navByRole: Record<UserRole, NavItem[]> = {
@@ -46,13 +46,13 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
-    { label: "Services", to: "/retailer/services", icon: ShoppingBag },
-    { label: "Wallet", to: "/retailer/wallet", icon: Wallet },
+    { label: "Apply Service", to: "/retailer/services", icon: ShoppingBag },
     { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
+    { label: "My Wallet", to: "/retailer/wallet", icon: Wallet },
     { label: "Money Transfer", to: "/retailer/money-transfer", icon: Banknote },
     { label: "CV Builder", to: "/retailer/cv-builder", icon: CVIcon },
     { label: "Trainings", to: "/retailer/trainings", icon: GraduationCap },
-    { label: "KYC", to: "/retailer/kyc", icon: ClipboardList },
+    { label: "KYC", to: "/retailer/kyc", icon: CheckCircle },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
@@ -68,99 +68,57 @@ const navByRole: Record<UserRole, NavItem[]> = {
 export function AppSidebar() {
   const { appUser, logout } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (!appUser) return null;
 
   const items = navByRole[appUser.role] || [];
 
-  const navContent = (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+  return (
+    <aside className="hidden lg:flex flex-col w-56 bg-card border-r border-border min-h-0">
+      {/* User welcome */}
+      <div className="p-4 bg-gov-blue text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Shield className="w-5 h-5 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <User className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="font-bold text-sidebar-foreground text-sm">EI SOLUTIONS</h2>
-            <p className="text-xs text-sidebar-foreground/60 capitalize">{appUser.role} Panel</p>
+          <div className="min-w-0">
+            <p className="text-xs opacity-70">Welcome</p>
+            <p className="text-sm font-bold truncate">{appUser.name || appUser.email.split("@")[0]}</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto">
         {items.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to as any}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-4 py-2.5 text-sm border-l-4 transition-colors ${
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  ? "border-gov-blue bg-gov-blue-light text-gov-blue font-semibold"
+                  : "border-transparent text-foreground/80 hover:bg-muted hover:text-foreground"
               }`}
             >
               <item.icon className="w-4 h-4 shrink-0" />
-              {item.label}
+              <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* User & Logout */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-3 px-3">
-          <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary">
-            {appUser.name?.[0] || appUser.email[0].toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-sidebar-foreground truncate">{appUser.name || appUser.email}</p>
-            <p className="text-xs text-sidebar-foreground/50 capitalize">{appUser.role}</p>
-          </div>
-        </div>
+      {/* Logout */}
+      <div className="p-3 border-t border-border">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:text-destructive hover:bg-sidebar-accent/50 w-full transition-colors"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm w-full bg-gov-gold text-white font-semibold hover:opacity-90 transition-opacity"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          Logout
         </button>
       </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Mobile toggle */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-      </Button>
-
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-foreground/50 z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-sidebar z-40 transform transition-transform lg:translate-x-0 lg:static lg:z-auto ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {navContent}
-      </aside>
-    </>
+    </aside>
   );
 }
