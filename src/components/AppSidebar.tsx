@@ -44,6 +44,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
+    { label: "Earnings", to: "/distributor/earnings", icon: BarChart3 },
     { label: "Wallet", to: "/distributor/wallet", icon: Wallet },
   ],
   retailer: [
