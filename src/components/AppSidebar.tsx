@@ -34,6 +34,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
     { label: "Services", to: "/admin/services", icon: ShoppingBag },
+    { label: "Recharge Txns", to: "/admin/recharge-transactions", icon: ArrowLeftRight },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
     { label: "Wallet Requests", to: "/admin/wallet-requests", icon: Banknote },
     { label: "Trainings", to: "/admin/trainings", icon: GraduationCap },
