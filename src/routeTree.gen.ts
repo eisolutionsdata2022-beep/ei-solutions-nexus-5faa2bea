@@ -33,6 +33,7 @@ import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.mon
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
+import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -165,6 +166,11 @@ const DistributorWalletRoute = DistributorWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => DistributorRoute,
 } as any)
+const DistributorEarningsRoute = DistributorEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => DistributorRoute,
+} as any)
 const AdminWalletsRoute = AdminWalletsRouteImport.update({
   id: '/wallets',
   path: '/wallets',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/kyc'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/kyc'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/kyc'
@@ -618,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DistributorWalletRouteImport
       parentRoute: typeof DistributorRoute
     }
+    '/distributor/earnings': {
+      id: '/distributor/earnings'
+      path: '/earnings'
+      fullPath: '/distributor/earnings'
+      preLoaderRoute: typeof DistributorEarningsRouteImport
+      parentRoute: typeof DistributorRoute
+    }
     '/admin/wallets': {
       id: '/admin/wallets'
       path: '/wallets'
@@ -731,11 +750,13 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface DistributorRouteChildren {
+  DistributorEarningsRoute: typeof DistributorEarningsRoute
   DistributorWalletRoute: typeof DistributorWalletRoute
   DistributorIndexRoute: typeof DistributorIndexRoute
 }
 
 const DistributorRouteChildren: DistributorRouteChildren = {
+  DistributorEarningsRoute: DistributorEarningsRoute,
   DistributorWalletRoute: DistributorWalletRoute,
   DistributorIndexRoute: DistributorIndexRoute,
 }
