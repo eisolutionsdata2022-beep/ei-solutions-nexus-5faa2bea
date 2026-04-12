@@ -39,6 +39,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
@@ -194,6 +195,12 @@ const AdminServicesRoute = AdminServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminRechargeTransactionsRoute =
+  AdminRechargeTransactionsRouteImport.update({
+    id: '/recharge-transactions',
+    path: '/recharge-transactions',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
@@ -295,6 +304,7 @@ export interface FileRoutesById {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
+    | '/admin/recharge-transactions'
     | '/admin/services'
     | '/admin/training-settings'
     | '/admin/trainings'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
+    | '/admin/recharge-transactions'
     | '/admin/services'
     | '/admin/training-settings'
     | '/admin/trainings'
@@ -400,6 +412,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
+    | '/admin/recharge-transactions'
     | '/admin/services'
     | '/admin/training-settings'
     | '/admin/trainings'
@@ -647,6 +660,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServicesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/recharge-transactions': {
+      id: '/admin/recharge-transactions'
+      path: '/recharge-transactions'
+      fullPath: '/admin/recharge-transactions'
+      preLoaderRoute: typeof AdminRechargeTransactionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/kyc': {
       id: '/admin/kyc'
       path: '/kyc'
@@ -683,6 +703,7 @@ interface AdminRouteChildren {
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
+  AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
   AdminTrainingsRoute: typeof AdminTrainingsRoute
@@ -697,6 +718,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
+  AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
   AdminTrainingsRoute: AdminTrainingsRoute,
