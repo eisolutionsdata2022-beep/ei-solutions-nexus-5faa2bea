@@ -1,0 +1,213 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { DEFAULT_COMMISSION_RATES, SERVICE_CATALOG, type CommissionRate, type ServiceType } from "@/lib/commission-config";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Pencil, Upload, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/admin/commissions")({
+  component: AdminCommissions,
+});
+
+function AdminCommissions() {
+  const [rates, setRates] = useState<CommissionRate[]>([]);
+  const [editRate, setEditRate] = useState<CommissionRate | null>(null);
+  const [form, setForm] = useState({
+    totalPercent: "",
+    retailerPercent: "",
+    distributorPercent: "",
+    adminPercent: "",
+    serviceCharge: "",
+  });
+
+  const fetchRates = async () => {
+    const snap = await getDocs(collection(db, "commissionRates"));
+    const list: CommissionRate[] = [];
+    snap.forEach((d) => list.push({ id: d.id, ...d.data() } as CommissionRate));
+    // Merge with defaults for any missing ones
+    const merged = DEFAULT_COMMISSION_RATES.map((def) => {
+      const existing = list.find(
+        (r) => r.serviceType === def.serviceType && r.operator === def.operator
+      );
+      return existing || { ...def, id: `${def.serviceType}_${def.operator}` };
+    });
+    setRates(merged);
+  };
+
+  useEffect(() => { fetchRates(); }, []);
+
+  const openEdit = (rate: CommissionRate) => {
+    setEditRate(rate);
+    setForm({
+      totalPercent: String(rate.totalPercent),
+      retailerPercent: String(rate.retailerPercent),
+      distributorPercent: String(rate.distributorPercent),
+      adminPercent: String(rate.adminPercent),
+      serviceCharge: String(rate.serviceCharge),
+    });
+  };
+
+  const handleSave = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editRate) return;
+    const data = {
+      serviceType: editRate.serviceType,
+      operator: editRate.operator,
+      totalPercent: parseFloat(form.totalPercent),
+      retailerPercent: parseFloat(form.retailerPercent),
+      distributorPercent: parseFloat(form.distributorPercent),
+      adminPercent: parseFloat(form.adminPercent),
+      serviceCharge: parseFloat(form.serviceCharge),
+    };
+    // Validate splits add up
+    const splitSum = data.retailerPercent + data.distributorPercent + data.adminPercent;
+    if (Math.abs(splitSum - data.totalPercent) > 0.01) {
+      toast.error(`Splits (${splitSum.toFixed(2)}%) must equal total (${data.totalPercent}%)`);
+      return;
+    }
+    try {
+      const docId = `${data.serviceType}_${data.operator}`;
+      await setDoc(doc(db, "commissionRates", docId), data);
+      toast.success("Commission rate updated!");
+      setEditRate(null);
+      fetchRates();
+    } catch {
+      toast.error("Failed to update rate");
+    }
+  };
+
+  const seedDefaults = async () => {
+    try {
+      for (const rate of DEFAULT_COMMISSION_RATES) {
+        const docId = `${rate.serviceType}_${rate.operator}`;
+        await setDoc(doc(db, "commissionRates", docId), rate);
+      }
+      toast.success("Default rates seeded to Firebase!");
+      fetchRates();
+    } catch {
+      toast.error("Failed to seed defaults");
+    }
+  };
+
+  const serviceTypes = Object.keys(SERVICE_CATALOG) as ServiceType[];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Commission Management</h1>
+          <p className="text-muted-foreground">Configure commission splits for all services.</p>
+        </div>
+        <Button variant="outline" onClick={seedDefaults}>
+          <Upload className="w-4 h-4 mr-2" /> Seed Default Rates
+        </Button>
+      </div>
+
+      <Tabs defaultValue="mobile_recharge">
+        <TabsList className="flex-wrap h-auto gap-1">
+          {serviceTypes.map((st) => (
+            <TabsTrigger key={st} value={st} className="text-xs">
+              {SERVICE_CATALOG[st].icon} {SERVICE_CATALOG[st].label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {serviceTypes.map((st) => {
+          const typeRates = rates.filter((r) => r.serviceType === st);
+          return (
+            <TabsContent key={st} value={st}>
+              <div className="grid gap-4">
+                {typeRates.map((rate) => {
+                  const op = SERVICE_CATALOG[st].operators.find((o) => o.id === rate.operator);
+                  return (
+                    <Card key={rate.operator}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{op?.logo || "📦"}</span>
+                            <div>
+                              <p className="font-semibold">{op?.name || rate.operator}</p>
+                              <p className="text-sm text-muted-foreground">Total: {rate.totalPercent}%</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              Retailer: {rate.retailerPercent}%
+                            </Badge>
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">
+                              Distributor: {rate.distributorPercent}%
+                            </Badge>
+                            <Badge className="bg-purple-100 text-purple-800 text-xs">
+                              Admin: {rate.adminPercent}%
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Charge: ₹{rate.serviceCharge}
+                            </Badge>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(rate)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {typeRates.length === 0 && (
+                  <p className="text-muted-foreground text-sm">No rates configured. Click "Seed Default Rates" to initialize.</p>
+                )}
+              </div>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editRate} onOpenChange={(v) => { if (!v) setEditRate(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Commission: {editRate?.operator.toUpperCase()}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Total Commission %</Label>
+                <Input type="number" step="0.01" value={form.totalPercent} onChange={(e) => setForm({ ...form, totalPercent: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Service Charge (₹)</Label>
+                <Input type="number" step="0.5" value={form.serviceCharge} onChange={(e) => setForm({ ...form, serviceCharge: e.target.value })} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Retailer %</Label>
+                <Input type="number" step="0.01" value={form.retailerPercent} onChange={(e) => setForm({ ...form, retailerPercent: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Distributor %</Label>
+                <Input type="number" step="0.01" value={form.distributorPercent} onChange={(e) => setForm({ ...form, distributorPercent: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Admin %</Label>
+                <Input type="number" step="0.01" value={form.adminPercent} onChange={(e) => setForm({ ...form, adminPercent: e.target.value })} required />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Split total: {(parseFloat(form.retailerPercent || "0") + parseFloat(form.distributorPercent || "0") + parseFloat(form.adminPercent || "0")).toFixed(2)}% 
+              (must equal {form.totalPercent || "0"}%)
+            </p>
+            <Button type="submit" className="w-full">Save Commission Rate</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
