@@ -28,6 +28,7 @@ import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
+import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
@@ -41,6 +42,7 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
+import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 
 const TrainerRoute = TrainerRouteImport.update({
   id: '/trainer',
@@ -137,6 +139,11 @@ const RetailerServicesRoute = RetailerServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerRechargeRoute = RetailerRechargeRouteImport.update({
+  id: '/recharge',
+  path: '/recharge',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
   id: '/money-transfer',
   path: '/money-transfer',
@@ -202,6 +209,11 @@ const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   path: '/create-user',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -211,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -224,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
@@ -240,6 +254,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/register': typeof RegisterRoute
+  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -253,6 +268,7 @@ export interface FileRoutesByTo {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
@@ -275,6 +291,7 @@ export interface FileRoutesById {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -288,6 +305,7 @@ export interface FileRoutesById {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
@@ -311,6 +329,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
@@ -324,6 +343,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
     | '/retailer/transactions'
@@ -340,6 +360,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/register'
+    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
@@ -353,6 +374,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
     | '/retailer/transactions'
@@ -374,6 +396,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
     | '/admin/kyc'
@@ -387,6 +410,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
     | '/retailer/transactions'
@@ -546,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerServicesRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/recharge': {
+      id: '/retailer/recharge'
+      path: '/recharge'
+      fullPath: '/retailer/recharge'
+      preLoaderRoute: typeof RetailerRechargeRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/money-transfer': {
       id: '/retailer/money-transfer'
       path: '/money-transfer'
@@ -637,10 +668,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreateUserRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/commissions': {
+      id: '/admin/commissions'
+      path: '/commissions'
+      fullPath: '/admin/commissions'
+      preLoaderRoute: typeof AdminCommissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
@@ -654,6 +693,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
@@ -686,6 +726,7 @@ interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
+  RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
   RetailerTransactionsRoute: typeof RetailerTransactionsRoute
@@ -697,6 +738,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
+  RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerServicesRoute: RetailerServicesRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
   RetailerTransactionsRoute: RetailerTransactionsRoute,

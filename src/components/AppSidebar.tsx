@@ -39,6 +39,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Trainings", to: "/admin/trainings", icon: GraduationCap },
     { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
     { label: "Forms", to: "/admin/forms", icon: FileText },
+    { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -46,6 +47,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
     { label: "Apply Service", to: "/retailer/services", icon: ShoppingBag },
     { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
     { label: "My Wallet", to: "/retailer/wallet", icon: Wallet },
