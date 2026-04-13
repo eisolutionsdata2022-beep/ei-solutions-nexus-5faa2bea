@@ -28,6 +28,7 @@ export interface RechargeResult {
   message: string;
   commission: CommissionSplit;
   newBalance: number;
+  apiResponse?: AmbikaApiResponse;
 }
 
 /**
