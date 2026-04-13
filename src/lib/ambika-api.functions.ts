@@ -19,7 +19,7 @@ export interface AmbikaApiResponse {
   apiTransactionId?: string;
   operatorRef?: string;
   message: string;
-  rawResponse?: Record<string, unknown>;
+  rawResponse?: Record<string, string | number | boolean | null>;
 }
 
 /**
