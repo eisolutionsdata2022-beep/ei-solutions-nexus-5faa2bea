@@ -160,7 +160,85 @@ export async function executeRechargeTransaction(
     createdAt: new Date().toISOString(),
   });
 
-  // 6. Distribute commissions
+  // 6. Call external Ambika Recharge API
+  let apiResponse: AmbikaApiResponse;
+  try {
+    apiResponse = await callAmbikaRechargeApi({
+      data: {
+        serviceType: request.serviceType,
+        operator: request.operator,
+        mobileNumber: request.mobileNumber,
+        amount: request.amount,
+        transactionId: txRef.id,
+      },
+    });
+
+    // Update transaction with API response
+    await updateDoc(txRef, {
+      apiStatus: apiResponse.status,
+      apiTransactionId: apiResponse.apiTransactionId || null,
+      operatorRef: apiResponse.operatorRef || null,
+      apiMessage: apiResponse.message,
+    });
+  } catch (err) {
+    // API call failed — refund wallet and mark failed
+    await runTransaction(db, async (transaction) => {
+      const walletDoc = await transaction.get(walletRef);
+      if (walletDoc.exists()) {
+        const current = walletDoc.data().balance || 0;
+        transaction.update(walletRef, { balance: current + totalDebit });
+      }
+    });
+
+    // Log refund transaction
+    await addDoc(collection(db, "transactions"), {
+      userId: request.userId,
+      amount: totalDebit,
+      type: "credit",
+      source: "refund",
+      description: `Refund: API call failed - ${request.operator.toUpperCase()}`,
+      rechargeTransactionId: txRef.id,
+      createdAt: new Date().toISOString(),
+    });
+
+    await updateDoc(txRef, { status: "api_failed", error: String(err) });
+
+    throw new Error("Recharge API call failed. Amount refunded to wallet.");
+  }
+
+  // 7. Handle API response
+  if (apiResponse.status === "failed") {
+    // Refund wallet on API failure
+    await runTransaction(db, async (transaction) => {
+      const walletDoc = await transaction.get(walletRef);
+      if (walletDoc.exists()) {
+        const current = walletDoc.data().balance || 0;
+        transaction.update(walletRef, { balance: current + totalDebit });
+      }
+    });
+
+    await addDoc(collection(db, "transactions"), {
+      userId: request.userId,
+      amount: totalDebit,
+      type: "credit",
+      source: "refund",
+      description: `Refund: ${apiResponse.message}`,
+      rechargeTransactionId: txRef.id,
+      createdAt: new Date().toISOString(),
+    });
+
+    await updateDoc(txRef, { status: "failed" });
+
+    throw new Error(apiResponse.message || "Recharge failed. Amount refunded.");
+  }
+
+  // For "pending" status, mark transaction but still distribute commissions
+  // (callback from eisolutionseprint.com will update final status)
+  if (apiResponse.status === "pending") {
+    await updateDoc(txRef, { status: "pending" });
+  }
+
+  // 8. Distribute commissions (only on success or pending)
   try {
     // Credit retailer commission
     if (commission.retailerAmount > 0) {
@@ -211,20 +289,22 @@ export async function executeRechargeTransaction(
       }
     }
 
-    // Update transaction status to success
-    const { updateDoc } = await import("firebase/firestore");
-    await updateDoc(txRef, { status: "success" });
+    // Update transaction status to success (if not pending)
+    if (apiResponse.status === "success") {
+      await updateDoc(txRef, { status: "success" });
+    }
   } catch (err) {
-    // Commission distribution failed but debit succeeded - mark for review
-    const { updateDoc } = await import("firebase/firestore");
     await updateDoc(txRef, { status: "commission_pending", error: String(err) });
   }
 
   return {
     success: true,
     transactionId: txRef.id,
-    message: `${request.operator.toUpperCase()} recharge of ₹${request.amount} successful!`,
+    message: apiResponse.status === "pending"
+      ? `${request.operator.toUpperCase()} recharge of ₹${request.amount} is being processed!`
+      : `${request.operator.toUpperCase()} recharge of ₹${request.amount} successful!`,
     commission,
-    newBalance: newBalance + commission.retailerAmount, // reflect commission credit
+    newBalance: newBalance + commission.retailerAmount,
+    apiResponse,
   };
 }
