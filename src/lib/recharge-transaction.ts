@@ -7,9 +7,10 @@
  * 5. Log transaction with full audit trail
  */
 
-import { doc, getDoc, runTransaction, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, runTransaction, collection, addDoc, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { calculateCommissionSplit, type CommissionRate, type CommissionSplit } from "./commission-config";
+import { callAmbikaRechargeApi, type AmbikaApiResponse } from "./ambika-api.functions";
 
 export interface RechargeRequest {
   userId: string;           // retailer uid
