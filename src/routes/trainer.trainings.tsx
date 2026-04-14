@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, GraduationCap, ExternalLink, Trash2, Edit, Users, IndianRupee, Video } from "lucide-react";
+import { Plus, GraduationCap, Trash2, Edit, Users, IndianRupee, Video, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { VideoRoom } from "@/components/VideoRoom";
 
@@ -38,10 +38,8 @@ function TrainerTrainings() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(1);
-  const [link, setLink] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [viewAttendanceId, setViewAttendanceId] = useState<string | null>(null);
   const [settings, setSettings] = useState({ pricePerHour: 300, trainerEarningPerHour: 150 });
   const [liveTrainingId, setLiveTrainingId] = useState<string | null>(null);
 
@@ -49,7 +47,13 @@ function TrainerTrainings() {
     if (!appUser) return;
     try {
       const settingsSnap = await getDoc(doc(db, "settings", "training"));
-      if (settingsSnap.exists()) setSettings(settingsSnap.data() as any);
+      if (settingsSnap.exists()) {
+        const data = settingsSnap.data();
+        setSettings({
+          pricePerHour: data.pricePerHour || 300,
+          trainerEarningPerHour: data.trainerEarningPerHour || 150,
+        });
+      }
 
       const snap = await getDocs(collection(db, "trainings"));
       const list: Training[] = [];
@@ -60,7 +64,6 @@ function TrainerTrainings() {
       list.sort((a, b) => b.date.localeCompare(a.date));
       setTrainings(list);
 
-      // Attendance
       const attSnap = await getDocs(collection(db, "attendance"));
       const attMap: Record<string, any[]> = {};
       attSnap.forEach((d) => {
@@ -77,18 +80,18 @@ function TrainerTrainings() {
   useEffect(() => { fetchAll(); }, [appUser]);
 
   const resetForm = () => {
-    setTitle(""); setDate(""); setTime(""); setDuration(1); setLink(""); setEditId(null);
+    setTitle(""); setDate(""); setTime(""); setDuration(1); setEditId(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!appUser) return;
-    const price = settings.pricePerHour * duration;
-    const trainerEarning = settings.trainerEarningPerHour * duration;
+    const price = (settings.pricePerHour || 300) * duration;
+    const trainerEarning = (settings.trainerEarningPerHour || 150) * duration;
 
     const data = {
       title, date, time, duration, price, trainerEarning,
-      meetingLink: link, trainerId: appUser.uid,
+      meetingLink: "", trainerId: appUser.uid,
       trainerName: appUser.name || appUser.email,
       createdAt: new Date().toISOString(),
     };
@@ -107,7 +110,8 @@ function TrainerTrainings() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     if (!confirm("Delete this training?")) return;
     try {
       await deleteDoc(doc(db, "trainings", id));
@@ -115,15 +119,16 @@ function TrainerTrainings() {
     } catch { toast.error("Failed"); }
   };
 
-  const handleEdit = (t: Training) => {
+  const handleEdit = (e: React.MouseEvent, t: Training) => {
+    e.stopPropagation();
     setTitle(t.title); setDate(t.date); setTime(t.time || "");
-    setDuration(t.duration || 1); setLink(t.meetingLink);
+    setDuration(t.duration || 1);
     setEditId(t.id); setOpen(true);
   };
 
-  const viewingAttendance = viewAttendanceId ? attendance[viewAttendanceId] || [] : [];
   const liveTraining = liveTrainingId ? trainings.find((t) => t.id === liveTrainingId) : null;
 
+  // When a training is selected, show the VideoRoom fullscreen
   if (liveTraining) {
     return (
       <VideoRoom
@@ -135,16 +140,19 @@ function TrainerTrainings() {
     );
   }
 
+  const computedPrice = (settings.pricePerHour || 300) * duration;
+  const computedEarning = (settings.trainerEarningPerHour || 150) * duration;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Trainings</h1>
-          <p className="text-muted-foreground">Create and manage your training sessions.</p>
+          <h1 className="text-2xl font-bold text-foreground">Live Training Room</h1>
+          <p className="text-muted-foreground">Click any training to start a live session with Video, Chat, Q&A & AI Bot.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Add Training</Button>
+            <Button><Plus className="w-4 h-4 mr-2" /> New Training</Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editId ? "Edit" : "Create"} Training</DialogTitle></DialogHeader>
@@ -167,13 +175,9 @@ function TrainerTrainings() {
                 <Label>Duration (hours)</Label>
                 <Input type="number" min={0.5} step={0.5} value={duration} onChange={(e) => setDuration(Number(e.target.value))} required />
               </div>
-              <div className="space-y-2">
-                <Label>Meeting Link (optional)</Label>
-                <Input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/... (optional)" />
-              </div>
               <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
-                <p className="text-muted-foreground">Price: ₹{settings.pricePerHour * duration}</p>
-                <p className="text-muted-foreground">Your Earning: <span className="text-green-600 font-semibold">₹{settings.trainerEarningPerHour * duration}</span></p>
+                <p className="text-muted-foreground">Price: ₹{computedPrice}</p>
+                <p className="text-muted-foreground">Your Earning: <span className="text-green-600 font-semibold">₹{computedEarning}</span></p>
               </div>
               <Button type="submit" className="w-full">{editId ? "Update" : "Create"} Training</Button>
             </form>
@@ -181,33 +185,18 @@ function TrainerTrainings() {
         </Dialog>
       </div>
 
-      {/* Attendance viewer */}
-      <Dialog open={!!viewAttendanceId} onOpenChange={(v) => { if (!v) setViewAttendanceId(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Joined Users</DialogTitle></DialogHeader>
-          {viewingAttendance.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No users have joined yet.</p>
-          ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {viewingAttendance.map((a) => (
-                <div key={a.id} className="flex justify-between items-center py-2 border-b border-border text-sm">
-                  <span className="text-foreground">{a.userName || a.userId}</span>
-                  <span className="text-muted-foreground text-xs">{a.joinTime || "—"}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       <div className="grid gap-4">
         {trainings.map((t) => (
-          <Card key={t.id}>
+          <Card
+            key={t.id}
+            className="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+            onClick={() => setLiveTrainingId(t.id)}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                    <Radio className="w-5 h-5 text-green-500" />
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">{t.title}</p>
@@ -218,29 +207,37 @@ function TrainerTrainings() {
                   <span className="text-sm text-green-600 font-medium flex items-center gap-1">
                     <IndianRupee className="w-3.5 h-3.5" /> ₹{t.trainerEarning}
                   </span>
-                  <Button variant="outline" size="sm" onClick={() => setViewAttendanceId(t.id)}>
-                    <Users className="w-4 h-4 mr-1" /> {(attendance[t.id] || []).length}
-                  </Button>
-                  {t.meetingLink && (
-                    <a href={t.meetingLink} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm"><ExternalLink className="w-4 h-4" /></Button>
-                    </a>
-                  )}
-                  <Button variant="default" size="sm" onClick={() => setLiveTrainingId(t.id)} className="bg-green-600 hover:bg-green-700">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" /> {(attendance[t.id] || []).length} joined
+                  </span>
+                  <Button variant="default" size="sm" onClick={(e) => { e.stopPropagation(); setLiveTrainingId(t.id); }} className="bg-green-600 hover:bg-green-700">
                     <Video className="w-4 h-4 mr-1" /> Go Live
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(t)}>
+                  <Button variant="outline" size="sm" onClick={(e) => handleEdit(e, t)}>
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(t.id)}>
+                  <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e, t.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Video className="w-3 h-3" /> WebRTC Video
+                <span className="mx-1">·</span> Live Chat
+                <span className="mx-1">·</span> Q&A
+                <span className="mx-1">·</span> AI Bot
+              </div>
             </CardContent>
           </Card>
         ))}
-        {trainings.length === 0 && <p className="text-muted-foreground">No trainings yet.</p>}
+        {trainings.length === 0 && (
+          <div className="text-center py-12 space-y-3">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <GraduationCap className="w-8 h-8 text-primary" />
+            </div>
+            <p className="text-muted-foreground">No trainings yet. Create your first live training session!</p>
+          </div>
+        )}
       </div>
     </div>
   );
