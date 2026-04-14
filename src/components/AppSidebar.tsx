@@ -41,6 +41,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Trainings", to: "/admin/trainings", icon: GraduationCap },
     { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
     { label: "Forms", to: "/admin/forms", icon: FileText },
+    { label: "Service Apps", to: "/admin/service-applications", icon: ClipboardList },
     { label: "Training Earnings", to: "/admin/training-earnings", icon: BarChart3 },
     { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
