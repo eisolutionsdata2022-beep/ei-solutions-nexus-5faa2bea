@@ -31,12 +31,30 @@ interface ServiceRequest {
   createdAt: string;
 }
 
+interface ServiceButtonData {
+  id: string;
+  name: string;
+  url: string;
+  style: "solid" | "outline" | "gradient";
+  enabled: boolean;
+}
+
+function getButtonClasses(style: string) {
+  switch (style) {
+    case "solid": return "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md";
+    case "outline": return "border-2 border-primary text-primary bg-transparent hover:bg-primary/10";
+    case "gradient": return "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:opacity-90";
+    default: return "bg-primary text-primary-foreground";
+  }
+}
+
 function RetailerDashboard() {
   const { appUser } = useAuth();
   const [balance, setBalance] = useState(0);
   const [recentTx, setRecentTx] = useState<Transaction[]>([]);
   const [applications, setApplications] = useState<ServiceRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [serviceButtons, setServiceButtons] = useState<ServiceButtonData[]>([]);
 
   const statusCounts = {
     pending: applications.filter((a) => a.status === "pending").length,
