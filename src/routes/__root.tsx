@@ -78,6 +78,7 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
+      <GlobalChatButton />
     </AuthProvider>
   );
 }
