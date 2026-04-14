@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, ExternalLink, Link2, Upload, X, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Link2, Upload, X, ImageIcon, Palette } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/service-buttons")({
@@ -28,6 +28,7 @@ interface ServiceButton {
   enabled: boolean;
   createdAt: string;
   iconUrl?: string;
+  customColor?: string;
 }
 
 const BUTTON_STYLES: { value: ButtonStyle; label: string; description: string }[] = [
@@ -36,15 +37,42 @@ const BUTTON_STYLES: { value: ButtonStyle; label: string; description: string }[
   { value: "gradient", label: "Gradient", description: "Gradient background effect" },
 ];
 
-function getButtonClasses(style: ButtonStyle) {
-  switch (style) {
-    case "solid":
-      return "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md";
-    case "outline":
-      return "border-2 border-primary text-primary bg-transparent hover:bg-primary/10";
-    case "gradient":
-      return "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:opacity-90";
+const PRESET_COLORS = [
+  "#2563eb", "#7c3aed", "#db2777", "#dc2626",
+  "#ea580c", "#ca8a04", "#16a34a", "#0d9488",
+  "#0891b2", "#4f46e5", "#1e293b", "#6b7280",
+];
+
+function getButtonClasses(style: ButtonStyle, hasCustomColor?: boolean) {
+  if (hasCustomColor) {
+    switch (style) {
+      case "solid": return "text-white shadow-md hover:opacity-90";
+      case "outline": return "border-2 bg-transparent hover:opacity-80";
+      case "gradient": return "text-white shadow-lg hover:opacity-90";
+    }
   }
+  switch (style) {
+    case "solid": return "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md";
+    case "outline": return "border-2 border-primary text-primary bg-transparent hover:bg-primary/10";
+    case "gradient": return "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:opacity-90";
+  }
+}
+
+function getButtonInlineStyle(style: ButtonStyle, color?: string): React.CSSProperties {
+  if (!color) return {};
+  switch (style) {
+    case "solid": return { backgroundColor: color };
+    case "outline": return { borderColor: color, color: color };
+    case "gradient": return { background: `linear-gradient(135deg, ${color}, ${adjustColor(color, 40)})` };
+  }
+}
+
+function adjustColor(hex: string, amount: number): string {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.min(255, ((num >> 16) & 0xff) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+  const b = Math.min(255, (num & 0xff) + amount);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
 function AdminServiceButtons() {
@@ -52,6 +80,7 @@ function AdminServiceButtons() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [style, setStyle] = useState<ButtonStyle>("solid");
+  const [customColor, setCustomColor] = useState("");
   const [open, setOpen] = useState(false);
   const [editBtn, setEditBtn] = useState<ServiceButton | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
@@ -70,7 +99,7 @@ function AdminServiceButtons() {
   useEffect(() => { fetchButtons(); }, []);
 
   const resetForm = () => {
-    setName(""); setUrl(""); setStyle("solid");
+    setName(""); setUrl(""); setStyle("solid"); setCustomColor("");
     setIconFile(null); setIconPreview("");
   };
 
@@ -112,6 +141,7 @@ function AdminServiceButtons() {
         name: name.trim(),
         url: url.trim(),
         style,
+        customColor: customColor || "",
         iconUrl: iconUrl || "",
         enabled: true,
         createdAt: new Date().toISOString(),
@@ -134,7 +164,7 @@ function AdminServiceButtons() {
     try {
       const iconUrl = await uploadIcon();
       const updateData: Record<string, string> = {
-        name: name.trim(), url: url.trim(), style,
+        name: name.trim(), url: url.trim(), style, customColor: customColor || "",
       };
       if (iconUrl !== undefined) updateData.iconUrl = iconUrl;
       await updateDoc(doc(db, "serviceButtons", editBtn.id), updateData);
@@ -166,7 +196,7 @@ function AdminServiceButtons() {
 
   const openEdit = (b: ServiceButton) => {
     setName(b.name); setUrl(b.url); setStyle(b.style || "solid");
-    setIconPreview(b.iconUrl || ""); setIconFile(null);
+    setCustomColor(b.customColor || ""); setIconPreview(b.iconUrl || ""); setIconFile(null);
     setEditBtn(b);
   };
 
@@ -213,6 +243,29 @@ function AdminServiceButtons() {
         <p className="text-xs text-muted-foreground">PNG, JPG, SVG — max 2MB. Square icons work best.</p>
       </div>
 
+      {/* Color Picker */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2"><Palette className="w-4 h-4" /> Button Color</Label>
+        <div className="flex flex-wrap gap-2">
+          {PRESET_COLORS.map((c) => (
+            <button key={c} type="button" onClick={() => setCustomColor(c)}
+              className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${customColor === c ? "border-foreground ring-2 ring-foreground/20 scale-110" : "border-transparent"}`}
+              style={{ backgroundColor: c }} />
+          ))}
+          <button type="button" onClick={() => setCustomColor("")}
+            className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center text-xs font-bold ${!customColor ? "border-foreground ring-2 ring-foreground/20 scale-110" : "border-border"}`}
+            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))" }}>
+            <span className="text-white text-[8px]">Auto</span>
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="color" value={customColor || "#2563eb"} onChange={(e) => setCustomColor(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-border" />
+          <Input value={customColor} onChange={(e) => setCustomColor(e.target.value)}
+            placeholder="#2563eb (or leave empty for default)" className="flex-1 text-sm font-mono" />
+        </div>
+      </div>
+
       <div className="space-y-3">
         <Label>Button Design</Label>
         <RadioGroup value={style} onValueChange={(v) => setStyle(v as ButtonStyle)} className="space-y-3">
@@ -223,7 +276,8 @@ function AdminServiceButtons() {
                 <p className="text-sm font-medium text-foreground">{bs.label}</p>
                 <p className="text-xs text-muted-foreground">{bs.description}</p>
               </div>
-              <div className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${getButtonClasses(bs.value)}`}>
+              <div className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${getButtonClasses(bs.value, !!customColor)}`}
+                style={getButtonInlineStyle(bs.value, customColor)}>
                 Preview
               </div>
             </label>
@@ -277,7 +331,8 @@ function AdminServiceButtons() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {buttons.filter((b) => b.enabled).map((b) => (
                 <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style)}`}>
+                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style, !!b.customColor)}`}
+                  style={getButtonInlineStyle(b.style, b.customColor)}>
                   {renderButtonIcon(b)} {b.name}
                 </a>
               ))}
@@ -316,7 +371,8 @@ function AdminServiceButtons() {
               </div>
               <div className="mb-3">
                 <a href={b.url} target="_blank" rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-base font-bold transition-all min-h-[50px] ${getButtonClasses(b.style)}`}>
+                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-base font-bold transition-all min-h-[50px] ${getButtonClasses(b.style, !!b.customColor)}`}
+                  style={getButtonInlineStyle(b.style, b.customColor)}>
                   {renderButtonIcon(b)} {b.name}
                 </a>
               </div>
