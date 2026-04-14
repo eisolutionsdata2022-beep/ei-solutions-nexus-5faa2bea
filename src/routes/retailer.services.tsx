@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, addDoc, doc, onSnapshot, query, where, orderBy, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { atomicDebit } from "@/lib/firebase-transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,6 +77,19 @@ function RetailerServices() {
     }
 
     const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
+
+    // Upload documents to Firebase Storage
+    const uploadedDocs: { name: string; url: string; fileName: string }[] = [];
+    for (const docItem of data.documents) {
+      if (docItem.file) {
+        const storagePath = `serviceDocuments/${appUser.uid}/${appNo}/${docItem.name}_${docItem.file.name}`;
+        const storageRef = ref(storage, storagePath);
+        await uploadBytes(storageRef, docItem.file);
+        const url = await getDownloadURL(storageRef);
+        uploadedDocs.push({ name: docItem.name, url, fileName: docItem.file.name });
+      }
+    }
+
     await addDoc(collection(db, "serviceApplications"), {
       userId: appUser.uid,
       userEmail: appUser.email,
@@ -95,6 +109,7 @@ function RetailerServices() {
       status: "Pending",
       declared: data.declared,
       signature: data.signature,
+      uploadedDocuments: uploadedDocs,
       createdAt: new Date().toISOString(),
     });
 
