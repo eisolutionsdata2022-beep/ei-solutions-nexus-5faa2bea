@@ -201,6 +201,9 @@ function AdminCommissions() {
           <TabsTrigger value="cv_fee" className="text-xs">
             📄 CV Builder Fee
           </TabsTrigger>
+          <TabsTrigger value="trainer_fee" className="text-xs">
+            🤖 Virtual Trainer Fee
+          </TabsTrigger>
         </TabsList>
 
         {serviceTypes.map((st) => {
