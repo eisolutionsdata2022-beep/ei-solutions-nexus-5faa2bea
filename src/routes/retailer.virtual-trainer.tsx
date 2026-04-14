@@ -445,6 +445,16 @@ function VirtualTrainerPage() {
             variant="ghost"
             size="icon"
             className="text-white hover:bg-white/10"
+            onClick={exportChatPDF}
+            title="PDF ഡൗൺലോഡ്"
+            disabled={messages.length <= 1}
+          >
+            <FileDown className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
             onClick={() => {
               if (!ttsEnabled) { setTtsEnabled(true); } else { window.speechSynthesis.cancel(); setIsSpeaking(false); setTtsEnabled(false); }
             }}
