@@ -86,7 +86,41 @@ function RetailerKYC() {
         </Badge>
       </div>
 
-      {success ? (
+      {appUser?.kycStatus === "approved" && (
+        <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <Award className="w-10 h-10 text-green-600" />
+                <div>
+                  <p className="font-bold text-foreground text-lg">🎉 KYC Approved!</p>
+                  <p className="text-sm text-muted-foreground">Your Franchise Certificate is ready to download.</p>
+                </div>
+              </div>
+              <Button
+                size="lg"
+                className="gap-2"
+                onClick={() => {
+                  const uid = appUser.uid || "";
+                  const idSuffix = uid.substring(0, 8).toUpperCase();
+                  downloadCertificate({
+                    name: appUser.name || "Retailer",
+                    franchiseeId: `#CSC${new Date().getFullYear()}${idSuffix}`,
+                    centerName: (appUser as any).shopName || "Training Center",
+                    agreementDate: new Date().toLocaleDateString("en-IN", {
+                      year: "numeric", month: "long", day: "numeric",
+                    }),
+                  });
+                }}
+              >
+                <Download className="w-5 h-5" />
+                Download Certificate
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
         <Card>
           <CardContent className="p-8 text-center">
             <CheckCircle className="w-12 h-12 text-success mx-auto mb-4" />
