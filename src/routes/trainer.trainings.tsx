@@ -25,9 +25,25 @@ interface Training {
   duration: number;
   price: number;
   trainerEarning: number;
+  adminEarning: number;
   meetingLink: string;
   trainerId: string;
   createdAt: string;
+}
+
+interface TrainingSettings {
+  pricePerHour: number;
+  earningMode: "fixed" | "percentage";
+  trainerEarningFixed: number;
+  trainerEarningPercent: number;
+  trainerEarningPerHour?: number;
+}
+
+function calcTrainerEarningPerHour(s: TrainingSettings): number {
+  if (s.earningMode === "percentage") {
+    return Math.round((s.pricePerHour * s.trainerEarningPercent) / 100 * 100) / 100;
+  }
+  return s.trainerEarningFixed;
 }
 
 function TrainerTrainings() {
@@ -40,7 +56,12 @@ function TrainerTrainings() {
   const [duration, setDuration] = useState(1);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [settings, setSettings] = useState({ pricePerHour: 300, trainerEarningPerHour: 150 });
+  const [settings, setSettings] = useState<TrainingSettings>({
+    pricePerHour: 300,
+    earningMode: "fixed",
+    trainerEarningFixed: 150,
+    trainerEarningPercent: 30,
+  });
   const [liveTrainingId, setLiveTrainingId] = useState<string | null>(null);
 
   const fetchAll = async () => {
@@ -50,8 +71,11 @@ function TrainerTrainings() {
       if (settingsSnap.exists()) {
         const data = settingsSnap.data();
         setSettings({
-          pricePerHour: data.pricePerHour || 300,
-          trainerEarningPerHour: data.trainerEarningPerHour || 150,
+          pricePerHour: data.pricePerHour ?? 300,
+          earningMode: data.earningMode ?? "fixed",
+          trainerEarningFixed: data.trainerEarningFixed ?? data.trainerEarningPerHour ?? 150,
+          trainerEarningPercent: data.trainerEarningPercent ?? 30,
+          trainerEarningPerHour: data.trainerEarningPerHour,
         });
       }
 
@@ -83,15 +107,22 @@ function TrainerTrainings() {
     setTitle(""); setDate(""); setTime(""); setDuration(1); setEditId(null);
   };
 
+  const trainerEarningPerHour = calcTrainerEarningPerHour(settings);
+  const computedPrice = settings.pricePerHour * duration;
+  const computedTrainerEarning = trainerEarningPerHour * duration;
+  const computedAdminEarning = computedPrice - computedTrainerEarning;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!appUser) return;
-    const price = (settings.pricePerHour || 300) * duration;
-    const trainerEarning = (settings.trainerEarningPerHour || 150) * duration;
 
     const data = {
-      title, date, time, duration, price, trainerEarning,
-      meetingLink: "", trainerId: appUser.uid,
+      title, date, time, duration,
+      price: computedPrice,
+      trainerEarning: computedTrainerEarning,
+      adminEarning: computedAdminEarning,
+      meetingLink: "",
+      trainerId: appUser.uid,
       trainerName: appUser.name || appUser.email,
       createdAt: new Date().toISOString(),
     };
@@ -128,7 +159,6 @@ function TrainerTrainings() {
 
   const liveTraining = liveTrainingId ? trainings.find((t) => t.id === liveTrainingId) : null;
 
-  // When a training is selected, show the VideoRoom fullscreen
   if (liveTraining) {
     return (
       <VideoRoom
@@ -139,9 +169,6 @@ function TrainerTrainings() {
       />
     );
   }
-
-  const computedPrice = (settings.pricePerHour || 300) * duration;
-  const computedEarning = (settings.trainerEarningPerHour || 150) * duration;
 
   return (
     <div className="space-y-6">
@@ -175,10 +202,24 @@ function TrainerTrainings() {
                 <Label>Duration (hours)</Label>
                 <Input type="number" min={0.5} step={0.5} value={duration} onChange={(e) => setDuration(Number(e.target.value))} required />
               </div>
-              <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
-                <p className="text-muted-foreground">Price: ₹{computedPrice}</p>
-                <p className="text-muted-foreground">Your Earning: <span className="text-green-600 font-semibold">₹{computedEarning}</span></p>
+
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2 border border-border">
+                <p className="text-sm font-medium text-foreground">Pricing Summary</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Training Price</span>
+                  <span className="font-semibold text-foreground">₹{computedPrice}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Your Earning</span>
+                  <span className="font-semibold text-green-600">₹{computedTrainerEarning}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {settings.earningMode === "percentage"
+                    ? `${settings.trainerEarningPercent}% of training price`
+                    : `₹${settings.trainerEarningFixed}/hr × ${duration}hr`}
+                </p>
               </div>
+
               <Button type="submit" className="w-full">{editId ? "Update" : "Create"} Training</Button>
             </form>
           </DialogContent>
