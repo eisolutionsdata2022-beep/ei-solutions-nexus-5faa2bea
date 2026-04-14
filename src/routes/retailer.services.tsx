@@ -1,16 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, addDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
-import { Card, CardContent } from "@/components/ui/card";
+import { atomicDebit } from "@/lib/firebase-transactions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingBag, Send, AlertCircle } from "lucide-react";
+import { ApplicationForm, type ApplicationData } from "@/components/services/ApplicationForm";
+import { ServiceCatalogView } from "@/components/services/ServiceCatalogView";
+import { SERVICE_CATALOG } from "@/lib/service-catalog";
+import {
+  Wallet, FileText, LayoutList, BookOpen, Clock, CheckCircle, XCircle,
+  Plus, Shield,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/services")({
@@ -18,195 +23,220 @@ export const Route = createFileRoute("/retailer/services")({
   component: RetailerServices,
 });
 
-const SERVICE_CATEGORIES = [
-  "Government Services",
-  "Bill Payment",
-  "Insurance",
-  "Banking",
-  "Other Services",
-];
-
-interface ServiceData {
+interface AppRecord {
   id: string;
-  name: string;
-  price: number;
-  category: string;
-  transactionType: string;
-  apiUrl: string;
-  enabled: boolean;
+  applicationNo: string;
+  serviceType: string;
+  fullName: string;
+  status: "Pending" | "Approved" | "Rejected";
+  staffRemark?: string;
+  createdAt: string;
+  fee: number;
 }
 
 function RetailerServices() {
   const { appUser } = useAuth();
-  const [services, setServices] = useState<ServiceData[]>([]);
   const [balance, setBalance] = useState(0);
-  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
-  const [apiInputs, setApiInputs] = useState<Record<string, string>>({});
-  const [processing, setProcessing] = useState(false);
+  const [applications, setApplications] = useState<AppRecord[]>([]);
+  const [view, setView] = useState<"dashboard" | "apply">("dashboard");
 
   useEffect(() => {
-    if (!appUser) return;
-    const unsub1 = onSnapshot(collection(db, "services"), (snap) => {
-      const list: ServiceData[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ServiceData));
-      setServices(list.filter((s) => s.enabled !== false));
-    });
-    const unsub2 = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
+    if (!appUser?.uid) return;
+    const unsub1 = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
       if (snap.exists()) setBalance(snap.data().balance || 0);
     });
+    const unsub2 = onSnapshot(
+      query(collection(db, "serviceApplications"), where("userId", "==", appUser.uid), orderBy("createdAt", "desc")),
+      (snap) => {
+        const list: AppRecord[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AppRecord));
+        setApplications(list);
+      }
+    );
     return () => { unsub1(); unsub2(); };
-  }, [appUser]);
+  }, [appUser?.uid]);
 
-  const useService = async (service: ServiceData) => {
+  const handleSubmit = async (data: ApplicationData) => {
     if (!appUser) return;
-    if (service.price <= 0) {
-      toast.error("Invalid service price.");
-      return;
-    }
-    if (service.transactionType !== "credit" && balance < service.price) {
-      toast.error("Insufficient wallet balance!");
-      return;
-    }
-    setProcessing(true);
-    try {
-      // Call API if exists
-      let apiResponse = null;
-      if (service.apiUrl) {
-        try {
-          const res = await fetch(service.apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: appUser.uid, ...apiInputs }),
-          });
-          apiResponse = await res.json();
-        } catch {
-          apiResponse = { error: "API call failed" };
-        }
-      }
+    const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
+    const fee = svc?.fee || 0;
 
-      // Atomic wallet update
-      if (service.transactionType === "credit") {
-        await atomicCredit(appUser.uid, service.price, {
-          source: "service",
-          serviceId: service.id,
-          description: `Service: ${service.name}`,
-        });
-      } else {
-        await atomicDebit(appUser.uid, service.price, {
-          source: "service",
-          serviceId: service.id,
-          description: `Service: ${service.name}`,
-        });
-      }
-
-      // Save service request
-      await addDoc(collection(db, "serviceRequests"), {
-        userId: appUser.uid,
-        userEmail: appUser.email,
-        serviceId: service.id,
-        serviceName: service.name,
-        price: service.price,
-        status: "completed",
-        apiResponse,
-        createdAt: new Date().toISOString(),
+    if (fee > 0) {
+      await atomicDebit(appUser.uid, fee, {
+        source: "service",
+        description: `Service Application: ${data.serviceType}`,
       });
-
-      toast.success(`${service.name} completed successfully!`);
-      setSelectedService(null);
-      setApiInputs({});
-    } catch (err: any) {
-      toast.error(err?.message || "Service request failed.");
-    } finally {
-      setProcessing(false);
     }
+
+    const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
+    await addDoc(collection(db, "serviceApplications"), {
+      userId: appUser.uid,
+      userEmail: appUser.email,
+      userName: data.fullName,
+      applicationNo: appNo,
+      serviceType: data.serviceType,
+      fullName: data.fullName,
+      dob: data.dob,
+      gender: data.gender,
+      mobile: data.mobile,
+      email: data.email,
+      aadhaar: data.aadhaar,
+      address: data.address,
+      district: data.district,
+      purpose: data.purpose,
+      fee,
+      status: "Pending",
+      declared: data.declared,
+      signature: data.signature,
+      createdAt: new Date().toISOString(),
+    });
+
+    toast.success(`Application ${appNo} submitted successfully!`);
+    setView("dashboard");
   };
 
-  const grouped = SERVICE_CATEGORIES.map((cat) => ({
-    category: cat,
-    items: services.filter((s) => (s.category || "Other Services") === cat),
-  })).filter((g) => g.items.length > 0);
+  const statusIcon = (s: string) => {
+    if (s === "Approved") return <CheckCircle className="w-3.5 h-3.5 text-gov-green" />;
+    if (s === "Rejected") return <XCircle className="w-3.5 h-3.5 text-destructive" />;
+    return <Clock className="w-3.5 h-3.5 text-gov-gold" />;
+  };
+
+  const statusVariant = (s: string): "default" | "secondary" | "destructive" => {
+    if (s === "Approved") return "default";
+    if (s === "Rejected") return "destructive";
+    return "secondary";
+  };
+
+  const pending = applications.filter((a) => a.status === "Pending").length;
+  const approved = applications.filter((a) => a.status === "Approved").length;
+  const rejected = applications.filter((a) => a.status === "Rejected").length;
+
+  if (view === "apply") {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <ApplicationForm balance={balance} onSubmit={handleSubmit} onBack={() => setView("dashboard")} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Available Services</h1>
-          <p className="text-muted-foreground">Browse and use services. Your balance: <span className="font-semibold text-primary">₹{balance.toFixed(2)}</span></p>
+      {/* Header */}
+      <div className="bg-gov-blue text-white p-4 rounded-lg border-b-4 border-gov-saffron">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8" />
+            <div>
+              <h1 className="text-lg font-bold tracking-wide">E-GOVERNANCE SERVICES PORTAL</h1>
+              <p className="text-xs opacity-80">EI Solutions — Digital India Services</p>
+            </div>
+          </div>
+          <Button onClick={() => setView("apply")} className="bg-white text-gov-blue hover:bg-white/90">
+            <Plus className="w-4 h-4 mr-1" /> New Application
+          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue={grouped[0]?.category || "Government Services"}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          {grouped.map((g) => (
-            <TabsTrigger key={g.category} value={g.category} className="text-xs">
-              {g.category} ({g.items.length})
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {grouped.map((g) => (
-          <TabsContent key={g.category} value={g.category}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {g.items.map((s) => (
-                <Card key={s.id}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <ShoppingBag className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{s.name}</p>
-                        <p className="text-lg font-bold text-primary">₹{s.price}</p>
-                      </div>
-                    </div>
-                    <Button
-                      className="w-full"
-                      size="sm"
-                      onClick={() => s.apiUrl ? setSelectedService(s) : useService(s)}
-                      disabled={processing}
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Use Service
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="border-l-4 border-l-gov-blue">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Wallet className="w-8 h-8 text-gov-blue" />
+            <div>
+              <p className="text-xs text-muted-foreground">Wallet Balance</p>
+              <p className="text-xl font-bold text-gov-blue">₹{balance.toFixed(2)}</p>
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-gov-gold">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Clock className="w-8 h-8 text-gov-gold" />
+            <div>
+              <p className="text-xs text-muted-foreground">Pending</p>
+              <p className="text-xl font-bold">{pending}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-gov-green">
+          <CardContent className="p-4 flex items-center gap-3">
+            <CheckCircle className="w-8 h-8 text-gov-green" />
+            <div>
+              <p className="text-xs text-muted-foreground">Approved</p>
+              <p className="text-xl font-bold">{approved}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-destructive">
+          <CardContent className="p-4 flex items-center gap-3">
+            <XCircle className="w-8 h-8 text-destructive" />
+            <div>
+              <p className="text-xs text-muted-foreground">Rejected</p>
+              <p className="text-xl font-bold">{rejected}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* API Service Dialog */}
-      <Dialog open={!!selectedService} onOpenChange={(v) => { if (!v) { setSelectedService(null); setApiInputs({}); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedService?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Enter the required details for this service.</p>
-            <div className="space-y-2">
-              <Label>Input Data</Label>
-              <Input
-                placeholder="Enter required info..."
-                value={apiInputs.data || ""}
-                onChange={(e) => setApiInputs({ ...apiInputs, data: e.target.value })}
-              />
-            </div>
-            {balance < (selectedService?.price || 0) && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-destructive" />
-                <p className="text-sm text-destructive">Insufficient balance (₹{balance.toFixed(2)})</p>
-              </div>
-            )}
-            <Button
-              className="w-full"
-              onClick={() => selectedService && useService(selectedService)}
-              disabled={processing || balance < (selectedService?.price || 0)}
-            >
-              {processing ? "Processing..." : `Pay ₹${selectedService?.price} & Submit`}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Tabs */}
+      <Tabs defaultValue="applications">
+        <TabsList>
+          <TabsTrigger value="applications" className="text-xs gap-1"><LayoutList className="w-3.5 h-3.5" /> My Applications</TabsTrigger>
+          <TabsTrigger value="catalog" className="text-xs gap-1"><BookOpen className="w-3.5 h-3.5" /> Service Catalog</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="applications">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Recent Applications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {applications.length === 0 ? (
+                <div className="p-8 text-center">
+                  <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No applications yet. Click "New Application" to get started.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs font-bold">Application No</TableHead>
+                        <TableHead className="text-xs font-bold">Service</TableHead>
+                        <TableHead className="text-xs font-bold">Date</TableHead>
+                        <TableHead className="text-xs font-bold">Fee</TableHead>
+                        <TableHead className="text-xs font-bold">Status</TableHead>
+                        <TableHead className="text-xs font-bold">Staff Remark</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {applications.map((a) => (
+                        <TableRow key={a.id}>
+                          <TableCell className="text-xs font-mono font-medium">{a.applicationNo}</TableCell>
+                          <TableCell className="text-xs">{a.serviceType}</TableCell>
+                          <TableCell className="text-xs">{new Date(a.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-xs">₹{a.fee}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusVariant(a.status)} className="text-[10px] gap-1">
+                              {statusIcon(a.status)} {a.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{a.staffRemark || "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="catalog">
+          <ServiceCatalogView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
