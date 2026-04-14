@@ -199,6 +199,67 @@ function AdminCommissions() {
             </TabsContent>
           );
         })}
+
+        {/* E-dis Service Fees Tab */}
+        <TabsContent value="edis_fees">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold">E-dis Application Fees</CardTitle>
+              <p className="text-xs text-muted-foreground">Set the fee deducted from retailer wallet per application submission.</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-xs font-bold text-left px-4 py-2">Service Name</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Category</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Current Fee (₹)</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EDIS_CATALOG.map((svc) => (
+                      <tr key={svc.name} className="border-b">
+                        <td className="text-xs font-medium px-4 py-2">{svc.name}</td>
+                        <td className="px-4 py-2">
+                          <Badge variant="outline" className="text-[10px]">{svc.category}</Badge>
+                        </td>
+                        <td className="px-4 py-2">
+                          {editingEdis === svc.name ? (
+                            <Input
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={edisFeeInput}
+                              onChange={(e) => setEdisFeeInput(e.target.value)}
+                              className="h-7 w-24 text-xs"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-xs font-semibold">₹{edisFees[svc.name] ?? svc.fee}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2">
+                          {editingEdis === svc.name ? (
+                            <div className="flex gap-1">
+                              <Button size="sm" className="h-7 text-xs" onClick={() => saveEdisFee(svc.name)}>Save</Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setEditingEdis(null); setEdisFeeInput(""); }}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { setEditingEdis(svc.name); setEdisFeeInput(String(edisFees[svc.name] ?? svc.fee)); }}>
+                              <Pencil className="w-3 h-3" /> Edit
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Edit Dialog */}
