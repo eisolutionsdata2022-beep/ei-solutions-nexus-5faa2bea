@@ -389,7 +389,55 @@ function VirtualTrainerPage() {
       </div>
 
       {/* Trainer Avatar Section + Chat */}
-      <div className="flex flex-1 min-h-0 bg-gradient-to-b from-muted/30 to-background">
+      <div className="flex flex-1 min-h-0 bg-gradient-to-b from-muted/30 to-background relative">
+        {/* Chat History Panel */}
+        {showHistory && (
+          <div className="absolute inset-0 z-20 bg-background/95 backdrop-blur-sm flex flex-col">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold text-foreground">📜 ചാറ്റ് ഹിസ്റ്ററി</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>✕</Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {loadingHistory ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              ) : chatSessions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">ചാറ്റ് ഹിസ്റ്ററി ഇല്ല</p>
+              ) : (
+                chatSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      currentSessionId === session.id
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                    onClick={() => loadSession(session)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{session.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {session.messageCount} messages • {session.updatedAt?.toDate ? new Date(session.updatedAt.toDate()).toLocaleDateString("ml-IN") : ""}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-3 border-t border-border">
+              <Button className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={startNewChat}>
+                <Plus className="w-4 h-4" /> പുതിയ ചാറ്റ് ആരംഭിക്കുക
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Avatar - visible on lg+ */}
         <div className="hidden lg:flex flex-col items-center justify-center w-64 border-r border-border p-4 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
           <div className={`relative ${isSpeaking ? "animate-pulse" : ""}`}>
