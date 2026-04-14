@@ -217,6 +217,34 @@ function StaffServiceApplications() {
                 <div><span className="text-muted-foreground">Fee:</span> <strong>₹{selected.fee}</strong></div>
                 <div><span className="text-muted-foreground">Purpose:</span> <strong>{selected.purpose}</strong></div>
               </div>
+              {/* Uploaded Documents */}
+              {selected.uploadedDocuments && selected.uploadedDocuments.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold flex items-center gap-1"><FileText className="w-3 h-3" /> Uploaded Documents</Label>
+                  <div className="border rounded divide-y">
+                    {selected.uploadedDocuments.map((doc, i) => (
+                      <div key={i} className="flex items-center justify-between p-2 text-xs">
+                        <div>
+                          <p className="font-medium">{doc.name}</p>
+                          <p className="text-muted-foreground">{doc.fileName}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-3 h-3" /> View
+                            </a>
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
+                            <a href={doc.url} download={doc.fileName}>
+                              <Download className="w-3 h-3" /> Download
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Government Application Number</Label>
                 <Input value={govAppNo} onChange={(e) => setGovAppNo(e.target.value)} placeholder="Enter govt application/tracking number" />
