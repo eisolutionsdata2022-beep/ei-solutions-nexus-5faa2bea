@@ -9,6 +9,7 @@ import { Shield, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
+  ssr: false,
   component: RegisterPage,
   head: () => ({
     meta: [
