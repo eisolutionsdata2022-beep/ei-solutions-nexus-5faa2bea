@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, addDoc, doc, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { atomicDebit } from "@/lib/firebase-transactions";
@@ -30,6 +30,7 @@ interface AppRecord {
   fullName: string;
   status: "Pending" | "Approved" | "Rejected";
   staffRemark?: string;
+  govApplicationNo?: string;
   createdAt: string;
   fee: number;
 }
@@ -59,7 +60,13 @@ function RetailerServices() {
   const handleSubmit = async (data: ApplicationData) => {
     if (!appUser) return;
     const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
-    const fee = svc?.fee || 0;
+    let fee = svc?.fee || 0;
+
+    // Check if admin has set a custom fee in Firebase
+    try {
+      const feeDoc = await getDoc(doc(db, "edisServiceFees", data.serviceType));
+      if (feeDoc.exists()) fee = feeDoc.data().fee as number;
+    } catch {}
 
     if (fee > 0) {
       await atomicDebit(appUser.uid, fee, {
@@ -207,6 +214,7 @@ function RetailerServices() {
                         <TableHead className="text-xs font-bold">Date</TableHead>
                         <TableHead className="text-xs font-bold">Fee</TableHead>
                         <TableHead className="text-xs font-bold">Status</TableHead>
+                        <TableHead className="text-xs font-bold">Govt App No</TableHead>
                         <TableHead className="text-xs font-bold">Staff Remark</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -222,6 +230,7 @@ function RetailerServices() {
                               {statusIcon(a.status)} {a.status}
                             </Badge>
                           </TableCell>
+                          <TableCell className="text-xs font-mono text-gov-blue">{a.govApplicationNo || "—"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{a.staffRemark || "—"}</TableCell>
                         </TableRow>
                       ))}
