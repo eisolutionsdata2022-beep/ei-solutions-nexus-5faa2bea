@@ -48,15 +48,22 @@ function RetailerRecharge() {
   // Get commission rate for selected operator
   const getRate = async (): Promise<CommissionRate> => {
     if (!selectedType || !selectedOperator) throw new Error("Select service");
-    const q = query(
-      collection(db, "commissionRates"),
-      where("serviceType", "==", selectedType),
-      where("operator", "==", selectedOperator)
-    );
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      return { id: snap.docs[0].id, ...snap.docs[0].data() } as CommissionRate;
+
+    // Try Firestore first, fall back to defaults on any error (e.g. missing index)
+    try {
+      const q = query(
+        collection(db, "commissionRates"),
+        where("serviceType", "==", selectedType),
+        where("operator", "==", selectedOperator)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        return { id: snap.docs[0].id, ...snap.docs[0].data() } as CommissionRate;
+      }
+    } catch {
+      // Firestore composite index may not exist — use defaults
     }
+
     const def = DEFAULT_COMMISSION_RATES.find(
       (r) => r.serviceType === selectedType && r.operator === selectedOperator
     );
