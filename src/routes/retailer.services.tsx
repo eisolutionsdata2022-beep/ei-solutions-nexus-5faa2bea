@@ -118,8 +118,8 @@ function RetailerServices() {
       setView("dashboard");
     } catch (err: any) {
       toast.error(err?.message || "Submission failed. Please try again.");
-    } finally {
-      setSubmitting(false);
+      throw err;
+    }
     }
   };
 
