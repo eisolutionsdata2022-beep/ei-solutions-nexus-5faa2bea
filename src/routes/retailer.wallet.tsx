@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import paytmQr from "@/assets/paytm-qr.jpeg";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import { doc, onSnapshot, collection, query, where, orderBy, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -122,6 +123,12 @@ function RetailerWallet() {
           <DialogContent>
             <DialogHeader><DialogTitle>Add Money Request</DialogTitle></DialogHeader>
             <form onSubmit={submitRequest} className="space-y-4">
+              {/* QR Code for Payment */}
+              <div className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg border">
+                <img src={paytmQr} alt="Paytm UPI QR Code" className="w-48 h-48 object-contain rounded" />
+                <p className="text-xs text-muted-foreground font-medium">Scan to pay via UPI</p>
+                <p className="text-xs text-muted-foreground">UPI ID: paytmqr5hnp9y@ptys</p>
+              </div>
               <div className="space-y-2">
                 <Label>Amount (₹)</Label>
                 <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min="1" />
