@@ -92,15 +92,13 @@ export function LoginForm() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 rounded-lg font-bold text-sm"
-                style={{ background: "hsl(var(--gov-blue))" }}
+                className="w-full h-12 rounded-lg font-bold text-sm bg-gov-blue text-white hover:bg-gov-blue-dark"
               >
                 Send Reset Link
               </Button>
               <button
                 type="button"
-                className="w-full text-sm hover:underline"
-                style={{ color: "hsl(var(--gov-blue))" }}
+                className="w-full text-sm hover:underline text-gov-blue"
                 onClick={() => { setShowReset(false); setResetSent(false); }}
               >
                 Back to Login
@@ -141,8 +139,7 @@ export function LoginForm() {
               <div className="text-right">
                 <button
                   type="button"
-                  className="text-sm font-medium hover:underline"
-                  style={{ color: "hsl(var(--gov-blue))" }}
+                className="text-sm font-medium hover:underline text-gov-blue"
                   onClick={() => setShowReset(true)}
                 >
                   Forgot password?
@@ -151,8 +148,7 @@ export function LoginForm() {
 
               <Button
                 type="submit"
-                className="w-full h-12 rounded-lg font-bold text-base text-white"
-                style={{ background: "hsl(var(--gov-blue))" }}
+                className="w-full h-12 rounded-lg font-bold text-base text-white bg-gov-blue hover:bg-gov-blue-dark"
                 disabled={loading}
               >
                 {loading ? "Signing in..." : "Sign In"}
@@ -165,8 +161,7 @@ export function LoginForm() {
             Don't have an account?{" "}
             <button
               type="button"
-              className="font-semibold hover:underline"
-              style={{ color: "hsl(var(--gov-blue))" }}
+              className="font-semibold hover:underline text-gov-blue"
               onClick={() => navigate({ to: "/register" as any })}
             >
               Sign Up
