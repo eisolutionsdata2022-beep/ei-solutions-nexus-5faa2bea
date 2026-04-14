@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, limit, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { atomicDebit } from "@/lib/firebase-transactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles } from "lucide-react";
+import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
 import trainerAvatar from "@/assets/elzu-trainer-avatar.jpg";
@@ -33,6 +33,14 @@ const QUICK_ACTIONS = [
   { label: "📱 Recharge & BBPS", query: "Recharge, Bill Payment എങ്ങനെ ചെയ്യാം?" },
 ];
 
+interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: any;
+  updatedAt: any;
+  messageCount: number;
+}
+
 function VirtualTrainerPage() {
   const { appUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,8 +53,107 @@ function VirtualTrainerPage() {
   const [trainerFee, setTrainerFee] = useState(0);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [sessionPaid, setSessionPaid] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // --- Chat History Functions ---
+  const loadChatSessions = useCallback(async () => {
+    if (!appUser) return;
+    setLoadingHistory(true);
+    try {
+      const q = query(
+        collection(db, "trainerChatSessions"),
+        where("userId", "==", appUser.uid),
+        orderBy("updatedAt", "desc"),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      const sessions: ChatSession[] = [];
+      snap.forEach((d) => sessions.push({ id: d.id, ...d.data() } as ChatSession));
+      setChatSessions(sessions);
+    } catch { /* ignore */ }
+    setLoadingHistory(false);
+  }, [appUser]);
+
+  const saveMessagesToSession = useCallback(async (sessionId: string, msgs: ChatMessage[]) => {
+    if (!appUser || msgs.length <= 1) return;
+    try {
+      const sessionRef = doc(db, "trainerChatSessions", sessionId);
+      // Save messages as subcollection is complex; store in session doc directly
+      const firstUserMsg = msgs.find(m => m.role === "user");
+      await updateDoc(sessionRef, {
+        messages: msgs.map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp })),
+        title: firstUserMsg?.content.slice(0, 50) || "ചാറ്റ്",
+        messageCount: msgs.length,
+        updatedAt: serverTimestamp(),
+      });
+    } catch { /* ignore */ }
+  }, [appUser]);
+
+  const createNewSession = useCallback(async (): Promise<string | null> => {
+    if (!appUser) return null;
+    try {
+      const docRef = await addDoc(collection(db, "trainerChatSessions"), {
+        userId: appUser.uid,
+        title: "പുതിയ ചാറ്റ്",
+        messages: [],
+        messageCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch { return null; }
+  }, [appUser]);
+
+  const loadSession = async (session: ChatSession) => {
+    try {
+      const snap = await getDoc(doc(db, "trainerChatSessions", session.id));
+      if (snap.exists()) {
+        const data = snap.data();
+        const msgs: ChatMessage[] = (data.messages || []).map((m: any, i: number) => ({
+          id: `${session.id}_${i}`,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+        }));
+        setMessages(msgs);
+        setCurrentSessionId(session.id);
+        setShowHistory(false);
+      }
+    } catch { toast.error("ചാറ്റ് ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
+  };
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      await deleteDoc(doc(db, "trainerChatSessions", sessionId));
+      setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (currentSessionId === sessionId) {
+        startNewChat();
+      }
+      toast.success("ചാറ്റ് ഡിലീറ്റ് ചെയ്തു");
+    } catch { toast.error("ഡിലീറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
+  };
+
+  const startNewChat = async () => {
+    const sessionId = await createNewSession();
+    setCurrentSessionId(sessionId);
+    initWelcome();
+    setShowHistory(false);
+  };
+
+  // Auto-save messages when they change
+  useEffect(() => {
+    if (currentSessionId && messages.length > 1) {
+      const timeout = setTimeout(() => {
+        saveMessagesToSession(currentSessionId, messages);
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [messages, currentSessionId, saveMessagesToSession]);
 
   // Load fee config and check if free
   useEffect(() => {
@@ -58,17 +165,23 @@ function VirtualTrainerPage() {
         if (fee === 0) {
           setAccessGranted(true);
           setSessionPaid(true);
-          initWelcome();
+          initWelcomeWithSession();
         }
       } catch {
         setAccessGranted(true);
         setSessionPaid(true);
-        initWelcome();
+        initWelcomeWithSession();
       }
       setCheckingAccess(false);
     };
     loadFee();
   }, []);
+
+  const initWelcomeWithSession = async () => {
+    const sessionId = await createNewSession();
+    setCurrentSessionId(sessionId);
+    initWelcome();
+  };
 
   const initWelcome = () => {
     setMessages([{
@@ -89,7 +202,7 @@ function VirtualTrainerPage() {
       toast.success("പേയ്മെന്റ് വിജയകരമായി! ട്രെയിനർ റെഡി ✅");
       setAccessGranted(true);
       setSessionPaid(true);
-      initWelcome();
+      initWelcomeWithSession();
     } catch (err: any) {
       toast.error(err?.message || "Wallet balance insufficient. Please add funds.");
     }
@@ -243,20 +356,88 @@ function VirtualTrainerPage() {
             {loading ? "ടൈപ്പ് ചെയ്യുന്നു..." : isSpeaking ? "സംസാരിക്കുന്നു..." : "നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ"}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/10"
-          onClick={() => {
-            if (!ttsEnabled) { setTtsEnabled(true); } else { window.speechSynthesis.cancel(); setIsSpeaking(false); setTtsEnabled(false); }
-          }}
-        >
-          {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={startNewChat}
+            title="പുതിയ ചാറ്റ്"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={() => { setShowHistory(!showHistory); if (!showHistory) loadChatSessions(); }}
+            title="ചാറ്റ് ഹിസ്റ്ററി"
+          >
+            <History className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={() => {
+              if (!ttsEnabled) { setTtsEnabled(true); } else { window.speechSynthesis.cancel(); setIsSpeaking(false); setTtsEnabled(false); }
+            }}
+          >
+            {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Trainer Avatar Section + Chat */}
-      <div className="flex flex-1 min-h-0 bg-gradient-to-b from-muted/30 to-background">
+      <div className="flex flex-1 min-h-0 bg-gradient-to-b from-muted/30 to-background relative">
+        {/* Chat History Panel */}
+        {showHistory && (
+          <div className="absolute inset-0 z-20 bg-background/95 backdrop-blur-sm flex flex-col">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold text-foreground">📜 ചാറ്റ് ഹിസ്റ്ററി</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>✕</Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {loadingHistory ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              ) : chatSessions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">ചാറ്റ് ഹിസ്റ്ററി ഇല്ല</p>
+              ) : (
+                chatSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      currentSessionId === session.id
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                    onClick={() => loadSession(session)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{session.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {session.messageCount} messages • {session.updatedAt?.toDate ? new Date(session.updatedAt.toDate()).toLocaleDateString("ml-IN") : ""}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-3 border-t border-border">
+              <Button className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={startNewChat}>
+                <Plus className="w-4 h-4" /> പുതിയ ചാറ്റ് ആരംഭിക്കുക
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Avatar - visible on lg+ */}
         <div className="hidden lg:flex flex-col items-center justify-center w-64 border-r border-border p-4 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
           <div className={`relative ${isSpeaking ? "animate-pulse" : ""}`}>
