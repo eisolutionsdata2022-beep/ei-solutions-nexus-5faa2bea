@@ -41,15 +41,20 @@ export function TrainingQA({ trainingId, role }: TrainingQAProps) {
   const isTrainer = role === "trainer";
 
   useEffect(() => {
+    const answerUnsubs: Array<() => void> = [];
     const unsub = onSnapshot(collection(db, "trainings", trainingId, "qa"), (snap) => {
       const qs: QAQuestion[] = [];
       snap.forEach((d) => qs.push({ id: d.id, answers: [], ...d.data() } as any));
       qs.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
       setQuestions(qs);
 
+      // Clean up old answer listeners
+      answerUnsubs.forEach((u) => u());
+      answerUnsubs.length = 0;
+
       // Listen to answers for each question
       qs.forEach((q) => {
-        onSnapshot(collection(db, "trainings", trainingId, "qa", q.id, "answers"), (ansSnap) => {
+        const ansUnsub = onSnapshot(collection(db, "trainings", trainingId, "qa", q.id, "answers"), (ansSnap) => {
           const answers: QAAnswer[] = [];
           ansSnap.forEach((d) => answers.push({ id: d.id, ...d.data() } as any));
           answers.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
@@ -57,9 +62,13 @@ export function TrainingQA({ trainingId, role }: TrainingQAProps) {
             prev.map((pq) => (pq.id === q.id ? { ...pq, answers } : pq))
           );
         });
+        answerUnsubs.push(ansUnsub);
       });
     });
-    return unsub;
+    return () => {
+      unsub();
+      answerUnsubs.forEach((u) => u());
+    };
   }, [trainingId]);
 
   const addQuestion = async () => {

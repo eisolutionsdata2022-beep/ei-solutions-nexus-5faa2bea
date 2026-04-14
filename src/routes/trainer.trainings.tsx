@@ -167,8 +167,8 @@ function TrainerTrainings() {
                 <Input type="number" min={0.5} step={0.5} value={duration} onChange={(e) => setDuration(Number(e.target.value))} required />
               </div>
               <div className="space-y-2">
-                <Label>Meeting Link</Label>
-                <Input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/..." required />
+                <Label>Meeting Link (optional)</Label>
+                <Input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/... (optional)" />
               </div>
               <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
                 <p className="text-muted-foreground">Price: ₹{settings.pricePerHour * duration}</p>
