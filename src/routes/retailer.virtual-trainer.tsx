@@ -60,6 +60,101 @@ function VirtualTrainerPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  // --- Chat History Functions ---
+  const loadChatSessions = useCallback(async () => {
+    if (!appUser) return;
+    setLoadingHistory(true);
+    try {
+      const q = query(
+        collection(db, "trainerChatSessions"),
+        where("userId", "==", appUser.uid),
+        orderBy("updatedAt", "desc"),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      const sessions: ChatSession[] = [];
+      snap.forEach((d) => sessions.push({ id: d.id, ...d.data() } as ChatSession));
+      setChatSessions(sessions);
+    } catch { /* ignore */ }
+    setLoadingHistory(false);
+  }, [appUser]);
+
+  const saveMessagesToSession = useCallback(async (sessionId: string, msgs: ChatMessage[]) => {
+    if (!appUser || msgs.length <= 1) return;
+    try {
+      const sessionRef = doc(db, "trainerChatSessions", sessionId);
+      // Save messages as subcollection is complex; store in session doc directly
+      const firstUserMsg = msgs.find(m => m.role === "user");
+      await updateDoc(sessionRef, {
+        messages: msgs.map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp })),
+        title: firstUserMsg?.content.slice(0, 50) || "ചാറ്റ്",
+        messageCount: msgs.length,
+        updatedAt: serverTimestamp(),
+      });
+    } catch { /* ignore */ }
+  }, [appUser]);
+
+  const createNewSession = useCallback(async (): Promise<string | null> => {
+    if (!appUser) return null;
+    try {
+      const docRef = await addDoc(collection(db, "trainerChatSessions"), {
+        userId: appUser.uid,
+        title: "പുതിയ ചാറ്റ്",
+        messages: [],
+        messageCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch { return null; }
+  }, [appUser]);
+
+  const loadSession = async (session: ChatSession) => {
+    try {
+      const snap = await getDoc(doc(db, "trainerChatSessions", session.id));
+      if (snap.exists()) {
+        const data = snap.data();
+        const msgs: ChatMessage[] = (data.messages || []).map((m: any, i: number) => ({
+          id: `${session.id}_${i}`,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+        }));
+        setMessages(msgs);
+        setCurrentSessionId(session.id);
+        setShowHistory(false);
+      }
+    } catch { toast.error("ചാറ്റ് ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
+  };
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      await deleteDoc(doc(db, "trainerChatSessions", sessionId));
+      setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (currentSessionId === sessionId) {
+        startNewChat();
+      }
+      toast.success("ചാറ്റ് ഡിലീറ്റ് ചെയ്തു");
+    } catch { toast.error("ഡിലീറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
+  };
+
+  const startNewChat = async () => {
+    const sessionId = await createNewSession();
+    setCurrentSessionId(sessionId);
+    initWelcome();
+    setShowHistory(false);
+  };
+
+  // Auto-save messages when they change
+  useEffect(() => {
+    if (currentSessionId && messages.length > 1) {
+      const timeout = setTimeout(() => {
+        saveMessagesToSession(currentSessionId, messages);
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [messages, currentSessionId, saveMessagesToSession]);
+
   // Load fee config and check if free
   useEffect(() => {
     const loadFee = async () => {
@@ -70,17 +165,23 @@ function VirtualTrainerPage() {
         if (fee === 0) {
           setAccessGranted(true);
           setSessionPaid(true);
-          initWelcome();
+          initWelcomeWithSession();
         }
       } catch {
         setAccessGranted(true);
         setSessionPaid(true);
-        initWelcome();
+        initWelcomeWithSession();
       }
       setCheckingAccess(false);
     };
     loadFee();
   }, []);
+
+  const initWelcomeWithSession = async () => {
+    const sessionId = await createNewSession();
+    setCurrentSessionId(sessionId);
+    initWelcome();
+  };
 
   const initWelcome = () => {
     setMessages([{
@@ -101,7 +202,7 @@ function VirtualTrainerPage() {
       toast.success("പേയ്മെന്റ് വിജയകരമായി! ട്രെയിനർ റെഡി ✅");
       setAccessGranted(true);
       setSessionPaid(true);
-      initWelcome();
+      initWelcomeWithSession();
     } catch (err: any) {
       toast.error(err?.message || "Wallet balance insufficient. Please add funds.");
     }
