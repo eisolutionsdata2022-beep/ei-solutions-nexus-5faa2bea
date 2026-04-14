@@ -120,7 +120,110 @@ function StaffServiceApplications() {
     toast.success("CSV downloaded!");
   };
 
-  const filtered = applications.filter((a) => {
+  const downloadApplicationPDF = useCallback((app: AppRecord) => {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const w = pdf.internal.pageSize.getWidth();
+    let y = 15;
+    const lm = 15;
+    const rw = w - 30;
+
+    // Header
+    pdf.setFillColor(25, 55, 109);
+    pdf.rect(0, 0, w, 28, "F");
+    pdf.setFillColor(255, 153, 51);
+    pdf.rect(0, 28, w, 3, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(16);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("EI SOLUTIONS APPLICATION FORM", lm, 13);
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("E-Governance & Digital India Services", lm, 20);
+    pdf.setFontSize(9);
+    pdf.text(`Application No: ${app.applicationNo}`, w - lm - 60, 13);
+    pdf.text(`Date: ${new Date(app.createdAt).toLocaleDateString()}`, w - lm - 60, 20);
+    y = 38;
+
+    // Section helper
+    const section = (title: string) => {
+      if (y > 260) { pdf.addPage(); y = 15; }
+      pdf.setFillColor(230, 240, 250);
+      pdf.rect(lm, y, rw, 8, "F");
+      pdf.setDrawColor(25, 55, 109);
+      pdf.rect(lm, y, rw, 8, "S");
+      pdf.setTextColor(25, 55, 109);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(title, lm + 3, y + 5.5);
+      y += 12;
+    };
+
+    const field = (label: string, value: string) => {
+      if (y > 275) { pdf.addPage(); y = 15; }
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(label, lm + 2, y);
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(value || "N/A", lm + 50, y);
+      y += 6;
+    };
+
+    // Section A: Applicant Details
+    section("SECTION A: Applicant Details");
+    field("Full Name", app.fullName);
+    field("Date of Birth", app.dob || "N/A");
+    field("Gender", app.gender || "N/A");
+    field("Mobile", app.mobile);
+    field("Email", app.email || "N/A");
+    field("Aadhaar", app.aadhaar || "N/A");
+    field("Address", app.address || "N/A");
+    field("District", app.district);
+    y += 4;
+
+    // Section B: Service Details
+    section("SECTION B: Service Details");
+    field("Service Type", app.serviceType);
+    field("Purpose", app.purpose);
+    field("Fee Paid", `Rs. ${app.fee}`);
+    y += 4;
+
+    // Section C: Documents
+    if (app.uploadedDocuments && app.uploadedDocuments.length > 0) {
+      section("SECTION C: Uploaded Documents");
+      app.uploadedDocuments.forEach((doc, i) => {
+        if (y > 275) { pdf.addPage(); y = 15; }
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`${i + 1}. ${doc.name} - ${doc.fileName}`, lm + 2, y);
+        y += 5;
+      });
+      y += 4;
+    }
+
+    // Section D: Status
+    section("SECTION D: Application Status");
+    field("Status", app.status);
+    field("Govt App No", app.govApplicationNo || "N/A");
+    field("Staff Remark", app.staffRemark || "N/A");
+    y += 8;
+
+    // Footer
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(lm, y, w - lm, y);
+    y += 6;
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "italic");
+    pdf.text("This is a system-generated document from EI Solutions Portal.", lm, y);
+
+    pdf.save(`${app.applicationNo}.pdf`);
+    toast.success("PDF downloaded!");
+  }, []);
+
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
