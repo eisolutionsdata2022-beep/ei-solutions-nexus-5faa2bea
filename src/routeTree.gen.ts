@@ -24,6 +24,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
+import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
@@ -41,6 +42,7 @@ import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
@@ -123,6 +125,12 @@ const StaffServicesRoute = StaffServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffServiceApplicationsRoute =
+  StaffServiceApplicationsRouteImport.update({
+    id: '/service-applications',
+    path: '/service-applications',
+    getParentRoute: () => StaffRoute,
+  } as any)
 const RetailerWalletRoute = RetailerWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -208,6 +216,12 @@ const AdminServicesRoute = AdminServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminServiceApplicationsRoute =
+  AdminServiceApplicationsRouteImport.update({
+    id: '/service-applications',
+    path: '/service-applications',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminRechargeTransactionsRoute =
   AdminRechargeTransactionsRouteImport.update({
     id: '/recharge-transactions',
@@ -254,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -271,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -289,6 +305,7 @@ export interface FileRoutesByTo {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -306,6 +323,7 @@ export interface FileRoutesByTo {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -330,6 +348,7 @@ export interface FileRoutesById {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -347,6 +366,7 @@ export interface FileRoutesById {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -372,6 +392,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
+    | '/admin/service-applications'
     | '/admin/services'
     | '/admin/training-earnings'
     | '/admin/training-settings'
@@ -389,6 +410,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -407,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
+    | '/admin/service-applications'
     | '/admin/services'
     | '/admin/training-earnings'
     | '/admin/training-settings'
@@ -424,6 +447,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -447,6 +471,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
+    | '/admin/service-applications'
     | '/admin/services'
     | '/admin/training-earnings'
     | '/admin/training-settings'
@@ -464,6 +489,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -591,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffServicesRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/staff/service-applications': {
+      id: '/staff/service-applications'
+      path: '/service-applications'
+      fullPath: '/staff/service-applications'
+      preLoaderRoute: typeof StaffServiceApplicationsRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/retailer/wallet': {
       id: '/retailer/wallet'
       path: '/wallet'
@@ -710,6 +743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServicesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/service-applications': {
+      id: '/admin/service-applications'
+      path: '/service-applications'
+      fullPath: '/admin/service-applications'
+      preLoaderRoute: typeof AdminServiceApplicationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/recharge-transactions': {
       id: '/admin/recharge-transactions'
       path: '/recharge-transactions'
@@ -762,6 +802,7 @@ interface AdminRouteChildren {
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
+  AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
@@ -779,6 +820,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
+  AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
@@ -836,11 +878,13 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
   StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
   StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
