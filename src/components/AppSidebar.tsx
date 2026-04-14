@@ -63,7 +63,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "CV Builder", to: "/retailer/cv-builder", icon: CVIcon },
     { label: "Trainings", to: "/retailer/trainings", icon: GraduationCap },
     { label: "KYC", to: "/retailer/kyc", icon: CheckCircle },
-  ],
+    { label: "വിർച്വൽ ട്രെയിനർ", to: "/retailer/virtual-trainer", icon: BotMessageSquare },
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
     { label: "Trainings", to: "/trainer/trainings", icon: GraduationCap },
