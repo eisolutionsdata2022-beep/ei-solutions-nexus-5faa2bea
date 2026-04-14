@@ -40,6 +40,11 @@ function AdminCommissions() {
   const [editingCvFee, setEditingCvFee] = useState(false);
   const [cvFeeInput, setCvFeeInput] = useState("");
 
+  // Virtual Trainer fee state
+  const [trainerFee, setTrainerFee] = useState(0);
+  const [editingTrainerFee, setEditingTrainerFee] = useState(false);
+  const [trainerFeeInput, setTrainerFeeInput] = useState("");
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
@@ -95,7 +100,26 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); }, []);
+  // Virtual Trainer fee fetch/save
+  const fetchTrainerFee = async () => {
+    try {
+      const snap = await getDoc(doc(db, "platformFees", "virtual_trainer"));
+      if (snap.exists()) { setTrainerFee(snap.data().fee || 0); }
+    } catch { /* default 0 = free */ }
+  };
+
+  const saveTrainerFee = async () => {
+    const fee = parseFloat(trainerFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee"); return; }
+    try {
+      await setDoc(doc(db, "platformFees", "virtual_trainer"), { fee, updatedAt: new Date().toISOString() });
+      toast.success("Virtual Trainer fee updated!");
+      setTrainerFee(fee);
+      setEditingTrainerFee(false);
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
@@ -176,6 +200,9 @@ function AdminCommissions() {
           </TabsTrigger>
           <TabsTrigger value="cv_fee" className="text-xs">
             📄 CV Builder Fee
+          </TabsTrigger>
+          <TabsTrigger value="trainer_fee" className="text-xs">
+            🤖 Virtual Trainer Fee
           </TabsTrigger>
         </TabsList>
 
@@ -318,6 +345,48 @@ function AdminCommissions() {
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-2xl font-bold text-primary">₹{cvFee}</span>
                       <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setEditingCvFee(true); setCvFeeInput(String(cvFee)); }}>
+                        <Pencil className="w-3 h-3" /> Edit
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Virtual Trainer Fee Tab */}
+        <TabsContent value="trainer_fee">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold">Virtual Trainer Fee</CardTitle>
+              <p className="text-xs text-muted-foreground">Set the fee deducted from retailer wallet per virtual trainer session. Set 0 for free access.</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Session Fee</Label>
+                  {editingTrainerFee ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-lg font-bold">₹</span>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={trainerFeeInput}
+                        onChange={(e) => setTrainerFeeInput(e.target.value)}
+                        className="w-32"
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={saveTrainerFee}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingTrainerFee(false)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-2xl font-bold text-primary">
+                        {trainerFee === 0 ? "Free" : `₹${trainerFee}`}
+                      </span>
+                      <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setEditingTrainerFee(true); setTrainerFeeInput(String(trainerFee)); }}>
                         <Pencil className="w-3 h-3" /> Edit
                       </Button>
                     </div>

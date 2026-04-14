@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
+import { atomicDebit } from "@/lib/firebase-transactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Mic, MicOff, Volume2, VolumeX, Bot, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
 import trainerAvatar from "@/assets/elzu-trainer-avatar.jpg";
@@ -20,28 +25,75 @@ interface ChatMessage {
 }
 
 const QUICK_ACTIONS = [
-  { label: "PAN Card സഹായം", query: "PAN Card എങ്ങനെ അപ്ലൈ ചെയ്യാം?" },
-  { label: "Aadhaar സേവനങ്ങൾ", query: "Aadhaar സേവനങ്ങൾ എന്തൊക്കെയാണ്?" },
-  { label: "Loan സേവനങ്ങൾ", query: "Loan-ന് എങ്ങനെ അപ്ലൈ ചെയ്യാം?" },
-  { label: "Training സഹായം", query: "ട്രെയിനിംഗ് എങ്ങനെ ജോയിൻ ചെയ്യാം?" },
+  { label: "📋 PAN Card സഹായം", query: "PAN Card എങ്ങനെ അപ്ലൈ ചെയ്യാം?" },
+  { label: "🪪 Aadhaar സേവനങ്ങൾ", query: "Aadhaar സേവനങ്ങൾ എന്തൊക്കെയാണ്?" },
+  { label: "💰 Loan സേവനങ്ങൾ", query: "Loan-ന് എങ്ങനെ അപ്ലൈ ചെയ്യാം?" },
+  { label: "🎓 Training സഹായം", query: "ട്രെയിനിംഗ് എങ്ങനെ ജോയിൻ ചെയ്യാം?" },
+  { label: "📄 E-dis സർട്ടിഫിക്കറ്റ്", query: "E-dis സർട്ടിഫിക്കറ്റ് സേവനങ്ങൾ എന്തൊക്കെ?" },
+  { label: "📱 Recharge & BBPS", query: "Recharge, Bill Payment എങ്ങനെ ചെയ്യാം?" },
 ];
 
 function VirtualTrainerPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "trainer",
-      content: "സുഹൃത്തേ, ഞാൻ എൽസുതത്താ ആണ്! നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ. എനിക്ക് എങ്ങനെ സഹായിക്കാം? 😊",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const { appUser } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [trainerFee, setTrainerFee] = useState(0);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [sessionPaid, setSessionPaid] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Load fee config and check if free
+  useEffect(() => {
+    const loadFee = async () => {
+      try {
+        const snap = await getDoc(doc(db, "platformFees", "virtual_trainer"));
+        const fee = snap.exists() ? (snap.data().fee || 0) : 0;
+        setTrainerFee(fee);
+        if (fee === 0) {
+          setAccessGranted(true);
+          setSessionPaid(true);
+          initWelcome();
+        }
+      } catch {
+        setAccessGranted(true);
+        setSessionPaid(true);
+        initWelcome();
+      }
+      setCheckingAccess(false);
+    };
+    loadFee();
+  }, []);
+
+  const initWelcome = () => {
+    setMessages([{
+      id: "welcome",
+      role: "trainer",
+      content: "സുഹൃത്തേ, ഞാൻ എൽസുതത്താ ആണ്! നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ. എനിക്ക് എങ്ങനെ സഹായിക്കാം? 😊\n\nPAN Card, Aadhaar, E-dis സർട്ടിഫിക്കറ്റ്, Loan, Recharge, Training - എന്തിനെ കുറിച്ചും ചോദിക്കാം!",
+      timestamp: new Date().toISOString(),
+    }]);
+  };
+
+  const handlePayAndAccess = async () => {
+    if (!appUser) return;
+    try {
+      await atomicDebit(appUser.uid, trainerFee, {
+        source: "virtual_trainer",
+        description: "Virtual Trainer Session Fee",
+      });
+      toast.success("പേയ്മെന്റ് വിജയകരമായി! ട്രെയിനർ റെഡി ✅");
+      setAccessGranted(true);
+      setSessionPaid(true);
+      initWelcome();
+    } catch (err: any) {
+      toast.error(err?.message || "Wallet balance insufficient. Please add funds.");
+    }
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -108,47 +160,81 @@ function VirtualTrainerPage() {
       toast.error("നിങ്ങളുടെ ബ്രൗസർ വോയ്സ് ഇൻപുട്ട് സപ്പോർട്ട് ചെയ്യുന്നില്ല");
       return;
     }
-
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
-
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "ml-IN";
     recognition.continuous = false;
     recognition.interimResults = false;
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInput(transcript);
       setIsListening(false);
     };
-    recognition.onerror = () => {
-      setIsListening(false);
-      toast.error("വോയ്സ് ഇൻപുട്ട് പ്രശ്നം. വീണ്ടും ശ്രമിക്കുക.");
-    };
+    recognition.onerror = () => { setIsListening(false); toast.error("വോയ്സ് ഇൻപുട്ട് പ്രശ്നം. വീണ്ടും ശ്രമിക്കുക."); };
     recognition.onend = () => setIsListening(false);
-
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
   };
+
+  if (checkingAccess) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Payment gate
+  if (!accessGranted && trainerFee > 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-16 h-16 rounded-full object-cover" width={64} height={64} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">എൽസുതത്താ വിർച്വൽ ട്രെയിനർ</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                AI ട്രെയിനർ സെഷൻ ആരംഭിക്കാൻ ₹{trainerFee} ഫീ ആവശ്യമാണ്
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-left">
+              <p className="text-xs font-medium text-foreground">ഈ സെഷനിൽ ലഭിക്കുന്നത്:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>✅ EI Solutions സേവനങ്ങളെ കുറിച്ച് മലയാളത്തിൽ ട്രെയിനിംഗ്</li>
+                <li>✅ PAN, Aadhaar, Loan, E-dis സഹായം</li>
+                <li>✅ വോയ്സ് ഇൻപുട്ട് & ഔട്ട്പുട്ട്</li>
+                <li>✅ Unlimited ചോദ്യങ്ങൾ</li>
+              </ul>
+            </div>
+            <Button
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              size="lg"
+              onClick={handlePayAndAccess}
+            >
+              <Wallet className="w-5 h-5" />
+              ₹{trainerFee} അടച്ച് സെഷൻ ആരംഭിക്കുക
+            </Button>
+            <p className="text-[11px] text-muted-foreground">Wallet balance-ൽ നിന്ന് debit ചെയ്യും</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] max-h-[800px]">
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-700 to-teal-600 text-white px-4 py-3 rounded-t-xl flex items-center gap-3">
         <div className="relative">
-          <img
-            src={trainerAvatar}
-            alt="എൽസുതത്താ"
-            className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
-            width={48}
-            height={48}
-          />
+          <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" width={48} height={48} />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-emerald-700" />
         </div>
         <div className="flex-1 min-w-0">
@@ -174,13 +260,7 @@ function VirtualTrainerPage() {
         {/* Avatar - visible on lg+ */}
         <div className="hidden lg:flex flex-col items-center justify-center w-64 border-r border-border p-4 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
           <div className={`relative ${isSpeaking ? "animate-pulse" : ""}`}>
-            <img
-              src={trainerAvatar}
-              alt="എൽസുതത്താ"
-              className="w-44 h-44 rounded-full border-4 border-emerald-500/30 object-cover shadow-lg"
-              width={176}
-              height={176}
-            />
+            <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-44 h-44 rounded-full border-4 border-emerald-500/30 object-cover shadow-lg" width={176} height={176} />
             {isSpeaking && (
               <div className="absolute inset-0 rounded-full border-4 border-emerald-400 animate-ping opacity-30" />
             )}
@@ -191,24 +271,26 @@ function VirtualTrainerPage() {
             <span className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-xs text-green-600 dark:text-green-400 font-medium">ഓൺലൈൻ</span>
           </div>
+          {sessionPaid && trainerFee > 0 && (
+            <div className="mt-3 flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-full">
+              <Sparkles className="w-3 h-3" /> Session Active
+            </div>
+          )}
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m) => (
               <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "trainer" && (
                   <img src={trainerAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 mt-1" width={32} height={32} />
                 )}
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
-                    m.role === "user"
-                      ? "bg-emerald-600 text-white rounded-br-sm"
-                      : "bg-card text-foreground border border-border rounded-bl-sm"
-                  }`}
-                >
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                  m.role === "user"
+                    ? "bg-emerald-600 text-white rounded-br-sm"
+                    : "bg-card text-foreground border border-border rounded-bl-sm"
+                }`}>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
                   <p className={`text-[10px] mt-1 ${m.role === "user" ? "text-white/60" : "text-muted-foreground"}`}>
                     {new Date(m.timestamp).toLocaleTimeString("ml-IN", { hour: "2-digit", minute: "2-digit" })}
@@ -277,7 +359,7 @@ function VirtualTrainerPage() {
               </Button>
             </div>
             {isListening && (
-              <p className="text-xs text-center text-red-500 mt-2 animate-pulse">🎤 കേൾക്കുന്നു... സംസാരിക്കുക</p>
+              <p className="text-xs text-center text-destructive mt-2 animate-pulse">🎤 കേൾക്കുന്നു... സംസാരിക്കുക</p>
             )}
           </div>
         </div>
