@@ -45,6 +45,7 @@ interface AppRecord {
   fee: number;
   status: "Pending" | "Approved" | "Rejected";
   staffRemark?: string;
+  govApplicationNo?: string;
   userId: string;
   userEmail: string;
   createdAt: string;
