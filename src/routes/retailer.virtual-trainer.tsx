@@ -33,6 +33,14 @@ const QUICK_ACTIONS = [
   { label: "📱 Recharge & BBPS", query: "Recharge, Bill Payment എങ്ങനെ ചെയ്യാം?" },
 ];
 
+interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: any;
+  updatedAt: any;
+  messageCount: number;
+}
+
 function VirtualTrainerPage() {
   const { appUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,6 +53,10 @@ function VirtualTrainerPage() {
   const [trainerFee, setTrainerFee] = useState(0);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [sessionPaid, setSessionPaid] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
