@@ -24,6 +24,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
+import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
@@ -124,6 +125,12 @@ const StaffServicesRoute = StaffServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffServiceApplicationsRoute =
+  StaffServiceApplicationsRouteImport.update({
+    id: '/service-applications',
+    path: '/service-applications',
+    getParentRoute: () => StaffRoute,
+  } as any)
 const RetailerWalletRoute = RetailerWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -279,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -315,6 +323,7 @@ export interface FileRoutesByTo {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -357,6 +366,7 @@ export interface FileRoutesById {
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -477,6 +489,7 @@ export interface FileRouteTypes {
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/wallet'
+    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -602,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/staff/services'
       preLoaderRoute: typeof StaffServicesRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/service-applications': {
+      id: '/staff/service-applications'
+      path: '/service-applications'
+      fullPath: '/staff/service-applications'
+      preLoaderRoute: typeof StaffServiceApplicationsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/retailer/wallet': {
@@ -858,11 +878,13 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
   StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
   StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
