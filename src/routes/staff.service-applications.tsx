@@ -193,7 +193,7 @@ function StaffServiceApplications() {
       </Card>
 
       {/* Review Dialog */}
-      <Dialog open={!!selected} onOpenChange={(v) => { if (!v) { setSelected(null); setRemark(""); } }}>
+      <Dialog open={!!selected} onOpenChange={(v) => { if (!v) { setSelected(null); setRemark(""); setGovAppNo(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEFAULT_COMMISSION_RATES, SERVICE_CATALOG, type CommissionRate, type ServiceType } from "@/lib/commission-config";
+import { SERVICE_CATALOG as EDIS_CATALOG } from "@/lib/service-catalog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
