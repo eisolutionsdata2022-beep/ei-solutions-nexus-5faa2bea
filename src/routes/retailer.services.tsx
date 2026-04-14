@@ -4,7 +4,7 @@ import { collection, addDoc, doc, onSnapshot, query, where, getDoc } from "fireb
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { atomicDebit } from "@/lib/firebase-transactions";
+import { atomicCredit, atomicDebit } from "@/lib/firebase-transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ function RetailerServices() {
   const { appUser } = useAuth();
   const [balance, setBalance] = useState(0);
   const [applications, setApplications] = useState<AppRecord[]>([]);
+  const [serviceFees, setServiceFees] = useState<Record<string, number>>({});
   const [view, setView] = useState<"dashboard" | "apply">("dashboard");
 
   useEffect(() => {
@@ -61,29 +62,44 @@ function RetailerServices() {
         setApplications([]);
       }
     );
-    return () => { unsub1(); unsub2(); };
+
+    const unsub3 = onSnapshot(
+      collection(db, "edisServiceFees"),
+      (snap) => {
+        const fees: Record<string, number> = {};
+        snap.forEach((feeDoc) => {
+          const fee = feeDoc.data().fee;
+          if (typeof fee === "number") {
+            fees[feeDoc.id] = fee;
+          }
+        });
+        setServiceFees(fees);
+      },
+      () => setServiceFees({})
+    );
+
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [appUser?.uid]);
 
   const handleSubmit = async (data: ApplicationData) => {
     if (!appUser) throw new Error("Please login to submit applications.");
+    const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
+    let debited = false;
+    let fee = serviceFees[data.serviceType];
+
     try {
       const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
-      let fee = svc?.fee || 0;
+      if (typeof fee !== "number") {
+        fee = svc?.fee || 0;
+      }
 
       // Check if admin has set a custom fee in Firebase
       try {
         const feeDoc = await getDoc(doc(db, "edisServiceFees", data.serviceType));
-        if (feeDoc.exists()) fee = feeDoc.data().fee as number;
+        if (feeDoc.exists() && typeof feeDoc.data().fee === "number") {
+          fee = feeDoc.data().fee as number;
+        }
       } catch {}
-
-      if (fee > 0) {
-        await atomicDebit(appUser.uid, fee, {
-          source: "service",
-          description: `Service Application: ${data.serviceType}`,
-        });
-      }
-
-      const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
 
       // Upload documents in parallel
       const docsToUpload = data.documents.filter((d) => d.file);
@@ -96,6 +112,15 @@ function RetailerServices() {
           return { name: docItem.name, url, fileName: docItem.file!.name };
         })
       );
+
+      if (fee > 0) {
+        await atomicDebit(appUser.uid, fee, {
+          source: "service",
+          applicationNo: appNo,
+          description: `Service Application: ${data.serviceType}`,
+        });
+        debited = true;
+      }
 
       await addDoc(collection(db, "serviceApplications"), {
         userId: appUser.uid,
@@ -123,7 +148,21 @@ function RetailerServices() {
       toast.success(`Application ${appNo} submitted successfully!`);
       setView("dashboard");
     } catch (err: any) {
-      toast.error(err?.message || "Submission failed. Please try again.");
+      if (debited && fee > 0) {
+        try {
+          await atomicCredit(appUser.uid, fee, {
+            source: "service_refund",
+            applicationNo: appNo,
+            description: `Refund for failed service application: ${data.serviceType}`,
+          });
+          toast.error((err?.message || "Submission failed.") + " Wallet amount refunded.");
+        } catch (refundError) {
+          console.error("Failed to refund service application charge:", refundError);
+          toast.error("Submission failed after wallet debit. Please contact support.");
+        }
+      } else {
+        toast.error(err?.message || "Submission failed. Please try again.");
+      }
       throw err;
     }
   };
@@ -147,7 +186,7 @@ function RetailerServices() {
   if (view === "apply") {
     return (
       <div className="max-w-4xl mx-auto">
-        <ApplicationForm balance={balance} onSubmit={handleSubmit} onBack={() => setView("dashboard")} />
+        <ApplicationForm balance={balance} feeOverrides={serviceFees} onSubmit={handleSubmit} onBack={() => setView("dashboard")} />
       </div>
     );
   }

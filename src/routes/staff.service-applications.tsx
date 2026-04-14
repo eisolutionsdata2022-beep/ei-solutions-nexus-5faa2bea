@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { collection, onSnapshot, doc, updateDoc, orderBy, query } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,11 +64,17 @@ function StaffServiceApplications() {
 
   useEffect(() => {
     const unsub = onSnapshot(
-      query(collection(db, "serviceApplications"), orderBy("createdAt", "desc")),
+      query(collection(db, "serviceApplications")),
       (snap) => {
         const list: AppRecord[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AppRecord));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setApplications(list);
+      },
+      (error) => {
+        console.error("Failed to load staff service applications:", error);
+        toast.error("Unable to load submitted applications right now.");
+        setApplications([]);
       }
     );
     return unsub;
@@ -76,7 +82,7 @@ function StaffServiceApplications() {
 
   const [govAppNo, setGovAppNo] = useState("");
 
-  const updateStatus = async (id: string, status: "Approved" | "Rejected") => {
+  const updateStatus = async (id: string, status: AppRecord["status"]) => {
     if (!appUser) return;
     setProcessing(true);
     try {
@@ -319,7 +325,7 @@ function StaffServiceApplications() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setSelected(a); setRemark(a.staffRemark || ""); }}>
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setSelected(a); setRemark(a.staffRemark || ""); setGovAppNo(a.govApplicationNo || ""); }}>
                           <Eye className="w-3 h-3" /> Review
                         </Button>
                       </TableCell>
@@ -403,7 +409,7 @@ function StaffServiceApplications() {
                 <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="Add remark..." rows={2} />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <Button className="bg-gov-gold hover:bg-gov-gold/90 text-white" onClick={() => updateStatus(selected.id, "Pending" as any)} disabled={processing || selected.status === "Pending"}>
+                <Button className="bg-gov-gold hover:bg-gov-gold/90 text-white" onClick={() => updateStatus(selected.id, "Pending")} disabled={processing || selected.status === "Pending"}>
                   <Clock className="w-4 h-4 mr-1" /> Pending
                 </Button>
                 <Button className="bg-gov-green hover:bg-gov-green/90" onClick={() => updateStatus(selected.id, "Approved")} disabled={processing}>

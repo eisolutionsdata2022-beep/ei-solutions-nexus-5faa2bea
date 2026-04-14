@@ -14,6 +14,7 @@ import { FileText, Upload, CreditCard, CheckCircle, ArrowLeft, ArrowRight, Rotat
 
 interface ApplicationFormProps {
   balance: number;
+  feeOverrides?: Record<string, number>;
   onSubmit: (data: ApplicationData) => Promise<void>;
   onBack: () => void;
 }
@@ -41,7 +42,7 @@ const STEPS = [
   { label: "Payment", icon: CreditCard },
 ];
 
-export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormProps) {
+export function ApplicationForm({ balance, feeOverrides = {}, onSubmit, onBack }: ApplicationFormProps) {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,6 +66,11 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
     () => SERVICE_CATALOG.find((s) => s.name === serviceType),
     [serviceType]
   );
+
+  const selectedFee = useMemo(() => {
+    if (!serviceType) return 0;
+    return feeOverrides[serviceType] ?? selectedService?.fee ?? 0;
+  }, [feeOverrides, selectedService?.fee, serviceType]);
 
   // Update documents when service changes
   const handleServiceChange = (val: string) => {
@@ -108,7 +114,7 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
 
   const canProceedStep0 = fullName && dob && mobile && aadhaar && district && serviceType && purpose;
   const canProceedStep1 = documents.length > 0;
-  const canSubmit = declared && signature && (selectedService ? balance >= selectedService.fee : true);
+  const canSubmit = declared && signature && balance >= selectedFee;
 
   return (
     <div className="space-y-4">
@@ -229,7 +235,7 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
                   <div className="text-xs space-y-1 p-2 bg-muted rounded border">
                     <p>Processing: <strong>{selectedService.processingDays}</strong></p>
                     <p>Validity: <strong>{selectedService.validity}</strong></p>
-                    <p>Fee: <strong>₹{selectedService.fee}</strong></p>
+                    <p>Fee: <strong>₹{selectedFee}</strong></p>
                   </div>
                 </div>
               )}
@@ -317,20 +323,20 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 bg-muted rounded border text-center">
                   <p className="text-xs text-muted-foreground">Service Charge</p>
-                  <p className="text-xl font-bold text-gov-blue">₹{selectedService?.fee || 0}</p>
+                  <p className="text-xl font-bold text-gov-blue">₹{selectedFee}</p>
                 </div>
                 <div className="p-3 bg-muted rounded border text-center">
                   <p className="text-xs text-muted-foreground">Wallet Balance</p>
-                  <p className={`text-xl font-bold ${balance >= (selectedService?.fee || 0) ? "text-gov-green" : "text-destructive"}`}>₹{balance.toFixed(2)}</p>
+                  <p className={`text-xl font-bold ${balance >= selectedFee ? "text-gov-green" : "text-destructive"}`}>₹{balance.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-muted rounded border text-center">
                   <p className="text-xs text-muted-foreground">Payment Status</p>
-                  <Badge variant={balance >= (selectedService?.fee || 0) ? "default" : "destructive"} className="mt-1">
-                    {balance >= (selectedService?.fee || 0) ? "Ready to Pay" : "Insufficient"}
+                  <Badge variant={balance >= selectedFee ? "default" : "destructive"} className="mt-1">
+                    {balance >= selectedFee ? "Ready to Pay" : "Insufficient"}
                   </Badge>
                 </div>
               </div>
-              {balance < (selectedService?.fee || 0) && (
+              {balance < selectedFee && (
                 <p className="text-xs text-destructive">⚠ Please add funds to your wallet before submitting.</p>
               )}
             </CardContent>
