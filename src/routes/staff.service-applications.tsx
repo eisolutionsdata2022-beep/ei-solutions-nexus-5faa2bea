@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList, CheckCircle, XCircle, Clock, Eye, Search, Filter,
-  Shield, User, FileText, MessageSquare, Download, ExternalLink,
+  Shield, User, FileText, MessageSquare, Download, ExternalLink, FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
