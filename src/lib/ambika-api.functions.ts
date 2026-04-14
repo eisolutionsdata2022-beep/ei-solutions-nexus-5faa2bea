@@ -4,6 +4,8 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { verifyFirebaseToken } from "./firebase-auth.server";
 
 const rechargeInputSchema = z.object({
   serviceType: z.string().min(1).max(50),
@@ -31,6 +33,18 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
     rechargeInputSchema.parse(input)
   )
   .handler(async ({ data }): Promise<AmbikaApiResponse> => {
+    // Verify Firebase auth token
+    const authHeader = getRequestHeader("authorization") || "";
+    const idToken = authHeader.replace(/^Bearer\s+/i, "");
+    const authUser = await verifyFirebaseToken(idToken);
+    if (!authUser) {
+      return {
+        success: false,
+        status: "failed",
+        message: "Authentication required. Please log in again.",
+      };
+    }
+
     const baseUrl = process.env.AMBIKA_API_BASE_URL;
     const userId = process.env.AMBIKA_API_USER_ID;
     const apiKey = process.env.AMBIKA_API_KEY;
