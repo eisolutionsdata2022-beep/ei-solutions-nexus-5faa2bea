@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userDoc.exists()) {
       throw new Error("User profile not found");
     }
-    const userData = userDoc.data() as AppUser;
+    const userData = { ...userDoc.data(), uid: cred.user.uid } as AppUser;
     setAppUser(userData);
     return userData;
   };
