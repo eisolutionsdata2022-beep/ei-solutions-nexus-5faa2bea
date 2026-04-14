@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList, CheckCircle, XCircle, Clock, Eye, Search, Filter,
@@ -109,13 +109,15 @@ function StaffServiceApplications() {
       toast.error("No data to download.");
       return;
     }
+
+    const toCsvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const headers = ["Application No", "Applicant", "Service", "DOB", "Gender", "Mobile", "Email", "Aadhaar", "Address", "District", "Purpose", "Fee", "Status", "Staff Remark", "Govt App No", "Date", "Documents"];
     const rows = filtered.map((a) => [
-      a.applicationNo, a.fullName, a.serviceType, a.dob || "", a.gender || "", a.mobile, a.email || "", a.aadhaar || "", `"${(a.address || "").replace(/"/g, '""')}"`, a.district, `"${(a.purpose || "").replace(/"/g, '""')}"`, a.fee, a.status, a.staffRemark || "", a.govApplicationNo || "",
+      a.applicationNo, a.fullName, a.serviceType, a.dob || "", a.gender || "", a.mobile, a.email || "", a.aadhaar || "", a.address || "", a.district, a.purpose || "", a.fee, a.status, a.staffRemark || "", a.govApplicationNo || "",
       new Date(a.createdAt).toLocaleDateString(),
       (a.uploadedDocuments || []).map((d) => d.fileName).join("; "),
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csv = [headers.map(toCsvCell).join(","), ...rows.map((r) => r.map(toCsvCell).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -345,6 +347,9 @@ function StaffServiceApplications() {
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" /> {selected?.applicationNo}
             </DialogTitle>
+            <DialogDescription>
+              Review submitted details, download files, and update the application status.
+            </DialogDescription>
           </DialogHeader>
           {selected && (
             <div className="space-y-3">

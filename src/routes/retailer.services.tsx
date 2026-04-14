@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, addDoc, doc, onSnapshot, query, where, getDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { atomicCredit, atomicDebit } from "@/lib/firebase-transactions";
+import { uploadServiceDocuments } from "@/lib/service-document-upload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,18 +105,12 @@ function RetailerServices() {
 
       console.log("[E-dis] Starting submission:", { appNo, serviceType: data.serviceType, fee, balance });
 
-      // Upload documents in parallel
-      const docsToUpload = data.documents.filter((d) => d.file);
-      console.log("[E-dis] Uploading", docsToUpload.length, "documents...");
-      const uploadedDocs = await Promise.all(
-        docsToUpload.map(async (docItem) => {
-          const storagePath = `serviceDocuments/${appUser.uid}/${appNo}/${docItem.name}_${docItem.file!.name}`;
-          const storageRef = ref(storage, storagePath);
-          await uploadBytes(storageRef, docItem.file!);
-          const url = await getDownloadURL(storageRef);
-          return { name: docItem.name, url, fileName: docItem.file!.name };
-        })
-      );
+      console.log("[E-dis] Uploading", data.documents.filter((d) => d.file).length, "documents...");
+      const uploadedDocs = await uploadServiceDocuments({
+        appNo,
+        documents: data.documents,
+        userId: appUser.uid,
+      });
       console.log("[E-dis] Documents uploaded:", uploadedDocs.length);
 
       if (fee > 0) {
