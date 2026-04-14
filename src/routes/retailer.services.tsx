@@ -99,10 +99,15 @@ function RetailerServices() {
         if (feeDoc.exists() && typeof feeDoc.data().fee === "number") {
           fee = feeDoc.data().fee as number;
         }
-      } catch {}
+      } catch (feeErr) {
+        console.warn("[E-dis] Fee lookup failed, using default:", feeErr);
+      }
+
+      console.log("[E-dis] Starting submission:", { appNo, serviceType: data.serviceType, fee, balance });
 
       // Upload documents in parallel
       const docsToUpload = data.documents.filter((d) => d.file);
+      console.log("[E-dis] Uploading", docsToUpload.length, "documents...");
       const uploadedDocs = await Promise.all(
         docsToUpload.map(async (docItem) => {
           const storagePath = `serviceDocuments/${appUser.uid}/${appNo}/${docItem.name}_${docItem.file!.name}`;
@@ -112,16 +117,20 @@ function RetailerServices() {
           return { name: docItem.name, url, fileName: docItem.file!.name };
         })
       );
+      console.log("[E-dis] Documents uploaded:", uploadedDocs.length);
 
       if (fee > 0) {
+        console.log("[E-dis] Debiting wallet:", fee);
         await atomicDebit(appUser.uid, fee, {
           source: "service",
           applicationNo: appNo,
           description: `Service Application: ${data.serviceType}`,
         });
         debited = true;
+        console.log("[E-dis] Wallet debited successfully");
       }
 
+      console.log("[E-dis] Saving application to Firestore...");
       await addDoc(collection(db, "serviceApplications"), {
         userId: appUser.uid,
         userEmail: appUser.email,
@@ -145,9 +154,11 @@ function RetailerServices() {
         createdAt: new Date().toISOString(),
       });
 
+      console.log("[E-dis] Application saved successfully:", appNo);
       toast.success(`Application ${appNo} submitted successfully!`);
       setView("dashboard");
     } catch (err: any) {
+      console.error("[E-dis] Submit FAILED:", err?.message, err?.code, err);
       if (debited && fee > 0) {
         try {
           await atomicCredit(appUser.uid, fee, {
@@ -157,7 +168,7 @@ function RetailerServices() {
           });
           toast.error((err?.message || "Submission failed.") + " Wallet amount refunded.");
         } catch (refundError) {
-          console.error("Failed to refund service application charge:", refundError);
+          console.error("[E-dis] Refund FAILED:", refundError);
           toast.error("Submission failed after wallet debit. Please contact support.");
         }
       } else {
