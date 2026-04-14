@@ -30,11 +30,15 @@ function AdminCommissions() {
     serviceCharge: "",
   });
 
+  // E-dis service fees state
+  const [edisFees, setEdisFees] = useState<Record<string, number>>({});
+  const [editingEdis, setEditingEdis] = useState<string | null>(null);
+  const [edisFeeInput, setEdisFeeInput] = useState("");
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
     snap.forEach((d) => list.push({ id: d.id, ...d.data() } as CommissionRate));
-    // Merge with defaults for any missing ones
     const merged = DEFAULT_COMMISSION_RATES.map((def) => {
       const existing = list.find(
         (r) => r.serviceType === def.serviceType && r.operator === def.operator
@@ -44,7 +48,30 @@ function AdminCommissions() {
     setRates(merged);
   };
 
-  useEffect(() => { fetchRates(); }, []);
+  const fetchEdisFees = async () => {
+    const snap = await getDocs(collection(db, "edisServiceFees"));
+    const fees: Record<string, number> = {};
+    snap.forEach((d) => { fees[d.id] = d.data().fee as number; });
+    // Merge with defaults
+    EDIS_CATALOG.forEach((s) => {
+      if (!(s.name in fees)) fees[s.name] = s.fee;
+    });
+    setEdisFees(fees);
+  };
+
+  const saveEdisFee = async (serviceName: string) => {
+    const fee = parseFloat(edisFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee amount"); return; }
+    try {
+      await setDoc(doc(db, "edisServiceFees", serviceName), { fee, updatedAt: new Date().toISOString() });
+      toast.success(`Fee updated for ${serviceName}`);
+      setEditingEdis(null);
+      setEdisFeeInput("");
+      fetchEdisFees();
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
