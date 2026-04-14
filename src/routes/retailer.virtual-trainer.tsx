@@ -7,7 +7,7 @@ import { atomicDebit } from "@/lib/firebase-transactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2 } from "lucide-react";
+import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
 import trainerAvatar from "@/assets/elzu-trainer-avatar.jpg";
@@ -294,6 +294,72 @@ function VirtualTrainerPage() {
     recognition.start();
     setIsListening(true);
   };
+  const exportChatPDF = async () => {
+    if (messages.length <= 1) { toast.error("എക്‌സ്‌പോർട്ട് ചെയ്യാൻ ചാറ്റ് ഇല്ല"); return; }
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      // Title
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Elzuthatha Virtual Trainer - Training Notes", margin, y);
+      y += 8;
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(120, 120, 120);
+      pdf.text(`Exported: ${new Date().toLocaleString()}  |  User: ${appUser?.name || appUser?.email || ""}`, margin, y);
+      y += 4;
+      pdf.setDrawColor(16, 185, 129);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 8;
+      pdf.setTextColor(0, 0, 0);
+
+      for (const msg of messages) {
+        if (msg.id === "welcome") continue;
+        const label = msg.role === "user" ? "You" : "Elzuthatha";
+        const time = new Date(msg.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+        // Label
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(msg.role === "user" ? 16 : 5, msg.role === "user" ? 185 : 150, msg.role === "user" ? 129 : 105);
+        if (y > pageHeight - 20) { pdf.addPage(); y = margin; }
+        pdf.text(`${label}  (${time})`, margin, y);
+        y += 5;
+
+        // Content - wrap text
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(30, 30, 30);
+        const lines = pdf.splitTextToSize(msg.content, contentWidth);
+        for (const line of lines) {
+          if (y > pageHeight - 15) { pdf.addPage(); y = margin; }
+          pdf.text(line, margin, y);
+          y += 5;
+        }
+        y += 4;
+      }
+
+      // Footer on each page
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`EI Solutions - Virtual Trainer Notes  |  Page ${i}/${totalPages}`, margin, pageHeight - 8);
+      }
+
+      pdf.save(`training-notes-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("PDF ഡൗൺലോഡ് ചെയ്തു! 📄");
+    } catch { toast.error("PDF ജനറേറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
+  };
 
   if (checkingAccess) {
     return (
@@ -374,6 +440,16 @@ function VirtualTrainerPage() {
             title="ചാറ്റ് ഹിസ്റ്ററി"
           >
             <History className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={exportChatPDF}
+            title="PDF ഡൗൺലോഡ്"
+            disabled={messages.length <= 1}
+          >
+            <FileDown className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
