@@ -70,6 +70,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   staff: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
     { label: "Services", to: "/staff/services", icon: ShoppingBag },
+    { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
   ],
 };
 
