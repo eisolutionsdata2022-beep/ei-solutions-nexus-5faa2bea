@@ -361,7 +361,7 @@ function VirtualTrainerPage() {
     } catch { toast.error("PDF ജനറേറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല"); }
   };
 
-
+  if (checkingAccess) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
