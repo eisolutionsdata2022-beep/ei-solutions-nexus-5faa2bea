@@ -54,7 +54,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
     { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
-    { label: "Apply Service", to: "/retailer/services", icon: ShoppingBag },
+    { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
     { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
     { label: "My Wallet", to: "/retailer/wallet", icon: Wallet },
     { label: "Money Transfer", to: "/retailer/money-transfer", icon: Banknote },
