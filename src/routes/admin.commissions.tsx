@@ -354,6 +354,48 @@ function AdminCommissions() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Virtual Trainer Fee Tab */}
+        <TabsContent value="trainer_fee">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold">Virtual Trainer Fee</CardTitle>
+              <p className="text-xs text-muted-foreground">Set the fee deducted from retailer wallet per virtual trainer session. Set 0 for free access.</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Session Fee</Label>
+                  {editingTrainerFee ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-lg font-bold">₹</span>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={trainerFeeInput}
+                        onChange={(e) => setTrainerFeeInput(e.target.value)}
+                        className="w-32"
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={saveTrainerFee}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingTrainerFee(false)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-2xl font-bold text-primary">
+                        {trainerFee === 0 ? "Free" : `₹${trainerFee}`}
+                      </span>
+                      <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setEditingTrainerFee(true); setTrainerFeeInput(String(trainerFee)); }}>
+                        <Pencil className="w-3 h-3" /> Edit
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Edit Dialog */}
