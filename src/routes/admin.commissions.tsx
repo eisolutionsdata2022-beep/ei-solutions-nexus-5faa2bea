@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEFAULT_COMMISSION_RATES, SERVICE_CATALOG, type CommissionRate, type ServiceType } from "@/lib/commission-config";
 import { SERVICE_CATALOG as EDIS_CATALOG } from "@/lib/service-catalog";
@@ -34,6 +34,11 @@ function AdminCommissions() {
   const [edisFees, setEdisFees] = useState<Record<string, number>>({});
   const [editingEdis, setEditingEdis] = useState<string | null>(null);
   const [edisFeeInput, setEdisFeeInput] = useState("");
+
+  // CV Builder fee state
+  const [cvFee, setCvFee] = useState(10);
+  const [editingCvFee, setEditingCvFee] = useState(false);
+  const [cvFeeInput, setCvFeeInput] = useState("");
 
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
@@ -71,7 +76,26 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); }, []);
+  // CV fee fetch/save
+  const fetchCvFee = async () => {
+    try {
+      const snap = await getDoc(doc(db, "platformFees", "cv_builder"));
+      if (snap.exists()) { setCvFee(snap.data().fee || 10); }
+    } catch { /* default */ }
+  };
+
+  const saveCvFee = async () => {
+    const fee = parseFloat(cvFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee"); return; }
+    try {
+      await setDoc(doc(db, "platformFees", "cv_builder"), { fee, updatedAt: new Date().toISOString() });
+      toast.success("CV Builder fee updated!");
+      setCvFee(fee);
+      setEditingCvFee(false);
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
@@ -149,6 +173,9 @@ function AdminCommissions() {
           ))}
           <TabsTrigger value="edis_fees" className="text-xs">
             📋 E-dis Service Fees
+          </TabsTrigger>
+          <TabsTrigger value="cv_fee" className="text-xs">
+            📄 CV Builder Fee
           </TabsTrigger>
         </TabsList>
 
@@ -256,6 +283,46 @@ function AdminCommissions() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CV Builder Fee Tab */}
+        <TabsContent value="cv_fee">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold">CV Builder Fee</CardTitle>
+              <p className="text-xs text-muted-foreground">Set the fee deducted from retailer wallet each time a CV is downloaded.</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Current Fee</Label>
+                  {editingCvFee ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-lg font-bold">₹</span>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={cvFeeInput}
+                        onChange={(e) => setCvFeeInput(e.target.value)}
+                        className="w-32"
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={saveCvFee}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingCvFee(false)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-2xl font-bold text-primary">₹{cvFee}</span>
+                      <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setEditingCvFee(true); setCvFeeInput(String(cvFee)); }}>
+                        <Pencil className="w-3 h-3" /> Edit
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
