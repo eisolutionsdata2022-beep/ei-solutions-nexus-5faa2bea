@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import paytmQr from "@/assets/paytm-qr.jpeg";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import { doc, onSnapshot, collection, query, where, orderBy, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
