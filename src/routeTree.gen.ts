@@ -46,6 +46,7 @@ import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
+import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 
 const TrainerRoute = TrainerRouteImport.update({
   id: '/trainer',
@@ -233,6 +234,11 @@ const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
   path: '/commissions',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
+  id: '/chat-inbox',
+  path: '/chat-inbox',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/register': typeof RegisterRoute
+  '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/forms': typeof AdminFormsRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/register'
+    | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/forms'
@@ -733,10 +745,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCommissionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/chat-inbox': {
+      id: '/admin/chat-inbox'
+      path: '/chat-inbox'
+      fullPath: '/admin/chat-inbox'
+      preLoaderRoute: typeof AdminChatInboxRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminFormsRoute: typeof AdminFormsRoute
@@ -753,6 +773,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminFormsRoute: AdminFormsRoute,
