@@ -38,14 +38,40 @@ interface ServiceButtonData {
   style: "solid" | "outline" | "gradient";
   enabled: boolean;
   iconUrl?: string;
+  customColor?: string;
 }
 
-function getButtonClasses(style: string) {
+function getButtonClasses(style: string, hasCustomColor?: boolean) {
+  if (hasCustomColor) {
+    switch (style) {
+      case "solid": return "text-white shadow-md hover:opacity-90";
+      case "outline": return "border-2 bg-transparent hover:opacity-80";
+      case "gradient": return "text-white shadow-lg hover:opacity-90";
+      default: return "text-white shadow-md hover:opacity-90";
+    }
+  }
   switch (style) {
     case "solid": return "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md";
     case "outline": return "border-2 border-primary text-primary bg-transparent hover:bg-primary/10";
     case "gradient": return "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:opacity-90";
     default: return "bg-primary text-primary-foreground";
+  }
+}
+
+function getButtonInlineStyle(style: string, color?: string): React.CSSProperties {
+  if (!color) return {};
+  switch (style) {
+    case "solid": return { backgroundColor: color };
+    case "outline": return { borderColor: color, color: color };
+    case "gradient": {
+      const num = parseInt(color.replace("#", ""), 16);
+      const r = Math.min(255, ((num >> 16) & 0xff) + 40);
+      const g = Math.min(255, ((num >> 8) & 0xff) + 40);
+      const b = Math.min(255, (num & 0xff) + 40);
+      const lighter = `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+      return { background: `linear-gradient(135deg, ${color}, ${lighter})` };
+    }
+    default: return { backgroundColor: color };
   }
 }
 
@@ -131,7 +157,8 @@ function RetailerDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {serviceButtons.map((b) => (
               <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style)}`}>
+                className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style, !!b.customColor)}`}
+                style={getButtonInlineStyle(b.style, b.customColor)}>
                 {b.iconUrl ? (
                   <img src={b.iconUrl} alt="" className="w-5 h-5 rounded-sm object-contain" />
                 ) : (
