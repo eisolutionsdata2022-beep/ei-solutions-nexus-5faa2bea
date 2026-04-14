@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Plus, Trash2, Check, IndianRupee, User, Briefcase, GraduationCap, Globe, Cpu, Users, Settings, FileText } from "lucide-react";
+import { Download, Plus, Trash2, Check, IndianRupee, User, Briefcase, GraduationCap, Globe, Cpu, Users, Settings, FileText, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/cv-builder")({
