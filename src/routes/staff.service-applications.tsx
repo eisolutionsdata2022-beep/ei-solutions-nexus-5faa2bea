@@ -65,6 +65,8 @@ function StaffServiceApplications() {
     return unsub;
   }, []);
 
+  const [govAppNo, setGovAppNo] = useState("");
+
   const updateStatus = async (id: string, status: "Approved" | "Rejected") => {
     if (!appUser) return;
     setProcessing(true);
@@ -72,12 +74,14 @@ function StaffServiceApplications() {
       await updateDoc(doc(db, "serviceApplications", id), {
         status,
         staffRemark: remark || undefined,
+        govApplicationNo: govAppNo || undefined,
         reviewedBy: appUser.email,
         reviewedAt: new Date().toISOString(),
       });
       toast.success(`Application ${status.toLowerCase()}.`);
       setSelected(null);
       setRemark("");
+      setGovAppNo("");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update.");
     } finally {
@@ -189,7 +193,7 @@ function StaffServiceApplications() {
       </Card>
 
       {/* Review Dialog */}
-      <Dialog open={!!selected} onOpenChange={(v) => { if (!v) { setSelected(null); setRemark(""); } }}>
+      <Dialog open={!!selected} onOpenChange={(v) => { if (!v) { setSelected(null); setRemark(""); setGovAppNo(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -207,14 +211,21 @@ function StaffServiceApplications() {
                 <div><span className="text-muted-foreground">Purpose:</span> <strong>{selected.purpose}</strong></div>
               </div>
               <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Government Application Number</Label>
+                <Input value={govAppNo} onChange={(e) => setGovAppNo(e.target.value)} placeholder="Enter govt application/tracking number" />
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Staff Remark</Label>
                 <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="Add remark..." rows={2} />
               </div>
-              <div className="flex gap-2">
-                <Button className="flex-1 bg-gov-green hover:bg-gov-green/90" onClick={() => updateStatus(selected.id, "Approved")} disabled={processing}>
+              <div className="grid grid-cols-3 gap-2">
+                <Button className="bg-gov-gold hover:bg-gov-gold/90 text-white" onClick={() => updateStatus(selected.id, "Pending" as any)} disabled={processing || selected.status === "Pending"}>
+                  <Clock className="w-4 h-4 mr-1" /> Pending
+                </Button>
+                <Button className="bg-gov-green hover:bg-gov-green/90" onClick={() => updateStatus(selected.id, "Approved")} disabled={processing}>
                   <CheckCircle className="w-4 h-4 mr-1" /> Approve
                 </Button>
-                <Button variant="destructive" className="flex-1" onClick={() => updateStatus(selected.id, "Rejected")} disabled={processing}>
+                <Button variant="destructive" onClick={() => updateStatus(selected.id, "Rejected")} disabled={processing}>
                   <XCircle className="w-4 h-4 mr-1" /> Reject
                 </Button>
               </div>

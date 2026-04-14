@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEFAULT_COMMISSION_RATES, SERVICE_CATALOG, type CommissionRate, type ServiceType } from "@/lib/commission-config";
+import { SERVICE_CATALOG as EDIS_CATALOG } from "@/lib/service-catalog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +30,15 @@ function AdminCommissions() {
     serviceCharge: "",
   });
 
+  // E-dis service fees state
+  const [edisFees, setEdisFees] = useState<Record<string, number>>({});
+  const [editingEdis, setEditingEdis] = useState<string | null>(null);
+  const [edisFeeInput, setEdisFeeInput] = useState("");
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
     snap.forEach((d) => list.push({ id: d.id, ...d.data() } as CommissionRate));
-    // Merge with defaults for any missing ones
     const merged = DEFAULT_COMMISSION_RATES.map((def) => {
       const existing = list.find(
         (r) => r.serviceType === def.serviceType && r.operator === def.operator
@@ -43,7 +48,30 @@ function AdminCommissions() {
     setRates(merged);
   };
 
-  useEffect(() => { fetchRates(); }, []);
+  const fetchEdisFees = async () => {
+    const snap = await getDocs(collection(db, "edisServiceFees"));
+    const fees: Record<string, number> = {};
+    snap.forEach((d) => { fees[d.id] = d.data().fee as number; });
+    // Merge with defaults
+    EDIS_CATALOG.forEach((s) => {
+      if (!(s.name in fees)) fees[s.name] = s.fee;
+    });
+    setEdisFees(fees);
+  };
+
+  const saveEdisFee = async (serviceName: string) => {
+    const fee = parseFloat(edisFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee amount"); return; }
+    try {
+      await setDoc(doc(db, "edisServiceFees", serviceName), { fee, updatedAt: new Date().toISOString() });
+      toast.success(`Fee updated for ${serviceName}`);
+      setEditingEdis(null);
+      setEdisFeeInput("");
+      fetchEdisFees();
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
@@ -119,6 +147,9 @@ function AdminCommissions() {
               {SERVICE_CATALOG[st].icon} {SERVICE_CATALOG[st].label}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="edis_fees" className="text-xs">
+            📋 E-dis Service Fees
+          </TabsTrigger>
         </TabsList>
 
         {serviceTypes.map((st) => {
@@ -168,6 +199,67 @@ function AdminCommissions() {
             </TabsContent>
           );
         })}
+
+        {/* E-dis Service Fees Tab */}
+        <TabsContent value="edis_fees">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold">E-dis Application Fees</CardTitle>
+              <p className="text-xs text-muted-foreground">Set the fee deducted from retailer wallet per application submission.</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-xs font-bold text-left px-4 py-2">Service Name</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Category</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Current Fee (₹)</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EDIS_CATALOG.map((svc) => (
+                      <tr key={svc.name} className="border-b">
+                        <td className="text-xs font-medium px-4 py-2">{svc.name}</td>
+                        <td className="px-4 py-2">
+                          <Badge variant="outline" className="text-[10px]">{svc.category}</Badge>
+                        </td>
+                        <td className="px-4 py-2">
+                          {editingEdis === svc.name ? (
+                            <Input
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={edisFeeInput}
+                              onChange={(e) => setEdisFeeInput(e.target.value)}
+                              className="h-7 w-24 text-xs"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-xs font-semibold">₹{edisFees[svc.name] ?? svc.fee}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2">
+                          {editingEdis === svc.name ? (
+                            <div className="flex gap-1">
+                              <Button size="sm" className="h-7 text-xs" onClick={() => saveEdisFee(svc.name)}>Save</Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setEditingEdis(null); setEdisFeeInput(""); }}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { setEditingEdis(svc.name); setEdisFeeInput(String(edisFees[svc.name] ?? svc.fee)); }}>
+                              <Pencil className="w-3 h-3" /> Edit
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Edit Dialog */}
