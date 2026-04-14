@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, Upload } from "lucide-react";
+import { CheckCircle, Clock, XCircle, Upload, Download, Award } from "lucide-react";
+import { downloadCertificate } from "@/lib/franchise-certificate";
 
 export const Route = createFileRoute("/retailer/kyc")({
   ssr: false,
