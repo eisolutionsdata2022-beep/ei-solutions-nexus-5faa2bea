@@ -224,6 +224,7 @@ function StaffServiceApplications() {
     toast.success("PDF downloaded!");
   }, []);
 
+  const filtered = applications.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
