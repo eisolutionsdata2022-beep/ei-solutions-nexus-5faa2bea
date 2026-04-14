@@ -120,7 +120,6 @@ function RetailerServices() {
       toast.error(err?.message || "Submission failed. Please try again.");
       throw err;
     }
-    }
   };
 
   const statusIcon = (s: string) => {
