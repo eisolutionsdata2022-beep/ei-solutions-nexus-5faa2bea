@@ -17,6 +17,7 @@ import {
   Shield, User, FileText, MessageSquare, Download, ExternalLink, FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { jsPDF } from "jspdf";
 
 export const Route = createFileRoute("/staff/service-applications")({
   ssr: false,
