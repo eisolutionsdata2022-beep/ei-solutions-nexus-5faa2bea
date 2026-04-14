@@ -19,6 +19,7 @@ import {
   Download,
   CheckCircle,
   MessageSquare,
+  BotMessageSquare,
 } from "lucide-react";
 
 interface NavItem {
