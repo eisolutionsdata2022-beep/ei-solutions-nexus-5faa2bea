@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
+import { GlobalChatButton } from "@/components/chat/GlobalChatButton";
 
 import appCss from "../styles.css?url";
 
