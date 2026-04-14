@@ -18,6 +18,7 @@ import {
   BarChart3,
   Download,
   CheckCircle,
+  MessageSquare,
 } from "lucide-react";
 
 interface NavItem {
