@@ -76,7 +76,26 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); }, []);
+  // CV fee fetch/save
+  const fetchCvFee = async () => {
+    try {
+      const snap = await getDoc(doc(db, "platformFees", "cv_builder"));
+      if (snap.exists()) { setCvFee(snap.data().fee || 10); }
+    } catch { /* default */ }
+  };
+
+  const saveCvFee = async () => {
+    const fee = parseFloat(cvFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee"); return; }
+    try {
+      await setDoc(doc(db, "platformFees", "cv_builder"), { fee, updatedAt: new Date().toISOString() });
+      toast.success("CV Builder fee updated!");
+      setCvFee(fee);
+      setEditingCvFee(false);
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
