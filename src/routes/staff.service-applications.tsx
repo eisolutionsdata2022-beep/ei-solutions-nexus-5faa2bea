@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList, CheckCircle, XCircle, Clock, Eye, Search, Filter,
-  Shield, User, FileText, MessageSquare,
+  Shield, User, FileText, MessageSquare, Download, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,6 +22,12 @@ export const Route = createFileRoute("/staff/service-applications")({
   ssr: false,
   component: StaffServiceApplications,
 });
+
+interface UploadedDoc {
+  name: string;
+  url: string;
+  fileName: string;
+}
 
 interface AppRecord {
   id: string;
@@ -42,6 +48,7 @@ interface AppRecord {
   userId: string;
   userEmail: string;
   createdAt: string;
+  uploadedDocuments?: UploadedDoc[];
 }
 
 function StaffServiceApplications() {
