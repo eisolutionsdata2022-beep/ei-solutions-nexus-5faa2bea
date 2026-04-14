@@ -33,6 +33,7 @@ function CVBuilder() {
   const [downloading, setDownloading] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [personal, setPersonal] = useState({ name: "", address: "", phone: "", email: "", dob: "", nationality: "" });
   const [jobAppliedFor, setJobAppliedFor] = useState("");
