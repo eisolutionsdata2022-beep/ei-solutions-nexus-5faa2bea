@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, ExternalLink, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Link2, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/service-buttons")({
@@ -26,6 +27,7 @@ interface ServiceButton {
   style: ButtonStyle;
   enabled: boolean;
   createdAt: string;
+  iconUrl?: string;
 }
 
 const BUTTON_STYLES: { value: ButtonStyle; label: string; description: string }[] = [
@@ -52,6 +54,10 @@ function AdminServiceButtons() {
   const [style, setStyle] = useState<ButtonStyle>("solid");
   const [open, setOpen] = useState(false);
   const [editBtn, setEditBtn] = useState<ServiceButton | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchButtons = async () => {
     const snap = await getDocs(collection(db, "serviceButtons"));
@@ -65,6 +71,32 @@ function AdminServiceButtons() {
 
   const resetForm = () => {
     setName(""); setUrl(""); setStyle("solid");
+    setIconFile(null); setIconPreview("");
+  };
+
+  const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Icon must be under 2MB.");
+      return;
+    }
+    setIconFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setIconPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadIcon = async (): Promise<string | undefined> => {
+    if (!iconFile) return iconPreview || undefined;
+    const fileName = `service-icons/${Date.now()}-${iconFile.name}`;
+    const storageRef = ref(storage, fileName);
+    await uploadBytes(storageRef, iconFile);
+    return getDownloadURL(storageRef);
   };
 
   const handleCreate = async (e: FormEvent) => {
@@ -73,11 +105,14 @@ function AdminServiceButtons() {
       toast.error("Name and URL are required.");
       return;
     }
+    setUploading(true);
     try {
+      const iconUrl = await uploadIcon();
       await addDoc(collection(db, "serviceButtons"), {
         name: name.trim(),
         url: url.trim(),
         style,
+        iconUrl: iconUrl || "",
         enabled: true,
         createdAt: new Date().toISOString(),
       });
@@ -87,19 +122,31 @@ function AdminServiceButtons() {
       toast.success("Service button created!");
     } catch {
       toast.error("Failed to create button.");
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleEdit = async (e: FormEvent) => {
     e.preventDefault();
     if (!editBtn) return;
-    await updateDoc(doc(db, "serviceButtons", editBtn.id), {
-      name: name.trim(), url: url.trim(), style,
-    });
-    resetForm();
-    setEditBtn(null);
-    fetchButtons();
-    toast.success("Button updated!");
+    setUploading(true);
+    try {
+      const iconUrl = await uploadIcon();
+      const updateData: Record<string, string> = {
+        name: name.trim(), url: url.trim(), style,
+      };
+      if (iconUrl !== undefined) updateData.iconUrl = iconUrl;
+      await updateDoc(doc(db, "serviceButtons", editBtn.id), updateData);
+      resetForm();
+      setEditBtn(null);
+      fetchButtons();
+      toast.success("Button updated!");
+    } catch {
+      toast.error("Failed to update button.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const toggleEnabled = async (b: ServiceButton) => {
@@ -109,6 +156,9 @@ function AdminServiceButtons() {
 
   const handleDelete = async (b: ServiceButton) => {
     if (!confirm(`Delete "${b.name}"?`)) return;
+    if (b.iconUrl) {
+      try { await deleteObject(ref(storage, b.iconUrl)); } catch { /* ignore */ }
+    }
     await deleteDoc(doc(db, "serviceButtons", b.id));
     fetchButtons();
     toast.success("Button deleted.");
@@ -116,7 +166,20 @@ function AdminServiceButtons() {
 
   const openEdit = (b: ServiceButton) => {
     setName(b.name); setUrl(b.url); setStyle(b.style || "solid");
+    setIconPreview(b.iconUrl || ""); setIconFile(null);
     setEditBtn(b);
+  };
+
+  const removeIcon = () => {
+    setIconFile(null); setIconPreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const renderButtonIcon = (b: ServiceButton, size = 20) => {
+    if (b.iconUrl) {
+      return <img src={b.iconUrl} alt="" className="rounded-sm object-contain" style={{ width: size, height: size }} />;
+    }
+    return <Link2 style={{ width: size, height: size }} />;
   };
 
   const formFields = (
@@ -129,6 +192,27 @@ function AdminServiceButtons() {
         <Label>Link URL</Label>
         <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" required />
       </div>
+
+      {/* Icon Upload */}
+      <div className="space-y-2">
+        <Label>Button Icon (Optional)</Label>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleIconSelect} className="hidden" />
+        {iconPreview ? (
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+            <img src={iconPreview} alt="icon" className="w-10 h-10 rounded-md object-contain border border-border bg-card" />
+            <span className="text-sm text-foreground flex-1 truncate">{iconFile?.name || "Current icon"}</span>
+            <Button type="button" variant="ghost" size="icon" onClick={removeIcon} className="text-destructive">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button type="button" variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-4 h-4" /> Upload Icon Image
+          </Button>
+        )}
+        <p className="text-xs text-muted-foreground">PNG, JPG, SVG — max 2MB. Square icons work best.</p>
+      </div>
+
       <div className="space-y-3">
         <Label>Button Design</Label>
         <RadioGroup value={style} onValueChange={(v) => setStyle(v as ButtonStyle)} className="space-y-3">
@@ -164,7 +248,9 @@ function AdminServiceButtons() {
             <DialogHeader><DialogTitle>Create Service Button</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate}>
               {formFields}
-              <Button type="submit" className="w-full mt-4">Create Button</Button>
+              <Button type="submit" className="w-full mt-4" disabled={uploading}>
+                {uploading ? "Uploading..." : "Create Button"}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -176,7 +262,9 @@ function AdminServiceButtons() {
           <DialogHeader><DialogTitle>Edit Service Button</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit}>
             {formFields}
-            <Button type="submit" className="w-full mt-4">Save Changes</Button>
+            <Button type="submit" className="w-full mt-4" disabled={uploading}>
+              {uploading ? "Uploading..." : "Save Changes"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -190,7 +278,7 @@ function AdminServiceButtons() {
               {buttons.filter((b) => b.enabled).map((b) => (
                 <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer"
                   className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style)}`}>
-                  <Link2 className="w-5 h-5" /> {b.name}
+                  {renderButtonIcon(b)} {b.name}
                 </a>
               ))}
             </div>
@@ -204,9 +292,18 @@ function AdminServiceButtons() {
           <Card key={b.id} className={!b.enabled ? "opacity-50" : ""}>
             <CardContent className="p-5">
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-semibold text-foreground">{b.name}</p>
-                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{b.url}</p>
+                <div className="flex items-center gap-2.5">
+                  {b.iconUrl ? (
+                    <img src={b.iconUrl} alt="" className="w-8 h-8 rounded-md object-contain border border-border bg-card" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-foreground">{b.name}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[180px]">{b.url}</p>
+                  </div>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={() => openEdit(b)}>
@@ -220,7 +317,7 @@ function AdminServiceButtons() {
               <div className="mb-3">
                 <a href={b.url} target="_blank" rel="noopener noreferrer"
                   className={`inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-base font-bold transition-all min-h-[50px] ${getButtonClasses(b.style)}`}>
-                  <ExternalLink className="w-5 h-5" /> {b.name}
+                  {renderButtonIcon(b)} {b.name}
                 </a>
               </div>
               <div className="flex items-center justify-between">
