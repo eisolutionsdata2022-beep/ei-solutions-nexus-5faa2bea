@@ -7,7 +7,7 @@ import { atomicDebit } from "@/lib/firebase-transactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2 } from "lucide-react";
+import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
 import trainerAvatar from "@/assets/elzu-trainer-avatar.jpg";
