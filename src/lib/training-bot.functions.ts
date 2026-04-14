@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 
 const inputSchema = z.object({
   question: z.string().min(1).max(2000),
@@ -11,8 +12,13 @@ const inputSchema = z.object({
 });
 
 export const askTrainingBot = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
   .inputValidator((input: unknown) => inputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { answer: "Authentication required. Please log in again." };
+    }
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { answer: "AI assistant is not configured. Please contact admin." };
