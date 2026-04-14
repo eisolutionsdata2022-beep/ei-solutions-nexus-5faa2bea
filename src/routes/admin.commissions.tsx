@@ -119,7 +119,7 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); }, []);
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
