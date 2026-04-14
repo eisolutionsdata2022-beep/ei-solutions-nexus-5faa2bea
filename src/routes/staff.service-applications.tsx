@@ -342,6 +342,11 @@ function StaffServiceApplications() {
           </DialogHeader>
           {selected && (
             <div className="space-y-3">
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => downloadApplicationPDF(selected)}>
+                  <FileDown className="w-3.5 h-3.5" /> Download PDF
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2 text-xs p-3 bg-muted rounded border">
                 <div><span className="text-muted-foreground">Name:</span> <strong>{selected.fullName}</strong></div>
                 <div><span className="text-muted-foreground">Service:</span> <strong>{selected.serviceType}</strong></div>
