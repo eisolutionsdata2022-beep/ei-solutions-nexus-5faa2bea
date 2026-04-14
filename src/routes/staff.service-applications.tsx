@@ -148,9 +148,14 @@ function StaffServiceApplications() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Service Applications</h1>
-        <p className="text-muted-foreground">Review and process service applications. <Badge variant="secondary">{pending} pending</Badge></p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Service Applications</h1>
+          <p className="text-muted-foreground">Review and process service applications. <Badge variant="secondary">{pending} pending</Badge></p>
+        </div>
+        <Button onClick={downloadAllData} variant="outline" className="gap-1.5">
+          <FileDown className="w-4 h-4" /> Download CSV
+        </Button>
       </div>
 
       {/* Filters */}
