@@ -117,6 +117,8 @@ function StaffServiceApplications() {
     URL.revokeObjectURL(url);
     toast.success("CSV downloaded!");
   };
+
+  const filtered = applications.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
