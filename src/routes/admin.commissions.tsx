@@ -100,6 +100,25 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
+  // Virtual Trainer fee fetch/save
+  const fetchTrainerFee = async () => {
+    try {
+      const snap = await getDoc(doc(db, "platformFees", "virtual_trainer"));
+      if (snap.exists()) { setTrainerFee(snap.data().fee || 0); }
+    } catch { /* default 0 = free */ }
+  };
+
+  const saveTrainerFee = async () => {
+    const fee = parseFloat(trainerFeeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee"); return; }
+    try {
+      await setDoc(doc(db, "platformFees", "virtual_trainer"), { fee, updatedAt: new Date().toISOString() });
+      toast.success("Virtual Trainer fee updated!");
+      setTrainerFee(fee);
+      setEditingTrainerFee(false);
+    } catch { toast.error("Failed to update fee"); }
+  };
+
   useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
