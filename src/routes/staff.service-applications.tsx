@@ -96,7 +96,27 @@ function StaffServiceApplications() {
     }
   };
 
-  const filtered = applications.filter((a) => {
+  const downloadAllData = () => {
+    if (filtered.length === 0) {
+      toast.error("No data to download.");
+      return;
+    }
+    const headers = ["Application No", "Applicant", "Service", "DOB", "Gender", "Mobile", "Email", "Aadhaar", "Address", "District", "Purpose", "Fee", "Status", "Staff Remark", "Govt App No", "Date", "Documents"];
+    const rows = filtered.map((a) => [
+      a.applicationNo, a.fullName, a.serviceType, a.dob || "", a.gender || "", a.mobile, a.email || "", a.aadhaar || "", `"${(a.address || "").replace(/"/g, '""')}"`, a.district, `"${(a.purpose || "").replace(/"/g, '""')}"`, a.fee, a.status, a.staffRemark || "", a.govApplicationNo || "",
+      new Date(a.createdAt).toLocaleDateString(),
+      (a.uploadedDocuments || []).map((d) => d.fileName).join("; "),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `service-applications-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded!");
+  };
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
