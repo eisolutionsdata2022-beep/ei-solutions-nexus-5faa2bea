@@ -356,16 +356,36 @@ function VirtualTrainerPage() {
             {loading ? "ടൈപ്പ് ചെയ്യുന്നു..." : isSpeaking ? "സംസാരിക്കുന്നു..." : "നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ"}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/10"
-          onClick={() => {
-            if (!ttsEnabled) { setTtsEnabled(true); } else { window.speechSynthesis.cancel(); setIsSpeaking(false); setTtsEnabled(false); }
-          }}
-        >
-          {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={startNewChat}
+            title="പുതിയ ചാറ്റ്"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={() => { setShowHistory(!showHistory); if (!showHistory) loadChatSessions(); }}
+            title="ചാറ്റ് ഹിസ്റ്ററി"
+          >
+            <History className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10"
+            onClick={() => {
+              if (!ttsEnabled) { setTtsEnabled(true); } else { window.speechSynthesis.cancel(); setIsSpeaking(false); setTtsEnabled(false); }
+            }}
+          >
+            {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Trainer Avatar Section + Chat */}
