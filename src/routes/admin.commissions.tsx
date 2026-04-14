@@ -147,6 +147,9 @@ function AdminCommissions() {
               {SERVICE_CATALOG[st].icon} {SERVICE_CATALOG[st].label}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="edis_fees" className="text-xs">
+            📋 E-dis Service Fees
+          </TabsTrigger>
         </TabsList>
 
         {serviceTypes.map((st) => {
