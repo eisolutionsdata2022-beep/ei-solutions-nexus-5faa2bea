@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList, CheckCircle, XCircle, Clock, Eye, Search, Filter,
-  Shield, User, FileText, MessageSquare, Download, ExternalLink,
+  Shield, User, FileText, MessageSquare, Download, ExternalLink, FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +45,7 @@ interface AppRecord {
   fee: number;
   status: "Pending" | "Approved" | "Rejected";
   staffRemark?: string;
+  govApplicationNo?: string;
   userId: string;
   userEmail: string;
   createdAt: string;
@@ -96,6 +97,28 @@ function StaffServiceApplications() {
     }
   };
 
+  const downloadAllData = () => {
+    if (filtered.length === 0) {
+      toast.error("No data to download.");
+      return;
+    }
+    const headers = ["Application No", "Applicant", "Service", "DOB", "Gender", "Mobile", "Email", "Aadhaar", "Address", "District", "Purpose", "Fee", "Status", "Staff Remark", "Govt App No", "Date", "Documents"];
+    const rows = filtered.map((a) => [
+      a.applicationNo, a.fullName, a.serviceType, a.dob || "", a.gender || "", a.mobile, a.email || "", a.aadhaar || "", `"${(a.address || "").replace(/"/g, '""')}"`, a.district, `"${(a.purpose || "").replace(/"/g, '""')}"`, a.fee, a.status, a.staffRemark || "", a.govApplicationNo || "",
+      new Date(a.createdAt).toLocaleDateString(),
+      (a.uploadedDocuments || []).map((d) => d.fileName).join("; "),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `service-applications-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded!");
+  };
+
   const filtered = applications.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
@@ -125,9 +148,14 @@ function StaffServiceApplications() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Service Applications</h1>
-        <p className="text-muted-foreground">Review and process service applications. <Badge variant="secondary">{pending} pending</Badge></p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Service Applications</h1>
+          <p className="text-muted-foreground">Review and process service applications. <Badge variant="secondary">{pending} pending</Badge></p>
+        </div>
+        <Button onClick={downloadAllData} variant="outline" className="gap-1.5">
+          <FileDown className="w-4 h-4" /> Download CSV
+        </Button>
       </div>
 
       {/* Filters */}
