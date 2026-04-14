@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 export const Route = createFileRoute("/admin/recharge-transactions")({
+  ssr: false,
   component: AdminRechargeTransactions,
 });
 

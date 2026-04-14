@@ -15,6 +15,7 @@ import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Clock, CheckCircle, XCircle,
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/wallet")({
+  ssr: false,
   component: RetailerWallet,
 });
 

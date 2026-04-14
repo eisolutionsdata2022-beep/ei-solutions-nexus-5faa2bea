@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { collection, addDoc } from "firebase/firestore";
 
 export const Route = createFileRoute("/retailer/money-transfer")({
+  ssr: false,
   component: MoneyTransfer,
 });
 

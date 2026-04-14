@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ShoppingBag, Clock, CheckCircle } from "lucide-react";
 
 export const Route = createFileRoute("/staff/")({
+  ssr: false,
   component: StaffDashboard,
 });
 

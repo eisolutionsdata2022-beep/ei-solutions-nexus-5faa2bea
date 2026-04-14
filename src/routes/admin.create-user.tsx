@@ -12,6 +12,7 @@ import { UserPlus, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/create-user")({
+  ssr: false,
   component: AdminCreateUser,
 });
 

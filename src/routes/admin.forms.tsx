@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/admin/forms")({
+  ssr: false,
   component: () => (
     <div className="space-y-6">
       <div>

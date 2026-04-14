@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, XCircle, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/retailer/kyc")({
+  ssr: false,
   component: RetailerKYC,
 });
 

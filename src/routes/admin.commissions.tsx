@@ -14,6 +14,7 @@ import { Pencil, Upload, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/commissions")({
+  ssr: false,
   component: AdminCommissions,
 });
 

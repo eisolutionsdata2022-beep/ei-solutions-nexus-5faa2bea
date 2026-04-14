@@ -14,6 +14,7 @@ import { ShoppingBag, Send, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/services")({
+  ssr: false,
   component: RetailerServices,
 });
 

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/staff/services")({
+  ssr: false,
   component: () => {
     const [services, setServices] = useState<any[]>([]);
 

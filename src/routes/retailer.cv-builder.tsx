@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Download, User, Mail, Phone, MapPin, GraduationCap, Briefcase, Target, Wrench } from "lucide-react";
 
 export const Route = createFileRoute("/retailer/cv-builder")({
+  ssr: false,
   component: CVBuilder,
 });
 

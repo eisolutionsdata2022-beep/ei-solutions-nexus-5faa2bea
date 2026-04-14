@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 export const Route = createFileRoute("/trainer/wallet")({
+  ssr: false,
   component: TrainerWallet,
 });
 

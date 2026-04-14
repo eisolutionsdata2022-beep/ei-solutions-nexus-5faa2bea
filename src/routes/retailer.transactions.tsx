@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 export const Route = createFileRoute("/retailer/transactions")({
+  ssr: false,
   component: RetailerTransactions,
 });
 

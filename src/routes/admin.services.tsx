@@ -14,6 +14,7 @@ import { Plus, ShoppingBag, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/services")({
+  ssr: false,
   component: AdminServices,
 });
 

@@ -21,6 +21,7 @@ import { Wallet, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-rea
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/recharge")({
+  ssr: false,
   component: RetailerRecharge,
 });
 

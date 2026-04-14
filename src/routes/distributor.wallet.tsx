@@ -3,6 +3,7 @@ import { Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/distributor/wallet")({
+  ssr: false,
   component: () => (
     <div className="space-y-6 max-w-lg">
       <div>

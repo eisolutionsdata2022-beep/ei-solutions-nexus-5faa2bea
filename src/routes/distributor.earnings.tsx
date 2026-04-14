@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowDownLeft } from "lucide-react";
 
 export const Route = createFileRoute("/distributor/earnings")({
+  ssr: false,
   component: DistributorEarnings,
 });
 
