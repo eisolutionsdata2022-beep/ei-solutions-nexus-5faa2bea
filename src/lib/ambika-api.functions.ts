@@ -4,8 +4,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getRequestHeader } from "@tanstack/react-start/server";
-import { verifyFirebaseToken } from "./firebase-auth.server";
+import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 
 const rechargeInputSchema = z.object({
   serviceType: z.string().min(1).max(50),
@@ -29,15 +28,12 @@ export interface AmbikaApiResponse {
  * Runs server-side only to protect API credentials.
  */
 export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof rechargeInputSchema>) =>
     rechargeInputSchema.parse(input)
   )
-  .handler(async ({ data }): Promise<AmbikaApiResponse> => {
-    // Verify Firebase auth token
-    const authHeader = getRequestHeader("authorization") || "";
-    const idToken = authHeader.replace(/^Bearer\s+/i, "");
-    const authUser = await verifyFirebaseToken(idToken);
-    if (!authUser) {
+  .handler(async ({ data, context }): Promise<AmbikaApiResponse> => {
+    if (!context.authUser) {
       return {
         success: false,
         status: "failed",
@@ -90,7 +86,7 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       );
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeout = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -114,8 +110,6 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       const raw = await response.json();
       console.log(`[Ambika API] Response:`, JSON.stringify(raw));
 
-      // Parse Ambika response — adapt to their actual response format
-      // Common formats: { status: "SUCCESS/FAILED/PENDING", txnid, message }
       const apiStatus = (
         raw.status || raw.Status || ""
       )

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getRequestHeader } from "@tanstack/react-start/server";
-import { verifyFirebaseToken } from "./firebase-auth.server";
+import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 
 const inputSchema = z.object({
   question: z.string().min(1).max(2000),
@@ -13,13 +12,10 @@ const inputSchema = z.object({
 });
 
 export const askTrainingBot = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
   .inputValidator((input: unknown) => inputSchema.parse(input))
-  .handler(async ({ data }) => {
-    // Verify Firebase auth token
-    const authHeader = getRequestHeader("authorization") || "";
-    const idToken = authHeader.replace(/^Bearer\s+/i, "");
-    const authUser = await verifyFirebaseToken(idToken);
-    if (!authUser) {
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
       return { answer: "Authentication required. Please log in again." };
     }
 
