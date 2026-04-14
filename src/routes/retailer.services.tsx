@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, addDoc, doc, onSnapshot, query, where, orderBy, getDoc } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, query, where, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -48,11 +48,17 @@ function RetailerServices() {
       if (snap.exists()) setBalance(snap.data().balance || 0);
     });
     const unsub2 = onSnapshot(
-      query(collection(db, "serviceApplications"), where("userId", "==", appUser.uid), orderBy("createdAt", "desc")),
+      query(collection(db, "serviceApplications"), where("userId", "==", appUser.uid)),
       (snap) => {
         const list: AppRecord[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AppRecord));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setApplications(list);
+      },
+      (error) => {
+        console.error("Failed to load service applications:", error);
+        toast.error("Unable to load applications right now. Please refresh and try again.");
+        setApplications([]);
       }
     );
     return () => { unsub1(); unsub2(); };
