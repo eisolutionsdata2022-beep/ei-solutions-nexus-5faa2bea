@@ -35,6 +35,11 @@ function AdminCommissions() {
   const [editingEdis, setEditingEdis] = useState<string | null>(null);
   const [edisFeeInput, setEdisFeeInput] = useState("");
 
+  // CV Builder fee state
+  const [cvFee, setCvFee] = useState(10);
+  const [editingCvFee, setEditingCvFee] = useState(false);
+  const [cvFeeInput, setCvFeeInput] = useState("");
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
