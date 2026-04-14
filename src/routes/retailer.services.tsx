@@ -58,11 +58,8 @@ function RetailerServices() {
     return () => { unsub1(); unsub2(); };
   }, [appUser?.uid]);
 
-  const [submitting, setSubmitting] = useState(false);
-
   const handleSubmit = async (data: ApplicationData) => {
-    if (!appUser || submitting) return;
-    setSubmitting(true);
+    if (!appUser) throw new Error("Please login to submit applications.");
     try {
       const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
       let fee = svc?.fee || 0;
