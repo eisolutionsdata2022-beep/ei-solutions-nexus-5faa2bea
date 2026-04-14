@@ -91,6 +91,7 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
     setSubmitting(true);
     try {
       await onSubmit({
@@ -98,6 +99,8 @@ export function ApplicationForm({ balance, onSubmit, onBack }: ApplicationFormPr
         serviceType, purpose, applicationDate: today, documents, declared, signature,
       });
       reset();
+    } catch (err: any) {
+      console.error("ApplicationForm submit error:", err);
     } finally {
       setSubmitting(false);
     }
