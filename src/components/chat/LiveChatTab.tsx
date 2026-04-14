@@ -57,7 +57,7 @@ export function LiveChatTab() {
 
   // Listen to messages for this user's conversation
   useEffect(() => {
-    if (!appUser) return;
+    if (!appUser?.uid) return;
 
     // For admin: show all messages sent to admin
     // For others: show messages in their conversation thread

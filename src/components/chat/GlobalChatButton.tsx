@@ -12,7 +12,7 @@ export function GlobalChatButton() {
 
   // Listen for unread messages
   useEffect(() => {
-    if (!appUser) return;
+    if (!appUser?.uid) return;
     const q = query(
       collection(db, "chat_messages"),
       where("toUserId", "==", appUser.uid),

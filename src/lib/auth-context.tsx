@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
-          setAppUser(userDoc.data() as AppUser);
+          setAppUser({ ...userDoc.data(), uid: firebaseUser.uid } as AppUser);
         }
       } else {
         setAppUser(null);
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userDoc.exists()) {
       throw new Error("User profile not found");
     }
-    const userData = userDoc.data() as AppUser;
+    const userData = { ...userDoc.data(), uid: cred.user.uid } as AppUser;
     setAppUser(userData);
     return userData;
   };
