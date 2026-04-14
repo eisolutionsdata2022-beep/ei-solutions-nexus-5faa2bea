@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList, CheckCircle, XCircle, Clock, Eye, Search, Filter,
-  Shield, User, Calendar, FileText, IndianRupee, MessageSquare,
+  Shield, User, Calendar, FileText, IndianRupee, MessageSquare, Download, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,12 @@ export const Route = createFileRoute("/admin/service-applications")({
   ssr: false,
   component: AdminServiceApplications,
 });
+
+interface UploadedDoc {
+  name: string;
+  url: string;
+  fileName: string;
+}
 
 interface AppRecord {
   id: string;
@@ -41,6 +47,7 @@ interface AppRecord {
   userId: string;
   userEmail: string;
   createdAt: string;
+  uploadedDocuments?: UploadedDoc[];
 }
 
 function AdminServiceApplications() {
@@ -297,6 +304,50 @@ function AdminServiceApplications() {
                   <div><span className="text-muted-foreground">Date:</span> <strong>{new Date(selected.createdAt).toLocaleDateString()}</strong></div>
                 </CardContent>
               </Card>
+
+              {/* Uploaded Documents */}
+              {selected.uploadedDocuments && selected.uploadedDocuments.length > 0 && (
+                <Card className="border-gov-blue/20">
+                  <CardHeader className="bg-gov-blue-light py-2 px-4 border-b">
+                    <CardTitle className="text-xs font-bold text-gov-blue flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5" /> Uploaded Documents ({selected.uploadedDocuments.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 divide-y">
+                    {selected.uploadedDocuments.map((docItem, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 text-xs">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{docItem.name}</p>
+                          <p className="text-muted-foreground truncate">{docItem.fileName}</p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
+                            <a href={docItem.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-3 h-3" /> View
+                            </a>
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={async () => {
+                            try {
+                              const res = await fetch(docItem.url);
+                              const blob = await res.blob();
+                              const blobUrl = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = blobUrl;
+                              a.download = docItem.fileName;
+                              a.click();
+                              URL.revokeObjectURL(blobUrl);
+                            } catch {
+                              window.open(docItem.url, "_blank");
+                            }
+                          }}>
+                            <Download className="w-3 h-3" /> Download
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Current Status */}
               <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border">
