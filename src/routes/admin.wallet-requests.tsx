@@ -12,6 +12,7 @@ import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallet-requests")({
+  ssr: false,
   component: AdminWalletRequests,
 });
 

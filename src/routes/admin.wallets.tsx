@@ -13,6 +13,7 @@ import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallets")({
+  ssr: false,
   component: AdminWallets,
 });
 

@@ -7,6 +7,7 @@ import { Wallet, Users, BarChart3, HelpCircle, FileText, ExternalLink } from "lu
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/distributor/")({
+  ssr: false,
   component: DistributorDashboard,
 });
 

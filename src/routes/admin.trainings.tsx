@@ -11,6 +11,7 @@ import { Plus, GraduationCap, ExternalLink, Trash2, Edit, Users, IndianRupee } f
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/trainings")({
+  ssr: false,
   component: AdminTrainings,
 });
 

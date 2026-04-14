@@ -10,6 +10,7 @@ import { Settings, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/training-settings")({
+  ssr: false,
   component: AdminTrainingSettings,
 });
 

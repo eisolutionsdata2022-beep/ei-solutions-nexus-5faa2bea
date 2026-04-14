@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { VideoRoom } from "@/components/VideoRoom";
 
 export const Route = createFileRoute("/trainer/trainings")({
+  ssr: false,
   component: TrainerTrainings,
 });
 

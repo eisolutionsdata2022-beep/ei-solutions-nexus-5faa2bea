@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle, XCircle, Search } from "lucide-react";
 
 export const Route = createFileRoute("/admin/kyc")({
+  ssr: false,
   component: AdminKYC,
 });
 
