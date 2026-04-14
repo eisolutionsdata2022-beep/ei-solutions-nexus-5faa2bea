@@ -40,6 +40,11 @@ function AdminCommissions() {
   const [editingCvFee, setEditingCvFee] = useState(false);
   const [cvFeeInput, setCvFeeInput] = useState("");
 
+  // Virtual Trainer fee state
+  const [trainerFee, setTrainerFee] = useState(0);
+  const [editingTrainerFee, setEditingTrainerFee] = useState(false);
+  const [trainerFeeInput, setTrainerFeeInput] = useState("");
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
