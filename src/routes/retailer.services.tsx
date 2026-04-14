@@ -58,63 +58,72 @@ function RetailerServices() {
     return () => { unsub1(); unsub2(); };
   }, [appUser?.uid]);
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (data: ApplicationData) => {
-    if (!appUser) return;
-    const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
-    let fee = svc?.fee || 0;
-
-    // Check if admin has set a custom fee in Firebase
+    if (!appUser || submitting) return;
+    setSubmitting(true);
     try {
-      const feeDoc = await getDoc(doc(db, "edisServiceFees", data.serviceType));
-      if (feeDoc.exists()) fee = feeDoc.data().fee as number;
-    } catch {}
+      const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
+      let fee = svc?.fee || 0;
 
-    if (fee > 0) {
-      await atomicDebit(appUser.uid, fee, {
-        source: "service",
-        description: `Service Application: ${data.serviceType}`,
-      });
-    }
+      // Check if admin has set a custom fee in Firebase
+      try {
+        const feeDoc = await getDoc(doc(db, "edisServiceFees", data.serviceType));
+        if (feeDoc.exists()) fee = feeDoc.data().fee as number;
+      } catch {}
 
-    const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
-
-    // Upload documents to Firebase Storage
-    const uploadedDocs: { name: string; url: string; fileName: string }[] = [];
-    for (const docItem of data.documents) {
-      if (docItem.file) {
-        const storagePath = `serviceDocuments/${appUser.uid}/${appNo}/${docItem.name}_${docItem.file.name}`;
-        const storageRef = ref(storage, storagePath);
-        await uploadBytes(storageRef, docItem.file);
-        const url = await getDownloadURL(storageRef);
-        uploadedDocs.push({ name: docItem.name, url, fileName: docItem.file.name });
+      if (fee > 0) {
+        await atomicDebit(appUser.uid, fee, {
+          source: "service",
+          description: `Service Application: ${data.serviceType}`,
+        });
       }
+
+      const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
+
+      // Upload documents in parallel
+      const docsToUpload = data.documents.filter((d) => d.file);
+      const uploadedDocs = await Promise.all(
+        docsToUpload.map(async (docItem) => {
+          const storagePath = `serviceDocuments/${appUser.uid}/${appNo}/${docItem.name}_${docItem.file!.name}`;
+          const storageRef = ref(storage, storagePath);
+          await uploadBytes(storageRef, docItem.file!);
+          const url = await getDownloadURL(storageRef);
+          return { name: docItem.name, url, fileName: docItem.file!.name };
+        })
+      );
+
+      await addDoc(collection(db, "serviceApplications"), {
+        userId: appUser.uid,
+        userEmail: appUser.email,
+        userName: data.fullName,
+        applicationNo: appNo,
+        serviceType: data.serviceType,
+        fullName: data.fullName,
+        dob: data.dob,
+        gender: data.gender,
+        mobile: data.mobile,
+        email: data.email,
+        aadhaar: data.aadhaar,
+        address: data.address,
+        district: data.district,
+        purpose: data.purpose,
+        fee,
+        status: "Pending",
+        declared: data.declared,
+        signature: data.signature,
+        uploadedDocuments: uploadedDocs,
+        createdAt: new Date().toISOString(),
+      });
+
+      toast.success(`Application ${appNo} submitted successfully!`);
+      setView("dashboard");
+    } catch (err: any) {
+      toast.error(err?.message || "Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-
-    await addDoc(collection(db, "serviceApplications"), {
-      userId: appUser.uid,
-      userEmail: appUser.email,
-      userName: data.fullName,
-      applicationNo: appNo,
-      serviceType: data.serviceType,
-      fullName: data.fullName,
-      dob: data.dob,
-      gender: data.gender,
-      mobile: data.mobile,
-      email: data.email,
-      aadhaar: data.aadhaar,
-      address: data.address,
-      district: data.district,
-      purpose: data.purpose,
-      fee,
-      status: "Pending",
-      declared: data.declared,
-      signature: data.signature,
-      uploadedDocuments: uploadedDocs,
-      createdAt: new Date().toISOString(),
-    });
-
-    toast.success(`Application ${appNo} submitted successfully!`);
-    setView("dashboard");
   };
 
   const statusIcon = (s: string) => {
