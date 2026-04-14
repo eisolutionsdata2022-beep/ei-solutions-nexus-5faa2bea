@@ -31,12 +31,30 @@ interface ServiceRequest {
   createdAt: string;
 }
 
+interface ServiceButtonData {
+  id: string;
+  name: string;
+  url: string;
+  style: "solid" | "outline" | "gradient";
+  enabled: boolean;
+}
+
+function getButtonClasses(style: string) {
+  switch (style) {
+    case "solid": return "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md";
+    case "outline": return "border-2 border-primary text-primary bg-transparent hover:bg-primary/10";
+    case "gradient": return "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:opacity-90";
+    default: return "bg-primary text-primary-foreground";
+  }
+}
+
 function RetailerDashboard() {
   const { appUser } = useAuth();
   const [balance, setBalance] = useState(0);
   const [recentTx, setRecentTx] = useState<Transaction[]>([]);
   const [applications, setApplications] = useState<ServiceRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [serviceButtons, setServiceButtons] = useState<ServiceButtonData[]>([]);
 
   const statusCounts = {
     pending: applications.filter((a) => a.status === "pending").length,
@@ -73,6 +91,13 @@ function RetailerDashboard() {
       setRecentTx(list);
     }).catch(() => {});
 
+    // Fetch service buttons
+    getDocs(collection(db, "serviceButtons")).then((snap) => {
+      const list: ServiceButtonData[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ServiceButtonData));
+      setServiceButtons(list.filter((b) => b.enabled));
+    }).catch(() => {});
+
     return unsub;
   }, [appUser]);
 
@@ -97,6 +122,21 @@ function RetailerDashboard() {
           <Button className="bg-gov-green hover:opacity-90 text-white font-bold">Recharge</Button>
         </Link>
       </div>
+
+      {/* Service Buttons */}
+      {serviceButtons.length > 0 && (
+        <div className="bg-card rounded-lg border border-border p-5">
+          <p className="text-sm font-semibold text-foreground mb-3">Quick Services</p>
+          <div className="flex flex-wrap gap-3">
+            {serviceButtons.map((b) => (
+              <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${getButtonClasses(b.style)}`}>
+                <ExternalLink className="w-4 h-4" /> {b.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
