@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
-          setAppUser(userDoc.data() as AppUser);
+          setAppUser({ ...userDoc.data(), uid: firebaseUser.uid } as AppUser);
         }
       } else {
         setAppUser(null);
