@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, addDoc, doc, onSnapshot, query, where, getDoc } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, query, where, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { atomicCredit, atomicDebit } from "@/lib/firebase-transactions";
@@ -58,7 +58,7 @@ function RetailerServices() {
       },
       (error) => {
         console.error("Failed to load service applications:", error);
-        toast.error("Unable to load applications right now. Please refresh and try again.");
+        toast.error("Unable to load applications. Please refresh.");
         setApplications([]);
       }
     );
@@ -69,9 +69,7 @@ function RetailerServices() {
         const fees: Record<string, number> = {};
         snap.forEach((feeDoc) => {
           const fee = feeDoc.data().fee;
-          if (typeof fee === "number") {
-            fees[feeDoc.id] = fee;
-          }
+          if (typeof fee === "number") fees[feeDoc.id] = fee;
         });
         setServiceFees(fees);
       },
@@ -89,43 +87,30 @@ function RetailerServices() {
 
     try {
       const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
-      if (typeof fee !== "number") {
-        fee = svc?.fee || 0;
-      }
+      if (typeof fee !== "number") fee = svc?.fee || 0;
 
-      // Check if admin has set a custom fee in Firebase
+      // Check admin custom fee
       try {
         const feeDoc = await getDoc(doc(db, "edisServiceFees", data.serviceType));
         if (feeDoc.exists() && typeof feeDoc.data().fee === "number") {
           fee = feeDoc.data().fee as number;
         }
-      } catch (feeErr) {
-        console.warn("[E-dis] Fee lookup failed, using default:", feeErr);
-      }
+      } catch { /* use default */ }
 
-      console.log("[E-dis] Starting submission:", { appNo, serviceType: data.serviceType, fee, balance });
+      console.log("[E-dis] Submission start:", { appNo, serviceType: data.serviceType, fee });
 
-      console.log("[E-dis] Uploading", data.documents.filter((d) => d.file).length, "documents...");
-      const uploadedDocs = await uploadServiceDocuments({
-        appNo,
-        documents: data.documents,
-        userId: appUser.uid,
-      });
-      console.log("[E-dis] Documents uploaded:", uploadedDocs.length);
-
+      // Step 1: Debit wallet first
       if (fee > 0) {
-        console.log("[E-dis] Debiting wallet:", fee);
         await atomicDebit(appUser.uid, fee, {
           source: "service",
           applicationNo: appNo,
           description: `Service Application: ${data.serviceType}`,
         });
         debited = true;
-        console.log("[E-dis] Wallet debited successfully");
       }
 
-      console.log("[E-dis] Saving application to Firestore...");
-      await addDoc(collection(db, "serviceApplications"), {
+      // Step 2: Save application to Firestore IMMEDIATELY (no waiting for uploads)
+      const appRef = await addDoc(collection(db, "serviceApplications"), {
         userId: appUser.uid,
         userEmail: appUser.email,
         userName: data.fullName,
@@ -144,26 +129,51 @@ function RetailerServices() {
         status: "Pending",
         declared: data.declared,
         signature: data.signature,
-        uploadedDocuments: uploadedDocs,
+        uploadedDocuments: [],
+        documentUploadStatus: "pending",
         createdAt: new Date().toISOString(),
       });
 
-      console.log("[E-dis] Application saved successfully:", appNo);
+      console.log("[E-dis] Application saved:", appNo);
       toast.success(`Application ${appNo} submitted successfully!`);
       setView("dashboard");
+
+      // Step 3: Upload documents in background (non-blocking)
+      const docsToUpload = data.documents.filter((d) => d.file);
+      if (docsToUpload.length > 0) {
+        toast.info(`Uploading ${docsToUpload.length} document(s) in background...`);
+        uploadServiceDocuments({ appNo, documents: data.documents, userId: appUser.uid })
+          .then(async (uploadedDocs) => {
+            await updateDoc(doc(db, "serviceApplications", appRef.id), {
+              uploadedDocuments: uploadedDocs,
+              documentUploadStatus: "completed",
+            });
+            toast.success(`${uploadedDocs.length} document(s) uploaded successfully!`);
+          })
+          .catch(async (uploadErr) => {
+            console.error("[E-dis] Background upload failed:", uploadErr);
+            await updateDoc(doc(db, "serviceApplications", appRef.id), {
+              documentUploadStatus: "failed",
+            }).catch(() => {});
+            toast.error("Document upload failed. Staff will contact you for documents.");
+          });
+      } else {
+        await updateDoc(doc(db, "serviceApplications", appRef.id), {
+          documentUploadStatus: "no_documents",
+        });
+      }
     } catch (err: any) {
-      console.error("[E-dis] Submit FAILED:", err?.message, err?.code, err);
+      console.error("[E-dis] Submit FAILED:", err?.message, err);
       if (debited && fee > 0) {
         try {
           await atomicCredit(appUser.uid, fee, {
             source: "service_refund",
             applicationNo: appNo,
-            description: `Refund for failed service application: ${data.serviceType}`,
+            description: `Refund for failed application: ${data.serviceType}`,
           });
-          toast.error((err?.message || "Submission failed.") + " Wallet amount refunded.");
-        } catch (refundError) {
-          console.error("[E-dis] Refund FAILED:", refundError);
-          toast.error("Submission failed after wallet debit. Please contact support.");
+          toast.error((err?.message || "Submission failed.") + " Wallet refunded.");
+        } catch {
+          toast.error("Submission failed after wallet debit. Contact support.");
         }
       } else {
         toast.error(err?.message || "Submission failed. Please try again.");
@@ -198,7 +208,6 @@ function RetailerServices() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-gov-blue text-white p-4 rounded-lg border-b-4 border-gov-saffron">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
@@ -214,7 +223,6 @@ function RetailerServices() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="border-l-4 border-l-gov-blue">
           <CardContent className="p-4 flex items-center gap-3">
@@ -254,7 +262,6 @@ function RetailerServices() {
         </Card>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="applications">
         <TabsList>
           <TabsTrigger value="applications" className="text-xs gap-1"><LayoutList className="w-3.5 h-3.5" /> My Applications</TabsTrigger>
