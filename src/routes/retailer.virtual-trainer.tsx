@@ -10,8 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
-import elzuStanding from "@/assets/elzu-teacher-standing.png";
-import elzuWaving from "@/assets/elzu-teacher-waving.png";
+import elzuRobot from "@/assets/elzu-robot-teacher.png";
 import elzuIntroVideo from "@/assets/elzu-intro-video.mp4.asset.json";
 import classroomBg from "@/assets/classroom-background.jpg";
 
@@ -380,7 +379,7 @@ function VirtualTrainerPage() {
           <CardContent className="p-0">
             <div className="bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-background p-6 flex flex-col items-center">
               <div className="relative animate-[float_3s_ease-in-out_infinite]">
-                <img src={elzuWaving} alt="Elzu" className="w-40 h-52 object-contain drop-shadow-xl" width={160} height={208} />
+                <img src={elzuRobot} alt="Elzu" className="w-40 h-52 object-contain drop-shadow-xl" width={160} height={208} />
               </div>
               <h2 className="text-xl font-bold text-foreground mt-2">Elzu Virtual Trainer</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -418,7 +417,7 @@ function VirtualTrainerPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-700 to-teal-600 text-white px-4 py-3 rounded-t-xl flex items-center gap-3">
         <div className="relative">
-          <img src={elzuStanding} alt="Elzu" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover object-top" width={48} height={48} />
+          <img src={elzuRobot} alt="Elzu" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover object-top" width={48} height={48} />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-emerald-700" />
         </div>
         <div className="flex-1 min-w-0">
@@ -554,7 +553,7 @@ function VirtualTrainerPage() {
           ) : (
             <div className={`relative z-10 ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
               <img
-                src={elzuStanding}
+                src={elzuRobot}
                 alt="Elzu Teacher"
                 className="w-64 h-auto object-contain drop-shadow-2xl"
                 width={256}
@@ -596,7 +595,7 @@ function VirtualTrainerPage() {
             {messages.map((m) => (
               <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "trainer" && (
-                  <img src={elzuStanding} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0 mt-1" width={32} height={32} />
+                  <img src={elzuRobot} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0 mt-1" width={32} height={32} />
                 )}
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
                   m.role === "user"
@@ -612,7 +611,7 @@ function VirtualTrainerPage() {
             ))}
             {loading && (
               <div className="flex gap-2 items-start">
-                <img src={elzuStanding} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0" width={32} height={32} />
+                <img src={elzuRobot} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0" width={32} height={32} />
                 <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
