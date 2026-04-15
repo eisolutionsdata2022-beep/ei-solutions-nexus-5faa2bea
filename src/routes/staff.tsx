@@ -5,7 +5,7 @@ import { RouteGuard } from "@/components/RouteGuard";
 export const Route = createFileRoute("/staff")({
   ssr: false,
   component: () => (
-    <RouteGuard allowedRoles={["staff"]}>
+    <RouteGuard allowedRoles={["staff", "manager"]}>
       <DashboardLayout />
     </RouteGuard>
   ),

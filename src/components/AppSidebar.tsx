@@ -75,9 +75,19 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   staff: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
-    { label: "Services", to: "/staff/services", icon: ShoppingBag },
+    { label: "Leads", to: "/staff/leads", icon: Users },
+    { label: "Reports", to: "/staff/reports", icon: BarChart3 },
+    { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "Form Submissions", to: "/staff/form-submissions", icon: FileText },
+  ],
+  manager: [
+    { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Leads", to: "/staff/leads", icon: Users },
+    { label: "Reports", to: "/staff/reports", icon: BarChart3 },
+    { label: "Performance", to: "/staff/performance", icon: BarChart3 },
+    { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
+    { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
   ],
 };
 

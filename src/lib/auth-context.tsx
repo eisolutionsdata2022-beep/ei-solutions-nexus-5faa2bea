@@ -16,7 +16,7 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
-export type UserRole = "admin" | "distributor" | "retailer" | "trainer" | "staff";
+export type UserRole = "admin" | "distributor" | "retailer" | "trainer" | "staff" | "manager";
 
 export interface AppUser {
   uid: string;
