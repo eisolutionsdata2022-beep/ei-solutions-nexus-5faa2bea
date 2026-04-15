@@ -11,6 +11,9 @@ import { doc, getDoc, runTransaction, collection, addDoc, query, where, getDocs,
 import { db } from "./firebase";
 import { calculateCommissionSplit, type CommissionRate, type CommissionSplit } from "./commission-config";
 import { callAmbikaRechargeApi, type AmbikaApiResponse } from "./ambika-api.functions";
+import { callInsuranceApi, type InsuranceApiResponse } from "./busyworld-insurance-api.functions";
+
+const INSURANCE_SERVICE_TYPES = ["bike_insurance", "four_wheeler_insurance", "life_insurance"];
 
 export interface RechargeRequest {
   userId: string;           // retailer uid
