@@ -212,7 +212,87 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
             </Button>
           </TabsContent>
 
-          <TabsContent value="calls" className="space-y-4 mt-3">
+          <TabsContent value="docs" className="space-y-4 mt-3">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files?.length) return;
+                  setUploading(true);
+                  try {
+                    for (const file of Array.from(files)) {
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error(`${file.name} 10MB-ൽ കൂടുതൽ`);
+                        continue;
+                      }
+                      const newDoc = await uploadLeadDocument(lead.id, file, appUser?.name || appUser?.email || "");
+                      setDocuments((prev) => [...prev, newDoc]);
+                      await addLeadHistory({
+                        leadId: lead.id, action: "Document Uploaded", field: "document",
+                        oldValue: "", newValue: file.name,
+                        updatedBy: appUser?.uid || "", updatedByName: appUser?.name || appUser?.email || "",
+                        createdAt: new Date().toISOString(),
+                      });
+                    }
+                    toast.success("Documents uploaded!");
+                  } catch (err: any) {
+                    toast.error(err?.message || "Upload failed");
+                  } finally {
+                    setUploading(false);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }
+                }}
+              />
+              <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                <Upload className="h-4 w-4 mr-1" /> {uploading ? "Uploading..." : "Upload Documents"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Max 10MB per file</span>
+            </div>
+
+            {documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map((d, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <File className="h-4 w-4 text-blue-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{d.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {d.uploadedBy} · {new Date(d.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(d.url, "_blank")}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <a href={d.url} download={d.name} target="_blank" rel="noopener noreferrer">
+                        <Button size="icon" variant="ghost" className="h-7 w-7">
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </a>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => {
+                        try {
+                          await deleteLeadDocument(lead.id, d.url);
+                          setDocuments((prev) => prev.filter((doc) => doc.url !== d.url));
+                          toast.success("Document deleted");
+                        } catch { toast.error("Delete failed"); }
+                      }}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No documents uploaded</p>
+            )}
+          </TabsContent>
+
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label>Call Status</Label>
