@@ -484,14 +484,6 @@ export default function ServiceBilling() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header Image */}
-      <div className="rounded-xl overflow-hidden shadow-lg">
-        <img
-          src={billingHeader}
-          alt="ജന സേവന കേന്ദ്രം - Customer Service Point"
-          className="w-full h-auto object-cover"
-        />
-      </div>
 
       {/* Title & Stats */}
       <div className="text-center space-y-2">
