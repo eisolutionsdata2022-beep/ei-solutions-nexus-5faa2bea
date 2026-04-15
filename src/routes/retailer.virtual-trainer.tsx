@@ -10,9 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
-import elzuStanding from "@/assets/elzu-avatar-standing.png";
-import elzuWaving from "@/assets/elzu-avatar-waving.png";
+import elzuStanding from "@/assets/elzu-teacher-standing.png";
+import elzuWaving from "@/assets/elzu-teacher-waving.png";
 import elzuIntroVideo from "@/assets/elzu-intro-video.mp4.asset.json";
+import classroomBg from "@/assets/classroom-background.jpg";
 
 export const Route = createFileRoute("/retailer/virtual-trainer")({
   ssr: false,
