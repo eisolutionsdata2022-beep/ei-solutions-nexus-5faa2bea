@@ -9,6 +9,7 @@ import { Printer, Download } from "lucide-react";
 import posterBg1 from "@/assets/poster-template.jpeg";
 import posterBg2 from "@/assets/poster-template-2.jpeg";
 import posterBg3 from "@/assets/poster-template-3.jpeg";
+import posterBg4 from "@/assets/poster-template-4.jpeg";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
@@ -16,9 +17,10 @@ export const Route = createFileRoute("/retailer/page-tools")({
 });
 
 const TEMPLATES = [
-  { id: "1", name: "EI Solutions", src: posterBg1 },
-  { id: "2", name: "Digital India Blue", src: posterBg2 },
-  { id: "3", name: "Gold Classic", src: posterBg3 },
+  { id: "1", name: "Classic", src: posterBg1 },
+  { id: "2", name: "Green Wave", src: posterBg2 },
+  { id: "3", name: "Tricolor", src: posterBg3 },
+  { id: "4", name: "Saffron", src: posterBg4 },
 ];
 
 const DEFAULT_SERVICES = [
