@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MessageSquare, Phone, Clock, FileText, History } from "lucide-react";
+import { MessageSquare, Phone, Clock, FileText, History, Upload, Download, Eye, Trash2, File } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { updateLead, addLeadHistory, addCallLog, subscribeCallLogs, subscribeLeadHistory } from "@/lib/crm-firebase";
+import { updateLead, addLeadHistory, addCallLog, subscribeCallLogs, subscribeLeadHistory, uploadLeadDocument, deleteLeadDocument } from "@/lib/crm-firebase";
 import {
   LEAD_STATUSES, CALL_STATUSES, PAYMENT_STATUSES, APP_PROGRESS, STATUS_COLORS, CALL_STATUS_COLORS,
   type Lead, type CallLog, type LeadHistory, type StaffMember, type LeadStatus, type CallStatus,
