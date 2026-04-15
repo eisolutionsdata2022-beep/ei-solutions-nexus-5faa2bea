@@ -32,6 +32,8 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
+    { label: "CRM Leads", to: "/admin/crm-leads", icon: Users },
+    { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
