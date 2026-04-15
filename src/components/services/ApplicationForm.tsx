@@ -113,7 +113,7 @@ export function ApplicationForm({ balance, feeOverrides = {}, onSubmit, onBack }
   };
 
   const canProceedStep0 = fullName && dob && mobile && aadhaar && district && serviceType && purpose;
-  const canProceedStep1 = documents.length > 0;
+  const canProceedStep1 = documents.length > 0 && documents.every((document) => !!document.file);
   const canSubmit = declared && signature && balance >= selectedFee;
 
   return (
@@ -262,7 +262,11 @@ export function ApplicationForm({ balance, feeOverrides = {}, onSubmit, onBack }
               {documents.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">Please select a service type first.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Upload all required documents before continuing to payment.
+                  </p>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gov-blue/5">
@@ -296,7 +300,8 @@ export function ApplicationForm({ balance, feeOverrides = {}, onSubmit, onBack }
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 </div>
               )}
             </CardContent>
