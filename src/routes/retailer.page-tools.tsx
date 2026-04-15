@@ -57,9 +57,8 @@ function PageToolsPage() {
 
   const handlePrint = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
       printWindow.document.write(`
