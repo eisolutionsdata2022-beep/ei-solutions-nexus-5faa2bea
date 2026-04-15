@@ -118,9 +118,9 @@ function RetailerForms() {
   };
 
   const statusIcon = (status: string) => {
-    if (status === "Verified") return <CheckCircle className="w-4 h-4 text-green-500" />;
-    if (status === "Rejected") return <XCircle className="w-4 h-4 text-red-500" />;
-    return <Clock className="w-4 h-4 text-yellow-500" />;
+    if (status === "Verified") return <CheckCircle className="w-4 h-4 text-primary" />;
+    if (status === "Rejected") return <XCircle className="w-4 h-4 text-destructive" />;
+    return <Clock className="w-4 h-4 text-muted-foreground" />;
   };
 
   return (
