@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import billingHeader from "@/assets/billing-header.jpeg";
+
 
 // ─── Category Data ───────────────────────────────────────────────
 interface ServiceEntry {
