@@ -47,7 +47,15 @@ function AdminForms() {
     setEditing({
       title: "",
       description: "",
-      fields: [],
+      fields: [
+        {
+          id: generateFieldId(),
+          label: "",
+          type: "text" as FieldType,
+          required: false,
+          placeholder: "",
+        },
+      ],
       active: true,
     });
   };
