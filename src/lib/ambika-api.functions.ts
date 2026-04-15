@@ -54,35 +54,24 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       };
     }
 
-    // Map service types to Ambika API action codes
-    const actionMap: Record<string, string> = {
-      mobile_recharge: "recharge",
-      dth: "dth",
-      electricity: "bbps",
-      water: "bbps",
-      lpg: "bbps",
-      loan_repayment: "bbps",
-      google_play: "recharge",
-      fastag: "bbps",
-    };
-
-    const action = actionMap[data.serviceType] || "recharge";
-
     try {
+      // Build query parameters matching Ambika API docs
+      // Required: UserID, Token, Account, Amount, SPKey, OperatorCode, APIRequestID, Format
       const params = new URLSearchParams({
-        userid: userId,
-        token: apiKey,
-        action: action,
-        operator: data.operator,
-        number: data.mobileNumber,
-        amount: String(data.amount),
-        orderid: data.transactionId,
+        UserID: userId,
+        Token: apiKey,
+        Account: data.mobileNumber,
+        Amount: String(data.amount),
+        SPKey: data.operator,
+        OperatorCode: data.operator,
+        APIRequestID: data.transactionId,
+        Format: "2", // JSON format
       });
 
       const apiUrl = `${baseUrl}?${params.toString()}`;
 
       console.log(
-        `[Ambika API] Calling: action=${action}, operator=${data.operator}, number=${data.mobileNumber}, amount=${data.amount}, orderid=${data.transactionId}`
+        `[Ambika API] Calling: operator=${data.operator}, number=${data.mobileNumber}, amount=${data.amount}, requestId=${data.transactionId}`
       );
 
       const controller = new AbortController();
@@ -110,34 +99,32 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       const raw = await response.json();
       console.log(`[Ambika API] Response:`, JSON.stringify(raw));
 
-      const apiStatus = (
-        raw.status || raw.Status || ""
-      )
-        .toString()
-        .toUpperCase();
+      // Ambika API: STATUS=2 means success, check MSG field
+      const apiStatus = String(raw.STATUS || raw.status || raw.Status || "").toUpperCase();
+      const apiMsg = raw.MSG || raw.msg || raw.message || "";
 
-      if (apiStatus === "SUCCESS" || apiStatus === "1" || apiStatus === "TRUE") {
+      if (apiStatus === "2" || apiStatus === "SUCCESS" || apiStatus === "1" || apiStatus === "TRUE") {
         return {
           success: true,
           status: "success",
-          apiTransactionId: raw.txnid || raw.transid || raw.rpid || "",
-          operatorRef: raw.opid || raw.operatorid || "",
-          message: raw.message || raw.msg || "Recharge successful",
+          apiTransactionId: raw.RPID || raw.rpid || raw.txnid || raw.transid || "",
+          operatorRef: raw.OPID || raw.opid || raw.operatorid || "",
+          message: apiMsg || "Recharge successful",
           rawResponse: raw,
         };
-      } else if (apiStatus === "PENDING" || apiStatus === "2") {
+      } else if (apiStatus === "0" || apiStatus === "PENDING") {
         return {
           success: true,
           status: "pending",
-          apiTransactionId: raw.txnid || raw.transid || "",
-          message: raw.message || raw.msg || "Transaction pending",
+          apiTransactionId: raw.RPID || raw.rpid || raw.txnid || "",
+          message: apiMsg || "Transaction pending",
           rawResponse: raw,
         };
       } else {
         return {
           success: false,
           status: "failed",
-          message: raw.message || raw.msg || "Recharge failed",
+          message: apiMsg || "Recharge failed",
           rawResponse: raw,
         };
       }
