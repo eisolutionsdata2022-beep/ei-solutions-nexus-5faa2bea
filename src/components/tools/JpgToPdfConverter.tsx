@@ -123,7 +123,7 @@ export default function JpgToPdfConverter() {
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext("2d")!;
-      await page.render({ canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
       pages.push({
         width: viewport.width,
         height: viewport.height,
