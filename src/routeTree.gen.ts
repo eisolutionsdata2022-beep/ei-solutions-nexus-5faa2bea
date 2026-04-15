@@ -25,6 +25,9 @@ import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
+import { Route as StaffReportsRouteImport } from './routes/staff.reports'
+import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
+import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
@@ -137,6 +140,21 @@ const StaffServiceApplicationsRoute =
     path: '/service-applications',
     getParentRoute: () => StaffRoute,
   } as any)
+const StaffReportsRoute = StaffReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffPerformanceRoute = StaffPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffLeadsRoute = StaffLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => StaffRoute,
+} as any)
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   id: '/form-submissions',
   path: '/form-submissions',
@@ -328,6 +346,9 @@ export interface FileRoutesByFullPath {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/leads': typeof StaffLeadsRoute
+  '/staff/performance': typeof StaffPerformanceRoute
+  '/staff/reports': typeof StaffReportsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -371,6 +392,9 @@ export interface FileRoutesByTo {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/leads': typeof StaffLeadsRoute
+  '/staff/performance': typeof StaffPerformanceRoute
+  '/staff/reports': typeof StaffReportsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -420,6 +444,9 @@ export interface FileRoutesById {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/leads': typeof StaffLeadsRoute
+  '/staff/performance': typeof StaffPerformanceRoute
+  '/staff/reports': typeof StaffReportsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -470,6 +497,9 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/leads'
+    | '/staff/performance'
+    | '/staff/reports'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -513,6 +543,9 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/leads'
+    | '/staff/performance'
+    | '/staff/reports'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -561,6 +594,9 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/leads'
+    | '/staff/performance'
+    | '/staff/reports'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -694,6 +730,27 @@ declare module '@tanstack/react-router' {
       path: '/service-applications'
       fullPath: '/staff/service-applications'
       preLoaderRoute: typeof StaffServiceApplicationsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/reports': {
+      id: '/staff/reports'
+      path: '/reports'
+      fullPath: '/staff/reports'
+      preLoaderRoute: typeof StaffReportsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/performance': {
+      id: '/staff/performance'
+      path: '/performance'
+      fullPath: '/staff/performance'
+      preLoaderRoute: typeof StaffPerformanceRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/leads': {
+      id: '/staff/leads'
+      path: '/leads'
+      fullPath: '/staff/leads'
+      preLoaderRoute: typeof StaffLeadsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/staff/form-submissions': {
@@ -1003,6 +1060,9 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 
 interface StaffRouteChildren {
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
+  StaffLeadsRoute: typeof StaffLeadsRoute
+  StaffPerformanceRoute: typeof StaffPerformanceRoute
+  StaffReportsRoute: typeof StaffReportsRoute
   StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
   StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
@@ -1010,6 +1070,9 @@ interface StaffRouteChildren {
 
 const StaffRouteChildren: StaffRouteChildren = {
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
+  StaffLeadsRoute: StaffLeadsRoute,
+  StaffPerformanceRoute: StaffPerformanceRoute,
+  StaffReportsRoute: StaffReportsRoute,
   StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
   StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
