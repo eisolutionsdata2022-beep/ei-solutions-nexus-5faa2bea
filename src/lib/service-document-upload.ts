@@ -12,7 +12,7 @@ interface UploadedServiceDocument {
   fileName: string;
 }
 
-const UPLOAD_TIMEOUT_MS = 45_000;
+const UPLOAD_TIMEOUT_MS = 120_000;
 
 function sanitizeSegment(value: string, fallback: string) {
   const sanitized = value
