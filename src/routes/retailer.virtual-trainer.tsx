@@ -554,6 +554,23 @@ function VirtualTrainerPage() {
                 width={224}
                 height={300}
               />
+              {/* Talking indicator overlay */}
+              {(isSpeaking || loading) && (
+                <div className="absolute bottom-[38%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                  {/* Sound wave bars */}
+                  <div className="flex items-end gap-[3px]">
+                    {[0, 80, 160, 240, 320].map((delay) => (
+                      <span
+                        key={delay}
+                        className="w-[3px] rounded-full bg-emerald-500/80"
+                        style={{
+                          animation: `talkBar 0.6s ease-in-out ${delay}ms infinite alternate`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {isSpeaking && (
                 <div className="absolute -inset-4 rounded-full bg-emerald-400/10 animate-ping" />
               )}
