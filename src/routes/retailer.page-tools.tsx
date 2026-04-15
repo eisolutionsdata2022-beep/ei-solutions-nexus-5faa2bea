@@ -6,34 +6,44 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Printer, Download } from "lucide-react";
-import posterBg from "@/assets/poster-template.jpeg";
+import posterBg1 from "@/assets/poster-template.jpeg";
+import posterBg2 from "@/assets/poster-template-2.jpeg";
+import posterBg3 from "@/assets/poster-template-3.jpeg";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
   component: PageToolsPage,
 });
 
+const TEMPLATES = [
+  { id: "1", name: "EI Solutions", src: posterBg1 },
+  { id: "2", name: "Digital India Blue", src: posterBg2 },
+  { id: "3", name: "Gold Classic", src: posterBg3 },
+];
+
 const DEFAULT_SERVICES = [
-  "ആധാർ വോവങ്ങൾ",
-  "പാൻ കാർഡ് അംഗീകൃത / അഹ്വൽ",
-  "വർക്ക്ട വോവങ്ങൾ",
-  "ഇൻഷ്വാൺസ് വോവങ്ങൾ",
-  "പാസ്പോർട്ട് വോവങ്ങൾ",
-  "സ്കോളർഷ്ട്ട് / ഇടിഎസ്സ്സ്ട് വോവങ്ങൾ",
-  "ട്രെയ്ൻ / ഫ്ലൈറ്റ് ടിക്കറ്റ്സ് ബുക്കിംഗ്",
-  "ടിൻ പേയമെന്റ് വോവങ്ങൾ",
+  "ആധാർ സേവനങ്ങൾ",
+  "പാൻ കാർഡ് സേവനങ്ങൾ",
+  "പാസ്പോർട്ട് സേവനങ്ങൾ",
+  "ഇൻഷുറൻസ് സേവനങ്ങൾ",
+  "സ്കോളർഷിപ്പ് സേവനങ്ങൾ",
+  "ട്രെയിൻ / ഫ്ലൈറ്റ് ടിക്കറ്റ് ബുക്കിംഗ്",
+  "ബില്ല് പേയ്മെന്റ് സേവനങ്ങൾ",
+  "സർട്ടിഫിക്കറ്റ് സേവനങ്ങൾ",
 ];
 
 function PageToolsPage() {
+  const [selectedTemplate, setSelectedTemplate] = useState("1");
   const [cspId, setCspId] = useState("");
   const [heading, setHeading] = useState("ജന സേവന കേന്ദ്രം");
-  const [subHeading, setSubHeading] = useState("കസ്റ്റമർ സർവീസ് വോവർസ് (CSP)");
+  const [subHeading, setSubHeading] = useState("EI SOLUTIONS JANASEVANA KENDRAM");
   const [servicesText, setServicesText] = useState(DEFAULT_SERVICES.join("\n"));
   const [contact, setContact] = useState("");
   const [location, setLocation] = useState("");
   const posterRef = useRef<HTMLDivElement>(null);
 
   const services = servicesText.split("\n").filter((s) => s.trim());
+  const currentTemplate = TEMPLATES.find((t) => t.id === selectedTemplate)!;
 
   const handlePrint = () => {
     const el = posterRef.current;
@@ -80,12 +90,35 @@ function PageToolsPage() {
           <CardTitle className="text-lg">📝 Poster Editor</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Template Selector */}
+          <div>
+            <Label className="mb-2 block">Template തിരഞ്ഞെടുക്കുക</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(t.id)}
+                  className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedTemplate === t.id
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <img src={t.src} alt={t.name} className="w-full h-20 object-cover" />
+                  <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] py-0.5 text-center">
+                    {t.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <Label>CSP ID</Label>
             <Input value={cspId} onChange={(e) => setCspId(e.target.value)} placeholder="CSP ID..." />
           </div>
           <div>
-            <Label>Heading (Malayalam)</Label>
+            <Label>Heading</Label>
             <Input value={heading} onChange={(e) => setHeading(e.target.value)} />
           </div>
           <div>
@@ -130,7 +163,7 @@ function PageToolsPage() {
         >
           {/* Background template image */}
           <img
-            src={posterBg}
+            src={currentTemplate.src}
             alt="Poster template"
             className="absolute inset-0 w-full h-full object-cover"
             crossOrigin="anonymous"
