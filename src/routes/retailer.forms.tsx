@@ -80,15 +80,23 @@ function RetailerForms() {
 
     setSubmitting(true);
     try {
-      // Upload files first
       const fileUrls: { fieldId: string; fileName: string; url: string }[] = [];
       for (const [fieldId, file] of Object.entries(fileInputs)) {
         if (!file) continue;
-        const path = `formUploads/${appUser.uid}/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        fileUrls.push({ fieldId, fileName: file.name, url });
+        try {
+          const path = `formUploads/${appUser.uid}/${Date.now()}_${file.name}`;
+          const storageRef = ref(storage, path);
+          const uploadPromise = uploadBytes(storageRef, file);
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("File upload timed out. Please try again.")), 30000)
+          );
+          await Promise.race([uploadPromise, timeoutPromise]);
+          const url = await getDownloadURL(storageRef);
+          fileUrls.push({ fieldId, fileName: file.name, url });
+        } catch (uploadErr: any) {
+          console.error("File upload error:", uploadErr);
+          throw new Error(`File "${file.name}" upload failed: ${uploadErr?.message || "Unknown error"}`);
+        }
       }
 
       const now = new Date().toISOString();
@@ -111,6 +119,7 @@ function RetailerForms() {
       toast.success("Form submitted successfully!");
       setSelectedForm(null);
     } catch (err: any) {
+      console.error("Form submission error:", err);
       toast.error(err?.message || "Submission failed");
     } finally {
       setSubmitting(false);
