@@ -147,10 +147,11 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
         </div>
 
         <Tabs defaultValue="update" className="mt-2">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="update"><FileText className="h-3.5 w-3.5 mr-1" /> Update</TabsTrigger>
+            <TabsTrigger value="docs"><File className="h-3.5 w-3.5 mr-1" /> Docs ({documents.length})</TabsTrigger>
             <TabsTrigger value="calls"><Phone className="h-3.5 w-3.5 mr-1" /> Calls ({callLogs.length})</TabsTrigger>
-            <TabsTrigger value="history"><History className="h-3.5 w-3.5 mr-1" /> History ({history.length})</TabsTrigger>
+            <TabsTrigger value="history"><History className="h-3.5 w-3.5 mr-1" /> History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="update" className="space-y-4 mt-3">
