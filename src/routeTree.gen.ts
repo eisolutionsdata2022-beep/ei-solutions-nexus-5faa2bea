@@ -51,6 +51,7 @@ import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.ser
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
+import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
@@ -268,6 +269,11 @@ const AdminFormsRoute = AdminFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
+  id: '/form-analytics',
+  path: '/form-analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   id: '/create-user',
   path: '/create-user',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
@@ -866,6 +878,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/form-analytics': {
+      id: '/admin/form-analytics'
+      path: '/form-analytics'
+      fullPath: '/admin/form-analytics'
+      preLoaderRoute: typeof AdminFormAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/create-user': {
       id: '/admin/create-user'
       path: '/create-user'
@@ -894,6 +913,7 @@ interface AdminRouteChildren {
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
+  AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
@@ -913,6 +933,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
+  AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
