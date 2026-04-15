@@ -102,6 +102,14 @@ loanOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("loan_repayment", o
 const lifeInsOps = ["911","905","907","902","901","938","912","906","909","903","929","908","910","904"];
 lifeInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("life_insurance", op, ["902","901","938","912","929"].includes(op) ? 1.0 : 0)));
 
+// Bike Insurance
+const bikeInsOps = ["2809","2803","2802","2816","2819","2805","2801","2813","2807","2812","2806","2808","2815","2814","2818","2810","2811","2817","2804"];
+bikeInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("bike_insurance", op, 0)));
+
+// Four Wheeler Insurance
+const carInsOps = ["2909","2903","2902","2916","2919","2905","2901","2913","2907","2912","2906","2908","2915","2914","2918","2910","2911","2917","2904"];
+carInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("four_wheeler_insurance", op, 0)));
+
 // Cable TV
 const cableTvOps = ["3903","3301","3904","3902"];
 cableTvOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("cable_tv", op, op === "3301" ? 1.5 : 0)));
@@ -580,6 +588,56 @@ export const SERVICE_CATALOG: Record<string, CatalogEntry> = {
       { id: "908", name: "Shriram Life", logo: "🛡️" },
       { id: "910", name: "Star Union Dai Ichi", logo: "🛡️" },
       { id: "904", name: "TATA AIA Life", logo: "🛡️" },
+    ],
+  },
+  bike_insurance: {
+    label: "Bike Insurance",
+    icon: "🏍️",
+    operators: [
+      { id: "2809", name: "Apollo Munich", logo: "🏍️" },
+      { id: "2803", name: "Bajaj Allianz", logo: "🏍️" },
+      { id: "2802", name: "Bharti Axa", logo: "🏍️" },
+      { id: "2816", name: "Cigna TTK", logo: "🏍️" },
+      { id: "2819", name: "Digit General Insurance", logo: "🏍️" },
+      { id: "2805", name: "Future Generali", logo: "🏍️" },
+      { id: "2801", name: "HDFC Ergo", logo: "🏍️" },
+      { id: "2813", name: "Iffco Tokio General", logo: "🏍️" },
+      { id: "2807", name: "Kotak", logo: "🏍️" },
+      { id: "2812", name: "Max Bupa Health", logo: "🏍️" },
+      { id: "2806", name: "New India", logo: "🏍️" },
+      { id: "2808", name: "Reliance General", logo: "🏍️" },
+      { id: "2815", name: "Religare Health", logo: "🏍️" },
+      { id: "2814", name: "Royal Sundaram", logo: "🏍️" },
+      { id: "2818", name: "Shriram General", logo: "🏍️" },
+      { id: "2810", name: "Star Health", logo: "🏍️" },
+      { id: "2811", name: "Tata Aig General", logo: "🏍️" },
+      { id: "2817", name: "United India", logo: "🏍️" },
+      { id: "2804", name: "Universal Sompo", logo: "🏍️" },
+    ],
+  },
+  four_wheeler_insurance: {
+    label: "Four Wheeler Insurance",
+    icon: "🚗",
+    operators: [
+      { id: "2909", name: "Apollo Munich", logo: "🚗" },
+      { id: "2903", name: "Bajaj Allianz", logo: "🚗" },
+      { id: "2902", name: "Bharti Axa", logo: "🚗" },
+      { id: "2916", name: "Cigna TTK", logo: "🚗" },
+      { id: "2919", name: "Digit General Insurance", logo: "🚗" },
+      { id: "2905", name: "Future Generali", logo: "🚗" },
+      { id: "2901", name: "HDFC Ergo", logo: "🚗" },
+      { id: "2913", name: "Iffco Tokio General", logo: "🚗" },
+      { id: "2907", name: "Kotak", logo: "🚗" },
+      { id: "2912", name: "Max Bupa Health", logo: "🚗" },
+      { id: "2906", name: "New India", logo: "🚗" },
+      { id: "2908", name: "Reliance General", logo: "🚗" },
+      { id: "2915", name: "Religare Health", logo: "🚗" },
+      { id: "2914", name: "Royal Sundaram", logo: "🚗" },
+      { id: "2918", name: "Shriram General", logo: "🚗" },
+      { id: "2910", name: "Star Health", logo: "🚗" },
+      { id: "2911", name: "Tata Aig General", logo: "🚗" },
+      { id: "2917", name: "United India", logo: "🚗" },
+      { id: "2904", name: "Universal Sompo", logo: "🚗" },
     ],
   },
   cable_tv: {
