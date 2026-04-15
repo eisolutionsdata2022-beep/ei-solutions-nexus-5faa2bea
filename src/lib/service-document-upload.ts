@@ -1,5 +1,5 @@
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { getDownloadURL, ref, uploadBytesResumable, type UploadTask } from "firebase/storage";
+import { auth, storage } from "@/lib/firebase";
 
 interface ServiceDocumentInput {
   name: string;
@@ -12,7 +12,10 @@ interface UploadedServiceDocument {
   fileName: string;
 }
 
-const UPLOAD_TIMEOUT_MS = 120_000;
+const UPLOAD_TIMEOUT_MS = 300_000;
+const UPLOAD_STALL_MS = 45_000;
+const DOWNLOAD_URL_TIMEOUT_MS = 30_000;
+const MAX_UPLOAD_ATTEMPTS = 3;
 
 function sanitizeSegment(value: string, fallback: string) {
   const sanitized = value
@@ -39,11 +42,11 @@ function sanitizeFileName(fileName: string) {
   return `${baseName}.${extension}`;
 }
 
-function withTimeout<T>(promise: Promise<T>, label: string) {
+function withTimeout<T>(promise: Promise<T>, message: string, timeoutMs = UPLOAD_TIMEOUT_MS) {
   return new Promise<T>((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new Error(`${label} upload timed out. Please try again with a smaller file or a better network.`));
-    }, UPLOAD_TIMEOUT_MS);
+      reject(new Error(message));
+    }, timeoutMs);
 
     promise
       .then((value) => {
@@ -55,6 +58,133 @@ function withTimeout<T>(promise: Promise<T>, label: string) {
         reject(error);
       });
   });
+}
+
+function waitForTaskCompletion(task: UploadTask, label: string) {
+  return new Promise<void>((resolve, reject) => {
+    let settled = false;
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
+    let overallTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearTimers = () => {
+      if (stallTimer) clearTimeout(stallTimer);
+      if (overallTimer) clearTimeout(overallTimer);
+    };
+
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimers();
+      try {
+        task.cancel();
+      } catch {
+        // no-op
+      }
+      reject(error);
+    };
+
+    const resetStallTimer = () => {
+      if (stallTimer) clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        fail(new Error(`${label} upload timed out. Firebase Storage did not respond in time.`));
+      }, UPLOAD_STALL_MS);
+    };
+
+    overallTimer = setTimeout(() => {
+      fail(new Error(`${label} upload timed out. Please try again with a smaller file or a better network.`));
+    }, UPLOAD_TIMEOUT_MS);
+
+    resetStallTimer();
+
+    task.on(
+      "state_changed",
+      () => {
+        resetStallTimer();
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimers();
+        reject(error);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimers();
+        resolve();
+      }
+    );
+  });
+}
+
+function isRetryableUploadError(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+  const message = typeof error === "object" && error && "message" in error ? String(error.message).toLowerCase() : "";
+
+  if (code === "storage/unauthorized" || code === "storage/canceled") {
+    return false;
+  }
+
+  return (
+    !code ||
+    code === "storage/unknown" ||
+    code === "storage/retry-limit-exceeded" ||
+    code === "storage/quota-exceeded" ||
+    code === "storage/cannot-slice-blob" ||
+    message.includes("timed out") ||
+    message.includes("network")
+  );
+}
+
+async function ensureStorageAuthReady() {
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) return;
+
+  try {
+    await withTimeout(
+      currentUser.getIdToken(),
+      "Authentication timed out while preparing the upload. Please sign in again and retry.",
+      15_000
+    );
+  } catch (error) {
+    console.warn("[E-dis] Failed to warm Firebase auth token before upload:", error);
+  }
+}
+
+async function uploadSingleDocument(storagePath: string, file: File, label: string) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const storageRef = ref(storage, storagePath);
+      const uploadTask = uploadBytesResumable(storageRef, file, {
+        contentType: file.type || undefined,
+        customMetadata: {
+          originalFileName: file.name,
+        },
+      });
+
+      await waitForTaskCompletion(uploadTask, label);
+
+      return await withTimeout(
+        getDownloadURL(storageRef),
+        `${label} upload finished, but the file link could not be generated in time. Please retry.`,
+        DOWNLOAD_URL_TIMEOUT_MS
+      );
+    } catch (error) {
+      lastError = error;
+
+      if (attempt >= MAX_UPLOAD_ATTEMPTS || !isRetryableUploadError(error)) {
+        break;
+      }
+
+      console.warn(`[E-dis] Retrying document upload (${attempt}/${MAX_UPLOAD_ATTEMPTS}) for ${label}:`, error);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
+  }
+
+  throw toFriendlyUploadError(lastError, label);
 }
 
 function toFriendlyUploadError(error: unknown, label: string) {
@@ -91,6 +221,8 @@ export async function uploadServiceDocuments({
     return [];
   }
 
+  await ensureStorageAuthReady();
+
   const uploadedDocs: UploadedServiceDocument[] = [];
 
   for (const [index, docItem] of docsToUpload.entries()) {
@@ -113,9 +245,7 @@ export async function uploadServiceDocuments({
         type: file.type,
       });
 
-      const storageRef = ref(storage, storagePath);
-      await withTimeout(uploadBytes(storageRef, file), docItem.name);
-      const url = await withTimeout(getDownloadURL(storageRef), docItem.name);
+      const url = await uploadSingleDocument(storagePath, file, docItem.name);
 
       uploadedDocs.push({
         name: docItem.name,
