@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, Image } from "lucide-react";
 import posterBg1 from "@/assets/poster-template.jpeg";
 import posterBg2 from "@/assets/poster-template-2.jpeg";
 import posterBg3 from "@/assets/poster-template-3.jpeg";
@@ -47,32 +47,42 @@ function PageToolsPage() {
   const services = servicesText.split("\n").filter((s) => s.trim());
   const currentTemplate = TEMPLATES.find((t) => t.id === selectedTemplate)!;
 
-  const handlePrint = () => {
+  const captureCanvas = async () => {
     const el = posterRef.current;
-    if (!el) return;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html><head><title>Poster Print</title>
-      <style>
-        @page { size: A4 portrait; margin: 0; }
-        body { margin: 0; display: flex; justify-content: center; }
-        img { width: 100vw; height: 100vh; object-fit: contain; }
-      </style></head>
-      <body>${el.innerHTML}</body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    if (!el) return null;
+    const { default: html2canvas } = await import("html2canvas");
+    return html2canvas(el, { scale: 3, useCORS: true, allowTaint: true });
+  };
+
+  const handlePrint = async () => {
+    try {
+      const canvas = await captureCanvas();
+      if (!canvas) return;
+      const imgData = canvas.toDataURL("image/png");
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html><head><title>Poster Print</title>
+        <style>
+          @page { size: A4 portrait; margin: 0; }
+          body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+          img { width: 100%; height: 100%; object-fit: contain; }
+        </style></head>
+        <body><img src="${imgData}" /></body></html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 600);
+    } catch (e) {
+      console.error("Print failed", e);
+    }
   };
 
   const handleDownloadPDF = async () => {
-    const el = posterRef.current;
-    if (!el) return;
     try {
-      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await captureCanvas();
+      if (!canvas) return;
       const { default: jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
@@ -81,6 +91,19 @@ function PageToolsPage() {
       pdf.save("EI-Solutions-Poster.pdf");
     } catch (e) {
       console.error("PDF generation failed", e);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      const canvas = await captureCanvas();
+      if (!canvas) return;
+      const link = document.createElement("a");
+      link.download = "EI-Solutions-Poster.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (e) {
+      console.error("Image download failed", e);
     }
   };
 
@@ -145,11 +168,16 @@ function PageToolsPage() {
             <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location..." />
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleDownloadPDF} className="flex-1 bg-gov-blue hover:bg-gov-blue/90">
-              <Download className="w-4 h-4 mr-1" /> PDF
-            </Button>
-            <Button onClick={handlePrint} variant="outline" className="flex-1">
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex gap-2">
+              <Button onClick={handleDownloadPDF} className="flex-1 bg-gov-blue hover:bg-gov-blue/90">
+                <Download className="w-4 h-4 mr-1" /> PDF
+              </Button>
+              <Button onClick={handleDownloadImage} className="flex-1 bg-gov-green hover:bg-gov-green/90 text-white">
+                <Image className="w-4 h-4 mr-1" /> Image
+              </Button>
+            </div>
+            <Button onClick={handlePrint} variant="outline" className="w-full">
               <Printer className="w-4 h-4 mr-1" /> Print
             </Button>
           </div>
