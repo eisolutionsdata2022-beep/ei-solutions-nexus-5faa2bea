@@ -132,3 +132,51 @@ export async function getCRMStats(staffId?: string) {
     contacted: leads.filter((l) => l.status === "Contacted").length,
   };
 }
+
+// ─── Document Upload/Delete ───
+export async function uploadLeadDocument(
+  leadId: string,
+  file: File,
+  uploadedBy: string
+): Promise<LeadDocument> {
+  const timestamp = Date.now();
+  const path = `crm-documents/${leadId}/${timestamp}_${file.name}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
+  const docEntry: LeadDocument = {
+    name: file.name,
+    url,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy,
+  };
+
+  // Get current lead docs and append
+  const leadDoc = await getDoc(doc(db, "crmLeads", leadId));
+  const currentDocs: LeadDocument[] = leadDoc.data()?.documents || [];
+  await updateDoc(doc(db, "crmLeads", leadId), {
+    documents: [...currentDocs, docEntry],
+    updatedAt: new Date().toISOString(),
+  });
+
+  return docEntry;
+}
+
+export async function deleteLeadDocument(leadId: string, docUrl: string) {
+  // Remove from Firestore array
+  const leadDoc = await getDoc(doc(db, "crmLeads", leadId));
+  const currentDocs: LeadDocument[] = leadDoc.data()?.documents || [];
+  const updatedDocs = currentDocs.filter((d) => d.url !== docUrl);
+  await updateDoc(doc(db, "crmLeads", leadId), {
+    documents: updatedDocs,
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Try to delete from storage (may fail if URL format differs)
+  try {
+    const storageRef = ref(storage, docUrl);
+    await deleteObject(storageRef);
+  } catch {
+    // Storage deletion is best-effort
+  }
+}
