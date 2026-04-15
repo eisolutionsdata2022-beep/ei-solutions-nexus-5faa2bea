@@ -10,7 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send, Mic, MicOff, Volume2, VolumeX, Loader2, Lock, Wallet, Sparkles, History, Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
-import trainerAvatar from "@/assets/elzu-trainer-avatar.jpg";
+import elzuStanding from "@/assets/elzu-avatar-standing.png";
+import elzuWaving from "@/assets/elzu-avatar-waving.png";
 
 export const Route = createFileRoute("/retailer/virtual-trainer")({
   ssr: false,
@@ -373,35 +374,37 @@ function VirtualTrainerPage() {
   if (!accessGranted && trainerFee > 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <img src={trainerAvatar} alt="Elzu" className="w-16 h-16 rounded-full object-cover" width={64} height={64} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">Elzu Virtual Trainer</h2>
-              <p className="text-sm text-muted-foreground mt-2">
+        <Card className="max-w-md w-full overflow-hidden">
+          <CardContent className="p-0">
+            <div className="bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-background p-6 flex flex-col items-center">
+              <div className="relative animate-[float_3s_ease-in-out_infinite]">
+                <img src={elzuWaving} alt="Elzu" className="w-40 h-52 object-contain drop-shadow-xl" width={160} height={208} />
+              </div>
+              <h2 className="text-xl font-bold text-foreground mt-2">Elzu Virtual Trainer</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 AI ട്രെയിനർ സെഷൻ ആരംഭിക്കാൻ ₹{trainerFee} ഫീ ആവശ്യമാണ്
               </p>
             </div>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-left">
-              <p className="text-xs font-medium text-foreground">ഈ സെഷനിൽ ലഭിക്കുന്നത്:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>✅ EI Solutions സേവനങ്ങളെ കുറിച്ച് മലയാളത്തിൽ ട്രെയിനിംഗ്</li>
-                <li>✅ PAN, Aadhaar, Loan, E-dis സഹായം</li>
-                <li>✅ വോയ്സ് ഇൻപുട്ട് & ഔട്ട്പുട്ട്</li>
-                <li>✅ Unlimited ചോദ്യങ്ങൾ</li>
-              </ul>
+            <div className="p-6 space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <p className="text-xs font-medium text-foreground">ഈ സെഷനിൽ ലഭിക്കുന്നത്:</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>✅ EI Solutions സേവനങ്ങളെ കുറിച്ച് മലയാളത്തിൽ ട്രെയിനിംഗ്</li>
+                  <li>✅ PAN, Aadhaar, Loan, E-dis സഹായം</li>
+                  <li>✅ വോയ്സ് ഇൻപുട്ട് & ഔട്ട്പുട്ട്</li>
+                  <li>✅ Unlimited ചോദ്യങ്ങൾ</li>
+                </ul>
+              </div>
+              <Button
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                size="lg"
+                onClick={handlePayAndAccess}
+              >
+                <Wallet className="w-5 h-5" />
+                ₹{trainerFee} അടച്ച് സെഷൻ ആരംഭിക്കുക
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center">Wallet balance-ൽ നിന്ന് debit ചെയ്യും</p>
             </div>
-            <Button
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
-              size="lg"
-              onClick={handlePayAndAccess}
-            >
-              <Wallet className="w-5 h-5" />
-              ₹{trainerFee} അടച്ച് സെഷൻ ആരംഭിക്കുക
-            </Button>
-            <p className="text-[11px] text-muted-foreground">Wallet balance-ൽ നിന്ന് debit ചെയ്യും</p>
           </CardContent>
         </Card>
       </div>
@@ -413,7 +416,7 @@ function VirtualTrainerPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-700 to-teal-600 text-white px-4 py-3 rounded-t-xl flex items-center gap-3">
         <div className="relative">
-          <img src={trainerAvatar} alt="Elzu" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" width={48} height={48} />
+          <img src={elzuStanding} alt="Elzu" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover object-top" width={48} height={48} />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-emerald-700" />
         </div>
         <div className="flex-1 min-w-0">
@@ -514,25 +517,33 @@ function VirtualTrainerPage() {
             </div>
           </div>
         )}
-        {/* Avatar - visible on lg+ */}
-        <div className="hidden lg:flex flex-col items-center justify-center w-64 border-r border-border p-4 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
-          <div className={`relative ${isSpeaking ? "animate-pulse" : ""}`}>
-            <img src={trainerAvatar} alt="Elzu" className="w-44 h-44 rounded-full border-4 border-emerald-500/30 object-cover shadow-lg" width={176} height={176} />
-            {isSpeaking && (
-              <div className="absolute inset-0 rounded-full border-4 border-emerald-400 animate-ping opacity-30" />
+        {/* 3D Avatar - visible on lg+ */}
+        <div className="hidden lg:flex flex-col items-center justify-end w-72 border-r border-border bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-white dark:from-emerald-950/30 dark:via-emerald-950/10 dark:to-background relative overflow-hidden">
+          <div className="absolute top-4 left-0 right-0 text-center z-10">
+            <h2 className="font-bold text-lg text-foreground">Elzu</h2>
+            <p className="text-xs text-muted-foreground">EI Solutions ട്രെയിനർ</p>
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs text-green-600 dark:text-green-400 font-medium">ഓൺലൈൻ</span>
+            </div>
+            {sessionPaid && trainerFee > 0 && (
+              <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-full">
+                <Sparkles className="w-3 h-3" /> Session Active
+              </div>
             )}
           </div>
-          <h2 className="mt-4 font-bold text-lg text-foreground">Elzu</h2>
-          <p className="text-xs text-muted-foreground text-center mt-1">EI Solutions ട്രെയിനർ</p>
-          <div className="flex items-center gap-1.5 mt-2">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium">ഓൺലൈൻ</span>
+          <div className={`relative ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
+            <img
+              src={elzuStanding}
+              alt="Elzu 3D Avatar"
+              className="w-56 h-auto object-contain drop-shadow-2xl"
+              width={224}
+              height={300}
+            />
+            {isSpeaking && (
+              <div className="absolute -inset-4 rounded-full bg-emerald-400/10 animate-ping" />
+            )}
           </div>
-          {sessionPaid && trainerFee > 0 && (
-            <div className="mt-3 flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-full">
-              <Sparkles className="w-3 h-3" /> Session Active
-            </div>
-          )}
         </div>
 
         {/* Chat Area */}
@@ -541,7 +552,7 @@ function VirtualTrainerPage() {
             {messages.map((m) => (
               <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "trainer" && (
-                  <img src={trainerAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 mt-1" width={32} height={32} />
+                  <img src={elzuStanding} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0 mt-1" width={32} height={32} />
                 )}
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
                   m.role === "user"
@@ -557,7 +568,7 @@ function VirtualTrainerPage() {
             ))}
             {loading && (
               <div className="flex gap-2 items-start">
-                <img src={trainerAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" width={32} height={32} />
+                <img src={elzuStanding} alt="" className="w-8 h-8 rounded-full object-cover object-top shrink-0" width={32} height={32} />
                 <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
