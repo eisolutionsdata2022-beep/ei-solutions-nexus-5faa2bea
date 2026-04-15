@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, Image } from "lucide-react";
 import posterBg1 from "@/assets/poster-template.jpeg";
 import posterBg2 from "@/assets/poster-template-2.jpeg";
 import posterBg3 from "@/assets/poster-template-3.jpeg";
