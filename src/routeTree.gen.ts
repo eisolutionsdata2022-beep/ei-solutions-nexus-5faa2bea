@@ -31,6 +31,7 @@ import { Route as RetailerTransactionsRouteImport } from './routes/retailer.tran
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
+import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
@@ -161,6 +162,11 @@ const RetailerServicesRoute = RetailerServicesRouteImport.update({
 const RetailerRechargeRoute = RetailerRechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
+  id: '/page-tools',
+  path: '/page-tools',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -378,6 +386,7 @@ export interface FileRoutesById {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/page-tools'
     | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
@@ -463,6 +473,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/page-tools'
     | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
@@ -507,6 +518,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
+    | '/retailer/page-tools'
     | '/retailer/recharge'
     | '/retailer/services'
     | '/retailer/trainings'
@@ -688,6 +700,13 @@ declare module '@tanstack/react-router' {
       path: '/recharge'
       fullPath: '/retailer/recharge'
       preLoaderRoute: typeof RetailerRechargeRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/page-tools': {
+      id: '/retailer/page-tools'
+      path: '/page-tools'
+      fullPath: '/retailer/page-tools'
+      preLoaderRoute: typeof RetailerPageToolsRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/money-transfer': {
@@ -893,6 +912,7 @@ interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
+  RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
@@ -906,6 +926,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
+  RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerServicesRoute: RetailerServicesRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
