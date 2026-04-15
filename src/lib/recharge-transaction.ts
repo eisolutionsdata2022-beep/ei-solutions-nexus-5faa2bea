@@ -11,6 +11,9 @@ import { doc, getDoc, runTransaction, collection, addDoc, query, where, getDocs,
 import { db } from "./firebase";
 import { calculateCommissionSplit, type CommissionRate, type CommissionSplit } from "./commission-config";
 import { callAmbikaRechargeApi, type AmbikaApiResponse } from "./ambika-api.functions";
+import { callInsuranceApi, type InsuranceApiResponse } from "./busyworld-insurance-api.functions";
+
+const INSURANCE_SERVICE_TYPES = ["bike_insurance", "four_wheeler_insurance", "life_insurance"];
 
 export interface RechargeRequest {
   userId: string;           // retailer uid
@@ -160,18 +163,39 @@ export async function executeRechargeTransaction(
     createdAt: new Date().toISOString(),
   });
 
-  // 6. Call external Ambika Recharge API
+  // 6. Call external API (BusyWorld for insurance, Ambika for others)
+  const isInsurance = INSURANCE_SERVICE_TYPES.includes(request.serviceType);
   let apiResponse: AmbikaApiResponse;
   try {
-    apiResponse = await callAmbikaRechargeApi({
-      data: {
-        serviceType: request.serviceType,
-        operator: request.operator,
-        mobileNumber: request.mobileNumber,
-        amount: request.amount,
-        transactionId: txRef.id,
-      },
-    });
+    if (isInsurance) {
+      const insRes = await callInsuranceApi({
+        data: {
+          action: "balance_deduct",
+          operatorId: request.operator,
+          subscriberId: request.mobileNumber,
+          amount: request.amount,
+          transactionId: txRef.id,
+        },
+      });
+      // Map InsuranceApiResponse → AmbikaApiResponse shape
+      apiResponse = {
+        success: insRes.success,
+        status: insRes.status,
+        apiTransactionId: insRes.transactionId,
+        message: insRes.message,
+        rawResponse: insRes.rawResponse,
+      };
+    } else {
+      apiResponse = await callAmbikaRechargeApi({
+        data: {
+          serviceType: request.serviceType,
+          operator: request.operator,
+          mobileNumber: request.mobileNumber,
+          amount: request.amount,
+          transactionId: txRef.id,
+        },
+      });
+    }
 
     // Update transaction with API response
     await updateDoc(txRef, {
