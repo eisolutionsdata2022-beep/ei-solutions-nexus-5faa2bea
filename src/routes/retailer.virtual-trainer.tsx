@@ -187,7 +187,7 @@ function VirtualTrainerPage() {
     setMessages([{
       id: "welcome",
       role: "trainer",
-      content: "സുഹൃത്തേ, ഞാൻ എൽസുതത്താ ആണ്! നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ. എനിക്ക് എങ്ങനെ സഹായിക്കാം? 😊\n\nPAN Card, Aadhaar, E-dis സർട്ടിഫിക്കറ്റ്, Loan, Recharge, Training - എന്തിനെ കുറിച്ചും ചോദിക്കാം!",
+      content: "സുഹൃത്തേ, ഞാൻ Elzu ആണ്! നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ. എനിക്ക് എങ്ങനെ സഹായിക്കാം? 😊\n\nPAN Card, Aadhaar, E-dis സർട്ടിഫിക്കറ്റ്, Loan, Recharge, Training - എന്തിനെ കുറിച്ചും ചോദിക്കാം!",
       timestamp: new Date().toISOString(),
     }]);
   };
@@ -308,7 +308,7 @@ function VirtualTrainerPage() {
       // Title
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Elzuthatha Virtual Trainer - Training Notes", margin, y);
+      pdf.text("Elzu Virtual Trainer - Training Notes", margin, y);
       y += 8;
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
@@ -323,7 +323,7 @@ function VirtualTrainerPage() {
 
       for (const msg of messages) {
         if (msg.id === "welcome") continue;
-        const label = msg.role === "user" ? "You" : "Elzuthatha";
+        const label = msg.role === "user" ? "You" : "Elzu";
         const time = new Date(msg.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
         // Label
@@ -376,10 +376,10 @@ function VirtualTrainerPage() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center space-y-6">
             <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-16 h-16 rounded-full object-cover" width={64} height={64} />
+              <img src={trainerAvatar} alt="Elzu" className="w-16 h-16 rounded-full object-cover" width={64} height={64} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">എൽസുതത്താ വിർച്വൽ ട്രെയിനർ</h2>
+              <h2 className="text-xl font-bold text-foreground">Elzu Virtual Trainer</h2>
               <p className="text-sm text-muted-foreground mt-2">
                 AI ട്രെയിനർ സെഷൻ ആരംഭിക്കാൻ ₹{trainerFee} ഫീ ആവശ്യമാണ്
               </p>
@@ -413,11 +413,11 @@ function VirtualTrainerPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-700 to-teal-600 text-white px-4 py-3 rounded-t-xl flex items-center gap-3">
         <div className="relative">
-          <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" width={48} height={48} />
+          <img src={trainerAvatar} alt="Elzu" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" width={48} height={48} />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-emerald-700" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-bold">എൽസുതത്താ വിർച്വൽ ട്രെയിനർ</h1>
+          <h1 className="text-base font-bold">Elzu Virtual Trainer</h1>
           <p className="text-xs text-white/70">
             {loading ? "ടൈപ്പ് ചെയ്യുന്നു..." : isSpeaking ? "സംസാരിക്കുന്നു..." : "നിങ്ങളുടെ ഡിജിറ്റൽ ട്രെയിനർ"}
           </p>
@@ -517,12 +517,12 @@ function VirtualTrainerPage() {
         {/* Avatar - visible on lg+ */}
         <div className="hidden lg:flex flex-col items-center justify-center w-64 border-r border-border p-4 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
           <div className={`relative ${isSpeaking ? "animate-pulse" : ""}`}>
-            <img src={trainerAvatar} alt="എൽസുതത്താ" className="w-44 h-44 rounded-full border-4 border-emerald-500/30 object-cover shadow-lg" width={176} height={176} />
+            <img src={trainerAvatar} alt="Elzu" className="w-44 h-44 rounded-full border-4 border-emerald-500/30 object-cover shadow-lg" width={176} height={176} />
             {isSpeaking && (
               <div className="absolute inset-0 rounded-full border-4 border-emerald-400 animate-ping opacity-30" />
             )}
           </div>
-          <h2 className="mt-4 font-bold text-lg text-foreground">എൽസുതത്താ</h2>
+          <h2 className="mt-4 font-bold text-lg text-foreground">Elzu</h2>
           <p className="text-xs text-muted-foreground text-center mt-1">EI Solutions ട്രെയിനർ</p>
           <div className="flex items-center gap-1.5 mt-2">
             <span className="w-2 h-2 rounded-full bg-green-500" />
