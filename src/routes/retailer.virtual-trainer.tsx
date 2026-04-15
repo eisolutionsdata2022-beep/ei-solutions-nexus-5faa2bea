@@ -533,18 +533,32 @@ function VirtualTrainerPage() {
               </div>
             )}
           </div>
-          <div className={`relative ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
-            <img
-              src={elzuStanding}
-              alt="Elzu 3D Avatar"
-              className="w-56 h-auto object-contain drop-shadow-2xl"
-              width={224}
-              height={300}
-            />
-            {isSpeaking && (
-              <div className="absolute -inset-4 rounded-full bg-emerald-400/10 animate-ping" />
-            )}
-          </div>
+          {/* Show intro video when no messages yet, otherwise static avatar */}
+          {messages.length <= 1 ? (
+            <div className="relative w-full flex items-end justify-center">
+              <video
+                src={elzuIntroVideo.url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-64 h-auto object-contain drop-shadow-2xl"
+              />
+            </div>
+          ) : (
+            <div className={`relative ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
+              <img
+                src={elzuStanding}
+                alt="Elzu 3D Avatar"
+                className="w-56 h-auto object-contain drop-shadow-2xl"
+                width={224}
+                height={300}
+              />
+              {isSpeaking && (
+                <div className="absolute -inset-4 rounded-full bg-emerald-400/10 animate-ping" />
+              )}
+            </div>
+          )}
         </div>
 
         {/* Chat Area */}
