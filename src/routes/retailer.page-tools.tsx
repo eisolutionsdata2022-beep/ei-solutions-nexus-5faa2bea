@@ -80,10 +80,9 @@ function PageToolsPage() {
 
   const handleDownloadPDF = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
+      const imgData = await captureDataUrl("jpeg");
+      if (!imgData) return;
       const { default: jsPDF } = await import("jspdf");
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
@@ -96,11 +95,11 @@ function PageToolsPage() {
 
   const handleDownloadImage = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
       const link = document.createElement("a");
       link.download = "EI-Solutions-Poster.png";
-      link.href = canvas.toDataURL("image/png");
+      link.href = imgData;
       link.click();
     } catch (e) {
       console.error("Image download failed", e);
