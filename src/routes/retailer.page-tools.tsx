@@ -47,11 +47,12 @@ function PageToolsPage() {
   const services = servicesText.split("\n").filter((s) => s.trim());
   const currentTemplate = TEMPLATES.find((t) => t.id === selectedTemplate)!;
 
-  const captureCanvas = async () => {
+  const captureDataUrl = async (type: "png" | "jpeg" = "png") => {
     const el = posterRef.current;
     if (!el) return null;
-    const { default: html2canvas } = await import("html2canvas");
-    return html2canvas(el, { scale: 3, useCORS: true, allowTaint: true });
+    const { toPng, toJpeg } = await import("html-to-image");
+    const fn = type === "jpeg" ? toJpeg : toPng;
+    return fn(el, { pixelRatio: 3, cacheBust: true });
   };
 
   const handlePrint = async () => {
