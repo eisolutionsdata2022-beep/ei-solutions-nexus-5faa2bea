@@ -5,11 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Download, Image } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Printer, Download, Image, FileImage } from "lucide-react";
 import posterBg1 from "@/assets/poster-template.jpeg";
 import posterBg2 from "@/assets/poster-template-2.jpeg";
 import posterBg3 from "@/assets/poster-template-3.jpeg";
 import posterBg4 from "@/assets/poster-template-4.jpeg";
+import JpgToPdfConverter from "@/components/tools/JpgToPdfConverter";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
@@ -35,6 +37,29 @@ const DEFAULT_SERVICES = [
 ];
 
 function PageToolsPage() {
+  return (
+    <Tabs defaultValue="poster" className="h-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="poster">
+          <Image className="w-4 h-4 mr-1.5" /> Poster Editor
+        </TabsTrigger>
+        <TabsTrigger value="jpg2pdf">
+          <FileImage className="w-4 h-4 mr-1.5" /> JPG to PDF
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="poster" className="h-[calc(100%-60px)]">
+        <PosterEditor />
+      </TabsContent>
+
+      <TabsContent value="jpg2pdf">
+        <JpgToPdfConverter />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function PosterEditor() {
   const [selectedTemplate, setSelectedTemplate] = useState("1");
   const [cspId, setCspId] = useState("");
   const [heading, setHeading] = useState("ജന സേവന കേന്ദ്രം");
@@ -108,13 +133,11 @@ function PageToolsPage() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
-      {/* Sidebar Editor */}
       <Card className="lg:w-80 shrink-0 overflow-y-auto max-h-[calc(100vh-200px)]">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">📝 Poster Editor</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Template Selector */}
           <div>
             <Label className="mb-2 block">Template തിരഞ്ഞെടുക്കുക</Label>
             <div className="grid grid-cols-3 gap-2">
@@ -183,50 +206,31 @@ function PageToolsPage() {
         </CardContent>
       </Card>
 
-      {/* Poster Preview */}
       <div className="flex-1 flex items-start justify-center overflow-auto">
         <div
           ref={posterRef}
           className="relative bg-white shadow-xl"
           style={{ width: 595, height: 842, fontFamily: "'Noto Sans Malayalam', sans-serif" }}
         >
-          {/* Background template image */}
           <img
             src={currentTemplate.src}
             alt="Poster template"
             className="absolute inset-0 w-full h-full object-cover"
             crossOrigin="anonymous"
           />
-
-          {/* CSP ID overlay */}
-          <div
-            className="absolute text-black font-bold"
-            style={{ top: "3.2%", left: "14%", fontSize: 13 }}
-          >
+          <div className="absolute text-black font-bold" style={{ top: "3.2%", left: "14%", fontSize: 13 }}>
             {cspId}
           </div>
-
-          {/* Main heading overlay */}
           <div
             className="absolute w-full text-center font-extrabold text-[#1a237e]"
             style={{ top: "23%", left: 0, fontSize: 32, lineHeight: 1.2, textShadow: "0 1px 2px rgba(0,0,0,0.1)" }}
           >
             {heading}
           </div>
-
-          {/* Sub heading overlay */}
-          <div
-            className="absolute w-full text-center font-bold text-[#333]"
-            style={{ top: "29.5%", left: 0, fontSize: 14 }}
-          >
+          <div className="absolute w-full text-center font-bold text-[#333]" style={{ top: "29.5%", left: 0, fontSize: 14 }}>
             {subHeading}
           </div>
-
-          {/* Services list overlay */}
-          <div
-            className="absolute"
-            style={{ top: "37%", left: "10%", width: "55%", fontSize: 12.5, lineHeight: 2.05 }}
-          >
+          <div className="absolute" style={{ top: "37%", left: "10%", width: "55%", fontSize: 12.5, lineHeight: 2.05 }}>
             {services.map((s, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <span className="text-green-600 text-sm">✅</span>
@@ -234,20 +238,10 @@ function PageToolsPage() {
               </div>
             ))}
           </div>
-
-          {/* Contact overlay */}
-          <div
-            className="absolute font-bold text-[#222]"
-            style={{ top: "86.5%", left: "19%", fontSize: 12 }}
-          >
+          <div className="absolute font-bold text-[#222]" style={{ top: "86.5%", left: "19%", fontSize: 12 }}>
             {contact}
           </div>
-
-          {/* Location overlay */}
-          <div
-            className="absolute font-bold text-[#222]"
-            style={{ top: "89.5%", left: "19%", fontSize: 12 }}
-          >
+          <div className="absolute font-bold text-[#222]" style={{ top: "89.5%", left: "19%", fontSize: 12 }}>
             {location}
           </div>
         </div>
