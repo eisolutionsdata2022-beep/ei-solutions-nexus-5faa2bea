@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { askVirtualTrainer } from "@/lib/virtual-trainer.functions";
 import elzuStanding from "@/assets/elzu-avatar-standing.png";
 import elzuWaving from "@/assets/elzu-avatar-waving.png";
+import elzuIntroVideo from "@/assets/elzu-intro-video.mp4.asset.json";
 
 export const Route = createFileRoute("/retailer/virtual-trainer")({
   ssr: false,
