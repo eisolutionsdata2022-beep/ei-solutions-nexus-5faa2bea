@@ -30,6 +30,16 @@ interface UploadedDoc {
   fileName: string;
 }
 
+function normalizeUploadedDocuments(value: unknown): UploadedDoc[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter((item): item is UploadedDoc => {
+    if (!item || typeof item !== "object") return false;
+    const candidate = item as Partial<UploadedDoc>;
+    return typeof candidate.name === "string" && typeof candidate.url === "string" && typeof candidate.fileName === "string";
+  });
+}
+
 interface AppRecord {
   id: string;
   applicationNo: string;
@@ -72,7 +82,14 @@ function StaffServiceApplications() {
       query(collection(db, "serviceApplications")),
       (snap) => {
         const list: AppRecord[] = [];
-        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AppRecord));
+        snap.forEach((d) => {
+          const data = d.data() as Partial<AppRecord>;
+          list.push({
+            ...(data as AppRecord),
+            id: d.id,
+            uploadedDocuments: normalizeUploadedDocuments(data.uploadedDocuments),
+          });
+        });
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setApplications(list);
       },
@@ -246,7 +263,10 @@ function StaffServiceApplications() {
       const a = document.createElement("a");
       a.href = blobUrl;
       a.download = fileName;
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       URL.revokeObjectURL(blobUrl);
     } catch {
       window.open(url, "_blank", "noopener,noreferrer");
@@ -414,6 +434,7 @@ function StaffServiceApplications() {
                     <div className="p-3 text-xs text-muted-foreground">
                       {selectedApplication.documentUploadStatus === "pending" && "Documents are still uploading. Keep this dialog open or reopen it in a few seconds."}
                       {selectedApplication.documentUploadStatus === "failed" && "Document upload failed for this application, so files are not available yet."}
+                      {selectedApplication.documentUploadStatus === "completed" && "Upload completed, but no valid document links were saved for this application."}
                       {selectedApplication.documentUploadStatus === "no_documents" && "No documents were attached to this application."}
                       {!selectedApplication.documentUploadStatus && "No uploaded documents are available for this application yet."}
                     </div>
