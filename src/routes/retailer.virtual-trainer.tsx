@@ -520,50 +520,54 @@ function VirtualTrainerPage() {
           </div>
         )}
         {/* 3D Avatar - visible on lg+ */}
-        <div className="hidden lg:flex flex-col items-center justify-end w-72 border-r border-border bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-white dark:from-emerald-950/30 dark:via-emerald-950/10 dark:to-background relative overflow-hidden">
+        <div className="hidden lg:flex flex-col items-center justify-end w-80 border-r border-border relative overflow-hidden">
+          {/* Classroom background */}
+          <img src={classroomBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10" />
+          
           <div className="absolute top-4 left-0 right-0 text-center z-10">
-            <h2 className="font-bold text-lg text-foreground">Elzu</h2>
-            <p className="text-xs text-muted-foreground">EI Solutions ട്രെയിനർ</p>
+            <h2 className="font-bold text-lg text-white drop-shadow-md">Elzu</h2>
+            <p className="text-xs text-white/80 drop-shadow">EI Solutions ട്രെയിനർ</p>
             <div className="flex items-center justify-center gap-1.5 mt-1">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-green-600 dark:text-green-400 font-medium">ഓൺലൈൻ</span>
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs text-green-300 font-medium drop-shadow">LIVE</span>
             </div>
             {sessionPaid && trainerFee > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-full">
+              <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-white bg-emerald-600/80 px-2 py-1 rounded-full">
                 <Sparkles className="w-3 h-3" /> Session Active
               </div>
             )}
           </div>
-          {/* Show intro video when no messages yet, otherwise static avatar */}
+
+          {/* Avatar with classroom feel */}
           {messages.length <= 1 ? (
-            <div className="relative w-full flex items-end justify-center">
+            <div className="relative w-full flex items-end justify-center z-10">
               <video
                 src={elzuIntroVideo.url}
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="w-64 h-auto object-contain drop-shadow-2xl"
+                className="w-72 h-auto object-contain drop-shadow-2xl"
               />
             </div>
           ) : (
-            <div className={`relative ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
+            <div className={`relative z-10 ${isSpeaking ? "animate-[float_2s_ease-in-out_infinite]" : "animate-[float_3s_ease-in-out_infinite]"}`}>
               <img
                 src={elzuStanding}
-                alt="Elzu 3D Avatar"
-                className="w-56 h-auto object-contain drop-shadow-2xl"
-                width={224}
-                height={300}
+                alt="Elzu Teacher"
+                className="w-64 h-auto object-contain drop-shadow-2xl"
+                width={256}
+                height={340}
               />
-              {/* Talking indicator overlay */}
+              {/* Speaking indicator */}
               {(isSpeaking || loading) && (
-                <div className="absolute bottom-[38%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                  {/* Sound wave bars */}
+                <div className="absolute bottom-[35%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
                   <div className="flex items-end gap-[3px]">
                     {[0, 80, 160, 240, 320].map((delay) => (
                       <span
                         key={delay}
-                        className="w-[3px] rounded-full bg-emerald-500/80"
+                        className="w-[3px] rounded-full bg-white/80"
                         style={{
                           animation: `talkBar 0.6s ease-in-out ${delay}ms infinite alternate`,
                         }}
@@ -573,10 +577,17 @@ function VirtualTrainerPage() {
                 </div>
               )}
               {isSpeaking && (
-                <div className="absolute -inset-4 rounded-full bg-emerald-400/10 animate-ping" />
+                <div className="absolute -inset-4 rounded-full bg-emerald-400/15 animate-ping" />
               )}
             </div>
           )}
+
+          {/* Bottom bar - teaching status */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/50 px-3 py-2 text-center">
+            <p className="text-[10px] text-white/70">
+              {loading ? "✍️ ടൈപ്പ് ചെയ്യുന്നു..." : isSpeaking ? "🗣️ സംസാരിക്കുന്നു..." : "🎓 ക്ലാസ് തുടരുന്നു"}
+            </p>
+          </div>
         </div>
 
         {/* Chat Area */}
