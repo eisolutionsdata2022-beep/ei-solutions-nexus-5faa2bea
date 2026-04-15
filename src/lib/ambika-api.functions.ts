@@ -54,32 +54,20 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       };
     }
 
-    // Map service types to Ambika API action codes
-    const actionMap: Record<string, string> = {
-      mobile_recharge: "recharge",
-      dth: "dth",
-      electricity: "bbps",
-      water: "bbps",
-      lpg: "bbps",
-      loan_repayment: "bbps",
-      google_play: "recharge",
-      fastag: "bbps",
-    };
+    // Build query parameters matching Ambika API docs
+    // Required: UserID, Token, Account, Amount, SPKey, OperatorCode, APIRequestID, Format
+    const params = new URLSearchParams({
+      UserID: userId,
+      Token: apiKey,
+      Account: data.mobileNumber,
+      Amount: String(data.amount),
+      SPKey: data.operator,
+      OperatorCode: data.operator,
+      APIRequestID: data.transactionId,
+      Format: "2", // JSON format
+    });
 
-    const action = actionMap[data.serviceType] || "recharge";
-
-    try {
-      const params = new URLSearchParams({
-        userid: userId,
-        token: apiKey,
-        action: action,
-        operator: data.operator,
-        number: data.mobileNumber,
-        amount: String(data.amount),
-        orderid: data.transactionId,
-      });
-
-      const apiUrl = `${baseUrl}?${params.toString()}`;
+    const apiUrl = `${baseUrl}?${params.toString()}`;
 
       console.log(
         `[Ambika API] Calling: action=${action}, operator=${data.operator}, number=${data.mobileNumber}, amount=${data.amount}, orderid=${data.transactionId}`
