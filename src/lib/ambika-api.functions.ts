@@ -100,9 +100,12 @@ export const callAmbikaRechargeApi = createServerFn({ method: "POST" })
       console.log(`[Ambika API] Raw Response:`, responseText);
 
       // Parse response — API may return XML or JSON
-      let raw: Record<string, string | number | boolean | null> = {};
+      let raw: Record<string, string> = {};
       try {
-        raw = JSON.parse(responseText);
+        const parsed = JSON.parse(responseText);
+        for (const [k, v] of Object.entries(parsed)) {
+          raw[k] = String(v ?? "");
+        }
       } catch {
         // Parse XML response: extract tag values like <STATUS>2</STATUS>
         const xmlTags = ["STATUS", "MSG", "BAL", "ERRORCODE", "ACCOUNT", "AMOUNT", "RPID", "AGENTID", "OPID"];
