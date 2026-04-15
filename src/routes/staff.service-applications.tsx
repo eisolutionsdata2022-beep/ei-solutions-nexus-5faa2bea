@@ -51,6 +51,7 @@ interface AppRecord {
   userEmail: string;
   createdAt: string;
   uploadedDocuments?: UploadedDoc[];
+  documentUploadStatus?: "pending" | "completed" | "failed" | "no_documents";
 }
 
 function StaffServiceApplications() {
@@ -61,6 +62,10 @@ function StaffServiceApplications() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  const selectedApplication = selected
+    ? applications.find((application) => application.id === selected.id) ?? selected
+    : null;
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -232,6 +237,22 @@ function StaffServiceApplications() {
     toast.success("PDF downloaded!");
   }, []);
 
+  const downloadDocument = async (url: string, fileName: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const filtered = applications.filter((a) => {
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (searchTerm) {
@@ -345,33 +366,33 @@ function StaffServiceApplications() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" /> {selected?.applicationNo}
+              <FileText className="w-5 h-5" /> {selectedApplication?.applicationNo}
             </DialogTitle>
             <DialogDescription>
               Review submitted details, download files, and update the application status.
             </DialogDescription>
           </DialogHeader>
-          {selected && (
+          {selectedApplication && (
             <div className="space-y-3">
               <div className="flex justify-end">
-                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => downloadApplicationPDF(selected)}>
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => downloadApplicationPDF(selectedApplication)}>
                   <FileDown className="w-3.5 h-3.5" /> Download PDF
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs p-3 bg-muted rounded border">
-                <div><span className="text-muted-foreground">Name:</span> <strong>{selected.fullName}</strong></div>
-                <div><span className="text-muted-foreground">Service:</span> <strong>{selected.serviceType}</strong></div>
-                <div><span className="text-muted-foreground">Mobile:</span> <strong>{selected.mobile}</strong></div>
-                <div><span className="text-muted-foreground">District:</span> <strong>{selected.district}</strong></div>
-                <div><span className="text-muted-foreground">Fee:</span> <strong>₹{selected.fee}</strong></div>
-                <div><span className="text-muted-foreground">Purpose:</span> <strong>{selected.purpose}</strong></div>
+                <div><span className="text-muted-foreground">Name:</span> <strong>{selectedApplication.fullName}</strong></div>
+                <div><span className="text-muted-foreground">Service:</span> <strong>{selectedApplication.serviceType}</strong></div>
+                <div><span className="text-muted-foreground">Mobile:</span> <strong>{selectedApplication.mobile}</strong></div>
+                <div><span className="text-muted-foreground">District:</span> <strong>{selectedApplication.district}</strong></div>
+                <div><span className="text-muted-foreground">Fee:</span> <strong>₹{selectedApplication.fee}</strong></div>
+                <div><span className="text-muted-foreground">Purpose:</span> <strong>{selectedApplication.purpose}</strong></div>
               </div>
               {/* Uploaded Documents */}
-              {selected.uploadedDocuments && selected.uploadedDocuments.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold flex items-center gap-1"><FileText className="w-3 h-3" /> Uploaded Documents ({selected.uploadedDocuments.length})</Label>
-                  <div className="border rounded divide-y">
-                    {selected.uploadedDocuments.map((docItem, i) => (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold flex items-center gap-1"><FileText className="w-3 h-3" /> Uploaded Documents ({selectedApplication.uploadedDocuments?.length || 0})</Label>
+                <div className="border rounded divide-y">
+                  {selectedApplication.uploadedDocuments && selectedApplication.uploadedDocuments.length > 0 ? (
+                    selectedApplication.uploadedDocuments.map((docItem, i) => (
                       <div key={i} className="flex items-center justify-between p-2 text-xs">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{docItem.name}</p>
@@ -383,28 +404,22 @@ function StaffServiceApplications() {
                               <ExternalLink className="w-3 h-3" /> View
                             </a>
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={async () => {
-                            try {
-                              const res = await fetch(docItem.url);
-                              const blob = await res.blob();
-                              const blobUrl = URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = blobUrl;
-                              a.download = docItem.fileName;
-                              a.click();
-                              URL.revokeObjectURL(blobUrl);
-                            } catch {
-                              window.open(docItem.url, "_blank");
-                            }
-                          }}>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => downloadDocument(docItem.url, docItem.fileName)}>
                             <Download className="w-3 h-3" /> Download
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      {selectedApplication.documentUploadStatus === "pending" && "Documents are still uploading. Keep this dialog open or reopen it in a few seconds."}
+                      {selectedApplication.documentUploadStatus === "failed" && "Document upload failed for this application, so files are not available yet."}
+                      {selectedApplication.documentUploadStatus === "no_documents" && "No documents were attached to this application."}
+                      {!selectedApplication.documentUploadStatus && "No uploaded documents are available for this application yet."}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Government Application Number</Label>
                 <Input value={govAppNo} onChange={(e) => setGovAppNo(e.target.value)} placeholder="Enter govt application/tracking number" />
@@ -414,13 +429,13 @@ function StaffServiceApplications() {
                 <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="Add remark..." rows={2} />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <Button className="bg-gov-gold hover:bg-gov-gold/90 text-white" onClick={() => updateStatus(selected.id, "Pending")} disabled={processing || selected.status === "Pending"}>
+                <Button className="bg-gov-gold hover:bg-gov-gold/90 text-white" onClick={() => updateStatus(selectedApplication.id, "Pending")} disabled={processing || selectedApplication.status === "Pending"}>
                   <Clock className="w-4 h-4 mr-1" /> Pending
                 </Button>
-                <Button className="bg-gov-green hover:bg-gov-green/90" onClick={() => updateStatus(selected.id, "Approved")} disabled={processing}>
+                <Button className="bg-gov-green hover:bg-gov-green/90" onClick={() => updateStatus(selectedApplication.id, "Approved")} disabled={processing}>
                   <CheckCircle className="w-4 h-4 mr-1" /> Approve
                 </Button>
-                <Button variant="destructive" onClick={() => updateStatus(selected.id, "Rejected")} disabled={processing}>
+                <Button variant="destructive" onClick={() => updateStatus(selectedApplication.id, "Rejected")} disabled={processing}>
                   <XCircle className="w-4 h-4 mr-1" /> Reject
                 </Button>
               </div>
