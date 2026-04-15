@@ -42,6 +42,9 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
   const [callDuration, setCallDuration] = useState("");
   const [callNotes, setCallNotes] = useState("");
   const [savingCall, setSavingCall] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [documents, setDocuments] = useState(lead.documents || []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unsub1 = subscribeCallLogs(lead.id, setCallLogs);
@@ -57,6 +60,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
     setRemarks(lead.remarks);
     setFollowUpDate(lead.followUpDate);
     setFollowUpTime(lead.followUpTime);
+    setDocuments(lead.documents || []);
   }, [lead]);
 
   const handleUpdate = async () => {
