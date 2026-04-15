@@ -25,6 +25,7 @@ import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
+import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
@@ -34,6 +35,7 @@ import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
+import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
@@ -134,6 +136,11 @@ const StaffServiceApplicationsRoute =
     path: '/service-applications',
     getParentRoute: () => StaffRoute,
   } as any)
+const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
+  id: '/form-submissions',
+  path: '/form-submissions',
+  getParentRoute: () => StaffRoute,
+} as any)
 const RetailerWalletRoute = RetailerWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -177,6 +184,11 @@ const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
 const RetailerKycRoute = RetailerKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerFormsRoute = RetailerFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
@@ -298,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -307,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -338,6 +352,7 @@ export interface FileRoutesByTo {
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -347,6 +362,7 @@ export interface FileRoutesByTo {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -384,6 +400,7 @@ export interface FileRoutesById {
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -393,6 +410,7 @@ export interface FileRoutesById {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
@@ -431,6 +449,7 @@ export interface FileRouteTypes {
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
+    | '/retailer/forms'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -440,6 +459,7 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/staff/form-submissions'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -471,6 +491,7 @@ export interface FileRouteTypes {
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
+    | '/retailer/forms'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -480,6 +501,7 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/staff/form-submissions'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -516,6 +538,7 @@ export interface FileRouteTypes {
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/retailer/cv-builder'
+    | '/retailer/forms'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -525,6 +548,7 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/staff/form-submissions'
     | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
@@ -660,6 +684,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffServiceApplicationsRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/staff/form-submissions': {
+      id: '/staff/form-submissions'
+      path: '/form-submissions'
+      fullPath: '/staff/form-submissions'
+      preLoaderRoute: typeof StaffFormSubmissionsRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/retailer/wallet': {
       id: '/retailer/wallet'
       path: '/wallet'
@@ -721,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/kyc'
       fullPath: '/retailer/kyc'
       preLoaderRoute: typeof RetailerKycRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/forms': {
+      id: '/retailer/forms'
+      path: '/forms'
+      fullPath: '/retailer/forms'
+      preLoaderRoute: typeof RetailerFormsRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/cv-builder': {
@@ -910,6 +948,7 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
 
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
+  RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
@@ -924,6 +963,7 @@ interface RetailerRouteChildren {
 
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
+  RetailerFormsRoute: RetailerFormsRoute,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
@@ -941,12 +981,14 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
   StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
   StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,

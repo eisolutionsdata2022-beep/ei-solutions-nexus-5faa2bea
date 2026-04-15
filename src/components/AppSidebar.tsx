@@ -65,6 +65,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "KYC", to: "/retailer/kyc", icon: CheckCircle },
     { label: "Virtual", to: "/retailer/virtual-trainer", icon: BotMessageSquare },
     { label: "Page Tools", to: "/retailer/page-tools", icon: FileText },
+    { label: "Forms", to: "/retailer/forms", icon: CVIcon },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
@@ -75,6 +76,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
     { label: "Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
+    { label: "Form Submissions", to: "/staff/form-submissions", icon: FileText },
   ],
 };
 
