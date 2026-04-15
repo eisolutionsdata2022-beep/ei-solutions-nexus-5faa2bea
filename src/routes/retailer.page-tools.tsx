@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, Download, Image, FileImage } from "lucide-react";
+import { Printer, Download, Image, FileImage, IndianRupee } from "lucide-react";
 import posterBg1 from "@/assets/poster-template.jpeg";
 import posterBg2 from "@/assets/poster-template-2.jpeg";
 import posterBg3 from "@/assets/poster-template-3.jpeg";
 import posterBg4 from "@/assets/poster-template-4.jpeg";
 import JpgToPdfConverter from "@/components/tools/JpgToPdfConverter";
+import ServiceBilling from "@/components/tools/ServiceBilling";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
@@ -46,6 +47,9 @@ function PageToolsPage() {
         <TabsTrigger value="jpg2pdf">
           <FileImage className="w-4 h-4 mr-1.5" /> JPG to PDF
         </TabsTrigger>
+        <TabsTrigger value="billing">
+          <IndianRupee className="w-4 h-4 mr-1.5" /> Service Billing
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="poster" className="h-[calc(100%-60px)]">
@@ -54,6 +58,10 @@ function PageToolsPage() {
 
       <TabsContent value="jpg2pdf">
         <JpgToPdfConverter />
+      </TabsContent>
+
+      <TabsContent value="billing">
+        <ServiceBilling />
       </TabsContent>
     </Tabs>
   );
