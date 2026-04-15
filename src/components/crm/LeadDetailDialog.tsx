@@ -293,6 +293,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
             )}
           </TabsContent>
 
+          <TabsContent value="calls" className="space-y-4 mt-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label>Call Status</Label>
