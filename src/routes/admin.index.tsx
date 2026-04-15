@@ -109,6 +109,8 @@ function AdminDashboard() {
           </div>
           <div className="p-5 space-y-3">
             <Link to="/admin/create-user"><Button className="w-full bg-gov-blue hover:opacity-90 text-white font-bold">+ Create New User</Button></Link>
+            <Link to="/admin/crm-leads"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">CRM Leads</Button></Link>
+            <Link to="/admin/crm-reports"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">CRM Reports</Button></Link>
             <Link to="/admin/kyc"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Review KYC Requests</Button></Link>
             <Link to="/admin/wallet-requests"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Wallet Requests</Button></Link>
           </div>

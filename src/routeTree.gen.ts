@@ -55,6 +55,8 @@ import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.re
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
+import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
+import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
@@ -292,6 +294,16 @@ const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   path: '/form-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCrmReportsRoute = AdminCrmReportsRouteImport.update({
+  id: '/crm-reports',
+  path: '/crm-reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCrmLeadsRoute = AdminCrmLeadsRouteImport.update({
+  id: '/crm-leads',
+  path: '/crm-leads',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   id: '/create-user',
   path: '/create-user',
@@ -319,6 +331,8 @@ export interface FileRoutesByFullPath {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-leads': typeof AdminCrmLeadsRoute
+  '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -365,6 +379,8 @@ export interface FileRoutesByTo {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-leads': typeof AdminCrmLeadsRoute
+  '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -417,6 +433,8 @@ export interface FileRoutesById {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-leads': typeof AdminCrmLeadsRoute
+  '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -470,6 +488,8 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-leads'
+    | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
@@ -516,6 +536,8 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-leads'
+    | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
@@ -567,6 +589,8 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-leads'
+    | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/kyc'
@@ -942,6 +966,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/crm-reports': {
+      id: '/admin/crm-reports'
+      path: '/crm-reports'
+      fullPath: '/admin/crm-reports'
+      preLoaderRoute: typeof AdminCrmReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/crm-leads': {
+      id: '/admin/crm-leads'
+      path: '/crm-leads'
+      fullPath: '/admin/crm-leads'
+      preLoaderRoute: typeof AdminCrmLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/create-user': {
       id: '/admin/create-user'
       path: '/create-user'
@@ -970,6 +1008,8 @@ interface AdminRouteChildren {
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
+  AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
+  AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminKycRoute: typeof AdminKycRoute
@@ -990,6 +1030,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
+  AdminCrmLeadsRoute: AdminCrmLeadsRoute,
+  AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminKycRoute: AdminKycRoute,
