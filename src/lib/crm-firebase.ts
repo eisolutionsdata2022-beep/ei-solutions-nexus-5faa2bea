@@ -13,8 +13,8 @@ import {
   setDoc,
   Timestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db } from "./firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "./firebase";
 import type { Lead, CallLog, LeadHistory, LeadDocument, StaffMember } from "./crm-types";
 
 // ─── Leads ───
