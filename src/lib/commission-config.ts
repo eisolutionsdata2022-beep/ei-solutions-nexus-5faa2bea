@@ -102,6 +102,14 @@ loanOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("loan_repayment", o
 const lifeInsOps = ["911","905","907","902","901","938","912","906","909","903","929","908","910","904"];
 lifeInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("life_insurance", op, ["902","901","938","912","929"].includes(op) ? 1.0 : 0)));
 
+// Bike Insurance
+const bikeInsOps = ["2809","2803","2802","2816","2819","2805","2801","2813","2807","2812","2806","2808","2815","2814","2818","2810","2811","2817","2804"];
+bikeInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("bike_insurance", op, 0)));
+
+// Four Wheeler Insurance
+const carInsOps = ["2909","2903","2902","2916","2919","2905","2901","2913","2907","2912","2906","2908","2915","2914","2918","2910","2911","2917","2904"];
+carInsOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("four_wheeler_insurance", op, 0)));
+
 // Cable TV
 const cableTvOps = ["3903","3301","3904","3902"];
 cableTvOps.forEach(op => DEFAULT_COMMISSION_RATES.push(bbpsRate("cable_tv", op, op === "3301" ? 1.5 : 0)));
