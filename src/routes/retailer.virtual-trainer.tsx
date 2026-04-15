@@ -308,7 +308,7 @@ function VirtualTrainerPage() {
       // Title
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Elzuthatha Virtual Trainer - Training Notes", margin, y);
+      pdf.text("Elzu Virtual Trainer - Training Notes", margin, y);
       y += 8;
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
@@ -323,7 +323,7 @@ function VirtualTrainerPage() {
 
       for (const msg of messages) {
         if (msg.id === "welcome") continue;
-        const label = msg.role === "user" ? "You" : "Elzuthatha";
+        const label = msg.role === "user" ? "You" : "Elzu";
         const time = new Date(msg.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
         // Label
