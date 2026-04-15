@@ -168,11 +168,16 @@ function PageToolsPage() {
             <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location..." />
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleDownloadPDF} className="flex-1 bg-gov-blue hover:bg-gov-blue/90">
-              <Download className="w-4 h-4 mr-1" /> PDF
-            </Button>
-            <Button onClick={handlePrint} variant="outline" className="flex-1">
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex gap-2">
+              <Button onClick={handleDownloadPDF} className="flex-1 bg-gov-blue hover:bg-gov-blue/90">
+                <Download className="w-4 h-4 mr-1" /> PDF
+              </Button>
+              <Button onClick={handleDownloadImage} className="flex-1 bg-gov-green hover:bg-gov-green/90 text-white">
+                <Image className="w-4 h-4 mr-1" /> Image
+              </Button>
+            </div>
+            <Button onClick={handlePrint} variant="outline" className="w-full">
               <Printer className="w-4 h-4 mr-1" /> Print
             </Button>
           </div>
