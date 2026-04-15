@@ -47,18 +47,18 @@ function PageToolsPage() {
   const services = servicesText.split("\n").filter((s) => s.trim());
   const currentTemplate = TEMPLATES.find((t) => t.id === selectedTemplate)!;
 
-  const captureCanvas = async () => {
+  const captureDataUrl = async (type: "png" | "jpeg" = "png") => {
     const el = posterRef.current;
     if (!el) return null;
-    const { default: html2canvas } = await import("html2canvas");
-    return html2canvas(el, { scale: 3, useCORS: true, allowTaint: true });
+    const { toPng, toJpeg } = await import("html-to-image");
+    const fn = type === "jpeg" ? toJpeg : toPng;
+    return fn(el, { pixelRatio: 3, cacheBust: true });
   };
 
   const handlePrint = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
       printWindow.document.write(`
@@ -80,10 +80,9 @@ function PageToolsPage() {
 
   const handleDownloadPDF = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
+      const imgData = await captureDataUrl("jpeg");
+      if (!imgData) return;
       const { default: jsPDF } = await import("jspdf");
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
@@ -96,11 +95,11 @@ function PageToolsPage() {
 
   const handleDownloadImage = async () => {
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
       const link = document.createElement("a");
       link.download = "EI-Solutions-Poster.png";
-      link.href = canvas.toDataURL("image/png");
+      link.href = imgData;
       link.click();
     } catch (e) {
       console.error("Image download failed", e);
