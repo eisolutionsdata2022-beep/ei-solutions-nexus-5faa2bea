@@ -84,6 +84,7 @@ function RetailerServices() {
     const appNo = `EIS-${Date.now().toString(36).toUpperCase()}`;
     let debited = false;
     let fee = serviceFees[data.serviceType];
+    let applicationSaved = false;
 
     try {
       const svc = SERVICE_CATALOG.find((s) => s.name === data.serviceType);
@@ -99,7 +100,6 @@ function RetailerServices() {
 
       console.log("[E-dis] Submission start:", { appNo, serviceType: data.serviceType, fee });
 
-      // Step 1: Debit wallet first
       if (fee > 0) {
         await atomicDebit(appUser.uid, fee, {
           source: "service",
@@ -109,7 +109,6 @@ function RetailerServices() {
         debited = true;
       }
 
-      // Step 2: Save application to Firestore IMMEDIATELY (no waiting for uploads)
       const appRef = await addDoc(collection(db, "serviceApplications"), {
         userId: appUser.uid,
         userEmail: appUser.email,
@@ -133,38 +132,40 @@ function RetailerServices() {
         documentUploadStatus: "pending",
         createdAt: new Date().toISOString(),
       });
+      applicationSaved = true;
 
       console.log("[E-dis] Application saved:", appNo);
-      toast.success(`Application ${appNo} submitted successfully!`);
-      setView("dashboard");
 
-      // Step 3: Upload documents in background (non-blocking)
       const docsToUpload = data.documents.filter((d) => d.file);
       if (docsToUpload.length > 0) {
-        toast.info(`Uploading ${docsToUpload.length} document(s) in background...`);
-        uploadServiceDocuments({ appNo, documents: data.documents, userId: appUser.uid })
-          .then(async (uploadedDocs) => {
-            await updateDoc(doc(db, "serviceApplications", appRef.id), {
-              uploadedDocuments: uploadedDocs,
-              documentUploadStatus: "completed",
-            });
-            toast.success(`${uploadedDocs.length} document(s) uploaded successfully!`);
-          })
-          .catch(async (uploadErr) => {
-            console.error("[E-dis] Background upload failed:", uploadErr);
-            await updateDoc(doc(db, "serviceApplications", appRef.id), {
-              documentUploadStatus: "failed",
-            }).catch(() => {});
-            toast.error("Document upload failed. Staff will contact you for documents.");
+        toast.info(`Uploading ${docsToUpload.length} document(s). Please wait on this page until upload completes.`);
+        try {
+          const uploadedDocs = await uploadServiceDocuments({ appNo, documents: data.documents, userId: appUser.uid });
+          await updateDoc(doc(db, "serviceApplications", appRef.id), {
+            uploadedDocuments: uploadedDocs,
+            documentUploadStatus: "completed",
           });
+          toast.success(`Application ${appNo} submitted with ${uploadedDocs.length} document(s)!`);
+        } catch (uploadErr) {
+          console.error("[E-dis] Document upload failed after application save:", uploadErr);
+          await updateDoc(doc(db, "serviceApplications", appRef.id), {
+            documentUploadStatus: "failed",
+          }).catch(() => {});
+          toast.error(`Application ${appNo} was saved, but document upload failed. Do not submit again; contact staff with this application number.`);
+          setView("dashboard");
+          return;
+        }
       } else {
         await updateDoc(doc(db, "serviceApplications", appRef.id), {
           documentUploadStatus: "no_documents",
         });
+        toast.success(`Application ${appNo} submitted successfully!`);
       }
+
+      setView("dashboard");
     } catch (err: any) {
       console.error("[E-dis] Submit FAILED:", err?.message, err);
-      if (debited && fee > 0) {
+      if (!applicationSaved && debited && fee > 0) {
         try {
           await atomicCredit(appUser.uid, fee, {
             source: "service_refund",
@@ -175,6 +176,8 @@ function RetailerServices() {
         } catch {
           toast.error("Submission failed after wallet debit. Contact support.");
         }
+      } else if (applicationSaved) {
+        toast.error(err?.message || "Application was saved, but document processing did not complete.");
       } else {
         toast.error(err?.message || "Submission failed. Please try again.");
       }
