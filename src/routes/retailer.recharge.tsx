@@ -114,7 +114,7 @@ function RetailerRecharge() {
     setResult(null);
   };
 
-  const serviceTypes = Object.entries(SERVICE_CATALOG) as [ServiceType, typeof SERVICE_CATALOG[ServiceType]][];
+  const serviceTypes = Object.entries(SERVICE_CATALOG) as [ServiceType, (typeof SERVICE_CATALOG)[string]][];
 
   // Result screen
   if (result) {
