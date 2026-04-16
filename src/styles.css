@@ -177,3 +177,21 @@
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
+
+@keyframes logo-fade-in {
+  0% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-logo-entrance {
+  animation: logo-fade-in 0.9s ease-out both, logo-float 5s ease-in-out 0.9s infinite;
+}
+
+.logo-glow {
+  filter: drop-shadow(0 8px 18px hsl(216 70% 28% / 0.35)) drop-shadow(0 0 24px hsl(216 90% 60% / 0.25));
+}

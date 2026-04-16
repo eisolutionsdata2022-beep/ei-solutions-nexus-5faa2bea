@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
-import digitalIndiaLogo from "@/assets/digital-india-logo.png";
+import eiSolutionsLogo from "@/assets/ei-solutions-3d-logo.png";
 import loginIllustration from "@/assets/login-illustration.png";
 
 export function LoginForm() {
@@ -51,19 +51,24 @@ export function LoginForm() {
 
         {/* Left — Form side */}
         <div className="flex flex-col justify-center px-8 md:px-14 py-10">
-          {/* Logo */}
-          <div className="mb-8">
+          {/* 3D EI SOLUTIONS Logo */}
+          <div className="flex flex-col items-center mb-8 animate-logo-entrance">
             <img
-              src={digitalIndiaLogo}
-              alt="Digital India — Power to Empower"
-              className="h-16 w-auto"
-              width={512}
+              src={eiSolutionsLogo}
+              alt="EI SOLUTIONS — Digital Services Platform"
+              className="h-20 md:h-24 w-auto logo-glow"
+              width={1280}
               height={512}
+              fetchPriority="high"
+              decoding="async"
             />
+            <p className="mt-2 text-xs md:text-sm font-medium tracking-[0.2em] uppercase text-gov-blue">
+              Digital Services Platform
+            </p>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Welcome Back</h1>
-          <p className="text-muted-foreground text-sm mb-6">Sign in to your account</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 text-center lg:text-left">Welcome Back</h1>
+          <p className="text-muted-foreground text-sm mb-6 text-center lg:text-left">Sign in to your account</p>
 
           {/* Error / success */}
           {error && (
