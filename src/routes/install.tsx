@@ -10,6 +10,10 @@ import {
   CheckCircle2,
   Banknote,
   Fingerprint,
+  Cpu,
+  AlertTriangle,
+  ShieldCheck,
+  Terminal,
 } from "lucide-react";
 
 export const Route = createFileRoute("/install")({
