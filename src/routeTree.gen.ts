@@ -48,7 +48,6 @@ import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.mon
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
-import { Route as RetailerIppbBadgeRouteImport } from './routes/retailer.ippb-badge'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
@@ -75,7 +74,6 @@ import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-mark
 import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
 import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-disputes'
 import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
-import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -282,11 +280,6 @@ const RetailerJobsRoute = RetailerJobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => RetailerRoute,
 } as any)
-const RetailerIppbBadgeRoute = RetailerIppbBadgeRouteImport.update({
-  id: '/ippb-badge',
-  path: '/ippb-badge',
-  getParentRoute: () => RetailerRoute,
-} as any)
 const RetailerIppbRoute = RetailerIppbRouteImport.update({
   id: '/ippb',
   path: '/ippb',
@@ -419,11 +412,6 @@ const AdminIppbSettingsRoute = AdminIppbSettingsRouteImport.update({
   path: '/ippb-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminIppbBadgesRoute = AdminIppbBadgesRouteImport.update({
-  id: '/ippb-badges',
-  path: '/ippb-badges',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -488,7 +476,6 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
-  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -515,7 +502,6 @@ export interface FileRoutesByFullPath {
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
-  '/retailer/ippb-badge': typeof RetailerIppbBadgeRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -560,7 +546,6 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
-  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -587,7 +572,6 @@ export interface FileRoutesByTo {
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
-  '/retailer/ippb-badge': typeof RetailerIppbBadgeRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -639,7 +623,6 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
-  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -666,7 +649,6 @@ export interface FileRoutesById {
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
-  '/retailer/ippb-badge': typeof RetailerIppbBadgeRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -719,7 +701,6 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
-    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -746,7 +727,6 @@ export interface FileRouteTypes {
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
-    | '/retailer/ippb-badge'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -791,7 +771,6 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
-    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -818,7 +797,6 @@ export interface FileRouteTypes {
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
-    | '/retailer/ippb-badge'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -869,7 +847,6 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
-    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -896,7 +873,6 @@ export interface FileRouteTypes {
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
-    | '/retailer/ippb-badge'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -1219,13 +1195,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerJobsRouteImport
       parentRoute: typeof RetailerRoute
     }
-    '/retailer/ippb-badge': {
-      id: '/retailer/ippb-badge'
-      path: '/ippb-badge'
-      fullPath: '/retailer/ippb-badge'
-      preLoaderRoute: typeof RetailerIppbBadgeRouteImport
-      parentRoute: typeof RetailerRoute
-    }
     '/retailer/ippb': {
       id: '/retailer/ippb'
       path: '/ippb'
@@ -1408,13 +1377,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIppbSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/ippb-badges': {
-      id: '/admin/ippb-badges'
-      path: '/ippb-badges'
-      fullPath: '/admin/ippb-badges'
-      preLoaderRoute: typeof AdminIppbBadgesRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1490,7 +1452,6 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
-  AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
   AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
   AdminJobDisputesRoute: typeof AdminJobDisputesRoute
   AdminJobEarningsRoute: typeof AdminJobEarningsRoute
@@ -1521,7 +1482,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
-  AdminIppbBadgesRoute: AdminIppbBadgesRoute,
   AdminIppbSettingsRoute: AdminIppbSettingsRoute,
   AdminJobDisputesRoute: AdminJobDisputesRoute,
   AdminJobEarningsRoute: AdminJobEarningsRoute,
@@ -1592,7 +1552,6 @@ interface RetailerRouteChildren {
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
-  RetailerIppbBadgeRoute: typeof RetailerIppbBadgeRoute
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
@@ -1614,7 +1573,6 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,
-  RetailerIppbBadgeRoute: RetailerIppbBadgeRoute,
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,

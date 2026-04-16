@@ -21,7 +21,6 @@ import {
   type IPPBStatus,
 } from "./ippb-types";
 import { getIPPBFeeConfig } from "./ippb-fee-config";
-import { assertIPPBBadge } from "./ippb-badge";
 
 const COL = "ippbRequests";
 
@@ -52,8 +51,6 @@ export async function createIPPBRequest(input: {
   retailerName: string;
   retailerEmail: string;
 }): Promise<string> {
-  // Gate: retailer must hold an admin-approved IPPB Badge.
-  await assertIPPBBadge(input.retailerId);
   const requestNo = generateRequestNo();
   const now = new Date().toISOString();
   const ref = await addDoc(collection(db, COL), {

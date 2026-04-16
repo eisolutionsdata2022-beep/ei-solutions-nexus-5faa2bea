@@ -47,36 +47,6 @@ function RetailerIPPBPage() {
 
   if (!appUser) return null;
 
-  // Gate: retailer must have IPPB Badge approved by admin
-  if (!appUser.ippbBadge) {
-    return (
-      <div className="space-y-6 max-w-2xl">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Banknote className="w-6 h-6 text-gov-blue" /> IPPB Account Opening
-          </h1>
-        </div>
-        <Card className="border-amber-300 bg-amber-50">
-          <CardContent className="p-6 space-y-3 text-sm text-amber-900">
-            <p className="font-semibold text-base">
-              🔒 IPPB Badge വേണം
-            </p>
-            <p>
-              IPPB അക്കൗണ്ട് ഓപ്പണിങ്ങും tablet biometric requests catch
-              ചെയ്യലും ചെയ്യാൻ <strong>admin-approved IPPB Badge</strong>{" "}
-              നിർബന്ധമാണ്. Apply ചെയ്ത് approval കാത്തിരിക്കുക.
-            </p>
-            <Link to="/retailer/ippb-badge">
-              <Button>
-                Apply for IPPB Badge
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const handleCreate = async () => {
     setCreating(true);
     try {

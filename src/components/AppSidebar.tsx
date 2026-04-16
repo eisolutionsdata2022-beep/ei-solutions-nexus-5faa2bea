@@ -61,7 +61,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Earnings", to: "/admin/job-earnings", icon: BarChart3 },
     { label: "Job Disputes", to: "/admin/job-disputes", icon: Gavel },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
-    { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
     { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
   ],
   distributor: [
@@ -86,7 +85,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Forms", to: "/retailer/forms", icon: CVIcon },
     { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
     { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
-    { label: "IPPB Badge", to: "/retailer/ippb-badge", icon: ShieldCheck },
     { label: "IPPB Account", to: "/retailer/ippb", icon: Banknote },
   ],
   trainer: [
