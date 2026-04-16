@@ -1,0 +1,145 @@
+name: Build & Release WPF PC Agent
+
+# Triggers:
+#   - Push a tag like  pc-agent-v1.0.0  → builds + creates a GitHub Release
+#   - Manual dispatch  → builds artifact only (no release), useful for testing
+on:
+  push:
+    tags:
+      - "pc-agent-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stamp into the build (e.g. 1.0.0-test)"
+        required: false
+        default: "0.0.0-dev"
+
+permissions:
+  contents: write   # required to upload release assets
+
+jobs:
+  build:
+    name: Build (windows-latest, .NET 8)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: native/pc-agent-wpf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Derive version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like "refs/tags/pc-agent-v*") {
+            $v = $env:GITHUB_REF -replace "refs/tags/pc-agent-v", ""
+          } else {
+            $v = "${{ github.event.inputs.version }}"
+          }
+          echo "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Building version: $v"
+
+      - name: Restore dependencies
+        run: dotnet restore EISolutions.IppbAgent/EISolutions.IppbAgent.csproj
+
+      - name: Publish single-file self-contained exe
+        run: >
+          dotnet publish EISolutions.IppbAgent/EISolutions.IppbAgent.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          /p:PublishSingleFile=true
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:Version=${{ steps.ver.outputs.version }}
+          /p:AssemblyVersion=${{ steps.ver.outputs.version }}.0
+          /p:FileVersion=${{ steps.ver.outputs.version }}.0
+          -o publish
+
+      - name: Rename output
+        shell: pwsh
+        run: |
+          $src = "publish/EISolutions.IppbAgent.exe"
+          $dst = "publish/EISolutions.IppbAgent.Setup.exe"
+          if (Test-Path $src) {
+            Rename-Item -Path $src -NewName "EISolutions.IppbAgent.Setup.exe"
+            Write-Host "Renamed $src -> $dst"
+          } else {
+            Write-Error "Build output not found at $src"
+            exit 1
+          }
+
+      # ----- Optional code signing -----
+      # To enable, add these repo secrets:
+      #   CODE_SIGN_PFX_BASE64   (base64 of your .pfx certificate)
+      #   CODE_SIGN_PFX_PASSWORD (password of the .pfx)
+      # The step is a no-op if either secret is missing.
+      - name: Sign exe (if certificate is configured)
+        if: env.CODE_SIGN_PFX_BASE64 != ''
+        env:
+          CODE_SIGN_PFX_BASE64: ${{ secrets.CODE_SIGN_PFX_BASE64 }}
+          CODE_SIGN_PFX_PASSWORD: ${{ secrets.CODE_SIGN_PFX_PASSWORD }}
+        shell: pwsh
+        run: |
+          $pfxPath = "$env:RUNNER_TEMP\codesign.pfx"
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODE_SIGN_PFX_BASE64))
+          & signtool sign `
+            /f $pfxPath `
+            /p $env:CODE_SIGN_PFX_PASSWORD `
+            /tr http://timestamp.sectigo.com `
+            /td sha256 `
+            /fd sha256 `
+            "publish/EISolutions.IppbAgent.Setup.exe"
+          Remove-Item $pfxPath -Force
+
+      - name: Compute SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "publish/EISolutions.IppbAgent.Setup.exe" -Algorithm SHA256).Hash
+          $hash | Out-File "publish/EISolutions.IppbAgent.Setup.exe.sha256"
+          Write-Host "SHA-256: $hash"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pc-agent-${{ steps.ver.outputs.version }}
+          path: |
+            native/pc-agent-wpf/publish/EISolutions.IppbAgent.Setup.exe
+            native/pc-agent-wpf/publish/EISolutions.IppbAgent.Setup.exe.sha256
+          retention-days: 30
+
+      # ----- Release (only on tag push) -----
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/pc-agent-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PC Agent ${{ steps.ver.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            native/pc-agent-wpf/publish/EISolutions.IppbAgent.Setup.exe
+            native/pc-agent-wpf/publish/EISolutions.IppbAgent.Setup.exe.sha256
+          body: |
+            ## EI SOLUTIONS IPPB PC Agent — v${{ steps.ver.outputs.version }}
+
+            Windows desktop agent that bridges the EI SOLUTIONS web app with
+            local MFS110 / Mantra / Morpho RD Service fingerprint devices.
+
+            ### Install
+            1. Download `EISolutions.IppbAgent.Setup.exe` below.
+            2. If Windows SmartScreen blocks → "More info" → "Run anyway".
+            3. Login with retailer credentials.
+            4. Plug in MFS110 → "Listening" status in system tray.
+
+            ### Verify download
+            Compare the SHA-256 below against `EISolutions.IppbAgent.Setup.exe.sha256`.
+
+            See [/install](https://eisoluions.xyz/install) for full Malayalam instructions.
