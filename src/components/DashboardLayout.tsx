@@ -1,10 +1,14 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PortalHeader } from "@/components/PortalHeader";
 import { PortalFooter } from "@/components/PortalFooter";
 import { MobileSidebar } from "@/components/MobileSidebar";
+import { WalletGate } from "@/components/WalletGate";
 
 export function DashboardLayout() {
+  const location = useLocation();
+  const isWalletPage = location.pathname.includes("/wallet");
+
   return (
     <div className="flex flex-col min-h-screen w-full">
       <PortalHeader />
@@ -12,7 +16,11 @@ export function DashboardLayout() {
         <AppSidebar />
         <MobileSidebar />
         <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background">
-          <Outlet />
+          {isWalletPage ? <Outlet /> : (
+            <WalletGate>
+              <Outlet />
+            </WalletGate>
+          )}
         </main>
       </div>
       <PortalFooter />
