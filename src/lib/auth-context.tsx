@@ -25,6 +25,7 @@ export interface AppUser {
   name?: string;
   phone?: string;
   kycStatus?: "pending" | "approved" | "rejected";
+  workBadge?: boolean;
 }
 
 interface AuthContextType {
