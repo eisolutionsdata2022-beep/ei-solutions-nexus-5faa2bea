@@ -26,6 +26,18 @@ function ProfileDetailPage() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [copied, setCopied] = useState(false);
+
+  const handleShareLink = () => {
+    const url = `${window.location.origin}/matrimony/${profileId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      toast.success("Profile link copied!");
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      toast.error("Failed to copy link");
+    });
+  };
 
   useEffect(() => {
     getDoc(doc(db, "matrimonyProfiles", profileId)).then((snap) => {
