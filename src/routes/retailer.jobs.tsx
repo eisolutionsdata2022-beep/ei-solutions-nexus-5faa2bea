@@ -146,7 +146,14 @@ function RetailerJobs() {
                   <div><Label>Budget (₹) *</Label><Input required type="number" min={50} value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
                   <div><Label>Deadline *</Label><Input required type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
                 </div>
-                <div><Label>Required Documents</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+                <div><Label>Required Documents (text)</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+                <div>
+                  <Label>Reference Files (optional)</Label>
+                  <p className="text-[11px] text-muted-foreground mb-1">
+                    Attach sample files, briefs, or source documents. Bidders & the assigned worker can download these.
+                  </p>
+                  <JobFileUploadField files={referenceFiles} onChange={setReferenceFiles} />
+                </div>
                 <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
                   ⚠️ Your budget will be held in escrow when you post. Excess (budget − accepted bid) is auto-refunded on completion.
                 </div>
