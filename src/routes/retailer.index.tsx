@@ -163,18 +163,31 @@ function RetailerDashboard() {
         <div className="bg-card rounded-lg border border-border p-5">
           <p className="text-sm font-semibold text-foreground mb-3">Quick Services</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {serviceButtons.map((b) => (
-              <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${getButtonClasses(b.style, !!b.customColor)}`}
-                style={getButtonInlineStyle(b.style, b.customColor)}>
-                {b.iconUrl ? (
-                  <img src={b.iconUrl} alt="" className="w-5 h-5 rounded-sm object-contain" />
-                ) : (
-                  <ExternalLink className="w-4 h-4" />
-                )}
-                {b.name}
-              </a>
-            ))}
+            {serviceButtons.map((b) => {
+              const isDisabled = disabledServices.has(b.name);
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => {
+                    if (isDisabled) {
+                      setBlockedServiceName(b.name);
+                      setShowBlockedDialog(true);
+                    } else {
+                      window.open(b.url, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${isDisabled ? "opacity-50 cursor-not-allowed" : ""} ${getButtonClasses(b.style, !!b.customColor)}`}
+                  style={getButtonInlineStyle(b.style, b.customColor)}
+                >
+                  {b.iconUrl ? (
+                    <img src={b.iconUrl} alt="" className="w-5 h-5 rounded-sm object-contain" />
+                  ) : (
+                    <ExternalLink className="w-4 h-4" />
+                  )}
+                  {b.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
