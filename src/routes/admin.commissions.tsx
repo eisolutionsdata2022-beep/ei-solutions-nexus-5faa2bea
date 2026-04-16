@@ -4,6 +4,9 @@ import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, onSnapshot } from 
 import { db } from "@/lib/firebase";
 import { DEFAULT_COMMISSION_RATES, SERVICE_CATALOG, type CommissionRate, type ServiceType } from "@/lib/commission-config";
 import { SERVICE_CATALOG as EDIS_CATALOG } from "@/lib/service-catalog";
+import { getMatrimonyPricing, saveMatrimonyPricing } from "@/lib/matrimony-firebase";
+import type { MatrimonyPricing } from "@/lib/matrimony-types";
+import { DEFAULT_PRICING } from "@/lib/matrimony-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Upload, RotateCcw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil, Upload, RotateCcw, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/commissions")({
