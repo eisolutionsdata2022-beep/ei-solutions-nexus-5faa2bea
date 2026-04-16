@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Users, Wallet, ShoppingBag, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search } from "lucide-react";
+import { Users, Wallet, ShoppingBag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { UserSearchPanel } from "@/components/admin/UserSearchPanel";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
