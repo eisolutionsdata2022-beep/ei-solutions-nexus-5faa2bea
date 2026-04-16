@@ -298,6 +298,12 @@ function JobDetail() {
           {job.requiredDocs && (
             <div className="bg-muted/50 p-2 rounded text-xs"><strong>Required docs:</strong> {job.requiredDocs}</div>
           )}
+          {job.referenceFiles && job.referenceFiles.length > 0 && (
+            <div className="border rounded p-2 bg-muted/20">
+              <p className="text-xs font-semibold mb-1">📎 Reference files from uploader (download to start work):</p>
+              <FilePreviewList files={job.referenceFiles} />
+            </div>
+          )}
           {job.status === "completed" && (
             <div className="bg-green-50 border border-green-200 p-3 rounded text-sm space-y-1">
               <p>✅ Worker received: <strong>₹{job.workerNet}</strong></p>
