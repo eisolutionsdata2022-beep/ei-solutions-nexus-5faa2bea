@@ -107,22 +107,162 @@ function RetailerIPPBPage() {
     }
   };
 
+  const handleApply = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!applyReason.trim() || applyReason.trim().length < 10) {
+      return toast.error("ദയവായി കാരണം detail-ആയി എഴുതുക (min 10 chars).");
+    }
+    if (!applyAck) {
+      return toast.error("Help page acknowledge ചെയ്യണം.");
+    }
+    setApplying(true);
+    try {
+      await applyForIPPBBadge({
+        userId: appUser.uid,
+        userName: appUser.name || appUser.email,
+        userEmail: appUser.email,
+        userPhone: appUser.phone,
+        reason: applyReason.trim(),
+        acknowledgedHelp: applyAck,
+      });
+      toast.success("അപേക്ഷ submit ആയി. Admin review ചെയ്യും.");
+      setApplyReason("");
+      setApplyAck(false);
+      setApplyOpen(false);
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed");
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Banknote className="w-6 h-6 text-gov-blue" /> IPPB Account Opening
+            {hasBadge && (
+              <Badge variant="default" className="ml-2 gap-1">
+                <ShieldCheck className="w-3 h-3" /> Badged
+              </Badge>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Create a request, then relay the OTP from the customer to the staff in real time.
+            {hasBadge
+              ? "Create a request, then relay the OTP from the customer to the staff in real time."
+              : "IPPB badge ഇല്ലാത്തതിനാൽ ഇപ്പോൾ work ചെയ്യാൻ കഴിയില്ല. താഴെ apply ചെയ്യുക."}
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={creating}>
-          {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+        <Button
+          onClick={handleCreate}
+          disabled={creating || !hasBadge}
+          title={!hasBadge ? "IPPB badge required" : undefined}
+        >
+          {!hasBadge ? (
+            <Lock className="w-4 h-4" />
+          ) : creating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
           New Request
         </Button>
       </div>
+
+      {/* Badge gate — block creation but show preview below */}
+      {!hasBadge && (
+        <Card className="border-amber-400 bg-amber-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-900">
+              <ShieldAlert className="w-5 h-5" />
+              IPPB Work Badge ആവശ്യമാണ്
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-amber-900">
+            <p>
+              IPPB account opening service ചെയ്യാൻ admin-ൽ നിന്ന് ഒരു{" "}
+              <strong>IPPB Work Badge</strong> approve ആകേണ്ടതുണ്ട്. താഴെയുള്ള form
+              fill ചെയ്ത് request അയക്കുക. Admin verify ചെയ്ത ശേഷം badge grant ആകും
+              — അതിനു ശേഷം മാത്രം "New Request" enable ആകും.
+            </p>
+
+            {pendingApp && (
+              <div className="rounded-md bg-white/70 border border-amber-300 p-3">
+                ⏳ <strong>Pending review</strong> — Submitted{" "}
+                {new Date(pendingApp.createdAt).toLocaleString()}.
+                Admin approve ചെയ്യാൻ കാത്തിരിക്കുന്നു.
+              </div>
+            )}
+
+            {lastRejected && (
+              <div className="rounded-md bg-red-50 border border-red-300 p-3 text-red-900">
+                ❌ <strong>Last application rejected.</strong>
+                {lastRejected.reviewNote && (
+                  <p className="text-xs italic mt-1">"{lastRejected.reviewNote}"</p>
+                )}
+                <p className="text-xs mt-1">
+                  നിങ്ങൾക്ക് വീണ്ടും apply ചെയ്യാം.
+                </p>
+              </div>
+            )}
+
+            {!pendingApp && (
+              <Collapsible open={applyOpen} onOpenChange={setApplyOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="default" size="sm">
+                    <ShieldCheck className="w-4 h-4 mr-1" />
+                    {lastRejected ? "Re-apply for IPPB Badge" : "Request IPPB Badge"}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <form
+                    onSubmit={handleApply}
+                    className="space-y-3 rounded-md bg-white p-3 border"
+                  >
+                    <div>
+                      <Label className="text-xs">
+                        എന്തുകൊണ്ട് IPPB work ചെയ്യണം? (Experience, training, customer base) *
+                      </Label>
+                      <Textarea
+                        required
+                        rows={4}
+                        placeholder="ഉദാ: 5 വർഷം banking field-ൽ. Customer base ~200. IPPB workflow help page വായിച്ചു…"
+                        value={applyReason}
+                        onChange={(e) => setApplyReason(e.target.value)}
+                      />
+                    </div>
+                    <label className="flex items-start gap-2 text-xs cursor-pointer">
+                      <Checkbox
+                        checked={applyAck}
+                        onCheckedChange={(v) => setApplyAck(!!v)}
+                      />
+                      <span>
+                        IPPB workflow + fee structure ഞാൻ വായിച്ചു മനസ്സിലാക്കി —{" "}
+                        <Link
+                          to="/help/ippb"
+                          target="_blank"
+                          className="text-gov-blue underline"
+                        >
+                          Help page തുറക്കുക
+                        </Link>
+                      </span>
+                    </label>
+                    <Button type="submit" disabled={applying} className="w-full">
+                      {applying ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Submit Application"
+                      )}
+                    </Button>
+                  </form>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* PC Agent upgrade banner — small, dismissable visual hint */}
       <div className="rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/50 px-4 py-3 flex items-center gap-3 flex-wrap">
