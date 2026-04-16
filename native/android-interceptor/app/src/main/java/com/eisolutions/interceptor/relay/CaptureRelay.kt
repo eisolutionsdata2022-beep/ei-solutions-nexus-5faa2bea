@@ -27,15 +27,28 @@ class CaptureRelay @Inject constructor(
     private val db: FirebaseFirestore,
     private val auth: FirebaseAuth,
 ) {
-    fun requestCapture(sourcePackage: String, pidOptionsXml: String): Flow<Result> = callbackFlow {
+    fun requestCapture(
+        sourcePackage: String,
+        pidOptionsXml: String,
+        detectionOnly: Boolean = false,
+    ): Flow<Result> = callbackFlow {
         val staffId = auth.currentUser?.uid ?: error("Not signed in")
         val now = System.currentTimeMillis()
         val expiresAt = Instant.ofEpochMilli(now + 90_000L).toString()
+
+        // mode = "detection" → retailer-side UI shows a passive notification
+        //                      ("Customer needs fingerprint at IPPB BCAS")
+        //                      and ACKs without returning a PID payload.
+        // mode = "capture"   → retailer scans on their RD device and returns
+        //                      a signed PID block. Subject to UIDAI signature
+        //                      mismatch (see native/docs/SECURITY.md §7).
+        val mode = if (detectionOnly) "detection" else "capture"
 
         val docRef = db.collection("interceptorCaptures").add(mapOf(
             "staffId" to staffId,
             "sourcePackage" to sourcePackage,
             "pidOptionsXml" to pidOptionsXml,
+            "mode" to mode,
             "status" to "requested",
             "requestedAt" to Instant.ofEpochMilli(now).toString(),
             "expiresAt" to expiresAt,
@@ -63,6 +76,8 @@ class CaptureRelay @Inject constructor(
         val deviceModel: String? = null,
         val errorMessage: String? = null,
     ) {
-        val isTerminal: Boolean get() = status in setOf("captured", "failed", "timeout", "cancelled")
+        val isTerminal: Boolean get() = status in setOf(
+            "captured", "acknowledged", "failed", "timeout", "cancelled"
+        )
     }
 }
