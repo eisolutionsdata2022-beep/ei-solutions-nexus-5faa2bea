@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import {
 } from "@/lib/matrimony-firebase";
 import { generateDemoProfiles, DEFAULT_PRICING } from "@/lib/matrimony-types";
 import type { MatrimonyProfile, MatrimonyRequest, MatrimonyPricing } from "@/lib/matrimony-types";
-import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2 } from "lucide-react";
+import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2, IndianRupee, Percent, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/matrimony")({
@@ -157,7 +158,51 @@ function AdminMatrimonyDashboard() {
                   </div>
                 </div>
               ))}
-              <Button onClick={handleSavePricing} className="bg-pink-500 hover:bg-pink-600">Save Pricing</Button>
+
+              {/* Commission Settings */}
+              <div className="space-y-3 p-4 border-2 border-emerald-200 rounded-lg bg-emerald-50/50">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <IndianRupee className="w-5 h-5 text-emerald-600" />
+                  Retailer Commission (Per Profile Registration)
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Commission Type</Label>
+                    <Select
+                      value={pricing.commissionType || "fixed"}
+                      onValueChange={(v) => setPricing({ ...pricing, commissionType: v as "fixed" | "percentage" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{pricing.commissionType === "percentage" ? "Percentage (%)" : "Amount (₹)"}</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={pricing.commissionValue ?? 100}
+                        onChange={e => setPricing({ ...pricing, commissionValue: parseFloat(e.target.value) || 0 })}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {pricing.commissionType === "percentage" ? <Percent className="w-4 h-4" /> : <IndianRupee className="w-4 h-4" />}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {pricing.commissionType === "percentage"
+                    ? `Retailer earns ${pricing.commissionValue ?? 0}% of the plan price per profile registered`
+                    : `Retailer earns ₹${pricing.commissionValue ?? 0} flat per profile registered`}
+                </p>
+              </div>
+
+              <Button onClick={handleSavePricing} className="bg-pink-500 hover:bg-pink-600">Save Pricing & Commission</Button>
             </CardContent>
           </Card>
         </TabsContent>
