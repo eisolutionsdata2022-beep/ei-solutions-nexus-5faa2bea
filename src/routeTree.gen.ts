@@ -74,6 +74,7 @@ import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-mark
 import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
 import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-disputes'
 import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
+import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -412,6 +413,11 @@ const AdminIppbSettingsRoute = AdminIppbSettingsRouteImport.update({
   path: '/ippb-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIppbBadgesRoute = AdminIppbBadgesRouteImport.update({
+  id: '/ippb-badges',
+  path: '/ippb-badges',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -476,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
@@ -701,6 +710,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -771,6 +781,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -847,6 +858,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
@@ -1377,6 +1389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIppbSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ippb-badges': {
+      id: '/admin/ippb-badges'
+      path: '/ippb-badges'
+      fullPath: '/admin/ippb-badges'
+      preLoaderRoute: typeof AdminIppbBadgesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1452,6 +1471,7 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
+  AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
   AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
   AdminJobDisputesRoute: typeof AdminJobDisputesRoute
   AdminJobEarningsRoute: typeof AdminJobEarningsRoute
@@ -1482,6 +1502,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
+  AdminIppbBadgesRoute: AdminIppbBadgesRoute,
   AdminIppbSettingsRoute: AdminIppbSettingsRoute,
   AdminJobDisputesRoute: AdminJobDisputesRoute,
   AdminJobEarningsRoute: AdminJobEarningsRoute,
