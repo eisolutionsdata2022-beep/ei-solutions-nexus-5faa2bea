@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { RemoteCapturePanel } from "@/components/ippb/RemoteCapturePanel";
 import { toast } from "sonner";
 import {
   Banknote,
@@ -406,10 +407,16 @@ function RequestProcessor({
                     L1: simulated capture. L2 (future): retailer-side fingerprint device.
                   </p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
+                  <RemoteCapturePanel
+                    ippbRequestId={req.id}
+                    staffId={staffId}
+                    retailerId={req.retailerId}
+                    alreadyCaptured={!!req.biometric}
+                  />
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    size="sm"
                     disabled={busy}
                     onClick={() =>
                       wrapped(
@@ -424,15 +431,7 @@ function RequestProcessor({
                       )
                     }
                   >
-                    <Fingerprint className="w-4 h-4" /> Capture (L1 Sim)
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    variant="secondary"
-                    disabled
-                    title="L2 device integration coming soon"
-                  >
-                    L2 Device (soon)
+                    <Fingerprint className="w-4 h-4" /> Fallback: L1 Tablet Sim
                   </Button>
                 </div>
               </CardContent>
