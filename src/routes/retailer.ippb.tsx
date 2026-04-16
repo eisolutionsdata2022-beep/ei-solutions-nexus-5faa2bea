@@ -43,6 +43,11 @@ function RetailerIPPBPage() {
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [fee, setFee] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
+  const [badgeApps, setBadgeApps] = useState<IPPBBadgeApplicationDoc[]>([]);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyReason, setApplyReason] = useState("");
+  const [applyAck, setApplyAck] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     if (!appUser) return;
@@ -51,7 +56,25 @@ function RetailerIPPBPage() {
 
   useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
+  useEffect(() => {
+    if (!appUser) return;
+    const unsub = onSnapshot(
+      query(collection(db, "ippbBadgeApplications"), where("userId", "==", appUser.uid)),
+      (snap) => {
+        const list: IPPBBadgeApplicationDoc[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+        list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        setBadgeApps(list);
+      }
+    );
+    return unsub;
+  }, [appUser?.uid]);
+
   if (!appUser) return null;
+
+  const hasBadge = !!appUser.ippbBadge;
+  const pendingApp = badgeApps.find((a) => a.status === "pending");
+  const lastRejected = !pendingApp && badgeApps.find((a) => a.status === "rejected");
 
   const handleCreate = async () => {
     setCreating(true);
