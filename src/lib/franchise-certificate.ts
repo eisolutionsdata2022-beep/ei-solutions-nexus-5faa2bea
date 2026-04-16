@@ -1,7 +1,9 @@
 /**
  * Franchise Certificate Generator
- * Generates a professional certificate matching the Skill India / Digital India design
+ * Generates a professional certificate with EI Solutions & Digital India branding
  */
+
+import { EI_SOLUTIONS_LOGO, DIGITAL_INDIA_LOGO } from "./certificate-logos";
 
 export interface CertificateData {
   name: string;
