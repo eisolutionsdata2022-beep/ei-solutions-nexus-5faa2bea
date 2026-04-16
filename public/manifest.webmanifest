@@ -1,0 +1,41 @@
+{
+  "name": "EI SOLUTIONS — Janasevana Kendram",
+  "short_name": "EI SOLUTIONS",
+  "description": "CSC platform for Staff IPPB, Retailer services, Distributor, Trainer & Admin.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a8a",
+  "lang": "en-IN",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Staff IPPB",
+      "short_name": "IPPB",
+      "url": "/staff/ippb",
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Retailer Dashboard",
+      "short_name": "Retailer",
+      "url": "/retailer",
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
+    }
+  ]
+}

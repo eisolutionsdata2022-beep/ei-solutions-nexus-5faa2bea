@@ -14,6 +14,7 @@ import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as DistributorRouteImport } from './routes/distributor'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -104,6 +105,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const MatrimonyRoute = MatrimonyRouteImport.update({
   id: '/matrimony',
   path: '/matrimony',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DistributorRoute = DistributorRouteImport.update({
@@ -444,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
@@ -515,6 +522,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/register': typeof RegisterRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -585,6 +593,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
@@ -660,6 +669,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/install'
     | '/matrimony'
     | '/register'
     | '/retailer'
@@ -731,6 +741,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/install'
     | '/register'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/install'
     | '/matrimony'
     | '/register'
     | '/retailer'
@@ -874,6 +886,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   DistributorRoute: typeof DistributorRouteWithChildren
+  InstallRoute: typeof InstallRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   RetailerRoute: typeof RetailerRouteWithChildren
@@ -917,6 +930,13 @@ declare module '@tanstack/react-router' {
       path: '/matrimony'
       fullPath: '/matrimony'
       preLoaderRoute: typeof MatrimonyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/distributor': {
@@ -1577,6 +1597,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DistributorRoute: DistributorRouteWithChildren,
+  InstallRoute: InstallRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
   RegisterRoute: RegisterRoute,
   RetailerRoute: RetailerRouteWithChildren,
