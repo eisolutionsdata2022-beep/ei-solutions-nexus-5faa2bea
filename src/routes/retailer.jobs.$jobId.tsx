@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Send, Star } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Star, AlertTriangle } from "lucide-react";
 import {
   type BidDoc,
   type JobDoc,
@@ -64,6 +64,9 @@ function JobDetail() {
 
   const [ratingOpen, setRatingOpen] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "jobs", jobId), (snap) => {
@@ -216,6 +219,22 @@ function JobDetail() {
       setTimeout(() => setRatingOpen(true), 500);
     } catch (err: any) { toast.error(err.message); }
     finally { setBusy(false); }
+  };
+
+  const handleRaiseDispute = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser || !job || busy) return;
+    setBusy(true);
+    try {
+      await raiseDispute(job.id, appUser.uid, disputeReason);
+      toast.success("Dispute raised. Admin will review and decide.");
+      setDisputeOpen(false);
+      setDisputeReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to raise dispute");
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!job) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
