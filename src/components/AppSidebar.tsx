@@ -84,6 +84,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Forms", to: "/retailer/forms", icon: CVIcon },
     { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
     { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
+    { label: "IPPB Account", to: "/retailer/ippb", icon: Banknote },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
@@ -98,6 +99,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "Form Submissions", to: "/staff/form-submissions", icon: FileText },
+    { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
@@ -106,6 +108,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Performance", to: "/staff/performance", icon: BarChart3 },
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
+    { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
   ],
 };
 

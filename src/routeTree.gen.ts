@@ -31,6 +31,7 @@ import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.ser
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
+import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
@@ -46,6 +47,7 @@ import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.mon
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
+import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
@@ -190,6 +192,11 @@ const StaffLeadsRoute = StaffLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffIppbRoute = StaffIppbRouteImport.update({
+  id: '/ippb',
+  path: '/ippb',
+  getParentRoute: () => StaffRoute,
+} as any)
 const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
   id: '/horoscope-requests',
   path: '/horoscope-requests',
@@ -263,6 +270,11 @@ const RetailerKycRoute = RetailerKycRouteImport.update({
 const RetailerJobsRoute = RetailerJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerIppbRoute = RetailerIppbRouteImport.update({
+  id: '/ippb',
+  path: '/ippb',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
@@ -468,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -483,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
+  '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -533,6 +547,7 @@ export interface FileRoutesByTo {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -548,6 +563,7 @@ export interface FileRoutesByTo {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
+  '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -605,6 +621,7 @@ export interface FileRoutesById {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
@@ -620,6 +637,7 @@ export interface FileRoutesById {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
+  '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -678,6 +696,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -693,6 +712,7 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
+    | '/staff/ippb'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -743,6 +763,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -758,6 +779,7 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
+    | '/staff/ippb'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -814,6 +836,7 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
@@ -829,6 +852,7 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
+    | '/staff/ippb'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -1014,6 +1038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffLeadsRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/staff/ippb': {
+      id: '/staff/ippb'
+      path: '/ippb'
+      fullPath: '/staff/ippb'
+      preLoaderRoute: typeof StaffIppbRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/staff/horoscope-requests': {
       id: '/staff/horoscope-requests'
       path: '/horoscope-requests'
@@ -1117,6 +1148,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/retailer/jobs'
       preLoaderRoute: typeof RetailerJobsRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/ippb': {
+      id: '/retailer/ippb'
+      path: '/ippb'
+      fullPath: '/retailer/ippb'
+      preLoaderRoute: typeof RetailerIppbRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/horoscope': {
@@ -1452,6 +1490,7 @@ interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
+  RetailerIppbRoute: typeof RetailerIppbRoute
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
@@ -1472,6 +1511,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
+  RetailerIppbRoute: RetailerIppbRoute,
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,
@@ -1495,6 +1535,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 interface StaffRouteChildren {
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
+  StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
@@ -1506,6 +1547,7 @@ interface StaffRouteChildren {
 const StaffRouteChildren: StaffRouteChildren = {
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
+  StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
