@@ -131,7 +131,27 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update fee"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); }, []);
+  // Matrimony commission fetch/save
+  const fetchMatPricing = async () => {
+    try {
+      const p = await getMatrimonyPricing();
+      setMatPricing(p);
+    } catch { /* default */ }
+  };
+
+  const saveMatCommission = async () => {
+    const val = parseFloat(matForm.commissionValue);
+    if (isNaN(val) || val < 0) { toast.error("Invalid commission value"); return; }
+    try {
+      const updated = { ...matPricing, commissionType: matForm.commissionType, commissionValue: val };
+      await saveMatrimonyPricing(updated);
+      setMatPricing(updated);
+      setEditingMat(false);
+      toast.success("Matrimony commission updated!");
+    } catch { toast.error("Failed to update"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); fetchMatPricing(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
