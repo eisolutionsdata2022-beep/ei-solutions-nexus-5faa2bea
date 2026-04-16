@@ -155,12 +155,12 @@ function AdminIPPBSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-amber-300/60">
+      <Card className="border-warning/40">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 flex-wrap">
             <Download className="w-5 h-5 text-gov-blue" />
             Android Interceptor APK
-            <Badge variant="outline" className="ml-2 border-amber-500 text-amber-700 bg-amber-50">
+            <Badge variant="outline" className="ml-2 border-warning text-warning-foreground bg-warning/10">
               <AlertTriangle className="w-3 h-3 mr-1" />
               Beta — UIDAI signature mismatch വരാം
             </Badge>
@@ -171,7 +171,7 @@ function AdminIPPBSettingsPage() {
             Tablet-ൽ install ചെയ്ത real IPPB BCAS / CSC VLE app-ലെ "Capture Fingerprint"
             ബട്ടൺ intercept ചെയ്ത് retailer PC-യിലേക്ക് relay ചെയ്യുന്ന AccessibilityService APK.
           </p>
-          <div className="rounded-md border border-amber-300 bg-amber-50/60 p-3 text-amber-900 text-xs leading-relaxed">
+          <div className="rounded-md border border-warning/50 bg-warning/10 p-3 text-foreground text-xs leading-relaxed">
             <strong>⚠ Limitation:</strong> UIDAI RD Service-ന്റെ device-bound RSA signature + WADH binding
             കാരണം retailer device-ൽ scan ചെയ്ത PID XML tablet-ലെ IPPB app-ൽ inject ചെയ്താൽ
             UIDAI server reject ചെയ്യാൻ സാധ്യത 90%+. <strong>Detection-only mode</strong>
