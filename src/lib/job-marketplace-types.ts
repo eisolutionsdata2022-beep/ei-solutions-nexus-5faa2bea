@@ -106,7 +106,9 @@ export interface JobNotificationDoc {
     | "doc_requested"
     | "doc_uploaded"
     | "work_submitted"
-    | "payment_completed";
+    | "payment_completed"
+    | "dispute_raised"
+    | "dispute_resolved";
   jobId: string;
   jobTitle: string;
   message: string;
