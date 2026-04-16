@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import {
   cancelIPPBRequest,
@@ -12,11 +14,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download, Info, ChevronDown } from "lucide-react";
+import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download, Info, ChevronDown, ShieldAlert, ShieldCheck, Lock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { getIPPBFeeConfig, netRetailerCost, DEFAULT_IPPB_FEE, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
+import { applyForIPPBBadge, type IPPBBadgeApplicationDoc } from "@/lib/ippb-badge";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
