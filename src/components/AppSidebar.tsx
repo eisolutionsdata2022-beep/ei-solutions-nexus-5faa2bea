@@ -21,6 +21,8 @@ import {
   CheckCircle,
   MessageSquare,
   BotMessageSquare,
+  Briefcase,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -54,6 +56,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
+    { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
+    { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -75,6 +79,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Virtual", to: "/retailer/virtual-trainer", icon: BotMessageSquare },
     { label: "Page Tools", to: "/retailer/page-tools", icon: FileText },
     { label: "Forms", to: "/retailer/forms", icon: CVIcon },
+    { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
+    { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
