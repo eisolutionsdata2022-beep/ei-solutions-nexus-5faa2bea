@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
   runTransaction,
@@ -26,7 +27,7 @@ const COL = "ippbRequests";
 /** Find first admin user id (for commission credit) */
 async function findAdminId(): Promise<string | null> {
   const q = query(collection(db, "users"), where("role", "==", "admin"));
-  const snap = await import("firebase/firestore").then((m) => m.getDocs(q));
+  const snap = await getDocs(q);
   if (snap.empty) return null;
   return snap.docs[0].id;
 }
