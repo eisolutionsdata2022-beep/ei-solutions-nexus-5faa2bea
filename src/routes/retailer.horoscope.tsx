@@ -19,7 +19,7 @@ import {
 } from "@/lib/horoscope-firebase";
 import { atomicDebit } from "@/lib/firebase-transactions";
 import type { HoroscopeRequest, HoroscopeSettings, Gender } from "@/lib/horoscope-types";
-import { STATUS_COLORS } from "@/lib/horoscope-types";
+import { STATUS_COLORS, NAKSHATRAS } from "@/lib/horoscope-types";
 
 export const Route = createFileRoute("/retailer/horoscope")({
   ssr: false,
@@ -40,6 +40,7 @@ function RetailerHoroscope() {
   const [timeOfBirth, setTimeOfBirth] = useState("");
   const [placeOfBirth, setPlaceOfBirth] = useState("");
   const [language, setLanguage] = useState<"Malayalam" | "English" | "Both">("Both");
+  const [birthStar, setBirthStar] = useState("");
   const [godImage, setGodImage] = useState<string>("");
 
   useEffect(() => {
@@ -79,18 +80,20 @@ function RetailerHoroscope() {
         dateOfBirth: dob,
         timeOfBirth,
         placeOfBirth,
+        birthStar: birthStar || undefined,
         language,
-        status: "Generated",
+        status: "Delivered",
         chart,
         predictions,
         godImage: godImage || undefined,
         amount: settings.pricePerHoroscope,
+        deliveredAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-      toast.success("ഹോറോസ്കോപ്പ് ജനറേറ്റ് ചെയ്തു!");
-      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth(""); setGodImage("");
+      toast.success("ഹോറോസ്കോപ്പ് ജനറേറ്റ് ചെയ്തു! ഡൗൺലോഡ് ചെയ്യാം.");
+      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth(""); setBirthStar(""); setGodImage("");
       setTab("reports");
     } catch (err: any) {
       toast.error(err.message || "പിശക് സംഭവിച്ചു");
@@ -162,6 +165,17 @@ function RetailerHoroscope() {
                 <div className="space-y-2">
                   <Label>ജനന സ്ഥലം / Place of Birth *</Label>
                   <Input value={placeOfBirth} onChange={(e) => setPlaceOfBirth(e.target.value)} placeholder="e.g., Thrissur, Kerala" />
+                </div>
+                <div className="space-y-2">
+                  <Label>ജന്മ നക്ഷത്രം / Birth Star</Label>
+                  <Select value={birthStar} onValueChange={setBirthStar}>
+                    <SelectTrigger><SelectValue placeholder="നക്ഷത്രം തിരഞ്ഞെടുക്കുക" /></SelectTrigger>
+                    <SelectContent>
+                      {NAKSHATRAS.map((n) => (
+                        <SelectItem key={n.id} value={n.ml}>{n.ml} ({n.en})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>ഭാഷ / Language</Label>
