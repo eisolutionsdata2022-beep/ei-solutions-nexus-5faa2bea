@@ -49,6 +49,14 @@ function AdminCommissions() {
   const [editingTrainerFee, setEditingTrainerFee] = useState(false);
   const [trainerFeeInput, setTrainerFeeInput] = useState("");
 
+  // Matrimony commission state
+  const [matPricing, setMatPricing] = useState<MatrimonyPricing>(DEFAULT_PRICING);
+  const [editingMat, setEditingMat] = useState(false);
+  const [matForm, setMatForm] = useState({
+    commissionType: "fixed" as "fixed" | "percentage",
+    commissionValue: "100",
+  });
+
   const fetchRates = async () => {
     const snap = await getDocs(collection(db, "commissionRates"));
     const list: CommissionRate[] = [];
