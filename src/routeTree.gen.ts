@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainerIndexRouteImport } from './routes/trainer.index'
 import { Route as StaffIndexRouteImport } from './routes/staff.index'
 import { Route as RetailerIndexRouteImport } from './routes/retailer.index'
+import { Route as MatrimonyIndexRouteImport } from './routes/matrimony.index'
 import { Route as DistributorIndexRouteImport } from './routes/distributor.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
@@ -122,6 +123,11 @@ const RetailerIndexRoute = RetailerIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RetailerRoute,
+} as any)
+const MatrimonyIndexRoute = MatrimonyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MatrimonyRoute,
 } as any)
 const DistributorIndexRoute = DistributorIndexRouteImport.update({
   id: '/',
@@ -418,13 +424,13 @@ export interface FileRoutesByFullPath {
   '/trainer/wallet': typeof TrainerWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
+  '/matrimony/': typeof MatrimonyIndexRoute
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -473,6 +479,7 @@ export interface FileRoutesByTo {
   '/trainer/wallet': typeof TrainerWalletRoute
   '/admin': typeof AdminIndexRoute
   '/distributor': typeof DistributorIndexRoute
+  '/matrimony': typeof MatrimonyIndexRoute
   '/retailer': typeof RetailerIndexRoute
   '/staff': typeof StaffIndexRoute
   '/trainer': typeof TrainerIndexRoute
@@ -534,6 +541,7 @@ export interface FileRoutesById {
   '/trainer/wallet': typeof TrainerWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
+  '/matrimony/': typeof MatrimonyIndexRoute
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
@@ -596,13 +604,13 @@ export interface FileRouteTypes {
     | '/trainer/wallet'
     | '/admin/'
     | '/distributor/'
+    | '/matrimony/'
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/matrimony'
     | '/register'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -651,6 +659,7 @@ export interface FileRouteTypes {
     | '/trainer/wallet'
     | '/admin'
     | '/distributor'
+    | '/matrimony'
     | '/retailer'
     | '/staff'
     | '/trainer'
@@ -711,6 +720,7 @@ export interface FileRouteTypes {
     | '/trainer/wallet'
     | '/admin/'
     | '/distributor/'
+    | '/matrimony/'
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
@@ -805,6 +815,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/retailer/'
       preLoaderRoute: typeof RetailerIndexRouteImport
       parentRoute: typeof RetailerRoute
+    }
+    '/matrimony/': {
+      id: '/matrimony/'
+      path: '/'
+      fullPath: '/matrimony/'
+      preLoaderRoute: typeof MatrimonyIndexRouteImport
+      parentRoute: typeof MatrimonyRoute
     }
     '/distributor/': {
       id: '/distributor/'
@@ -1206,10 +1223,12 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
 
 interface MatrimonyRouteChildren {
   MatrimonyProfileIdRoute: typeof MatrimonyProfileIdRoute
+  MatrimonyIndexRoute: typeof MatrimonyIndexRoute
 }
 
 const MatrimonyRouteChildren: MatrimonyRouteChildren = {
   MatrimonyProfileIdRoute: MatrimonyProfileIdRoute,
+  MatrimonyIndexRoute: MatrimonyIndexRoute,
 }
 
 const MatrimonyRouteWithChildren = MatrimonyRoute._addFileChildren(
