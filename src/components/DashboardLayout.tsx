@@ -4,6 +4,7 @@ import { PortalHeader } from "@/components/PortalHeader";
 import { PortalFooter } from "@/components/PortalFooter";
 import { MobileSidebar } from "@/components/MobileSidebar";
 import { WalletGate } from "@/components/WalletGate";
+import { BiometricCaptureListener } from "@/components/ippb/BiometricCaptureListener";
 
 export function DashboardLayout() {
   const location = useLocation();
@@ -24,6 +25,7 @@ export function DashboardLayout() {
         </main>
       </div>
       <PortalFooter />
+      <BiometricCaptureListener />
     </div>
   );
 }
