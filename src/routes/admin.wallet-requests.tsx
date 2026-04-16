@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallet-requests")({
@@ -22,7 +22,8 @@ interface WalletRequest {
   userEmail: string;
   amount: number;
   paymentMethod: string;
-  screenshotUrl: string;
+  transactionId?: string;
+  upiId?: string;
   status: string;
   remarks?: string;
   createdAt: string;
@@ -91,12 +92,9 @@ function AdminWalletRequests() {
                     <p className="font-semibold text-foreground">{req.userEmail}</p>
                     <p className="text-2xl font-bold text-primary">₹{req.amount}</p>
                     <p className="text-sm text-muted-foreground">Method: {req.paymentMethod}</p>
+                    {req.transactionId && <p className="text-sm text-muted-foreground">Txn ID: <span className="font-mono font-semibold text-foreground">{req.transactionId}</span></p>}
+                    {req.upiId && <p className="text-sm text-muted-foreground">UPI ID: <span className="font-mono font-semibold text-foreground">{req.upiId}</span></p>}
                     <p className="text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleString()}</p>
-                    {req.screenshotUrl && (
-                      <a href={req.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex items-center gap-1">
-                        <ExternalLink className="w-3 h-3" /> View Screenshot
-                      </a>
-                    )}
                   </div>
                   <div className="flex flex-col gap-2 min-w-[200px]">
                     <Badge variant={
