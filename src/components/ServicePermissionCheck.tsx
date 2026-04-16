@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { PLATFORM_SERVICES } from "@/lib/platform-services";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,33 +13,41 @@ import {
 import { Button } from "@/components/ui/button";
 import { ShieldX } from "lucide-react";
 
-interface DisabledService {
-  id: string;
-  name: string;
-  enabled: boolean;
-}
-
 /**
- * Hook to get list of disabled services (admin-controlled)
+ * Hook to get set of disabled service keys from platformServices collection.
+ * Also checks legacy "services" collection for backward compatibility.
  */
 export function useDisabledServices() {
-  const [disabledServices, setDisabledServices] = useState<Set<string>>(new Set());
+  const [disabledKeys, setDisabledKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "services"), (snap) => {
+    // Listen to platformServices collection
+    const unsub = onSnapshot(collection(db, "platformServices"), (snap) => {
       const disabled = new Set<string>();
       snap.forEach((d) => {
         const data = d.data();
         if (data.enabled === false) {
-          disabled.add(data.name);
+          disabled.add(d.id); // key like "recharge-bbps"
         }
       });
-      setDisabledServices(disabled);
+      setDisabledKeys(disabled);
     });
     return unsub;
   }, []);
 
-  return disabledServices;
+  return disabledKeys;
+}
+
+/**
+ * Check if a retailer route is blocked based on disabled service keys.
+ */
+export function isRouteBlocked(pathname: string, disabledKeys: Set<string>): string | null {
+  for (const svc of PLATFORM_SERVICES) {
+    if (svc.route && pathname.startsWith(svc.route) && disabledKeys.has(svc.key)) {
+      return svc.name;
+    }
+  }
+  return null;
 }
 
 /**
