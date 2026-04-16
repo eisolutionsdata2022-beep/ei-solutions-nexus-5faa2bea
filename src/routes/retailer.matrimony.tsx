@@ -23,10 +23,11 @@ export const Route = createFileRoute("/retailer/matrimony")({
   component: RetailerMatrimonyDashboard,
 });
 
-const EMPTY_FORM = {
-  name: "", gender: "Male" as const, age: "", dob: "", nakshatram: "",
-  religion: "", caste: "", education: "", job: "", location: "",
-  maritalStatus: "Never Married", height: "", bio: "",
+const EMPTY_FORM: {
+  name: string; gender: string; age: string; dob: string; nakshatram: string;
+  religion: string; caste: string; education: string; job: string; location: string;
+  maritalStatus: string; height: string; bio: string;
+} = {
 };
 
 function RetailerMatrimonyDashboard() {
