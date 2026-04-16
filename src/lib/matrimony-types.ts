@@ -42,6 +42,8 @@ export interface MatrimonyPricing {
   basicFeatures: string[];
   premiumFeatures: string[];
   vipFeatures: string[];
+  commissionType: "fixed" | "percentage";
+  commissionValue: number;
 }
 
 export const DEFAULT_PRICING: MatrimonyPricing = {
@@ -51,6 +53,8 @@ export const DEFAULT_PRICING: MatrimonyPricing = {
   basicFeatures: ["Profile Listing", "Basic Search", "5 Interest Requests/month"],
   premiumFeatures: ["Priority Listing", "Advanced Filters", "Unlimited Requests", "Photo Gallery"],
   vipFeatures: ["Top Listing", "Personal Matchmaker", "Unlimited Everything", "Verified Badge", "WhatsApp Support"],
+  commissionType: "fixed",
+  commissionValue: 100,
 };
 
 export const RELIGIONS = ["Hindu", "Muslim", "Christian", "Sikh", "Buddhist", "Jain", "Other"];
