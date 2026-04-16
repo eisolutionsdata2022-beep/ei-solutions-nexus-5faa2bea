@@ -58,29 +58,9 @@ export function generateCertificateHTML(data: CertificateData): string {
     align-items: center; width: 100%;
     margin-bottom: 20px;
   }
-  .logo-box {
-    display: flex; align-items: center; gap: 10px;
-  }
-  .logo-icon {
-    width: 52px; height: 52px;
-    background: linear-gradient(135deg, #1a3a6b, #2563eb);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 24px; font-weight: 700;
-  }
-  .logo-text {
-    font-size: 18px; font-weight: 700; color: #1a3a6b;
-    line-height: 1.2;
-  }
-  .logo-text small {
-    display: block; font-size: 10px; font-weight: 400; color: #555;
-  }
-  .logo-right .logo-icon {
-    background: linear-gradient(135deg, #065f46, #10b981);
-    border-radius: 50%;
-  }
-  .logo-right .logo-text {
-    color: #065f46;
+  .logo-img {
+    height: 64px;
+    object-fit: contain;
   }
   /* Title */
   .title {
