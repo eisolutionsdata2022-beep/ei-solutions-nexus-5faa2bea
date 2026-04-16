@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { collection, doc, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Send } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Star } from "lucide-react";
 import {
   type BidDoc,
   type JobDoc,
@@ -26,6 +26,10 @@ import {
   submitWork,
   uploadDocumentsResponse,
 } from "@/lib/job-marketplace";
+import { uploadJobFiles } from "@/lib/job-file-upload";
+import { JobFileUploadField, FilePreviewList } from "@/components/JobFileUploadField";
+import { RatingDialog } from "@/components/RatingDialog";
+import { getRatingForJob } from "@/lib/job-ratings";
 
 export const Route = createFileRoute("/retailer/jobs/$jobId")({
   ssr: false,
@@ -51,11 +55,14 @@ function JobDetail() {
 
   const [docUploadOpen, setDocUploadOpen] = useState(false);
   const [docUploadText, setDocUploadText] = useState("");
-  const [docUploadUrls, setDocUploadUrls] = useState("");
+  const [docUploadFiles, setDocUploadFiles] = useState<File[]>([]);
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitText, setSubmitText] = useState("");
-  const [submitUrls, setSubmitUrls] = useState("");
+  const [submitFiles, setSubmitFiles] = useState<File[]>([]);
+
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "jobs", jobId), (snap) => {
@@ -89,6 +96,13 @@ function JobDetail() {
     );
     return unsub;
   }, [jobId]);
+
+  // Check if rating exists
+  useEffect(() => {
+    if (job?.status === "completed") {
+      getRatingForJob(jobId).then((r) => setHasRated(!!r));
+    }
+  }, [jobId, job?.status]);
 
   const isUploader = appUser && job && appUser.uid === job.uploaderId;
   const isWorker = appUser && job && appUser.uid === job.assignedWorkerId;
@@ -148,11 +162,22 @@ function JobDetail() {
     if (!appUser || !job || busy) return;
     setBusy(true);
     try {
-      const urls = docUploadUrls.split("\n").map((s) => s.trim()).filter(Boolean);
-      await uploadDocumentsResponse(job.id, appUser.uid, appUser.name || appUser.email, docUploadText, urls);
+      const uploaded = await uploadJobFiles({
+        jobId: job.id,
+        userId: appUser.uid,
+        kind: "doc-upload",
+        files: docUploadFiles,
+      });
+      await uploadDocumentsResponse(
+        job.id,
+        appUser.uid,
+        appUser.name || appUser.email,
+        docUploadText,
+        uploaded.map((u) => u.url),
+      );
       toast.success("Documents shared with worker");
-      setDocUploadOpen(false); setDocUploadText(""); setDocUploadUrls("");
-    } catch (err: any) { toast.error(err.message); }
+      setDocUploadOpen(false); setDocUploadText(""); setDocUploadFiles([]);
+    } catch (err: any) { toast.error(err.message || "Upload failed"); }
     finally { setBusy(false); }
   };
 
@@ -161,11 +186,22 @@ function JobDetail() {
     if (!appUser || !job || busy) return;
     setBusy(true);
     try {
-      const urls = submitUrls.split("\n").map((s) => s.trim()).filter(Boolean);
-      await submitWork(job.id, appUser.uid, appUser.name || appUser.email, submitText, urls);
+      const uploaded = await uploadJobFiles({
+        jobId: job.id,
+        userId: appUser.uid,
+        kind: "submission",
+        files: submitFiles,
+      });
+      await submitWork(
+        job.id,
+        appUser.uid,
+        appUser.name || appUser.email,
+        submitText,
+        uploaded.map((u) => u.url),
+      );
       toast.success("Work submitted for review");
-      setSubmitOpen(false); setSubmitText(""); setSubmitUrls("");
-    } catch (err: any) { toast.error(err.message); }
+      setSubmitOpen(false); setSubmitText(""); setSubmitFiles([]);
+    } catch (err: any) { toast.error(err.message || "Upload failed"); }
     finally { setBusy(false); }
   };
 
@@ -175,7 +211,8 @@ function JobDetail() {
     setBusy(true);
     try {
       await completeJobAndRelease(job.id);
-      toast.success("Payment released!");
+      toast.success("Payment released! Please rate your worker.");
+      setTimeout(() => setRatingOpen(true), 500);
     } catch (err: any) { toast.error(err.message); }
     finally { setBusy(false); }
   };
@@ -191,7 +228,12 @@ function JobDetail() {
           <div className="flex items-start justify-between flex-wrap gap-2">
             <div>
               <CardTitle>{job.title}</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">{job.category} • Posted by {job.uploaderName}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {job.category} • Posted by {job.uploaderName}
+                {job.assignedWorkerId && (
+                  <> • Worker: <Link to="/worker/$workerId" params={{ workerId: job.assignedWorkerId }} className="text-primary underline">{job.assignedWorkerName}</Link></>
+                )}
+              </p>
             </div>
             <Badge variant={job.status === "completed" ? "default" : job.status === "rejected" ? "destructive" : "secondary"}>{job.status}</Badge>
           </div>
@@ -234,6 +276,14 @@ function JobDetail() {
         {isUploader && job.status === "submitted" && (
           <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
         )}
+        {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
+          <Button onClick={() => setRatingOpen(true)} variant="default">
+            <Star className="w-4 h-4 mr-1" /> Rate Worker
+          </Button>
+        )}
+        {isUploader && job.status === "completed" && hasRated && (
+          <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
+        )}
         {isUploader && job.status !== "completed" && job.status !== "rejected" && (
           <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
         )}
@@ -249,7 +299,10 @@ function JobDetail() {
                 {bids.map((b) => (
                   <div key={b.id} className="flex items-center justify-between p-3 border rounded">
                     <div>
-                      <p className="font-semibold">{b.workerName} — <span className="text-primary">₹{b.amount}</span></p>
+                      <p className="font-semibold">
+                        <Link to="/worker/$workerId" params={{ workerId: b.workerId }} className="hover:underline">{b.workerName}</Link>
+                        {" — "}<span className="text-primary">₹{b.amount}</span>
+                      </p>
                       {b.message && <p className="text-xs text-muted-foreground">{b.message}</p>}
                     </div>
                     <div className="flex items-center gap-2">
@@ -280,9 +333,7 @@ function JobDetail() {
                   </div>
                   <p className="whitespace-pre-wrap">{m.text}</p>
                   {m.fileUrls && m.fileUrls.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-xs">
-                      {m.fileUrls.map((u, i) => <li key={i}><a href={u} target="_blank" rel="noreferrer" className="text-primary underline break-all">{u}</a></li>)}
-                    </ul>
+                    <FilePreviewList urls={m.fileUrls} />
                   )}
                 </div>
               ))}
@@ -324,30 +375,54 @@ function JobDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Doc upload */}
+      {/* Doc upload (file picker) */}
       <Dialog open={docUploadOpen} onOpenChange={setDocUploadOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Upload Documents</DialogTitle></DialogHeader>
           <form onSubmit={handleUploadDocs} className="space-y-3">
             <div><Label>Note</Label><Textarea rows={3} value={docUploadText} onChange={(e) => setDocUploadText(e.target.value)} /></div>
-            <div><Label>File URLs (one per line)</Label><Textarea rows={4} placeholder="https://..." value={docUploadUrls} onChange={(e) => setDocUploadUrls(e.target.value)} /></div>
-            <p className="text-xs text-muted-foreground">Upload files to Drive/any storage and paste the share links here.</p>
-            <Button type="submit" disabled={busy} className="w-full">Send</Button>
+            <div>
+              <Label>Files</Label>
+              <JobFileUploadField files={docUploadFiles} onChange={setDocUploadFiles} />
+            </div>
+            <Button type="submit" disabled={busy || docUploadFiles.length === 0} className="w-full">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upload & Send"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Submit work */}
+      {/* Submit work (file picker) */}
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Submit Completed Work</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmitWork} className="space-y-3">
-            <div><Label>Notes</Label><Textarea required rows={3} value={submitText} onChange={(e) => setSubmitText(e.target.value)} /></div>
-            <div><Label>Deliverable URLs (one per line)</Label><Textarea required rows={4} value={submitUrls} onChange={(e) => setSubmitUrls(e.target.value)} /></div>
-            <Button type="submit" disabled={busy} className="w-full">Submit for Review</Button>
+            <div><Label>Notes *</Label><Textarea required rows={3} value={submitText} onChange={(e) => setSubmitText(e.target.value)} /></div>
+            <div>
+              <Label>Deliverable Files *</Label>
+              <JobFileUploadField files={submitFiles} onChange={setSubmitFiles} />
+            </div>
+            <Button type="submit" disabled={busy || submitFiles.length === 0} className="w-full">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upload & Submit"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Rating dialog */}
+      {job.assignedWorkerId && job.assignedWorkerName && appUser && (
+        <RatingDialog
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          jobId={job.id}
+          jobTitle={job.title}
+          workerId={job.assignedWorkerId}
+          workerName={job.assignedWorkerName}
+          uploaderId={appUser.uid}
+          uploaderName={appUser.name || appUser.email}
+          onSubmitted={() => setHasRated(true)}
+        />
+      )}
     </div>
   );
 }

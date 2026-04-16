@@ -23,6 +23,7 @@ import { Route as RetailerIndexRouteImport } from './routes/retailer.index'
 import { Route as MatrimonyIndexRouteImport } from './routes/matrimony.index'
 import { Route as DistributorIndexRouteImport } from './routes/distributor.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
@@ -66,6 +67,7 @@ import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
+import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -145,6 +147,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const WorkerWorkerIdRoute = WorkerWorkerIdRouteImport.update({
+  id: '/worker/$workerId',
+  path: '/worker/$workerId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TrainerWalletRoute = TrainerWalletRouteImport.update({
   id: '/wallet',
@@ -364,6 +371,11 @@ const AdminJobMarketplaceRoute = AdminJobMarketplaceRouteImport.update({
   path: '/job-marketplace',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminJobEarningsRoute = AdminJobEarningsRouteImport.update({
+  id: '/job-earnings',
+  path: '/job-earnings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -427,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
@@ -470,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
+  '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
@@ -489,6 +503,7 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
@@ -532,6 +547,7 @@ export interface FileRoutesByTo {
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
+  '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin': typeof AdminIndexRoute
   '/distributor': typeof DistributorIndexRoute
   '/matrimony': typeof MatrimonyIndexRoute
@@ -558,6 +574,7 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
@@ -601,6 +618,7 @@ export interface FileRoutesById {
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
+  '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
@@ -628,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
@@ -671,6 +690,7 @@ export interface FileRouteTypes {
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
+    | '/worker/$workerId'
     | '/admin/'
     | '/distributor/'
     | '/matrimony/'
@@ -690,6 +710,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
@@ -733,6 +754,7 @@ export interface FileRouteTypes {
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
+    | '/worker/$workerId'
     | '/admin'
     | '/distributor'
     | '/matrimony'
@@ -758,6 +780,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
@@ -801,6 +824,7 @@ export interface FileRouteTypes {
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
+    | '/worker/$workerId'
     | '/admin/'
     | '/distributor/'
     | '/matrimony/'
@@ -819,6 +843,7 @@ export interface RootRouteChildren {
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
   TrainerRoute: typeof TrainerRouteWithChildren
+  WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -920,6 +945,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/worker/$workerId': {
+      id: '/worker/$workerId'
+      path: '/worker/$workerId'
+      fullPath: '/worker/$workerId'
+      preLoaderRoute: typeof WorkerWorkerIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/trainer/wallet': {
       id: '/trainer/wallet'
@@ -1222,6 +1254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminJobMarketplaceRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/job-earnings': {
+      id: '/admin/job-earnings'
+      path: '/job-earnings'
+      fullPath: '/admin/job-earnings'
+      preLoaderRoute: typeof AdminJobEarningsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1297,6 +1336,7 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
+  AdminJobEarningsRoute: typeof AdminJobEarningsRoute
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
@@ -1324,6 +1364,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
+  AdminJobEarningsRoute: AdminJobEarningsRoute,
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
@@ -1478,6 +1519,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
   TrainerRoute: TrainerRouteWithChildren,
+  WorkerWorkerIdRoute: WorkerWorkerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -57,6 +57,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
     { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
+    { label: "Job Earnings", to: "/admin/job-earnings", icon: BarChart3 },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
   ],
   distributor: [
