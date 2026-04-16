@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { NoticeMarquee } from "@/components/NoticeMarquee";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,9 @@ function RetailerDashboard() {
 
   return (
     <div className="space-y-5">
+      {/* Notice Board Marquee */}
+      <NoticeMarquee />
+
       {/* Wallet Balance */}
       <div className="bg-card rounded-lg border border-border p-5 flex items-center justify-between">
         <div className="flex items-center gap-4">

@@ -52,6 +52,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Apps", to: "/admin/service-applications", icon: ClipboardList },
     { label: "Training Earnings", to: "/admin/training-earnings", icon: BarChart3 },
     { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
+    { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
   ],
   distributor: [

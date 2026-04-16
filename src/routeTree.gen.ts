@@ -58,6 +58,7 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
 import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
+import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
@@ -317,6 +318,11 @@ const AdminRechargeTransactionsRoute =
     path: '/recharge-transactions',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminNoticesRoute = AdminNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMatrimonyRoute = AdminMatrimonyRouteImport.update({
   id: '/matrimony',
   path: '/matrimony',
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByTo {
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -567,6 +576,7 @@ export interface FileRouteTypes {
     | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/matrimony'
+    | '/admin/notices'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -622,6 +632,7 @@ export interface FileRouteTypes {
     | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/matrimony'
+    | '/admin/notices'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -683,6 +694,7 @@ export interface FileRouteTypes {
     | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/matrimony'
+    | '/admin/notices'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -1082,6 +1094,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRechargeTransactionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/notices': {
+      id: '/admin/notices'
+      path: '/notices'
+      fullPath: '/admin/notices'
+      preLoaderRoute: typeof AdminNoticesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/matrimony': {
       id: '/admin/matrimony'
       path: '/matrimony'
@@ -1166,6 +1185,7 @@ interface AdminRouteChildren {
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
+  AdminNoticesRoute: typeof AdminNoticesRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
@@ -1190,6 +1210,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
+  AdminNoticesRoute: AdminNoticesRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
