@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import {
 } from "@/lib/matrimony-firebase";
 import { generateDemoProfiles, DEFAULT_PRICING } from "@/lib/matrimony-types";
 import type { MatrimonyProfile, MatrimonyRequest, MatrimonyPricing } from "@/lib/matrimony-types";
-import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2 } from "lucide-react";
+import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2, IndianRupee, Percent, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/matrimony")({
