@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Download, Plus, Star } from "lucide-react";
+import { FileText, Download, Plus, Star, Upload, Image } from "lucide-react";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
 import {
@@ -40,6 +40,7 @@ function RetailerHoroscope() {
   const [timeOfBirth, setTimeOfBirth] = useState("");
   const [placeOfBirth, setPlaceOfBirth] = useState("");
   const [language, setLanguage] = useState<"Malayalam" | "English" | "Both">("Both");
+  const [godImage, setGodImage] = useState<string>("");
 
   useEffect(() => {
     if (!appUser) return;
@@ -82,13 +83,14 @@ function RetailerHoroscope() {
         status: "Generated",
         chart,
         predictions,
+        godImage: godImage || undefined,
         amount: settings.pricePerHoroscope,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
       toast.success("ഹോറോസ്കോപ്പ് ജനറേറ്റ് ചെയ്തു!");
-      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth("");
+      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth(""); setGodImage("");
       setTab("reports");
     } catch (err: any) {
       toast.error(err.message || "പിശക് സംഭവിച്ചു");

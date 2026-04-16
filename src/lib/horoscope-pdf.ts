@@ -47,7 +47,7 @@ function getChartHTML(chart: HoroscopeRequest["chart"]): string {
   return `<table class="chart-table"><tbody>${rows}</tbody></table>`;
 }
 
-export function generateHoroscopePDF(request: HoroscopeRequest): string {
+export function generateHoroscopePDF(request: HoroscopeRequest & { godImage?: string }): string {
   const lang = request.language || "Both";
   const predictions = request.predictions || [];
 
@@ -90,7 +90,8 @@ export function generateHoroscopePDF(request: HoroscopeRequest): string {
   body { font-family: 'Noto Sans Malayalam', 'Segoe UI', sans-serif; color: #1a1a2e; background: #fff; }
   .page { max-width: 210mm; margin: 0 auto; padding: 20px; }
 
-  .header { text-align: center; background: linear-gradient(135deg, #0c2461, #1e3a8a); color: white; padding: 30px 20px; border-radius: 8px; margin-bottom: 20px; }
+  .header { text-align: center; background: linear-gradient(135deg, #0c2461, #1e3a8a); color: white; padding: 20px 20px 30px; border-radius: 8px; margin-bottom: 20px; }
+  .god-image { width: 80px; height: 80px; object-fit: contain; border-radius: 50%; border: 3px solid #d4a932; margin: 0 auto 10px; display: block; background: rgba(255,255,255,0.1); padding: 4px; }
   .header h1 { font-size: 28px; margin-bottom: 4px; letter-spacing: 1px; }
   .header h2 { font-size: 16px; font-weight: 400; opacity: 0.85; }
   .header .subtitle { font-size: 13px; opacity: 0.7; margin-top: 8px; }
@@ -132,6 +133,7 @@ export function generateHoroscopePDF(request: HoroscopeRequest): string {
 <div class="page">
   <!-- Header -->
   <div class="header">
+    ${request.godImage ? `<img src="${request.godImage}" class="god-image" alt="God Image" />` : ""}
     <h1>☉ ജ്യോതിഷ ഫലം ☉</h1>
     <h2>Horoscope Report</h2>
     <div class="subtitle">EI Solutions — Premium Astrology Service</div>
