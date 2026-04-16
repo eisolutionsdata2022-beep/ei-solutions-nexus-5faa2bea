@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import paytmQr from "@/assets/paytm-qr.jpeg";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import { doc, onSnapshot, collection, query, where, orderBy, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,8 @@ function RetailerWallet() {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("UPI");
-  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [transactionId, setTransactionId] = useState("");
+  const [upiId, setUpiId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
@@ -82,25 +82,21 @@ function RetailerWallet() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      let screenshotUrl = "";
-      if (screenshot) {
-        const storageRef = ref(storage, `wallet-screenshots/${appUser.uid}/${Date.now()}`);
-        await uploadBytes(storageRef, screenshot);
-        screenshotUrl = await getDownloadURL(storageRef);
-      }
       await addDoc(collection(db, "walletRequests"), {
         userId: appUser.uid,
         userEmail: appUser.email,
         amount: parseFloat(amount),
         paymentMethod,
-        screenshotUrl,
+        transactionId,
+        upiId,
         status: "pending",
         createdAt: new Date().toISOString(),
       });
       toast.success("Wallet request submitted!");
       setOpen(false);
       setAmount("");
-      setScreenshot(null);
+      setTransactionId("");
+      setUpiId("");
     } catch {
       toast.error("Failed to submit request.");
     } finally {
@@ -145,8 +141,12 @@ function RetailerWallet() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Payment Screenshot</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setScreenshot(e.target.files?.[0] || null)} />
+                <Label>Transaction ID</Label>
+                <Input placeholder="Enter transaction/UTR ID" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>UPI ID</Label>
+                <Input placeholder="e.g. name@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)} required />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? (
