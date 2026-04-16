@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Banknote, Users, UserCog, Shield, ArrowLeft, Smartphone, Download } from "lucide-react";
+import { Banknote, Users, UserCog, Shield, ArrowLeft, Smartphone, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getIPPBFeeConfig, netRetailerCost, type IPPBFeeConfig, DEFAULT_IPPB_FEE } from "@/lib/ippb-fee-config";
 
