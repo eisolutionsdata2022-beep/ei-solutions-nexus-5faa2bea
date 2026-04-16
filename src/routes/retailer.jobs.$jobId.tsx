@@ -393,28 +393,30 @@ function JobDetail() {
         </Card>
       )}
 
-      {/* Messages thread */}
-      <Card>
-        <CardHeader><CardTitle>Communication ({messages.length})</CardTitle></CardHeader>
-        <CardContent>
-          {messages.length === 0 ? <p className="text-muted-foreground text-sm">No messages yet.</p> : (
-            <div className="space-y-2">
-              {messages.map((m) => (
-                <div key={m.id} className="p-3 border rounded text-sm">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="font-semibold text-xs">{m.fromUserName} <Badge variant="outline" className="ml-2">{m.type}</Badge></p>
-                    <p className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString()}</p>
+      {/* Messages thread — only participants & admin */}
+      {canSeePrivate && (
+        <Card>
+          <CardHeader><CardTitle>Communication ({messages.length})</CardTitle></CardHeader>
+          <CardContent>
+            {messages.length === 0 ? <p className="text-muted-foreground text-sm">No messages yet.</p> : (
+              <div className="space-y-2">
+                {messages.map((m) => (
+                  <div key={m.id} className="p-3 border rounded text-sm">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-semibold text-xs">{m.fromUserName} <Badge variant="outline" className="ml-2">{m.type}</Badge></p>
+                      <p className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString()}</p>
+                    </div>
+                    <p className="whitespace-pre-wrap">{m.text}</p>
+                    {((m.files && m.files.length > 0) || (m.fileUrls && m.fileUrls.length > 0)) && (
+                      <FilePreviewList files={m.files} urls={m.fileUrls} />
+                    )}
                   </div>
-                  <p className="whitespace-pre-wrap">{m.text}</p>
-                  {m.fileUrls && m.fileUrls.length > 0 && (
-                    <FilePreviewList urls={m.fileUrls} />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bid dialog */}
       <Dialog open={bidOpen} onOpenChange={setBidOpen}>
