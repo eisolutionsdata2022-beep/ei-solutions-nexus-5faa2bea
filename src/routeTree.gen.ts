@@ -68,6 +68,7 @@ import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
 import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
+import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-disputes'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -376,6 +377,11 @@ const AdminJobEarningsRoute = AdminJobEarningsRouteImport.update({
   path: '/job-earnings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminJobDisputesRoute = AdminJobDisputesRouteImport.update({
+  id: '/job-disputes',
+  path: '/job-disputes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -439,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -503,6 +510,7 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -574,6 +582,7 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
@@ -780,6 +791,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
@@ -1261,6 +1273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminJobEarningsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/job-disputes': {
+      id: '/admin/job-disputes'
+      path: '/job-disputes'
+      fullPath: '/admin/job-disputes'
+      preLoaderRoute: typeof AdminJobDisputesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1336,6 +1355,7 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
+  AdminJobDisputesRoute: typeof AdminJobDisputesRoute
   AdminJobEarningsRoute: typeof AdminJobEarningsRoute
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
@@ -1364,6 +1384,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
+  AdminJobDisputesRoute: AdminJobDisputesRoute,
   AdminJobEarningsRoute: AdminJobEarningsRoute,
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,

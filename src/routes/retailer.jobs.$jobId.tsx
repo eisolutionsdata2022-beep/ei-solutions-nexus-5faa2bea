@@ -21,6 +21,7 @@ import {
   acceptBid,
   completeJobAndRelease,
   placeBid,
+  raiseDispute,
   rejectJob,
   requestDocuments,
   submitWork,
