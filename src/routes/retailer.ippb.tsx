@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Banknote, Clock, KeyRound, Loader2, Plus, X } from "lucide-react";
+import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
@@ -86,6 +87,32 @@ function RetailerIPPBPage() {
         <Button onClick={handleCreate} disabled={creating}>
           {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           New Request
+        </Button>
+      </div>
+
+      {/* PC Agent upgrade banner — small, dismissable visual hint */}
+      <div className="rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/50 px-4 py-3 flex items-center gap-3 flex-wrap">
+        <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+          <Cpu className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-[200px]">
+          <p className="text-sm font-semibold text-amber-900">
+            Real MFS110 LED activation വേണോ?
+          </p>
+          <p className="text-xs text-amber-800/80">
+            PC Agent install ചെയ്താൽ browser-ന് പകരം real fingerprint device-ൽ നിന്ന് capture ചെയ്യാം.
+          </p>
+        </div>
+        <Button
+          asChild
+          size="sm"
+          variant="outline"
+          className="border-amber-500 text-amber-900 hover:bg-amber-200"
+        >
+          <Link to="/install">
+            <Download className="w-4 h-4" />
+            Download PC Agent
+          </Link>
         </Button>
       </div>
 
