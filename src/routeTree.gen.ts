@@ -32,6 +32,8 @@ import { Route as StaffPerformanceRouteImport } from './routes/staff.performance
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
+import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
+import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
@@ -42,12 +44,14 @@ import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-to
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
+import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
+import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -61,6 +65,7 @@ import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.re
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -69,6 +74,7 @@ import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
+import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 
 const TrainerRoute = TrainerRouteImport.update({
   id: '/trainer',
@@ -186,6 +192,16 @@ const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   path: '/form-submissions',
   getParentRoute: () => StaffRoute,
 } as any)
+const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
+  id: '/work-badge',
+  path: '/work-badge',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerWorkRoute = RetailerWorkRouteImport.update({
+  id: '/work',
+  path: '/work',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerWalletRoute = RetailerWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -236,6 +252,11 @@ const RetailerKycRoute = RetailerKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerJobsRoute = RetailerJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
   id: '/horoscope',
   path: '/horoscope',
@@ -265,6 +286,11 @@ const DistributorEarningsRoute = DistributorEarningsRouteImport.update({
   id: '/earnings',
   path: '/earnings',
   getParentRoute: () => DistributorRoute,
+} as any)
+const AdminWorkBadgesRoute = AdminWorkBadgesRouteImport.update({
+  id: '/work-badges',
+  path: '/work-badges',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminWalletsRoute = AdminWalletsRouteImport.update({
   id: '/wallets',
@@ -333,6 +359,11 @@ const AdminKycRoute = AdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminJobMarketplaceRoute = AdminJobMarketplaceRouteImport.update({
+  id: '/job-marketplace',
+  path: '/job-marketplace',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -373,6 +404,11 @@ const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
   path: '/chat-inbox',
   getParentRoute: () => AdminRoute,
 } as any)
+const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
+  id: '/$jobId',
+  path: '/$jobId',
+  getParentRoute: () => RetailerJobsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -391,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -404,12 +441,14 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
@@ -420,6 +459,8 @@ export interface FileRoutesByFullPath {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/retailer/work': typeof RetailerWorkRoute
+  '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -435,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -447,6 +489,7 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -460,12 +503,14 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
@@ -476,6 +521,8 @@ export interface FileRoutesByTo {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/retailer/work': typeof RetailerWorkRoute
+  '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -491,6 +538,7 @@ export interface FileRoutesByTo {
   '/retailer': typeof RetailerIndexRoute
   '/staff': typeof StaffIndexRoute
   '/trainer': typeof TrainerIndexRoute
+  '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -510,6 +558,7 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -523,12 +572,14 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
@@ -539,6 +590,8 @@ export interface FileRoutesById {
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
+  '/retailer/work': typeof RetailerWorkRoute
+  '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -554,6 +607,7 @@ export interface FileRoutesById {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -574,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -587,12 +642,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
@@ -603,6 +660,8 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/retailer/work'
+    | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
     | '/staff/leads'
@@ -618,6 +677,7 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/retailer/jobs/$jobId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -630,6 +690,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -643,12 +704,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
@@ -659,6 +722,8 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/retailer/work'
+    | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
     | '/staff/leads'
@@ -674,6 +739,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/retailer/jobs/$jobId'
   id:
     | '__root__'
     | '/'
@@ -692,6 +758,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -705,12 +772,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
@@ -721,6 +790,8 @@ export interface FileRouteTypes {
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
+    | '/retailer/work'
+    | '/retailer/work-badge'
     | '/staff/form-submissions'
     | '/staff/horoscope-requests'
     | '/staff/leads'
@@ -736,6 +807,7 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/retailer/jobs/$jobId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -912,6 +984,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffFormSubmissionsRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/retailer/work-badge': {
+      id: '/retailer/work-badge'
+      path: '/work-badge'
+      fullPath: '/retailer/work-badge'
+      preLoaderRoute: typeof RetailerWorkBadgeRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/work': {
+      id: '/retailer/work'
+      path: '/work'
+      fullPath: '/retailer/work'
+      preLoaderRoute: typeof RetailerWorkRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/wallet': {
       id: '/retailer/wallet'
       path: '/wallet'
@@ -982,6 +1068,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerKycRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/jobs': {
+      id: '/retailer/jobs'
+      path: '/jobs'
+      fullPath: '/retailer/jobs'
+      preLoaderRoute: typeof RetailerJobsRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/horoscope': {
       id: '/retailer/horoscope'
       path: '/horoscope'
@@ -1023,6 +1116,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/distributor/earnings'
       preLoaderRoute: typeof DistributorEarningsRouteImport
       parentRoute: typeof DistributorRoute
+    }
+    '/admin/work-badges': {
+      id: '/admin/work-badges'
+      path: '/work-badges'
+      fullPath: '/admin/work-badges'
+      preLoaderRoute: typeof AdminWorkBadgesRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/wallets': {
       id: '/admin/wallets'
@@ -1115,6 +1215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKycRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/job-marketplace': {
+      id: '/admin/job-marketplace'
+      path: '/job-marketplace'
+      fullPath: '/admin/job-marketplace'
+      preLoaderRoute: typeof AdminJobMarketplaceRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1171,6 +1278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChatInboxRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/retailer/jobs/$jobId': {
+      id: '/retailer/jobs/$jobId'
+      path: '/$jobId'
+      fullPath: '/retailer/jobs/$jobId'
+      preLoaderRoute: typeof RetailerJobsJobIdRouteImport
+      parentRoute: typeof RetailerJobsRoute
+    }
   }
 }
 
@@ -1183,6 +1297,7 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
+  AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
@@ -1196,6 +1311,7 @@ interface AdminRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletRequestsRoute: typeof AdminWalletRequestsRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
+  AdminWorkBadgesRoute: typeof AdminWorkBadgesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -1208,6 +1324,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
+  AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
@@ -1221,6 +1338,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletRequestsRoute: AdminWalletRequestsRoute,
   AdminWalletsRoute: AdminWalletsRoute,
+  AdminWorkBadgesRoute: AdminWorkBadgesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -1256,10 +1374,23 @@ const MatrimonyRouteWithChildren = MatrimonyRoute._addFileChildren(
   MatrimonyRouteChildren,
 )
 
+interface RetailerJobsRouteChildren {
+  RetailerJobsJobIdRoute: typeof RetailerJobsJobIdRoute
+}
+
+const RetailerJobsRouteChildren: RetailerJobsRouteChildren = {
+  RetailerJobsJobIdRoute: RetailerJobsJobIdRoute,
+}
+
+const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
+  RetailerJobsRouteChildren,
+)
+
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
+  RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
@@ -1270,6 +1401,8 @@ interface RetailerRouteChildren {
   RetailerTransactionsRoute: typeof RetailerTransactionsRoute
   RetailerVirtualTrainerRoute: typeof RetailerVirtualTrainerRoute
   RetailerWalletRoute: typeof RetailerWalletRoute
+  RetailerWorkRoute: typeof RetailerWorkRoute
+  RetailerWorkBadgeRoute: typeof RetailerWorkBadgeRoute
   RetailerIndexRoute: typeof RetailerIndexRoute
 }
 
@@ -1277,6 +1410,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
+  RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
@@ -1287,6 +1421,8 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerTransactionsRoute: RetailerTransactionsRoute,
   RetailerVirtualTrainerRoute: RetailerVirtualTrainerRoute,
   RetailerWalletRoute: RetailerWalletRoute,
+  RetailerWorkRoute: RetailerWorkRoute,
+  RetailerWorkBadgeRoute: RetailerWorkBadgeRoute,
   RetailerIndexRoute: RetailerIndexRoute,
 }
 
