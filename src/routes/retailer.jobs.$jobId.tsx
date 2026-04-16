@@ -177,7 +177,12 @@ function JobDetail() {
         appUser.uid,
         appUser.name || appUser.email,
         docUploadText,
-        uploaded.map((u) => u.url),
+        uploaded.map((u) => ({
+          url: u.url,
+          name: u.name,
+          contentType: u.contentType,
+          size: u.size,
+        })),
       );
       toast.success("Documents shared with worker");
       setDocUploadOpen(false); setDocUploadText(""); setDocUploadFiles([]);
@@ -201,7 +206,12 @@ function JobDetail() {
         appUser.uid,
         appUser.name || appUser.email,
         submitText,
-        uploaded.map((u) => u.url),
+        uploaded.map((u) => ({
+          url: u.url,
+          name: u.name,
+          contentType: u.contentType,
+          size: u.size,
+        })),
       );
       toast.success("Work submitted for review");
       setSubmitOpen(false); setSubmitText(""); setSubmitFiles([]);
