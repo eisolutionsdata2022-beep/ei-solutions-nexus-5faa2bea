@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Download, Plus, Star } from "lucide-react";
+import { FileText, Download, Plus, Star, Upload, Image } from "lucide-react";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
 import {
@@ -40,6 +40,7 @@ function RetailerHoroscope() {
   const [timeOfBirth, setTimeOfBirth] = useState("");
   const [placeOfBirth, setPlaceOfBirth] = useState("");
   const [language, setLanguage] = useState<"Malayalam" | "English" | "Both">("Both");
+  const [godImage, setGodImage] = useState<string>("");
 
   useEffect(() => {
     if (!appUser) return;
@@ -82,13 +83,14 @@ function RetailerHoroscope() {
         status: "Generated",
         chart,
         predictions,
+        godImage: godImage || undefined,
         amount: settings.pricePerHoroscope,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
       toast.success("ഹോറോസ്കോപ്പ് ജനറേറ്റ് ചെയ്തു!");
-      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth("");
+      setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth(""); setGodImage("");
       setTab("reports");
     } catch (err: any) {
       toast.error(err.message || "പിശക് സംഭവിച്ചു");
@@ -172,6 +174,36 @@ function RetailerHoroscope() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              {/* God Image Upload */}
+              <div className="space-y-2">
+                <Label><Image className="w-4 h-4 inline mr-1" /> ദൈവ ചിത്രം / God Image (Optional)</Label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          toast.error("Image must be under 2MB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => setGodImage(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                  {godImage && (
+                    <div className="relative">
+                      <img src={godImage} alt="God" className="w-16 h-16 rounded-full object-cover border-2 border-primary" />
+                      <button onClick={() => setGodImage("")} className="absolute -top-1 -right-1 bg-destructive text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PDF റിപ്പോർട്ടിന്റെ header-ൽ ഈ ചിത്രം കാണിക്കും</p>
               </div>
               <Button onClick={handleSubmit} disabled={loading} className="w-full bg-gov-blue hover:bg-gov-blue/90">
                 <Star className="w-4 h-4 mr-2" />

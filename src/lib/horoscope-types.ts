@@ -78,6 +78,7 @@ export interface HoroscopeRequest {
   processedBy?: string;
   processedByName?: string;
   deliveredAt?: string;
+  godImage?: string; // base64 data URL of uploaded god image
 }
 
 export interface HoroscopeSettings {
