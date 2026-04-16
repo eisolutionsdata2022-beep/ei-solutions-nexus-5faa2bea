@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { AlertTriangle, Wallet, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
