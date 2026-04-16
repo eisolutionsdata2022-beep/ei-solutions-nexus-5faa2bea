@@ -70,10 +70,10 @@ function StaffHoroscopeRequests() {
       <h1 className="text-2xl font-bold">🔮 Horoscope Requests</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard title="Total" value={stats.total} />
-        <StatsCard title="Pending" value={stats.pending} />
-        <StatsCard title="Generated" value={stats.generated} />
-        <StatsCard title="Delivered" value={stats.delivered} />
+        <StatsCard title="Total" value={stats.total} icon={Search} />
+        <StatsCard title="Pending" value={stats.pending} icon={RefreshCw} />
+        <StatsCard title="Generated" value={stats.generated} icon={Download} />
+        <StatsCard title="Delivered" value={stats.delivered} icon={Search} />
       </div>
 
       <Card>
