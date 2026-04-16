@@ -3,7 +3,7 @@
  * Government-style certificate with EI Solutions & Digital India branding
  */
 
-import { KSUM_LOGO, DIGITAL_INDIA_LOGO } from "./certificate-logos";
+// Logos removed per request
 
 export interface CertificateData {
   name: string;
@@ -355,10 +355,6 @@ export function generateCertificateHTML(data: CertificateData): string {
     <div class="company-name">EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED</div>
     <div class="company-sub">Authorized Franchise Certificate</div>
 
-    <div class="logos">
-      <img class="logo-img" src="${KSUM_LOGO}" alt="Kerala Startup Mission" />
-      <img class="logo-img" src="${DIGITAL_INDIA_LOGO}" alt="Digital India" />
-    </div>
 
     <div class="divider"><div class="line"></div><div class="diamond"></div><div class="line"></div></div>
 
