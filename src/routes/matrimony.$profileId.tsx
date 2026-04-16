@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { addMatrimonyRequest } from "@/lib/matrimony-firebase";
 import type { MatrimonyProfile } from "@/lib/matrimony-types";
-import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send, Sparkles, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import godIcon from "@/assets/matrimony-god-icon.png";
 
