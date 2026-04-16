@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Banknote, Users, UserCog, Shield, ArrowLeft, Smartphone, Download } from "lucide-react";
+import { Banknote, Users, UserCog, Shield, ArrowLeft, Smartphone, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getIPPBFeeConfig, netRetailerCost, type IPPBFeeConfig, DEFAULT_IPPB_FEE } from "@/lib/ippb-fee-config";
 
@@ -94,9 +94,33 @@ function IPPBHelpPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-gov-saffron" /> Tablet Interceptor APK — Install Guide
+            <span className="ml-auto text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded">BETA</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-3">
+          <div className="bg-red-50 border-2 border-red-400 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-red-900">
+                <p className="font-bold text-base">⚠ പ്രധാന മുന്നറിയിപ്പ് — Beta Feature</p>
+                <p className="text-sm leading-relaxed">
+                  ഈ Interceptor APK <strong>experimental</strong> ആണ്. Real IPPB / CSC / Aadhaar apps-ലെ biometric capture detect ചെയ്യാൻ പറ്റും, പക്ഷേ <strong>UIDAI signature mismatch</strong> കാരണം injection fail ആകാൻ സാധ്യതയുണ്ട്:
+                </p>
+                <ul className="list-disc pl-5 text-xs space-y-1">
+                  <li><strong>RD Service signature:</strong> Retailer-ൻ്റെ device-ൽ sign ചെയ്ത PID XML, tablet-ലെ IPPB app-ൽ inject ചെയ്താൽ UIDAI server reject ചെയ്യാം (signature mismatch).</li>
+                  <li><strong>WADH binding:</strong> IPPB app capture-നു മുമ്പ് generate ചെയ്യുന്ന unique transaction hash retailer device-ൽ ഉണ്ടാകില്ല → Aadhaar auth fail.</li>
+                  <li><strong>Hardened apps:</strong> പുതിയ IPPB BCAS versions-ൽ Accessibility blocking ഉണ്ട് (RBI guideline) — injection silently fail ആകാം.</li>
+                </ul>
+                <p className="text-sm font-semibold bg-white/60 rounded p-2 mt-2">
+                  ✅ <strong>100% reliable workflow:</strong> നമ്മുടെ own form ഉപയോഗിക്കുക → <Link to="/retailer/ippb" className="underline">/retailer/ippb</Link>. അവിടെ end-to-end ഞങ്ങളുടെ system control ചെയ്യും, signature/wadh issues വരില്ല.
+                </p>
+                <p className="text-xs italic">
+                  Real IPPB app interception detection-നു + notifications-നു മാത്രം use ചെയ്യാൻ recommend ചെയ്യുന്നു. PID injection ഭാഗം UIDAI architecture-മായി conflict ആകുന്നു — production-ൽ depend ചെയ്യരുത്.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <p>
             Staff tablet-ൽ <strong>വേറെ ഏതെങ്കിലും IPPB / CSC / Aadhaar app</strong> (ഉദാ: IPPB BCAS, CSC VLE) ഉപയോഗിക്കുമ്പോഴും, അതിൻ്റെ fingerprint capture call <strong>retailer-ൻ്റെ Windows PC</strong> യിലേക്ക് redirect ചെയ്യാൻ ഈ <strong>EI SOLUTIONS Interceptor APK</strong> install ചെയ്യണം.
           </p>
