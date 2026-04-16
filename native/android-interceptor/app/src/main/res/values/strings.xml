@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">EI SOLUTIONS Interceptor</string>
+    <string name="accessibility_service_label">EI SOLUTIONS Biometric Interceptor</string>
+    <string name="accessibility_service_summary">IPPB / CSC ആപ്പുകളിലെ fingerprint capture call retailer-ന്റെ PC യിലേക്ക് redirect ചെയ്യും</string>
+    <string name="accessibility_service_description">ഈ service activate ചെയ്താൽ, tablet-ലെ ഏതൊരു whitelisted IPPB / Aadhaar app-ലെ biometric request automatic ആയി retailer-ന്റെ Windows PC യിലെ MFS110 / Mantra device-ലേക്ക് forward ചെയ്യും. Captured PID block source app-ലേക്ക് തിരികെ inject ചെയ്യും.</string>
+    <string name="overlay_capturing">🔒 Retailer PC യിൽ fingerprint capture നടക്കുന്നു…</string>
+    <string name="overlay_injected">✅ Captured — source app-ലേക്ക് inject ചെയ്തു</string>
+    <string name="overlay_failed">❌ Capture പരാജയപ്പെട്ടു — വീണ്ടും ശ്രമിക്കുക</string>
+</resources>
