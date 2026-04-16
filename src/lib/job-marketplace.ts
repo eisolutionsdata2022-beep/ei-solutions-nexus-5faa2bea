@@ -20,6 +20,7 @@ import {
   DEFAULT_COMMISSION_PERCENT,
   DEFAULT_WORKER_SECURITY_PERCENT,
   type CategoryCommissionDoc,
+  type DisputeResolution,
   type JobCategory,
   type JobDoc,
   type JobNotificationDoc,
