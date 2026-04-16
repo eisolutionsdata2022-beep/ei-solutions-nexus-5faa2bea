@@ -36,11 +36,14 @@ function RetailerIPPBPage() {
   const [creating, setCreating] = useState(false);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [fee, setFee] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
 
   useEffect(() => {
     if (!appUser) return;
     return subscribeRetailerRequests(appUser.uid, setRows);
   }, [appUser]);
+
+  useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
   if (!appUser) return null;
 
