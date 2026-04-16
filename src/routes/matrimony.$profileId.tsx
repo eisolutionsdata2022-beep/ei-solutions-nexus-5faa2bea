@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { addMatrimonyRequest } from "@/lib/matrimony-firebase";
 import type { MatrimonyProfile } from "@/lib/matrimony-types";
-import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send } from "lucide-react";
+import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import godIcon from "@/assets/matrimony-god-icon.png";
 
@@ -59,115 +59,207 @@ function ProfileDetailPage() {
     setSubmitting(false);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50"><p>Loading...</p></div>;
-  if (!profile) return <div className="min-h-screen flex items-center justify-center bg-pink-50"><p>Profile not found</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-white to-rose-50">
+        <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-pink-500 animate-spin mb-4" />
+        <p className="text-muted-foreground animate-pulse">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-white to-rose-50 gap-4">
+        <Heart className="w-16 h-16 text-pink-200" />
+        <p className="text-xl font-semibold text-muted-foreground">Profile not found</p>
+        <Link to="/matrimony" className="text-pink-500 hover:text-pink-600 underline">← Back to profiles</Link>
+      </div>
+    );
+  }
+
+  const isMale = profile.gender === "Male";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/matrimony" className="flex items-center gap-2 text-white/90 hover:text-white">
-            <ArrowLeft className="w-5 h-5" /> Back
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
+      {/* Premium Header */}
+      <header className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_60%)]" />
+        <div className="relative max-w-5xl mx-auto px-4 py-5 flex items-center justify-between">
+          <Link to="/matrimony" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors duration-200 group">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+            <span className="text-sm font-medium">Back</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <img src={godIcon} alt="" width={32} height={32} />
-            <span className="font-bold">Kukku Life Matrimony</span>
+          <div className="flex items-center gap-2.5">
+            <img src={godIcon} alt="" width={28} height={28} className="opacity-90" />
+            <span className="font-bold text-white tracking-wide">Kukku Life Matrimony</span>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* God Image Header */}
-        <div className="text-center mb-6">
-          <img src={godIcon} alt="Ganapathi" width={80} height={80} className="mx-auto drop-shadow-md" />
-          <p className="text-xs text-muted-foreground mt-1">ശ്രീ ഗണേശായ നമഃ</p>
+      {/* Decorative God Image Section */}
+      <div className="relative py-8 text-center">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-pink-300 to-transparent" />
+        <div className="inline-block relative">
+          <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-amber-100 to-orange-50 opacity-60 blur-sm" />
+          <img src={godIcon} alt="Ganapathi" width={72} height={72} className="relative drop-shadow-lg" />
         </div>
+        <p className="text-xs text-amber-700/70 mt-2 tracking-widest font-medium">ശ്രീ ഗണേശായ നമഃ</p>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-pink-200 to-transparent" />
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Photo */}
-          <div className="aspect-[3/4] bg-gradient-to-br from-pink-100 to-rose-100 rounded-2xl overflow-hidden shadow-lg">
-            {profile.photoUrl ? (
-              <img src={profile.photoUrl} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-200 to-rose-300 flex items-center justify-center text-6xl font-bold text-white">
-                  {profile.name.charAt(0)}
-                </div>
+      <div className="max-w-5xl mx-auto px-4 pb-12">
+        <div className="grid md:grid-cols-5 gap-8">
+          {/* Photo — 2 cols */}
+          <div className="md:col-span-2 animate-fade-in">
+            <div className="sticky top-6">
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/5 bg-gradient-to-br from-pink-100 to-rose-100">
+                {profile.photoUrl ? (
+                  <img src={profile.photoUrl} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-pink-300 to-rose-400 flex items-center justify-center text-5xl font-bold text-white shadow-lg">
+                      {profile.name.charAt(0)}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+              {profile.isDemo && (
+                <Badge className="mt-3 bg-amber-100 text-amber-700 border-amber-200 text-xs">Demo Profile</Badge>
+              )}
+            </div>
           </div>
 
-          {/* Details */}
-          <div className="space-y-4">
+          {/* Details — 3 cols */}
+          <div className="md:col-span-3 space-y-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+            {/* Name & Badge */}
             <div>
-              <Badge className={`${profile.gender === "Male" ? "bg-blue-500" : "bg-pink-500"} text-white border-0 mb-2`}>
-                {profile.gender === "Male" ? "🤵 Groom" : "👰 Bride"}
+              <Badge className={`${isMale ? "bg-blue-500/90" : "bg-pink-500/90"} text-white border-0 mb-3 text-xs px-3 py-1 rounded-full shadow-sm`}>
+                {isMale ? "🤵 Groom" : "👰 Bride"}
               </Badge>
-              <h1 className="text-3xl font-bold">{profile.name}</h1>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">
+                {profile.name}
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {profile.age} yrs · {profile.height} · {profile.location}
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <DetailItem icon={Calendar} label="Age" value={`${profile.age} years`} />
-              <DetailItem icon={Calendar} label="DOB" value={profile.dob} />
-              <DetailItem icon={Star} label="Nakshatram" value={profile.nakshatram} />
-              <DetailItem icon={Ruler} label="Height" value={profile.height} />
-              <DetailItem icon={MapPin} label="Location" value={profile.location} />
-              <DetailItem icon={BookOpen} label="Religion" value={`${profile.religion} - ${profile.caste}`} />
-              <DetailItem icon={GraduationCap} label="Education" value={profile.education} />
-              <DetailItem icon={Briefcase} label="Job" value={profile.job} />
-              <DetailItem icon={User} label="Marital Status" value={profile.maritalStatus} />
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <InfoCard icon={Calendar} label="Age" value={`${profile.age} years`} color="blue" />
+              <InfoCard icon={Calendar} label="DOB" value={profile.dob} color="indigo" />
+              <InfoCard icon={Star} label="Nakshatram" value={profile.nakshatram} color="amber" />
+              <InfoCard icon={Ruler} label="Height" value={profile.height} color="teal" />
+              <InfoCard icon={MapPin} label="Location" value={profile.location} color="rose" />
+              <InfoCard icon={BookOpen} label="Religion" value={`${profile.religion}`} color="purple" />
+              <InfoCard icon={GraduationCap} label="Education" value={profile.education} color="emerald" />
+              <InfoCard icon={Briefcase} label="Occupation" value={profile.job} color="orange" />
+              <InfoCard icon={User} label="Status" value={profile.maritalStatus} color="sky" />
             </div>
 
-            {profile.bio && (
-              <Card className="border-pink-100">
-                <CardContent className="p-4">
-                  <p className="text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>
-                </CardContent>
-              </Card>
+            {/* Caste */}
+            {profile.caste && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="font-medium text-gray-700">Caste:</span> {profile.caste}
+              </div>
             )}
 
+            {/* Bio */}
+            {profile.bio && (
+              <div className="relative rounded-xl bg-gradient-to-br from-pink-50/80 to-rose-50/80 border border-pink-100/60 p-5">
+                <Sparkles className="absolute top-3 right-3 w-4 h-4 text-pink-300" />
+                <p className="text-sm leading-relaxed text-gray-600 italic">"{profile.bio}"</p>
+              </div>
+            )}
+
+            {/* CTA Button */}
             <Button
               onClick={() => setShowRequestForm(!showRequestForm)}
-              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white py-6 text-lg rounded-xl shadow-lg"
+              className="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-pink-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-pink-500/30 hover:-translate-y-0.5 active:translate-y-0"
             >
-              <Heart className="w-5 h-5 mr-2" /> Send Interest Request
+              <Heart className="w-5 h-5 mr-2" />
+              {showRequestForm ? "Close Form" : "Send Interest Request"}
             </Button>
           </div>
         </div>
 
         {/* Request Form */}
         {showRequestForm && (
-          <Card className="mt-6 border-pink-200 animate-in fade-in slide-in-from-top-4 duration-300">
-            <CardHeader>
-              <CardTitle className="text-pink-600 flex items-center gap-2"><Send className="w-5 h-5" /> Send Interest</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div><Label>Your Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Enter your name" /></div>
-                <div><Label>Phone *</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Phone number" /></div>
-                <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" type="email" /></div>
-              </div>
-              <div><Label>Message</Label><Textarea value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Write a message..." rows={3} /></div>
-              <Button onClick={handleSubmitRequest} disabled={submitting} className="bg-pink-500 hover:bg-pink-600">
-                {submitting ? "Sending..." : "Submit Request"}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="mt-8 max-w-2xl mx-auto animate-fade-in">
+            <Card className="border-pink-200/60 shadow-xl shadow-pink-100/40 rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100/50 pb-4">
+                <CardTitle className="text-pink-600 flex items-center gap-2 text-lg">
+                  <Send className="w-5 h-5" /> Express Your Interest
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Fill the form below and we'll share your details with the profile owner.</p>
+              </CardHeader>
+              <CardContent className="p-6 space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Your Name *</Label>
+                    <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Enter your full name" className="rounded-lg" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Phone *</Label>
+                    <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Phone number" className="rounded-lg" />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Email (optional)</Label>
+                    <Input value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="your@email.com" type="email" className="rounded-lg" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Message</Label>
+                  <Textarea value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Write a brief message about yourself..." rows={4} className="rounded-lg resize-none" />
+                </div>
+                <Button
+                  onClick={handleSubmitRequest}
+                  disabled={submitting}
+                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 py-5 rounded-xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Sending...</span>
+                  ) : (
+                    <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Submit Interest Request</span>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-pink-100 bg-gradient-to-r from-pink-50/50 to-rose-50/50 py-6 text-center">
+        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Kukku Life Matrimony — Powered by EI SOLUTIONS</p>
+      </footer>
     </div>
   );
 }
 
-function DetailItem({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+const colorMap: Record<string, string> = {
+  blue: "bg-blue-50 border-blue-100 text-blue-600",
+  indigo: "bg-indigo-50 border-indigo-100 text-indigo-600",
+  amber: "bg-amber-50 border-amber-100 text-amber-600",
+  teal: "bg-teal-50 border-teal-100 text-teal-600",
+  rose: "bg-rose-50 border-rose-100 text-rose-600",
+  purple: "bg-purple-50 border-purple-100 text-purple-600",
+  emerald: "bg-emerald-50 border-emerald-100 text-emerald-600",
+  orange: "bg-orange-50 border-orange-100 text-orange-600",
+  sky: "bg-sky-50 border-sky-100 text-sky-600",
+};
+
+function InfoCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string; color: string }) {
+  const classes = colorMap[color] || colorMap.blue;
   return (
-    <div className="flex items-start gap-2 text-sm">
-      <Icon className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
-      <div>
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className="font-medium">{value}</p>
+    <div className={`rounded-xl border p-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${classes}`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className="w-3.5 h-3.5 opacity-70" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider opacity-60">{label}</span>
       </div>
+      <p className="font-semibold text-sm text-gray-800 leading-tight truncate">{value}</p>
     </div>
   );
 }
