@@ -28,6 +28,7 @@ import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.ser
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
+import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
@@ -38,6 +39,7 @@ import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
+import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
@@ -53,6 +55,7 @@ import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-
 import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -157,6 +160,11 @@ const StaffLeadsRoute = StaffLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
+  id: '/horoscope-requests',
+  path: '/horoscope-requests',
+  getParentRoute: () => StaffRoute,
+} as any)
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   id: '/form-submissions',
   path: '/form-submissions',
@@ -205,6 +213,11 @@ const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
 const RetailerKycRoute = RetailerKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
+  id: '/horoscope',
+  path: '/horoscope',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerFormsRoute = RetailerFormsRouteImport.update({
@@ -284,6 +297,11 @@ const AdminKycRoute = AdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
+  id: '/horoscope-settings',
+  path: '/horoscope-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFormsRoute = AdminFormsRouteImport.update({
   id: '/forms',
   path: '/forms',
@@ -335,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
+  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
@@ -350,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
+  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -360,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -383,6 +404,7 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
+  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
@@ -398,6 +420,7 @@ export interface FileRoutesByTo {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
+  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -408,6 +431,7 @@ export interface FileRoutesByTo {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -437,6 +461,7 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
+  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
@@ -452,6 +477,7 @@ export interface FileRoutesById {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
+  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
@@ -462,6 +488,7 @@ export interface FileRoutesById {
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
@@ -492,6 +519,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
+    | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
@@ -507,6 +535,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/forms'
+    | '/retailer/horoscope'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -517,6 +546,7 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/horoscope-requests'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -540,6 +570,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
+    | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
@@ -555,6 +586,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/forms'
+    | '/retailer/horoscope'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -565,6 +597,7 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/horoscope-requests'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -593,6 +626,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/form-analytics'
     | '/admin/forms'
+    | '/admin/horoscope-settings'
     | '/admin/kyc'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
@@ -608,6 +642,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/retailer/cv-builder'
     | '/retailer/forms'
+    | '/retailer/horoscope'
     | '/retailer/kyc'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
@@ -618,6 +653,7 @@ export interface FileRouteTypes {
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/staff/form-submissions'
+    | '/staff/horoscope-requests'
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
@@ -777,6 +813,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffLeadsRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/staff/horoscope-requests': {
+      id: '/staff/horoscope-requests'
+      path: '/horoscope-requests'
+      fullPath: '/staff/horoscope-requests'
+      preLoaderRoute: typeof StaffHoroscopeRequestsRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/staff/form-submissions': {
       id: '/staff/form-submissions'
       path: '/form-submissions'
@@ -845,6 +888,13 @@ declare module '@tanstack/react-router' {
       path: '/kyc'
       fullPath: '/retailer/kyc'
       preLoaderRoute: typeof RetailerKycRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/horoscope': {
+      id: '/retailer/horoscope'
+      path: '/horoscope'
+      fullPath: '/retailer/horoscope'
+      preLoaderRoute: typeof RetailerHoroscopeRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/forms': {
@@ -952,6 +1002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKycRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/horoscope-settings': {
+      id: '/admin/horoscope-settings'
+      path: '/horoscope-settings'
+      fullPath: '/admin/horoscope-settings'
+      preLoaderRoute: typeof AdminHoroscopeSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/forms': {
       id: '/admin/forms'
       path: '/forms'
@@ -1012,6 +1069,7 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
+  AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
@@ -1034,6 +1092,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
+  AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
@@ -1069,6 +1128,7 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
+  RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
@@ -1084,6 +1144,7 @@ interface RetailerRouteChildren {
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerFormsRoute: RetailerFormsRoute,
+  RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
@@ -1102,6 +1163,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 
 interface StaffRouteChildren {
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
+  StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
@@ -1112,6 +1174,7 @@ interface StaffRouteChildren {
 
 const StaffRouteChildren: StaffRouteChildren = {
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
+  StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
