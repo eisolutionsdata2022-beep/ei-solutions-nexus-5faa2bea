@@ -148,6 +148,7 @@ export function generateHoroscopePDF(request: HoroscopeRequest & { godImage?: st
       <div class="customer-item"><span class="customer-label">ജനന തീയതി / DOB:</span> ${request.dateOfBirth}</div>
       <div class="customer-item"><span class="customer-label">ജനന സമയം / Time:</span> ${request.timeOfBirth}</div>
       <div class="customer-item"><span class="customer-label">ജനന സ്ഥലം / Place:</span> ${request.placeOfBirth}</div>
+      ${request.birthStar ? `<div class="customer-item"><span class="customer-label">ജന്മ നക്ഷത്രം / Star:</span> ${request.birthStar}</div>` : ""}
       <div class="customer-item"><span class="customer-label">ലഗ്നം / Lagna:</span> ${request.chart ? getRashiName(request.chart.lagna, "ml") + " (" + getRashiName(request.chart.lagna, "en") + ")" : "N/A"}</div>
     </div>
   </div>
