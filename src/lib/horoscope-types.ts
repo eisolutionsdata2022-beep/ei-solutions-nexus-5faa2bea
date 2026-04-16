@@ -10,6 +10,36 @@ export const STATUS_COLORS: Record<HoroscopeStatus, string> = {
   Delivered: "bg-indigo-100 text-indigo-800",
 };
 
+export const NAKSHATRAS = [
+  { id: 1, en: "Ashwini", ml: "അശ്വതി" },
+  { id: 2, en: "Bharani", ml: "ഭരണി" },
+  { id: 3, en: "Krittika", ml: "കാർത്തിക" },
+  { id: 4, en: "Rohini", ml: "രോഹിണി" },
+  { id: 5, en: "Mrigashira", ml: "മകയിരം" },
+  { id: 6, en: "Ardra", ml: "തിരുവാതിര" },
+  { id: 7, en: "Punarvasu", ml: "പുണർതം" },
+  { id: 8, en: "Pushya", ml: "പൂയം" },
+  { id: 9, en: "Ashlesha", ml: "ആയില്യം" },
+  { id: 10, en: "Magha", ml: "മകം" },
+  { id: 11, en: "Purva Phalguni", ml: "പൂരം" },
+  { id: 12, en: "Uttara Phalguni", ml: "ഉത്രം" },
+  { id: 13, en: "Hasta", ml: "അത്തം" },
+  { id: 14, en: "Chitra", ml: "ചിത്തിര" },
+  { id: 15, en: "Swati", ml: "ചോതി" },
+  { id: 16, en: "Vishakha", ml: "വിശാഖം" },
+  { id: 17, en: "Anuradha", ml: "അനിഴം" },
+  { id: 18, en: "Jyeshtha", ml: "തൃക്കേട്ട" },
+  { id: 19, en: "Mula", ml: "മൂലം" },
+  { id: 20, en: "Purva Ashadha", ml: "പൂരാടം" },
+  { id: 21, en: "Uttara Ashadha", ml: "ഉത്രാടം" },
+  { id: 22, en: "Shravana", ml: "തിരുവോണം" },
+  { id: 23, en: "Dhanishta", ml: "അവിട്ടം" },
+  { id: 24, en: "Shatabhisha", ml: "ചതയം" },
+  { id: 25, en: "Purva Bhadrapada", ml: "പൂരുരുട്ടാതി" },
+  { id: 26, en: "Uttara Bhadrapada", ml: "ഉത്രട്ടാതി" },
+  { id: 27, en: "Revati", ml: "രേവതി" },
+] as const;
+
 export const RASHIS = [
   { id: 1, en: "Aries", ml: "മേടം" },
   { id: 2, en: "Taurus", ml: "ഇടവം" },
@@ -66,6 +96,7 @@ export interface HoroscopeRequest {
   dateOfBirth: string;
   timeOfBirth: string;
   placeOfBirth: string;
+  birthStar?: string; // Nakshatra name
   language: "Malayalam" | "English" | "Both";
   status: HoroscopeStatus;
   chart?: HoroscopeChart;
