@@ -21,6 +21,7 @@ import {
   type IPPBStatus,
 } from "./ippb-types";
 import { getIPPBFeeConfig } from "./ippb-fee-config";
+import { hasIPPBBadge } from "./ippb-badge";
 
 const COL = "ippbRequests";
 
@@ -51,6 +52,13 @@ export async function createIPPBRequest(input: {
   retailerName: string;
   retailerEmail: string;
 }): Promise<string> {
+  // Gate: only badge-holding retailers can open IPPB accounts.
+  const allowed = await hasIPPBBadge(input.retailerId);
+  if (!allowed) {
+    throw new Error(
+      "IPPB badge required. Apply from the IPPB page and wait for admin approval."
+    );
+  }
   const requestNo = generateRequestNo();
   const now = new Date().toISOString();
   const ref = await addDoc(collection(db, COL), {
