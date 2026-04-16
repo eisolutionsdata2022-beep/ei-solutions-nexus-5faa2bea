@@ -7,14 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   subscribeMatrimonyProfiles, deleteMatrimonyProfile,
   subscribeMatrimonyRequests, deleteDemoProfiles, getDemoProfileCount,
   getMatrimonyPricing, saveMatrimonyPricing, addMatrimonyProfile,
+  updateMatrimonyRequest,
 } from "@/lib/matrimony-firebase";
-import { generateDemoProfiles, DEFAULT_PRICING } from "@/lib/matrimony-types";
+import { generateDemoProfiles, DEFAULT_PRICING, KERALA_DISTRICTS } from "@/lib/matrimony-types";
 import type { MatrimonyProfile, MatrimonyRequest, MatrimonyPricing } from "@/lib/matrimony-types";
-import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2, IndianRupee, Percent, Copy } from "lucide-react";
+import { Trash2, Users, Heart, MessageSquare, Crown, Database, Loader2, IndianRupee, Percent, Eye, Phone, Mail, MapPin, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/matrimony")({
@@ -28,6 +30,11 @@ function AdminMatrimonyDashboard() {
   const [pricing, setPricing] = useState<MatrimonyPricing>(DEFAULT_PRICING);
   const [demoCount, setDemoCount] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Request filters
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedRequest, setSelectedRequest] = useState<MatrimonyRequest | null>(null);
 
   useEffect(() => {
     const unsub1 = subscribeMatrimonyProfiles(setProfiles);
@@ -78,6 +85,34 @@ function AdminMatrimonyDashboard() {
     } catch { toast.error("Failed to delete"); }
   };
 
+  const handleUpdateRequestStatus = async (id: string, status: "New" | "Contacted" | "Converted") => {
+    try {
+      await updateMatrimonyRequest(id, { status });
+      toast.success(`Status updated to ${status}`);
+    } catch { toast.error("Failed to update"); }
+  };
+
+  const handleReassignFranchise = async (requestId: string, franchiseId: string, franchiseName: string) => {
+    try {
+      await updateMatrimonyRequest(requestId, { assignedFranchiseId: franchiseId, assignedFranchiseName: franchiseName });
+      toast.success("Franchise reassigned");
+    } catch { toast.error("Failed to reassign"); }
+  };
+
+  // Filter requests
+  const filteredRequests = requests.filter(r => {
+    if (districtFilter !== "all" && r.district !== districtFilter) return false;
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    return true;
+  });
+
+  const statusColor = (s: string) => {
+    if (s === "New") return "bg-blue-100 text-blue-700 border-blue-200";
+    if (s === "Contacted") return "bg-amber-100 text-amber-700 border-amber-200";
+    if (s === "Converted") return "bg-green-100 text-green-700 border-green-200";
+    return "";
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,18 +124,87 @@ function AdminMatrimonyDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-pink-100"><CardContent className="p-4 text-center"><Users className="w-6 h-6 text-pink-500 mx-auto" /><p className="text-2xl font-bold">{profiles.length}</p><p className="text-xs text-muted-foreground">Total Profiles</p></CardContent></Card>
         <Card className="border-amber-100"><CardContent className="p-4 text-center"><Database className="w-6 h-6 text-amber-500 mx-auto" /><p className="text-2xl font-bold">{demoCount}</p><p className="text-xs text-muted-foreground">Demo Profiles</p></CardContent></Card>
-        <Card className="border-blue-100"><CardContent className="p-4 text-center"><MessageSquare className="w-6 h-6 text-blue-500 mx-auto" /><p className="text-2xl font-bold">{requests.length}</p><p className="text-xs text-muted-foreground">Requests</p></CardContent></Card>
-        <Card className="border-green-100"><CardContent className="p-4 text-center"><Heart className="w-6 h-6 text-green-500 mx-auto" /><p className="text-2xl font-bold">{profiles.filter(p => !p.isDemo).length}</p><p className="text-xs text-muted-foreground">Real Profiles</p></CardContent></Card>
+        <Card className="border-blue-100"><CardContent className="p-4 text-center"><MessageSquare className="w-6 h-6 text-blue-500 mx-auto" /><p className="text-2xl font-bold">{requests.length}</p><p className="text-xs text-muted-foreground">Total Requests</p></CardContent></Card>
+        <Card className="border-green-100"><CardContent className="p-4 text-center"><Heart className="w-6 h-6 text-green-500 mx-auto" /><p className="text-2xl font-bold">{requests.filter(r => r.status === "New").length}</p><p className="text-xs text-muted-foreground">New Requests</p></CardContent></Card>
       </div>
 
-      <Tabs defaultValue="profiles">
+      <Tabs defaultValue="requests">
         <TabsList>
-          <TabsTrigger value="profiles">Profiles</TabsTrigger>
           <TabsTrigger value="requests">Requests ({requests.length})</TabsTrigger>
+          <TabsTrigger value="profiles">Profiles</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="demo">Demo Data</TabsTrigger>
         </TabsList>
 
+        {/* ─── Requests Tab ─── */}
+        <TabsContent value="requests" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={districtFilter} onValueChange={setDistrictFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="District" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Districts</SelectItem>
+                {KERALA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Contacted">Contacted</SelectItem>
+                <SelectItem value="Converted">Converted</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground ml-auto">{filteredRequests.length} results</span>
+          </div>
+
+          {filteredRequests.map(r => (
+            <Card key={r.id} className="border-blue-100 hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold text-lg">{r.requesterName}</p>
+                      <Badge className={`${statusColor(r.status)} text-xs`}>{r.status}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Interested in: <strong>{r.profileName}</strong>
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{r.phone}</span>
+                      {r.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{r.email}</span>}
+                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{r.district || "N/A"}</span>
+                    </div>
+                    {r.message && <p className="text-sm mt-2 italic text-gray-500">"{r.message}"</p>}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <span>Franchise: <strong>{r.assignedFranchiseName || "Unassigned"}</strong></span>
+                      <span>•</span>
+                      <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Select value={r.status} onValueChange={(v) => handleUpdateRequestStatus(r.id, v as "New" | "Contacted" | "Converted")}>
+                      <SelectTrigger className="w-[130px] text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Contacted">Contacted</SelectItem>
+                        <SelectItem value="Converted">Converted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedRequest(r)} className="text-xs">
+                      <Eye className="w-3.5 h-3.5 mr-1" /> Details
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {filteredRequests.length === 0 && <p className="text-center py-8 text-muted-foreground">No requests found</p>}
+        </TabsContent>
+
+        {/* ─── Profiles Tab ─── */}
         <TabsContent value="profiles" className="space-y-3">
           {profiles.map(p => (
             <Card key={p.id} className="border-pink-100">
@@ -112,7 +216,6 @@ function AdminMatrimonyDashboard() {
                   <div className="flex items-center gap-2">
                     <p className="font-semibold truncate">{p.name}</p>
                     {p.isDemo && <Badge className="bg-amber-500 text-white border-0 text-[10px]">Demo</Badge>}
-                    <Badge className="bg-green-500 text-white border-0 text-[10px]">Delivered</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{p.age} yrs • {p.gender} • {p.location} • By: {p.franchiseName}</p>
                 </div>
@@ -124,23 +227,7 @@ function AdminMatrimonyDashboard() {
           ))}
         </TabsContent>
 
-        <TabsContent value="requests" className="space-y-3">
-          {requests.map(r => (
-            <Card key={r.id} className="border-blue-100">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold">{r.requesterName}</p>
-                  <Badge variant="outline" className="text-xs">{new Date(r.createdAt).toLocaleDateString()}</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Profile: <strong>{r.profileName}</strong></p>
-                <p className="text-sm">📞 {r.phone} {r.email && `• ✉️ ${r.email}`}</p>
-                {r.message && <p className="text-sm mt-1 italic">"{r.message}"</p>}
-              </CardContent>
-            </Card>
-          ))}
-          {requests.length === 0 && <p className="text-center py-8 text-muted-foreground">No requests yet</p>}
-        </TabsContent>
-
+        {/* ─── Pricing Tab ─── */}
         <TabsContent value="pricing">
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Manage Pricing</CardTitle></CardHeader>
@@ -168,13 +255,8 @@ function AdminMatrimonyDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Commission Type</Label>
-                    <Select
-                      value={pricing.commissionType || "fixed"}
-                      onValueChange={(v) => setPricing({ ...pricing, commissionType: v as "fixed" | "percentage" })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={pricing.commissionType || "fixed"} onValueChange={(v) => setPricing({ ...pricing, commissionType: v as "fixed" | "percentage" })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
                         <SelectItem value="percentage">Percentage (%)</SelectItem>
@@ -184,11 +266,7 @@ function AdminMatrimonyDashboard() {
                   <div>
                     <Label>{pricing.commissionType === "percentage" ? "Percentage (%)" : "Amount (₹)"}</Label>
                     <div className="relative">
-                      <Input
-                        type="number"
-                        value={pricing.commissionValue ?? 100}
-                        onChange={e => setPricing({ ...pricing, commissionValue: parseFloat(e.target.value) || 0 })}
-                      />
+                      <Input type="number" value={pricing.commissionValue ?? 100} onChange={e => setPricing({ ...pricing, commissionValue: parseFloat(e.target.value) || 0 })} />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         {pricing.commissionType === "percentage" ? <Percent className="w-4 h-4" /> : <IndianRupee className="w-4 h-4" />}
                       </span>
@@ -207,6 +285,7 @@ function AdminMatrimonyDashboard() {
           </Card>
         </TabsContent>
 
+        {/* ─── Demo Tab ─── */}
         <TabsContent value="demo">
           <Card>
             <CardHeader><CardTitle>Demo Profile Management</CardTitle></CardHeader>
@@ -224,6 +303,48 @@ function AdminMatrimonyDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Request Detail Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request Details</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">Requester:</span><p className="font-semibold">{selectedRequest.requesterName}</p></div>
+                <div><span className="text-muted-foreground">Phone:</span><p className="font-semibold">{selectedRequest.phone}</p></div>
+                <div><span className="text-muted-foreground">Email:</span><p className="font-semibold">{selectedRequest.email || "N/A"}</p></div>
+                <div><span className="text-muted-foreground">Profile:</span><p className="font-semibold">{selectedRequest.profileName}</p></div>
+                <div><span className="text-muted-foreground">District:</span><p className="font-semibold">{selectedRequest.district || "N/A"}</p></div>
+                <div><span className="text-muted-foreground">Status:</span><Badge className={`${statusColor(selectedRequest.status)} mt-1`}>{selectedRequest.status}</Badge></div>
+                <div><span className="text-muted-foreground">Franchise:</span><p className="font-semibold">{selectedRequest.assignedFranchiseName || "Unassigned"}</p></div>
+                <div><span className="text-muted-foreground">Date:</span><p className="font-semibold">{new Date(selectedRequest.createdAt).toLocaleString()}</p></div>
+              </div>
+              {selectedRequest.message && (
+                <div>
+                  <span className="text-sm text-muted-foreground">Message:</span>
+                  <p className="text-sm italic mt-1 bg-gray-50 p-3 rounded-lg">"{selectedRequest.message}"</p>
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Select value={selectedRequest.status} onValueChange={(v) => {
+                  handleUpdateRequestStatus(selectedRequest.id, v as "New" | "Contacted" | "Converted");
+                  setSelectedRequest({ ...selectedRequest, status: v as "New" | "Contacted" | "Converted" });
+                }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Contacted">Contacted</SelectItem>
+                    <SelectItem value="Converted">Converted</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

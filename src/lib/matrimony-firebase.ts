@@ -59,6 +59,55 @@ export async function addMatrimonyRequest(request: Omit<MatrimonyRequest, "id">)
   return addDoc(collection(db, "matrimonyRequests"), request);
 }
 
+export async function updateMatrimonyRequest(id: string, data: Partial<MatrimonyRequest>) {
+  return updateDoc(doc(db, "matrimonyRequests", id), data);
+}
+
+// ─── Franchise lookup by district ───
+export async function findFranchiseByDistrict(district: string): Promise<{ id: string; name: string } | null> {
+  // Look up users with role=retailer whose district/location matches
+  const q = query(collection(db, "users"), where("district", "==", district), where("role", "==", "retailer"));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    // Fallback: try matching by location field
+    const q2 = query(collection(db, "users"), where("location", "==", district), where("role", "==", "retailer"));
+    const snap2 = await getDocs(q2);
+    if (!snap2.empty) {
+      const d = snap2.docs[0];
+      return { id: d.id, name: d.data().name || d.data().businessName || district };
+    }
+    return null;
+  }
+  const d = snap.docs[0];
+  return { id: d.id, name: d.data().name || d.data().businessName || district };
+}
+
+// ─── Notifications ───
+export async function addNotification(userId: string, notification: {
+  type: string;
+  title: string;
+  message: string;
+  data?: Record<string, string>;
+}) {
+  return addDoc(collection(db, "notifications"), {
+    userId,
+    ...notification,
+    read: false,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export function subscribeNotifications(userId: string, callback: (notifications: Array<{ id: string; type: string; title: string; message: string; read: boolean; createdAt: string; data?: Record<string, string> }>) => void) {
+  const q = query(collection(db, "notifications"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+  });
+}
+
+export async function markNotificationRead(id: string) {
+  return updateDoc(doc(db, "notifications", id), { read: true });
+}
+
 // ─── Pricing ───
 export async function getMatrimonyPricing(): Promise<MatrimonyPricing> {
   const docRef = doc(db, "settings", "matrimonyPricing");
