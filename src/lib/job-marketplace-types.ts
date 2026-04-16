@@ -46,6 +46,14 @@ export interface JobDoc {
   adminCommission?: number;
   workerNet?: number;
   uploaderRefund?: number;
+  // Dispute fields
+  disputeReason?: string;
+  disputeRaisedAt?: string;
+  disputeResolution?: DisputeResolution;
+  disputeAdminNote?: string;
+  disputeResolvedAt?: string;
+  disputeResolvedBy?: string; // admin uid
+  disputeWorkerSplitPercent?: number; // for "split" resolution
   createdAt: string;
   updatedAt: string;
 }
