@@ -13,7 +13,7 @@ import {
   subscribeMatrimonyProfiles, addMatrimonyProfile, updateMatrimonyProfile,
   uploadProfilePhoto, subscribeMatrimonyRequests, updateMatrimonyRequest,
 } from "@/lib/matrimony-firebase";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { RELIGIONS, MARITAL_STATUSES, HEIGHTS, NAKSHATRAS } from "@/lib/matrimony-types";
 import type { MatrimonyProfile, MatrimonyRequest } from "@/lib/matrimony-types";
@@ -53,11 +53,12 @@ function RetailerMatrimonyDashboard() {
     if (!appUser?.uid) return;
     const q = query(
       collection(db, "matrimonyRequests"),
-      where("assignedFranchiseId", "==", appUser.uid),
-      orderBy("createdAt", "desc")
+      where("assignedFranchiseId", "==", appUser.uid)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setAssignedRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as MatrimonyRequest)));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as MatrimonyRequest));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      setAssignedRequests(list);
     });
     return unsub;
   }, [appUser?.uid]);

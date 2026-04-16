@@ -13,11 +13,13 @@ export function subscribeMatrimonyProfiles(
   franchiseId?: string
 ) {
   const q = franchiseId
-    ? query(collection(db, "matrimonyProfiles"), where("franchiseId", "==", franchiseId), orderBy("createdAt", "desc"))
-    : query(collection(db, "matrimonyProfiles"), orderBy("createdAt", "desc"));
+    ? query(collection(db, "matrimonyProfiles"), where("franchiseId", "==", franchiseId))
+    : query(collection(db, "matrimonyProfiles"));
 
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as MatrimonyProfile)));
+    const profiles = snap.docs.map((d) => ({ id: d.id, ...d.data() } as MatrimonyProfile));
+    profiles.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    callback(profiles);
   });
 }
 
@@ -98,9 +100,11 @@ export async function addNotification(userId: string, notification: {
 }
 
 export function subscribeNotifications(userId: string, callback: (notifications: Array<{ id: string; type: string; title: string; message: string; read: boolean; createdAt: string; data?: Record<string, string> }>) => void) {
-  const q = query(collection(db, "notifications"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "notifications"), where("userId", "==", userId));
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    callback(list);
   });
 }
 

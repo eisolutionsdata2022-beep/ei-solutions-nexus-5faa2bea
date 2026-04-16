@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Megaphone } from "lucide-react";
 
@@ -17,12 +17,12 @@ export function NoticeMarquee() {
   useEffect(() => {
     const q = query(
       collection(db, "notices"),
-      where("active", "==", true),
-      orderBy("createdAt", "desc")
+      where("active", "==", true)
     );
     const unsub = onSnapshot(q, (snap) => {
       const list: Notice[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Notice));
+      list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       setNotices(list);
     });
     return unsub;
