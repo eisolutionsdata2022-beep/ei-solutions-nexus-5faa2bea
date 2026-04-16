@@ -130,6 +130,7 @@ export async function createJobWithEscrow(
     budget: number;
     deadline: string;
     requiredDocs: string;
+    referenceFiles?: { url: string; name: string; contentType?: string; size?: number }[];
   }
 ): Promise<string> {
   if (data.budget < 50) throw new Error("Minimum budget is ₹50");
@@ -141,6 +142,7 @@ export async function createJobWithEscrow(
 
   const jobRef = await addDoc(collection(db, "jobs"), {
     ...data,
+    referenceFiles: data.referenceFiles || [],
     uploaderId,
     uploaderName,
     status: "open",
@@ -191,6 +193,7 @@ export async function acceptBid(jobId: string, bidId: string) {
   const jobRef = doc(db, "jobs", jobId);
   const bidRef = doc(db, "bids", bidId);
 
+  // Read + atomically claim job inside transaction (prevents double-accept races)
   const { job, bid } = await runTransaction(db, async (tx) => {
     const jobSnap = await tx.get(jobRef);
     const bidSnap = await tx.get(bidRef);
@@ -200,27 +203,51 @@ export async function acceptBid(jobId: string, bidId: string) {
     const bid = { id: bidSnap.id, ...(bidSnap.data() as any) };
     if (job.status !== "open")
       throw new Error("Job is no longer accepting bids");
+    if (bid.status !== "pending")
+      throw new Error("This bid is no longer pending");
+    // Re-validate worker badge (admin may have revoked it after the bid)
+    const workerSnap = await tx.get(doc(db, "users", bid.workerId));
+    if (!workerSnap.exists() || !(workerSnap.data() as any).workBadge) {
+      throw new Error("Worker no longer holds a valid Work Badge");
+    }
+    // Claim the job atomically so concurrent acceptBid calls fail
+    tx.update(jobRef, {
+      status: "assigned",
+      assignedWorkerId: bid.workerId,
+      assignedWorkerName: bid.workerName,
+      finalBidAmount: bid.amount,
+      updatedAt: new Date().toISOString(),
+    });
+    tx.update(bidRef, { status: "accepted" });
     return { job, bid };
   });
 
   const rule = await getCategoryCommission(job.category);
   const securityFee = calcSecurityFee(bid.amount, rule);
 
-  // Worker pays a security fee (escrow)
-  await atomicDebit(bid.workerId, securityFee, {
-    source: "job-security-fee",
-    description: `Security fee for: ${job.title}`,
-  });
+  // Worker pays a security fee (escrow) — outside tx because it touches another doc atomically
+  try {
+    await atomicDebit(bid.workerId, securityFee, {
+      source: "job-security-fee",
+      description: `Security fee for: ${job.title}`,
+    });
+  } catch (e) {
+    // Rollback: re-open the job & bid so another worker can take it
+    await updateDoc(jobRef, {
+      status: "open",
+      assignedWorkerId: null,
+      assignedWorkerName: null,
+      finalBidAmount: null,
+      updatedAt: new Date().toISOString(),
+    });
+    await updateDoc(bidRef, { status: "pending" });
+    throw new Error("Worker has insufficient wallet balance for security fee");
+  }
 
   await updateDoc(jobRef, {
-    status: "assigned",
-    assignedWorkerId: bid.workerId,
-    assignedWorkerName: bid.workerName,
-    finalBidAmount: bid.amount,
     workerSecurityFee: securityFee,
     updatedAt: new Date().toISOString(),
   });
-  await updateDoc(bidRef, { status: "accepted" });
 
   // Reject all other bids
   const others = await getDocs(
@@ -275,7 +302,7 @@ export async function uploadDocumentsResponse(
   uploaderId: string,
   uploaderName: string,
   text: string,
-  fileUrls: string[]
+  files: { url: string; name: string; contentType?: string; size?: number }[]
 ) {
   await addDoc(collection(db, "jobMessages"), {
     jobId,
@@ -283,7 +310,8 @@ export async function uploadDocumentsResponse(
     fromUserId: uploaderId,
     fromUserName: uploaderName,
     text,
-    fileUrls,
+    files,
+    fileUrls: files.map((f) => f.url), // legacy fallback
     createdAt: new Date().toISOString(),
   });
   await updateDoc(doc(db, "jobs", jobId), {
@@ -310,7 +338,7 @@ export async function submitWork(
   workerId: string,
   workerName: string,
   text: string,
-  fileUrls: string[]
+  files: { url: string; name: string; contentType?: string; size?: number }[]
 ) {
   await addDoc(collection(db, "jobMessages"), {
     jobId,
@@ -318,7 +346,8 @@ export async function submitWork(
     fromUserId: workerId,
     fromUserName: workerName,
     text,
-    fileUrls,
+    files,
+    fileUrls: files.map((f) => f.url), // legacy fallback
     createdAt: new Date().toISOString(),
   });
   await updateDoc(doc(db, "jobs", jobId), {

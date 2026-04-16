@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Briefcase, Plus, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Briefcase, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { JOB_CATEGORIES, type JobDoc } from "@/lib/job-marketplace-types";
 import { createJobWithEscrow } from "@/lib/job-marketplace";
+import { JobFileUploadField } from "@/components/JobFileUploadField";
+import { uploadJobFiles } from "@/lib/job-file-upload";
 
 export const Route = createFileRoute("/retailer/jobs")({
   ssr: false,
@@ -36,6 +38,7 @@ function RetailerJobs() {
   const [budget, setBudget] = useState("");
   const [deadline, setDeadline] = useState("");
   const [requiredDocs, setRequiredDocs] = useState("");
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -69,6 +72,19 @@ function RetailerJobs() {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Pre-create temp ID by using timestamp; uploads happen *after* job is created so use job ID returned.
+      // Strategy: create the job first WITHOUT files, then upload using returned jobId, then update.
+      // Simpler: upload using a synthetic key derived from uploader+ts, then attach metadata.
+      const tempKey = `pre-${Date.now()}`;
+      let uploaded: { url: string; name: string; contentType: string; size: number }[] = [];
+      if (referenceFiles.length > 0) {
+        uploaded = await uploadJobFiles({
+          jobId: tempKey,
+          userId: appUser.uid,
+          kind: "doc-upload",
+          files: referenceFiles,
+        });
+      }
       await createJobWithEscrow(appUser.uid, appUser.name || appUser.email, {
         title,
         description,
@@ -77,10 +93,17 @@ function RetailerJobs() {
         budget: Number(budget),
         deadline,
         requiredDocs,
+        referenceFiles: uploaded.map((u) => ({
+          url: u.url,
+          name: u.name,
+          contentType: u.contentType,
+          size: u.size,
+        })),
       });
       toast.success("Job posted! Budget held in escrow.");
       setOpen(false);
       setTitle(""); setDescription(""); setPages(""); setBudget(""); setDeadline(""); setRequiredDocs("");
+      setReferenceFiles([]);
     } catch (err: any) {
       toast.error(err.message || "Failed to post job");
     } finally {
@@ -123,7 +146,14 @@ function RetailerJobs() {
                   <div><Label>Budget (₹) *</Label><Input required type="number" min={50} value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
                   <div><Label>Deadline *</Label><Input required type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
                 </div>
-                <div><Label>Required Documents</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+                <div><Label>Required Documents (text)</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+                <div>
+                  <Label>Reference Files (optional)</Label>
+                  <p className="text-[11px] text-muted-foreground mb-1">
+                    Attach sample files, briefs, or source documents. Bidders & the assigned worker can download these.
+                  </p>
+                  <JobFileUploadField files={referenceFiles} onChange={setReferenceFiles} />
+                </div>
                 <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
                   ⚠️ Your budget will be held in escrow when you post. Excess (budget − accepted bid) is auto-refunded on completion.
                 </div>

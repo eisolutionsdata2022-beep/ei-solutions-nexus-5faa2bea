@@ -27,6 +27,13 @@ export type DisputeResolution =
   | "split"               // partial payout to worker, partial refund to uploader (admin chooses %)
   | "favor_worker_no_commission"; // worker gets full bid, no admin commission
 
+export interface JobFileMeta {
+  url: string;
+  name: string;
+  contentType?: string;
+  size?: number;
+}
+
 export interface JobDoc {
   id: string;
   uploaderId: string;
@@ -38,6 +45,8 @@ export interface JobDoc {
   budget: number;
   deadline: string; // ISO date
   requiredDocs: string;
+  /** Reference files attached by uploader at job creation (visible to bidders & worker) */
+  referenceFiles?: JobFileMeta[];
   status: JobStatus;
   assignedWorkerId?: string;
   assignedWorkerName?: string;
@@ -92,7 +101,10 @@ export interface JobMessageDoc {
   fromUserId: string;
   fromUserName: string;
   text: string;
+  /** Legacy URL-only list (kept for back-compat) */
   fileUrls?: string[];
+  /** Preferred: includes original filename for download */
+  files?: JobFileMeta[];
   createdAt: string;
 }
 
