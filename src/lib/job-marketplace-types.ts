@@ -16,9 +16,16 @@ export type JobStatus =
   | "assigned"      // worker selected, in progress
   | "doc_requested" // worker asked for documents
   | "submitted"     // worker submitted work, awaiting review
+  | "disputed"      // uploader rejected submission, awaiting admin review
   | "completed"     // payment released
   | "rejected"      // closed by uploader
   | "cancelled";
+
+export type DisputeResolution =
+  | "release_worker"      // pay worker full bid (minus commission), refund uploader excess
+  | "refund_uploader"     // full refund to uploader, security fee returned to worker
+  | "split"               // partial payout to worker, partial refund to uploader (admin chooses %)
+  | "favor_worker_no_commission"; // worker gets full bid, no admin commission
 
 export interface JobDoc {
   id: string;
@@ -39,6 +46,14 @@ export interface JobDoc {
   adminCommission?: number;
   workerNet?: number;
   uploaderRefund?: number;
+  // Dispute fields
+  disputeReason?: string;
+  disputeRaisedAt?: string;
+  disputeResolution?: DisputeResolution;
+  disputeAdminNote?: string;
+  disputeResolvedAt?: string;
+  disputeResolvedBy?: string; // admin uid
+  disputeWorkerSplitPercent?: number; // for "split" resolution
   createdAt: string;
   updatedAt: string;
 }
@@ -91,7 +106,9 @@ export interface JobNotificationDoc {
     | "doc_requested"
     | "doc_uploaded"
     | "work_submitted"
-    | "payment_completed";
+    | "payment_completed"
+    | "dispute_raised"
+    | "dispute_resolved";
   jobId: string;
   jobTitle: string;
   message: string;

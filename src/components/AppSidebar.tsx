@@ -23,6 +23,7 @@ import {
   BotMessageSquare,
   Briefcase,
   ShieldCheck,
+  Gavel,
 } from "lucide-react";
 
 interface NavItem {
@@ -58,6 +59,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
     { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
     { label: "Job Earnings", to: "/admin/job-earnings", icon: BarChart3 },
+    { label: "Job Disputes", to: "/admin/job-disputes", icon: Gavel },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
   ],
   distributor: [

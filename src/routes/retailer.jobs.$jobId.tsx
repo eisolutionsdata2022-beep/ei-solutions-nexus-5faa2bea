@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Send, Star } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Star, AlertTriangle } from "lucide-react";
 import {
   type BidDoc,
   type JobDoc,
@@ -21,6 +21,7 @@ import {
   acceptBid,
   completeJobAndRelease,
   placeBid,
+  raiseDispute,
   rejectJob,
   requestDocuments,
   submitWork,
@@ -63,6 +64,9 @@ function JobDetail() {
 
   const [ratingOpen, setRatingOpen] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "jobs", jobId), (snap) => {
@@ -217,6 +221,22 @@ function JobDetail() {
     finally { setBusy(false); }
   };
 
+  const handleRaiseDispute = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser || !job || busy) return;
+    setBusy(true);
+    try {
+      await raiseDispute(job.id, appUser.uid, disputeReason);
+      toast.success("Dispute raised. Admin will review and decide.");
+      setDisputeOpen(false);
+      setDisputeReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to raise dispute");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!job) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -254,6 +274,20 @@ function JobDetail() {
               <p>✅ Worker received: <strong>₹{job.workerNet}</strong></p>
               <p>💼 Admin commission: <strong>₹{job.adminCommission}</strong></p>
               {(job.uploaderRefund || 0) > 0 && <p>💰 You were refunded: <strong>₹{job.uploaderRefund}</strong></p>}
+              {job.disputeResolution && (
+                <p className="pt-1 border-t mt-1">⚖️ Resolved via dispute: <strong>{job.disputeResolution}</strong></p>
+              )}
+            </div>
+          )}
+          {job.status === "disputed" && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm space-y-1">
+              <p className="font-semibold flex items-center gap-1 text-amber-900">
+                <AlertTriangle className="w-4 h-4" /> Under Dispute — Awaiting Admin Review
+              </p>
+              {job.disputeReason && (
+                <p className="text-xs text-amber-800"><strong>Reason:</strong> {job.disputeReason}</p>
+              )}
+              <p className="text-xs text-amber-700">Funds remain held in escrow. Admin will decide payout.</p>
             </div>
           )}
         </CardContent>
@@ -274,7 +308,12 @@ function JobDetail() {
           <Button onClick={() => setDocUploadOpen(true)}>Upload Documents</Button>
         )}
         {isUploader && job.status === "submitted" && (
-          <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+          <>
+            <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+            <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
+              <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
+            </Button>
+          </>
         )}
         {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
           <Button onClick={() => setRatingOpen(true)} variant="default">
@@ -284,7 +323,7 @@ function JobDetail() {
         {isUploader && job.status === "completed" && hasRated && (
           <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
         )}
-        {isUploader && job.status !== "completed" && job.status !== "rejected" && (
+        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && (
           <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
         )}
       </div>
@@ -409,7 +448,36 @@ function JobDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Rating dialog */}
+      {/* Dispute dialog */}
+      <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" /> Reject & Raise Dispute
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRaiseDispute} className="space-y-3">
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded text-xs space-y-1">
+              <p className="font-semibold text-amber-900">⚠️ This will freeze all funds in escrow.</p>
+              <p className="text-amber-800">An admin will review the submission and decide payouts. You cannot cancel a disputed job.</p>
+            </div>
+            <div>
+              <Label>Reason for rejecting the work *</Label>
+              <Textarea
+                required
+                rows={5}
+                placeholder="Explain what's wrong with the submission (incomplete, low quality, wrong files, etc.)"
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+              />
+            </div>
+            <Button type="submit" variant="destructive" disabled={busy} className="w-full">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Dispute"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {job.assignedWorkerId && job.assignedWorkerName && appUser && (
         <RatingDialog
           open={ratingOpen}
