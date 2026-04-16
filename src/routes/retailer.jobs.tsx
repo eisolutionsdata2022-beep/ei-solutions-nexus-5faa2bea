@@ -38,6 +38,7 @@ function RetailerJobs() {
   const [budget, setBudget] = useState("");
   const [deadline, setDeadline] = useState("");
   const [requiredDocs, setRequiredDocs] = useState("");
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(
