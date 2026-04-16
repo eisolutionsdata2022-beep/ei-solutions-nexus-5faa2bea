@@ -310,6 +310,13 @@ function RetailerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Service Blocked Dialog */}
+      <ServiceBlockedDialog
+        open={showBlockedDialog}
+        onClose={() => setShowBlockedDialog(false)}
+        serviceName={blockedServiceName}
+      />
     </div>
   );
 }
