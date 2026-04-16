@@ -60,11 +60,12 @@ function RetailerMatrimonyDashboard() {
     }
     setSubmitting(true);
     try {
+      const genderVal = form.gender === "Female" ? "Female" : "Male";
       const profileData = {
         franchiseId: appUser.uid,
         franchiseName: appUser.name || appUser.email,
         name: form.name,
-        gender: form.gender as "Male" | "Female",
+        gender: genderVal as "Male" | "Female",
         age: parseInt(form.age),
         dob: form.dob,
         nakshatram: form.nakshatram,

@@ -13,6 +13,7 @@ import { Route as TrainerRouteImport } from './routes/trainer'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as DistributorRouteImport } from './routes/distributor'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -38,10 +39,12 @@ import { Route as RetailerServicesRouteImport } from './routes/retailer.services
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
+import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
+import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
@@ -54,6 +57,7 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
 import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
+import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
@@ -82,6 +86,11 @@ const RetailerRoute = RetailerRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatrimonyRoute = MatrimonyRouteImport.update({
+  id: '/matrimony',
+  path: '/matrimony',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DistributorRoute = DistributorRouteImport.update({
@@ -210,6 +219,11 @@ const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
   path: '/money-transfer',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerMatrimonyRoute = RetailerMatrimonyRouteImport.update({
+  id: '/matrimony',
+  path: '/matrimony',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerKycRoute = RetailerKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -229,6 +243,11 @@ const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
   id: '/cv-builder',
   path: '/cv-builder',
   getParentRoute: () => RetailerRoute,
+} as any)
+const MatrimonyProfileIdRoute = MatrimonyProfileIdRouteImport.update({
+  id: '/$profileId',
+  path: '/$profileId',
+  getParentRoute: () => MatrimonyRoute,
 } as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
   id: '/wallet',
@@ -292,6 +311,11 @@ const AdminRechargeTransactionsRoute =
     path: '/recharge-transactions',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminMatrimonyRoute = AdminMatrimonyRouteImport.update({
+  id: '/matrimony',
+  path: '/matrimony',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -342,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
@@ -355,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -367,10 +393,12 @@ export interface FileRoutesByFullPath {
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -396,6 +424,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -406,6 +435,7 @@ export interface FileRoutesByTo {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -418,10 +448,12 @@ export interface FileRoutesByTo {
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -450,6 +482,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/distributor': typeof DistributorRouteWithChildren
+  '/matrimony': typeof MatrimonyRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
@@ -463,6 +496,7 @@ export interface FileRoutesById {
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
@@ -475,10 +509,12 @@ export interface FileRoutesById {
   '/admin/wallets': typeof AdminWalletsRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/kyc': typeof RetailerKycRoute
+  '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -508,6 +544,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/matrimony'
     | '/register'
     | '/retailer'
     | '/staff'
@@ -521,6 +558,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/kyc'
+    | '/admin/matrimony'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -533,10 +571,12 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/kyc'
+    | '/retailer/matrimony'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
     | '/retailer/recharge'
@@ -562,6 +602,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/matrimony'
     | '/register'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -572,6 +613,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/kyc'
+    | '/admin/matrimony'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -584,10 +626,12 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/kyc'
+    | '/retailer/matrimony'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
     | '/retailer/recharge'
@@ -615,6 +659,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/distributor'
+    | '/matrimony'
     | '/register'
     | '/retailer'
     | '/staff'
@@ -628,6 +673,7 @@ export interface FileRouteTypes {
     | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/kyc'
+    | '/admin/matrimony'
     | '/admin/recharge-transactions'
     | '/admin/service-applications'
     | '/admin/service-buttons'
@@ -640,10 +686,12 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/kyc'
+    | '/retailer/matrimony'
     | '/retailer/money-transfer'
     | '/retailer/page-tools'
     | '/retailer/recharge'
@@ -672,6 +720,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   DistributorRoute: typeof DistributorRouteWithChildren
+  MatrimonyRoute: typeof MatrimonyRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
@@ -706,6 +755,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matrimony': {
+      id: '/matrimony'
+      path: '/matrimony'
+      fullPath: '/matrimony'
+      preLoaderRoute: typeof MatrimonyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/distributor': {
@@ -883,6 +939,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerMoneyTransferRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/matrimony': {
+      id: '/retailer/matrimony'
+      path: '/matrimony'
+      fullPath: '/retailer/matrimony'
+      preLoaderRoute: typeof RetailerMatrimonyRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/kyc': {
       id: '/retailer/kyc'
       path: '/kyc'
@@ -910,6 +973,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/retailer/cv-builder'
       preLoaderRoute: typeof RetailerCvBuilderRouteImport
       parentRoute: typeof RetailerRoute
+    }
+    '/matrimony/$profileId': {
+      id: '/matrimony/$profileId'
+      path: '/$profileId'
+      fullPath: '/matrimony/$profileId'
+      preLoaderRoute: typeof MatrimonyProfileIdRouteImport
+      parentRoute: typeof MatrimonyRoute
     }
     '/distributor/wallet': {
       id: '/distributor/wallet'
@@ -995,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRechargeTransactionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/matrimony': {
+      id: '/admin/matrimony'
+      path: '/matrimony'
+      fullPath: '/admin/matrimony'
+      preLoaderRoute: typeof AdminMatrimonyRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/kyc': {
       id: '/admin/kyc'
       path: '/kyc'
@@ -1071,6 +1148,7 @@ interface AdminRouteChildren {
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminKycRoute: typeof AdminKycRoute
+  AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
@@ -1094,6 +1172,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminKycRoute: AdminKycRoute,
+  AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
@@ -1125,11 +1204,24 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
   DistributorRouteChildren,
 )
 
+interface MatrimonyRouteChildren {
+  MatrimonyProfileIdRoute: typeof MatrimonyProfileIdRoute
+}
+
+const MatrimonyRouteChildren: MatrimonyRouteChildren = {
+  MatrimonyProfileIdRoute: MatrimonyProfileIdRoute,
+}
+
+const MatrimonyRouteWithChildren = MatrimonyRoute._addFileChildren(
+  MatrimonyRouteChildren,
+)
+
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerKycRoute: typeof RetailerKycRoute
+  RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
@@ -1146,6 +1238,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerKycRoute: RetailerKycRoute,
+  RetailerMatrimonyRoute: RetailerMatrimonyRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
@@ -1204,6 +1297,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DistributorRoute: DistributorRouteWithChildren,
+  MatrimonyRoute: MatrimonyRouteWithChildren,
   RegisterRoute: RegisterRoute,
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
