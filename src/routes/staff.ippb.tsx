@@ -27,17 +27,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { RemoteCapturePanel } from "@/components/ippb/RemoteCapturePanel";
 import { toast } from "sonner";
 import {
   Banknote,
   CheckCircle2,
+  ChevronDown,
   Fingerprint,
+  Info,
   KeyRound,
   Loader2,
   Smartphone,
   XCircle,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { getIPPBFeeConfig, DEFAULT_IPPB_FEE, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 
 export const Route = createFileRoute("/staff/ippb")({
   ssr: false,
@@ -54,10 +59,13 @@ function StaffIPPBPage() {
   const [rows, setRows] = useState<IPPBRequest[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("active");
+  const [fee, setFee] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
 
   useEffect(() => {
     return subscribeStaffQueue(setRows);
   }, []);
+
+  useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
   const filtered = useMemo(() => {
     const terminal = ["success", "failed", "cancelled"];
@@ -80,6 +88,44 @@ function StaffIPPBPage() {
           Live queue of retailer-initiated IPPB Account Opening requests.
         </p>
       </div>
+
+      {/* Malayalam workflow guide */}
+      <Collapsible defaultOpen={false}>
+        <Card className="border-gov-blue/30">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/40 transition-colors">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Info className="w-5 h-5 text-gov-blue" />
+                  Staff Workflow & Commission (Malayalam)
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="text-sm space-y-3 leading-relaxed">
+              <div className="rounded-lg bg-gov-blue/5 border border-gov-blue/20 p-3">
+                <p className="font-semibold text-gov-blue mb-1">💰 Staff Commission per success</p>
+                <p>ഓരോ successful IPPB account-നും <strong>₹{fee.staffCommission}</strong> നിങ്ങളുടെ wallet-ൽ auto-credit ആകും.</p>
+                <p className="text-xs text-amber-700 mt-1">⚠ Mark Failed ആയാൽ commission ഇല്ല.</p>
+              </div>
+              <ol className="list-decimal pl-5 space-y-1.5">
+                <li>Active tab-ൽ pending request select ചെയ്ത് <strong>"Claim This Request"</strong> click.</li>
+                <li>Customer-ന്റെ 10-digit mobile enter ചെയ്ത് IPPB tablet-ൽ same number type ചെയ്യുക → "Send OTP".</li>
+                <li>Retailer OTP relay ചെയ്യുമ്പോൾ വലിയ font-ൽ display ആകും. IPPB tablet-ൽ enter ചെയ്ത് <strong>"Verified"</strong>.</li>
+                <li>Customer details (Name, DOB, Aadhaar, PAN, Address, Nominee) fill ചെയ്യുക.</li>
+                <li>Biometric: Remote PC Agent (real MFS110) അല്ലെങ്കിൽ L1 simulation use ചെയ്യുക.</li>
+                <li>Account number generate ആയാൽ enter ചെയ്ത് <strong>"Mark Success"</strong> → Retailer wallet debit + എല്ലാ commissions distribute ആകും.</li>
+                <li>IPPB reject ചെയ്താൽ <strong>"Mark Failed"</strong>.</li>
+              </ol>
+              <p className="text-xs">
+                <Link to="/help/ippb" className="text-gov-blue underline">Full Malayalam help page →</Link>
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
