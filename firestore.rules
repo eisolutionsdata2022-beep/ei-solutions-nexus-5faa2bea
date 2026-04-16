@@ -1,0 +1,123 @@
+rules_version = '2';
+
+// =====================================================================
+// EI Solutions — Firestore Security Rules
+// ---------------------------------------------------------------------
+// Deploy with:  firebase deploy --only firestore:rules
+// Spec:        native/docs/SECURITY.md §4 (ippbRequests) and §8
+//              (interceptorCaptures — added 2025-04).
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // ---------- helpers ---------------------------------------------
+    function isAuthed()    { return request.auth != null; }
+    function role()        { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
+    function isStaffish()  { return role() in ["staff","manager","admin"]; }
+    function isRetailer()  { return role() == "retailer"; }
+
+    // Field-diff helper: returns the set of top-level keys that
+    // changed between the existing doc and the incoming write.
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------- ippbRequests (full rules in SECURITY.md §4) ---------
+    match /ippbRequests/{rid} {
+      allow read:   if isAuthed() && (
+                      resource.data.retailerId == request.auth.uid
+                   || resource.data.staffId    == request.auth.uid
+                   || isStaffish());
+      allow create: if isAuthed() && isRetailer()
+                    && request.resource.data.retailerId == request.auth.uid
+                    && request.resource.data.status == "pending";
+      allow update: if isAuthed() && (
+                      (resource.data.staffId    == request.auth.uid && isStaffish())
+                   || (resource.data.retailerId == request.auth.uid));
+      allow delete: if false;
+
+      match /captureRequests/{cid} {
+        allow create: if isAuthed() && isStaffish()
+                      && request.resource.data.staffId == request.auth.uid;
+        allow read:   if isAuthed() && (
+                        resource.data.retailerId == request.auth.uid
+                     || resource.data.staffId    == request.auth.uid);
+        allow update: if isAuthed() && (
+                        (resource.data.staffId    == request.auth.uid
+                         && request.resource.data.status == "cancelled")
+                     || (resource.data.retailerId == request.auth.uid
+                         && request.resource.data.status in
+                            ["capturing","captured","failed"]));
+        allow delete: if false;
+      }
+    }
+
+    // ---------- interceptorCaptures ---------------------------------
+    // Top-level collection used by the Android Interceptor APK
+    // (native/android-interceptor) to relay third-party app capture
+    // events to the retailer's PC agent.
+    //
+    // Document shape (see CaptureRelay.kt):
+    //   staffId         string  — uid of the operator running the APK
+    //   retailerId      string  — uid of the paired retailer (set by
+    //                             a Cloud Function or PC agent claim)
+    //   sourcePackage   string  — e.g. "com.ippb.bcas"
+    //   pidOptionsXml   string
+    //   mode            string  — "capture" | "detection"
+    //   status          string  — requested|capturing|captured
+    //                            |acknowledged|failed|timeout|cancelled
+    //   pidXml          string? — set by retailer on success
+    //   hash            string?
+    //   errorMessage    string?
+    //
+    // Security goals:
+    //   1. Only the staff/operator may CREATE, and the doc must pin
+    //      staffId == auth.uid (no impersonation).
+    //   2. Only the matching retailer (resource.data.retailerId ==
+    //      auth.uid) may UPDATE status/pidXml/hash/errorMessage to
+    //      record the result of the capture.
+    //   3. Staff may CANCEL their own in-flight request, nothing else.
+    //   4. Reads limited to the two parties (+ admin/manager).
+    //   5. No client deletes — retention handled by a scheduled
+    //      Cloud Function that purges docs >24h old.
+    match /interceptorCaptures/{cid} {
+
+      allow read: if isAuthed() && (
+                    resource.data.staffId    == request.auth.uid
+                 || resource.data.retailerId == request.auth.uid
+                 || isStaffish());
+
+      // Staff/operator creates the request. Pin staffId; status must
+      // start at "requested"; mode must be one of the allowed values.
+      allow create: if isAuthed()
+                    && request.resource.data.staffId == request.auth.uid
+                    && request.resource.data.status == "requested"
+                    && request.resource.data.mode in ["capture","detection"];
+
+      // Retailer updates: may only change result fields, and only
+      // into a terminal/intermediate status the retailer is allowed
+      // to set. Cannot rewrite staffId, sourcePackage, mode, etc.
+      function retailerUpdateOk() {
+        return resource.data.retailerId == request.auth.uid
+            && request.resource.data.status in
+               ["capturing","captured","acknowledged","failed","timeout"]
+            && changedKeys().hasOnly([
+                 "status","pidXml","hash","deviceModel",
+                 "errorMessage","completedAt","retailerId"
+               ]);
+      }
+
+      // Staff may only cancel their own in-flight request.
+      function staffCancelOk() {
+        return resource.data.staffId == request.auth.uid
+            && request.resource.data.status == "cancelled"
+            && changedKeys().hasOnly(["status","cancelledAt"]);
+      }
+
+      allow update: if isAuthed() && (retailerUpdateOk() || staffCancelOk());
+
+      allow delete: if false;
+    }
+  }
+}
