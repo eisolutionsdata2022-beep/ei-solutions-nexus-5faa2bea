@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Banknote, Clock, KeyRound, Loader2, Plus, X } from "lucide-react";
+import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
