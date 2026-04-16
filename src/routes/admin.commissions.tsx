@@ -236,6 +236,9 @@ function AdminCommissions() {
           <TabsTrigger value="trainer_fee" className="text-xs">
             🤖 Virtual Trainer Fee
           </TabsTrigger>
+          <TabsTrigger value="matrimony" className="text-xs">
+            <Heart className="w-3 h-3 mr-1" /> Matrimony
+          </TabsTrigger>
         </TabsList>
 
         {serviceTypes.map((st) => {
