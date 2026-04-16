@@ -59,6 +59,8 @@ export function BiometricCaptureListener() {
 
   useEffect(() => {
     if (!appUser || appUser.role !== "retailer") return;
+    // Only retailers with admin-approved IPPB Badge can catch capture requests
+    if (!appUser.ippbBadge) return;
     return subscribeRetailerPendingCaptures(appUser.uid, (rows) => {
       // Pick the oldest pending one
       const pending = rows.find((r) => r.status === "requested");
@@ -139,7 +141,7 @@ export function BiometricCaptureListener() {
     }
   };
 
-  if (!appUser || appUser.role !== "retailer") return null;
+  if (!appUser || appUser.role !== "retailer" || !appUser.ippbBadge) return null;
 
   return (
     <Dialog open={!!active} onOpenChange={(o) => !o && phase === "idle" && setActive(null)}>
