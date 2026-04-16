@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
   runTransaction,
@@ -19,8 +20,17 @@ import {
   type IPPBRequest,
   type IPPBStatus,
 } from "./ippb-types";
+import { getIPPBFeeConfig } from "./ippb-fee-config";
 
 const COL = "ippbRequests";
+
+/** Find first admin user id (for commission credit) */
+async function findAdminId(): Promise<string | null> {
+  const q = query(collection(db, "users"), where("role", "==", "admin"));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return snap.docs[0].id;
+}
 
 function appendHistory(
   current: IPPBRequest["history"] | undefined,
@@ -275,6 +285,149 @@ export async function staffSubmitAccount(
         history: appendHistory(data.history, "failed", staffId, outcome.reason),
       });
     }
+  });
+
+  // === Charge fee ONLY on success (atomic, after status update) ===
+  if (outcome.success) {
+    try {
+      await chargeIPPBFee({
+        requestId,
+        retailerId: (await getRequest(requestId))?.retailerId ?? "",
+        staffId,
+      });
+    } catch (e) {
+      // Mark fee_pending so admin can retry — but DON'T fail the success itself
+      console.error("[IPPB] Fee charge failed:", e);
+      await updateDoc(ref, {
+        feeStatus: "failed",
+        feeError: (e as Error).message,
+      });
+    }
+  }
+}
+
+/**
+ * Atomically debit retailer + credit retailer/staff/admin commissions.
+ * Logs all transactions for audit. Idempotent via feeStatus check.
+ */
+async function chargeIPPBFee(params: {
+  requestId: string;
+  retailerId: string;
+  staffId: string;
+}): Promise<void> {
+  const { requestId, retailerId, staffId } = params;
+  if (!retailerId) throw new Error("Retailer not found");
+
+  const reqRef = doc(db, COL, requestId);
+  const reqSnap = await getDoc(reqRef);
+  if (!reqSnap.exists()) throw new Error("Request not found");
+  if ((reqSnap.data() as any).feeStatus === "charged") return; // idempotent
+
+  const cfg = await getIPPBFeeConfig();
+  if (cfg.serviceCharge <= 0) {
+    await updateDoc(reqRef, { feeStatus: "skipped" });
+    return;
+  }
+
+  const retailerWalletRef = doc(db, "wallets", retailerId);
+
+  // 1. Debit retailer atomically
+  await runTransaction(db, async (tx) => {
+    const w = await tx.get(retailerWalletRef);
+    if (!w.exists()) throw new Error("Retailer wallet not found");
+    const cur = (w.data().balance as number) || 0;
+    if (cur < cfg.serviceCharge) throw new Error("Insufficient retailer balance");
+    tx.update(retailerWalletRef, { balance: cur - cfg.serviceCharge });
+  });
+
+  await addDoc(collection(db, "transactions"), {
+    userId: retailerId,
+    amount: cfg.serviceCharge,
+    type: "debit",
+    source: "ippb_account_opening",
+    description: "IPPB Account Opening – Service Charge",
+    ippbRequestId: requestId,
+    createdAt: new Date().toISOString(),
+  });
+
+  // 2. Credit retailer commission
+  if (cfg.retailerCommission > 0) {
+    await runTransaction(db, async (tx) => {
+      const w = await tx.get(retailerWalletRef);
+      if (!w.exists()) return;
+      const cur = (w.data().balance as number) || 0;
+      tx.update(retailerWalletRef, { balance: cur + cfg.retailerCommission });
+    });
+    await addDoc(collection(db, "transactions"), {
+      userId: retailerId,
+      amount: cfg.retailerCommission,
+      type: "credit",
+      source: "ippb_commission",
+      description: "IPPB Commission (Retailer Share)",
+      ippbRequestId: requestId,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // 3. Credit staff commission
+  if (cfg.staffCommission > 0) {
+    const staffWalletRef = doc(db, "wallets", staffId);
+    const staffW = await getDoc(staffWalletRef);
+    if (staffW.exists()) {
+      await runTransaction(db, async (tx) => {
+        const w = await tx.get(staffWalletRef);
+        const cur = w.exists() ? (w.data().balance as number) || 0 : 0;
+        tx.set(staffWalletRef, { balance: cur + cfg.staffCommission }, { merge: true });
+      });
+    } else {
+      await runTransaction(db, async (tx) => {
+        tx.set(staffWalletRef, { balance: cfg.staffCommission }, { merge: true });
+      });
+    }
+    await addDoc(collection(db, "transactions"), {
+      userId: staffId,
+      amount: cfg.staffCommission,
+      type: "credit",
+      source: "ippb_commission",
+      description: "IPPB Commission (Staff Share)",
+      ippbRequestId: requestId,
+      retailerId,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // 4. Credit admin commission
+  if (cfg.adminCommission > 0) {
+    const adminId = await findAdminId();
+    if (adminId) {
+      const adminWalletRef = doc(db, "wallets", adminId);
+      await runTransaction(db, async (tx) => {
+        const w = await tx.get(adminWalletRef);
+        const cur = w.exists() ? (w.data().balance as number) || 0 : 0;
+        tx.set(adminWalletRef, { balance: cur + cfg.adminCommission }, { merge: true });
+      });
+      await addDoc(collection(db, "transactions"), {
+        userId: adminId,
+        amount: cfg.adminCommission,
+        type: "credit",
+        source: "ippb_commission",
+        description: "IPPB Commission (Admin Share)",
+        ippbRequestId: requestId,
+        retailerId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  await updateDoc(reqRef, {
+    feeStatus: "charged",
+    feeChargedAt: new Date().toISOString(),
+    feeBreakdown: {
+      serviceCharge: cfg.serviceCharge,
+      retailerCommission: cfg.retailerCommission,
+      staffCommission: cfg.staffCommission,
+      adminCommission: cfg.adminCommission,
+    },
   });
 }
 

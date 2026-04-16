@@ -12,9 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download } from "lucide-react";
+import { Banknote, Clock, KeyRound, Loader2, Plus, X, Cpu, Download, Info, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { getIPPBFeeConfig, netRetailerCost, DEFAULT_IPPB_FEE, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
@@ -34,11 +36,14 @@ function RetailerIPPBPage() {
   const [creating, setCreating] = useState(false);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [fee, setFee] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
 
   useEffect(() => {
     if (!appUser) return;
     return subscribeRetailerRequests(appUser.uid, setRows);
   }, [appUser]);
+
+  useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
   if (!appUser) return null;
 
@@ -115,6 +120,44 @@ function RetailerIPPBPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Malayalam workflow guide */}
+      <Collapsible defaultOpen={false}>
+        <Card className="border-gov-blue/30">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/40 transition-colors">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Info className="w-5 h-5 text-gov-blue" />
+                  എങ്ങനെ പ്രവർത്തിക്കും? (Workflow & Fees in Malayalam)
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="text-sm space-y-3 leading-relaxed">
+              <div className="rounded-lg bg-gov-blue/5 border border-gov-blue/20 p-3">
+                <p className="font-semibold text-gov-blue mb-1">💰 ഫീ വിശദാംശങ്ങൾ</p>
+                <p>Success ആകുമ്പോൾ wallet-ൽ നിന്ന് <strong>₹{fee.serviceCharge}</strong> debit ആകും, തിരികെ commission <strong>₹{fee.retailerCommission}</strong> credit ആകും.</p>
+                <p className="font-bold mt-1">Net cost: ₹{netRetailerCost(fee)} per account</p>
+                <p className="text-xs text-amber-700 mt-1">⚠ Failed/Cancelled ആയാൽ charge ഇല്ല.</p>
+              </div>
+              <ol className="list-decimal pl-5 space-y-1.5">
+                <li>"New Request" click ചെയ്യുക. (ഇപ്പോൾ wallet debit ഇല്ല.)</li>
+                <li>Staff request claim ചെയ്ത് customer mobile enter ചെയ്യും.</li>
+                <li>Customer-ന് OTP വരും → അത് retailer dashboard-ൽ enter ചെയ്യുക.</li>
+                <li>Staff details + biometric (MFS110/L1) capture ചെയ്യും.</li>
+                <li>Account number വന്ന് success മാർക്ക് ചെയ്യുമ്പോൾ <strong>only then</strong> debit + commission auto-distribute ആകും.</li>
+                <li>Real fingerprint device-ന് <Link to="/install" className="text-gov-blue underline">PC Agent install ചെയ്യുക</Link>.</li>
+              </ol>
+              <p className="text-xs">
+                <Link to="/help/ippb" className="text-gov-blue underline">Full Malayalam help page →</Link>
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {rows.length === 0 && (
         <Card>

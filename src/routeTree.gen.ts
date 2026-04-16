@@ -53,6 +53,7 @@ import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horosco
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
+import { Route as HelpIppbRouteImport } from './routes/help.ippb'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
@@ -72,6 +73,7 @@ import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
 import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
 import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-disputes'
+import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
@@ -303,6 +305,11 @@ const MatrimonyProfileIdRoute = MatrimonyProfileIdRouteImport.update({
   path: '/$profileId',
   getParentRoute: () => MatrimonyRoute,
 } as any)
+const HelpIppbRoute = HelpIppbRouteImport.update({
+  id: '/help/ippb',
+  path: '/help/ippb',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -400,6 +407,11 @@ const AdminJobDisputesRoute = AdminJobDisputesRouteImport.update({
   path: '/job-disputes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIppbSettingsRoute = AdminIppbSettingsRouteImport.update({
+  id: '/ippb-settings',
+  path: '/ippb-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   id: '/horoscope-settings',
   path: '/horoscope-settings',
@@ -464,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
@@ -483,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
@@ -532,6 +546,7 @@ export interface FileRoutesByTo {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
@@ -551,6 +566,7 @@ export interface FileRoutesByTo {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
@@ -607,6 +623,7 @@ export interface FileRoutesById {
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
+  '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
@@ -626,6 +643,7 @@ export interface FileRoutesById {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/forms': typeof RetailerFormsRoute
@@ -683,6 +701,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
@@ -702,6 +721,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
@@ -751,6 +771,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
@@ -770,6 +791,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
@@ -825,6 +847,7 @@ export interface FileRouteTypes {
     | '/admin/form-analytics'
     | '/admin/forms'
     | '/admin/horoscope-settings'
+    | '/admin/ippb-settings'
     | '/admin/job-disputes'
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
@@ -844,6 +867,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/forms'
@@ -892,6 +916,7 @@ export interface RootRouteChildren {
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
   TrainerRoute: typeof TrainerRouteWithChildren
+  HelpIppbRoute: typeof HelpIppbRoute
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
 }
 
@@ -1205,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatrimonyProfileIdRouteImport
       parentRoute: typeof MatrimonyRoute
     }
+    '/help/ippb': {
+      id: '/help/ippb'
+      path: '/help/ippb'
+      fullPath: '/help/ippb'
+      preLoaderRoute: typeof HelpIppbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/distributor/wallet': {
       id: '/distributor/wallet'
       path: '/wallet'
@@ -1338,6 +1370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminJobDisputesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ippb-settings': {
+      id: '/admin/ippb-settings'
+      path: '/ippb-settings'
+      fullPath: '/admin/ippb-settings'
+      preLoaderRoute: typeof AdminIppbSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/horoscope-settings': {
       id: '/admin/horoscope-settings'
       path: '/horoscope-settings'
@@ -1413,6 +1452,7 @@ interface AdminRouteChildren {
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
+  AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
   AdminJobDisputesRoute: typeof AdminJobDisputesRoute
   AdminJobEarningsRoute: typeof AdminJobEarningsRoute
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
@@ -1442,6 +1482,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
+  AdminIppbSettingsRoute: AdminIppbSettingsRoute,
   AdminJobDisputesRoute: AdminJobDisputesRoute,
   AdminJobEarningsRoute: AdminJobEarningsRoute,
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
@@ -1603,6 +1644,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
   TrainerRoute: TrainerRouteWithChildren,
+  HelpIppbRoute: HelpIppbRoute,
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
 }
 export const routeTree = rootRouteImport
