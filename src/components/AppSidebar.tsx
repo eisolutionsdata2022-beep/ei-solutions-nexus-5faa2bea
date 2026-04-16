@@ -3,6 +3,7 @@ import { useAuth, type UserRole } from "@/lib/auth-context";
 import {
   LayoutDashboard,
   ArrowLeftRight,
+  Sparkles,
   FileText as CVIcon,
   Banknote,
   Users,
