@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { subscribeNotifications, markNotificationRead } from "@/lib/matrimony-firebase";
 import { Link } from "@tanstack/react-router";
+import { JobNotificationsBell } from "@/components/JobNotificationsBell";
 
 export function PortalHeader() {
   const { appUser, logout } = useAuth();
@@ -48,6 +49,9 @@ export function PortalHeader() {
             <span className="hidden sm:inline text-sm font-medium">
               Welcome <strong>{appUser.name || appUser.email.split("@")[0]}</strong>
             </span>
+
+            {/* Job notifications bell */}
+            <JobNotificationsBell />
 
             {/* Notification Bell */}
             <div className="relative" ref={dropdownRef}>
