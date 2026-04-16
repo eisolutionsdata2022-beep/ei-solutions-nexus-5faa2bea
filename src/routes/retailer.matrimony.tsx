@@ -13,7 +13,7 @@ import {
   subscribeMatrimonyProfiles, addMatrimonyProfile, updateMatrimonyProfile,
   uploadProfilePhoto, subscribeMatrimonyRequests, updateMatrimonyRequest,
 } from "@/lib/matrimony-firebase";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { RELIGIONS, MARITAL_STATUSES, HEIGHTS, NAKSHATRAS } from "@/lib/matrimony-types";
 import type { MatrimonyProfile, MatrimonyRequest } from "@/lib/matrimony-types";
