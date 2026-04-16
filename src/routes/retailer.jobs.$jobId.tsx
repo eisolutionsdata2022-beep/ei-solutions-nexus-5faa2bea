@@ -274,6 +274,20 @@ function JobDetail() {
               <p>✅ Worker received: <strong>₹{job.workerNet}</strong></p>
               <p>💼 Admin commission: <strong>₹{job.adminCommission}</strong></p>
               {(job.uploaderRefund || 0) > 0 && <p>💰 You were refunded: <strong>₹{job.uploaderRefund}</strong></p>}
+              {job.disputeResolution && (
+                <p className="pt-1 border-t mt-1">⚖️ Resolved via dispute: <strong>{job.disputeResolution}</strong></p>
+              )}
+            </div>
+          )}
+          {job.status === "disputed" && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm space-y-1">
+              <p className="font-semibold flex items-center gap-1 text-amber-900">
+                <AlertTriangle className="w-4 h-4" /> Under Dispute — Awaiting Admin Review
+              </p>
+              {job.disputeReason && (
+                <p className="text-xs text-amber-800"><strong>Reason:</strong> {job.disputeReason}</p>
+              )}
+              <p className="text-xs text-amber-700">Funds remain held in escrow. Admin will decide payout.</p>
             </div>
           )}
         </CardContent>
@@ -294,7 +308,12 @@ function JobDetail() {
           <Button onClick={() => setDocUploadOpen(true)}>Upload Documents</Button>
         )}
         {isUploader && job.status === "submitted" && (
-          <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+          <>
+            <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+            <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
+              <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
+            </Button>
+          </>
         )}
         {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
           <Button onClick={() => setRatingOpen(true)} variant="default">
@@ -304,7 +323,7 @@ function JobDetail() {
         {isUploader && job.status === "completed" && hasRated && (
           <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
         )}
-        {isUploader && job.status !== "completed" && job.status !== "rejected" && (
+        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && (
           <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
         )}
       </div>
