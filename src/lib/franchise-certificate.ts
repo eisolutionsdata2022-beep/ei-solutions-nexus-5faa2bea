@@ -3,7 +3,7 @@
  * Government-style certificate with EI Solutions & Digital India branding
  */
 
-import { KSUM_LOGO, DIGITAL_INDIA_LOGO } from "./certificate-logos";
+// Logos removed per request
 
 export interface CertificateData {
   name: string;
