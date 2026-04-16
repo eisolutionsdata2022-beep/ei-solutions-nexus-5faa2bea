@@ -448,7 +448,36 @@ function JobDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Rating dialog */}
+      {/* Dispute dialog */}
+      <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" /> Reject & Raise Dispute
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRaiseDispute} className="space-y-3">
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded text-xs space-y-1">
+              <p className="font-semibold text-amber-900">⚠️ This will freeze all funds in escrow.</p>
+              <p className="text-amber-800">An admin will review the submission and decide payouts. You cannot cancel a disputed job.</p>
+            </div>
+            <div>
+              <Label>Reason for rejecting the work *</Label>
+              <Textarea
+                required
+                rows={5}
+                placeholder="Explain what's wrong with the submission (incomplete, low quality, wrong files, etc.)"
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+              />
+            </div>
+            <Button type="submit" variant="destructive" disabled={busy} className="w-full">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Dispute"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {job.assignedWorkerId && job.assignedWorkerName && appUser && (
         <RatingDialog
           open={ratingOpen}
