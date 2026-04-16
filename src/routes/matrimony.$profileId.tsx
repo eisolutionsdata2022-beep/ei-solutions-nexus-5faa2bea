@@ -107,6 +107,15 @@ function ProfileDetailPage() {
             <img src={godIcon} alt="" width={28} height={28} className="opacity-90" />
             <span className="font-bold text-white tracking-wide">Kukku Life Matrimony</span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShareLink}
+            className="text-white/80 hover:text-white hover:bg-white/10"
+          >
+            {copied ? <Check className="w-4 h-4 mr-1" /> : <Share2 className="w-4 h-4 mr-1" />}
+            {copied ? "Copied!" : "Share"}
+          </Button>
         </div>
       </header>
 
