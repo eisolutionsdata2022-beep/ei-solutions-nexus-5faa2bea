@@ -26,6 +26,8 @@ export interface AppUser {
   phone?: string;
   kycStatus?: "pending" | "approved" | "rejected";
   workBadge?: boolean;
+  /** Permission to create IPPB account-opening requests (admin-approved). */
+  ippbBadge?: boolean;
 }
 
 interface AuthContextType {
