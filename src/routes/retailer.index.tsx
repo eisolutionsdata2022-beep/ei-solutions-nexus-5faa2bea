@@ -4,7 +4,7 @@ import { doc, onSnapshot, collection, query, where, orderBy, limit, getDocs } fr
 import { NoticeMarquee } from "@/components/NoticeMarquee";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { useDisabledServices, ServiceBlockedDialog } from "@/components/ServicePermissionCheck";
+import { useDisabledServices } from "@/components/ServicePermissionCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
