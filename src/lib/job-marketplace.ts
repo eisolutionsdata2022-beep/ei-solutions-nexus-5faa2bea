@@ -302,7 +302,7 @@ export async function uploadDocumentsResponse(
   uploaderId: string,
   uploaderName: string,
   text: string,
-  fileUrls: string[]
+  files: { url: string; name: string; contentType?: string; size?: number }[]
 ) {
   await addDoc(collection(db, "jobMessages"), {
     jobId,
@@ -310,7 +310,8 @@ export async function uploadDocumentsResponse(
     fromUserId: uploaderId,
     fromUserName: uploaderName,
     text,
-    fileUrls,
+    files,
+    fileUrls: files.map((f) => f.url), // legacy fallback
     createdAt: new Date().toISOString(),
   });
   await updateDoc(doc(db, "jobs", jobId), {
@@ -337,7 +338,7 @@ export async function submitWork(
   workerId: string,
   workerName: string,
   text: string,
-  fileUrls: string[]
+  files: { url: string; name: string; contentType?: string; size?: number }[]
 ) {
   await addDoc(collection(db, "jobMessages"), {
     jobId,
@@ -345,7 +346,8 @@ export async function submitWork(
     fromUserId: workerId,
     fromUserName: workerName,
     text,
-    fileUrls,
+    files,
+    fileUrls: files.map((f) => f.url), // legacy fallback
     createdAt: new Date().toISOString(),
   });
   await updateDoc(doc(db, "jobs", jobId), {
