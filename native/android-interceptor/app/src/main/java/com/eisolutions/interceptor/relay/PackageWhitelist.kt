@@ -23,6 +23,16 @@ class PackageWhitelist @Inject constructor(db: FirebaseFirestore) {
     @Volatile private var packages: Set<String> = DEFAULT
     @Volatile var enabled: Boolean = true; private set
 
+    /**
+     * Detection-only mode. When true, the AccessibilityService will still
+     * fire the Firestore relay (so retailers get notified that a customer
+     * is at the BCAS counter and needs a fingerprint), but it will NOT
+     * attempt to inject the captured PID XML back into the third-party
+     * app. This sidesteps the UIDAI device-bound RSA signature / wadh
+     * mismatch problem documented in native/docs/SECURITY.md §7.
+     */
+    @Volatile var detectionOnly: Boolean = false; private set
+
     init {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope.launch {
@@ -33,6 +43,7 @@ class PackageWhitelist @Inject constructor(db: FirebaseFirestore) {
                     val list = (data["whitelistedPackages"] as? List<String>)?.toSet()
                     if (!list.isNullOrEmpty()) packages = list
                     enabled = (data["enabled"] as? Boolean) ?: true
+                    detectionOnly = (data["detectionOnly"] as? Boolean) ?: false
                 }
         }
     }

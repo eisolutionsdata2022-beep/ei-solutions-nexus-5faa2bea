@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Banknote, Loader2, Save, Info } from "lucide-react";
+import { Banknote, Loader2, Save, Info, AlertTriangle, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/ippb-settings")({
@@ -151,6 +152,37 @@ function AdminIPPBSettingsPage() {
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-warning/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 flex-wrap">
+            <Download className="w-5 h-5 text-gov-blue" />
+            Android Interceptor APK
+            <Badge variant="outline" className="ml-2 border-warning text-warning-foreground bg-warning/10">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              Beta — UIDAI signature mismatch വരാം
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-3">
+          <p className="text-muted-foreground">
+            Tablet-ൽ install ചെയ്ത real IPPB BCAS / CSC VLE app-ലെ "Capture Fingerprint"
+            ബട്ടൺ intercept ചെയ്ത് retailer PC-യിലേക്ക് relay ചെയ്യുന്ന AccessibilityService APK.
+          </p>
+          <div className="rounded-md border border-warning/50 bg-warning/10 p-3 text-foreground text-xs leading-relaxed">
+            <strong>⚠ Limitation:</strong> UIDAI RD Service-ന്റെ device-bound RSA signature + WADH binding
+            കാരണം retailer device-ൽ scan ചെയ്ത PID XML tablet-ലെ IPPB app-ൽ inject ചെയ്താൽ
+            UIDAI server reject ചെയ്യാൻ സാധ്യത 90%+. <strong>Detection-only mode</strong>
+            (Firestore: <code>config/interceptor.detectionOnly = true</code>) recommended —
+            retailer-ന് notification പോകും, injection skip ചെയ്യും. Full reliable flow-ന്
+            <a href="/retailer/ippb" className="underline ml-1">own /retailer/ippb form</a> use ചെയ്യാൻ retailer-ന് പറയുക.
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Build steps: <code>native/android-interceptor/BUILD.md</code> · Tech docs:
+            <code> native/docs/SECURITY.md §7</code>
+          </p>
         </CardContent>
       </Card>
 

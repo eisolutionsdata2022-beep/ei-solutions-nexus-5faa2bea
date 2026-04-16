@@ -30,6 +30,7 @@ class OverlayController @Inject constructor(
         data object Idle : State()
         data object Capturing : State()
         data object Injected : State()
+        data object DetectionOnly : State()
         data class Failed(val msg: String?) : State()
     }
 
@@ -41,10 +42,11 @@ class OverlayController @Inject constructor(
         ensureView()
         val tv = view?.findViewById<TextView>(android.R.id.text1) ?: return@post
         tv.text = when (state) {
-            State.Capturing -> "🔒 Retailer PC യിൽ fingerprint capture നടക്കുന്നു…"
-            State.Injected  -> "✅ Captured — source app-ലേക്ക് inject ചെയ്തു"
-            is State.Failed -> "❌ Capture പരാജയപ്പെട്ടു: ${state.msg ?: "unknown"}"
-            State.Idle      -> ""
+            State.Capturing     -> "🔒 Retailer PC യിൽ fingerprint capture നടക്കുന്നു…"
+            State.Injected      -> "✅ Captured — source app-ലേക്ക് inject ചെയ്തു"
+            State.DetectionOnly -> "📣 Retailer-നെ notify ചെയ്തു — ഈ device-ൽ തന്നെ capture തുടരുക"
+            is State.Failed     -> "❌ Capture പരാജയപ്പെട്ടു: ${state.msg ?: "unknown"}"
+            State.Idle          -> ""
         }
     }
 

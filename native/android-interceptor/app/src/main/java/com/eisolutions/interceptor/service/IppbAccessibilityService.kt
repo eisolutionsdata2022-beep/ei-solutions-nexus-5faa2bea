@@ -71,13 +71,21 @@ class IppbAccessibilityService : AccessibilityService() {
                 val pidOptions = extractPidOptions(source)
                 val targetNode = findInjectionTarget(rootInActiveWindow)
 
+                val detectionOnly = whitelist.detectionOnly
                 val result = relay.requestCapture(
                     sourcePackage = pkg,
                     pidOptionsXml = pidOptions,
+                    detectionOnly = detectionOnly,
                 ).first { it.isTerminal }
 
-                when (result.status) {
-                    "captured" -> {
+                when {
+                    detectionOnly && result.status == "acknowledged" -> {
+                        // Retailer was notified; we deliberately do NOT inject.
+                        // Customer should hand the BCAS tablet back to the
+                        // operator who completes capture on the real device.
+                        overlay.show(OverlayController.State.DetectionOnly)
+                    }
+                    result.status == "captured" -> {
                         injection.inject(targetNode, result.pidXml ?: "")
                         overlay.show(OverlayController.State.Injected)
                     }
