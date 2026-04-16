@@ -8,11 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { addMatrimonyRequest } from "@/lib/matrimony-firebase";
+import { addMatrimonyRequest, findFranchiseByDistrict, addNotification } from "@/lib/matrimony-firebase";
 import type { MatrimonyProfile } from "@/lib/matrimony-types";
-import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send, Sparkles, Share2, Copy, Check } from "lucide-react";
+import { ArrowLeft, MapPin, GraduationCap, Briefcase, Heart, Star, User, Calendar, Ruler, BookOpen, Send, Sparkles, Share2, Check } from "lucide-react";
 import { toast } from "sonner";
-import godIcon from "@/assets/matrimony-god-icon.png";
 
 export const Route = createFileRoute("/matrimony/$profileId")({
   ssr: false,
@@ -51,17 +50,39 @@ function ProfileDetailPage() {
       toast.error("Name and Phone are required");
       return;
     }
+    if (!profile) return;
     setSubmitting(true);
     try {
+      // Auto-detect district from profile location
+      const district = profile.location;
+
+      // Find franchise for this district
+      const franchise = await findFranchiseByDistrict(district);
+
       await addMatrimonyRequest({
         profileId,
-        profileName: profile?.name || "",
+        profileName: profile.name,
         requesterName: form.name,
         phone: form.phone,
         email: form.email,
         message: form.message,
+        district,
+        assignedFranchiseId: franchise?.id || "",
+        assignedFranchiseName: franchise?.name || "Unassigned",
+        status: "New",
         createdAt: new Date().toISOString(),
       });
+
+      // Send notification to franchise if found
+      if (franchise) {
+        await addNotification(franchise.id, {
+          type: "matrimony_request",
+          title: "New Matrimony Request Received",
+          message: `${form.name} (${form.phone}) is interested in ${profile.name}`,
+          data: { profileId, profileName: profile.name, requesterName: form.name, phone: form.phone },
+        });
+      }
+
       toast.success("Interest request sent successfully!");
       setShowRequestForm(false);
       setForm({ name: "", phone: "", email: "", message: "" });
@@ -94,46 +115,25 @@ function ProfileDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
-      {/* Premium Header */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_60%)]" />
-        <div className="relative max-w-5xl mx-auto px-4 py-5 flex items-center justify-between">
-          <Link to="/matrimony" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors duration-200 group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+      {/* Header */}
+      <header className="bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link to="/matrimony" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors group">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Back</span>
           </Link>
-          <div className="flex items-center gap-2.5">
-            <img src={godIcon} alt="" width={28} height={28} className="opacity-90" />
-            <span className="font-bold text-white tracking-wide">Kukku Life Matrimony</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleShareLink}
-            className="text-white/80 hover:text-white hover:bg-white/10"
-          >
+          <span className="font-bold text-white tracking-wide">💕 Kukku Life Matrimony</span>
+          <Button variant="ghost" size="sm" onClick={handleShareLink} className="text-white/80 hover:text-white hover:bg-white/10">
             {copied ? <Check className="w-4 h-4 mr-1" /> : <Share2 className="w-4 h-4 mr-1" />}
             {copied ? "Copied!" : "Share"}
           </Button>
         </div>
       </header>
 
-      {/* Decorative God Image Section */}
-      <div className="relative py-8 text-center">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-pink-300 to-transparent" />
-        <div className="inline-block relative">
-          <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-amber-100 to-orange-50 opacity-60 blur-sm" />
-          <img src={godIcon} alt="Ganapathi" width={72} height={72} className="relative drop-shadow-lg" />
-        </div>
-        <p className="text-xs text-amber-700/70 mt-2 tracking-widest font-medium">ശ്രീ ഗണേശായ നമഃ</p>
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-pink-200 to-transparent" />
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 pb-12">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-5 gap-8">
           {/* Photo — 2 cols */}
-          <div className="md:col-span-2 animate-fade-in">
+          <div className="md:col-span-2">
             <div className="sticky top-6">
               <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/5 bg-gradient-to-br from-pink-100 to-rose-100">
                 {profile.photoUrl ? (
@@ -146,25 +146,18 @@ function ProfileDetailPage() {
                   </div>
                 )}
               </div>
-              {profile.isDemo && (
-                <Badge className="mt-3 bg-amber-100 text-amber-700 border-amber-200 text-xs">Demo Profile</Badge>
-              )}
             </div>
           </div>
 
           {/* Details — 3 cols */}
-          <div className="md:col-span-3 space-y-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="md:col-span-3 space-y-6">
             {/* Name & Badge */}
             <div>
               <Badge className={`${isMale ? "bg-blue-500/90" : "bg-pink-500/90"} text-white border-0 mb-3 text-xs px-3 py-1 rounded-full shadow-sm`}>
                 {isMale ? "🤵 Groom" : "👰 Bride"}
               </Badge>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">
-                {profile.name}
-              </h1>
-              <p className="text-muted-foreground mt-1 text-sm">
-                {profile.age} yrs · {profile.height} · {profile.location}
-              </p>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">{profile.name}</h1>
+              <p className="text-muted-foreground mt-1 text-sm">{profile.age} yrs · {profile.height} · {profile.location}</p>
             </div>
 
             {/* Info Grid */}
@@ -174,7 +167,7 @@ function ProfileDetailPage() {
               <InfoCard icon={Star} label="Nakshatram" value={profile.nakshatram} color="amber" />
               <InfoCard icon={Ruler} label="Height" value={profile.height} color="teal" />
               <InfoCard icon={MapPin} label="Location" value={profile.location} color="rose" />
-              <InfoCard icon={BookOpen} label="Religion" value={`${profile.religion}`} color="purple" />
+              <InfoCard icon={BookOpen} label="Religion" value={profile.religion} color="purple" />
               <InfoCard icon={GraduationCap} label="Education" value={profile.education} color="emerald" />
               <InfoCard icon={Briefcase} label="Occupation" value={profile.job} color="orange" />
               <InfoCard icon={User} label="Status" value={profile.maritalStatus} color="sky" />
@@ -189,7 +182,7 @@ function ProfileDetailPage() {
 
             {/* Bio */}
             {profile.bio && (
-              <div className="relative rounded-xl bg-gradient-to-br from-pink-50/80 to-rose-50/80 border border-pink-100/60 p-5">
+              <div className="rounded-xl bg-gradient-to-br from-pink-50/80 to-rose-50/80 border border-pink-100/60 p-5 relative">
                 <Sparkles className="absolute top-3 right-3 w-4 h-4 text-pink-300" />
                 <p className="text-sm leading-relaxed text-gray-600 italic">"{profile.bio}"</p>
               </div>
@@ -198,7 +191,7 @@ function ProfileDetailPage() {
             {/* CTA Button */}
             <Button
               onClick={() => setShowRequestForm(!showRequestForm)}
-              className="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-pink-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-pink-500/30 hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-pink-500/20 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
             >
               <Heart className="w-5 h-5 mr-2" />
               {showRequestForm ? "Close Form" : "Send Interest Request"}
@@ -208,13 +201,13 @@ function ProfileDetailPage() {
 
         {/* Request Form */}
         {showRequestForm && (
-          <div className="mt-8 max-w-2xl mx-auto animate-fade-in">
-            <Card className="border-pink-200/60 shadow-xl shadow-pink-100/40 rounded-2xl overflow-hidden">
+          <div className="mt-8 max-w-2xl mx-auto">
+            <Card className="border-pink-200/60 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100/50 pb-4">
                 <CardTitle className="text-pink-600 flex items-center gap-2 text-lg">
                   <Send className="w-5 h-5" /> Express Your Interest
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Fill the form below and we'll share your details with the profile owner.</p>
+                <p className="text-xs text-muted-foreground mt-1">Fill the form below and we'll connect you with the nearest franchise.</p>
               </CardHeader>
               <CardContent className="p-6 space-y-5">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -238,7 +231,7 @@ function ProfileDetailPage() {
                 <Button
                   onClick={handleSubmitRequest}
                   disabled={submitting}
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 py-5 rounded-xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 py-5 rounded-xl font-semibold shadow-md"
                 >
                   {submitting ? (
                     <span className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Sending...</span>
@@ -253,7 +246,7 @@ function ProfileDetailPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-pink-100 bg-gradient-to-r from-pink-50/50 to-rose-50/50 py-6 text-center">
+      <footer className="border-t border-pink-100 bg-gradient-to-r from-pink-50/50 to-rose-50/50 py-6 text-center mt-8">
         <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Kukku Life Matrimony — Powered by EI SOLUTIONS</p>
       </footer>
     </div>

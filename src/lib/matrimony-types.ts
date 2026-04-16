@@ -32,6 +32,10 @@ export interface MatrimonyRequest {
   phone: string;
   email: string;
   message: string;
+  district: string;
+  assignedFranchiseId: string;
+  assignedFranchiseName: string;
+  status: "New" | "Contacted" | "Converted";
   createdAt: string;
 }
 
@@ -65,13 +69,19 @@ export const HEIGHTS = Array.from({ length: 25 }, (_, i) => {
   return `${ft}'${inch}"`;
 });
 
+export const KERALA_DISTRICTS = [
+  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
+  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram",
+  "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
+];
+
 export { NAKSHATRAS };
 
 // Demo profile generator
 const MALE_NAMES = ["Arun Kumar", "Vishnu Prasad", "Rajesh Menon", "Suresh Nair", "Anand Krishnan", "Deepak Pillai", "Manoj Varma", "Sathish Babu", "Vinod Kumar", "Prasanth G", "Akhil Mohan", "Bijoy Thomas", "Dileep Raj", "Ganesh Kumar", "Hari Shankar", "Jithin Das", "Kiran Mohan", "Lal Krishna", "Midhun S", "Nikhil Rajan", "Praveen Kumar", "Rahul Dev", "Sajith M", "Tintu Thomas", "Unni Krishnan", "Vivek Nair", "Amal Jose", "Bibin Paul", "Cibin K", "Dinu Mohan", "Eldho George", "Febin Mathew", "Gokul Krishnan", "Harikumar P", "Ijaz Mohammed", "Jinson K", "Kannan M", "Libin Joseph", "Manu Rajan", "Nidhin S", "Ouseph K", "Pradeep R", "Rajeev Nair", "Shinto Thomas", "Tiju John", "Umesh Babu", "Vipin Das", "Winson K", "Xavier Jose", "Yadu Krishnan"];
 const FEMALE_NAMES = ["Anjali Menon", "Priya Nair", "Divya Krishnan", "Lakshmi Devi", "Sreeja Pillai", "Meera Suresh", "Athira Mohan", "Bhavana Raj", "Chithra Devi", "Deepa Nair", "Gayathri S", "Hema Latha", "Indira Menon", "Jisha Thomas", "Kavitha Pillai", "Lekha Nair", "Maya Krishnan", "Nimisha Das", "Parvathy S", "Remya Raj", "Saritha Mohan", "Teena Joseph", "Uma Devi", "Veena Nair", "Yamuna S", "Amrutha K", "Bindu Mohan", "Chandana R", "Dhanya S", "Elsa George", "Fathima K", "Gopika M", "Haritha Nair", "Irene Thomas", "Janaki Devi", "Keerthana S", "Liji Paul", "Manju Lal", "Neena Raj", "Olivia John", "Pooja Nair", "Radha Krishnan", "Sneha Mohan", "Thulasi Devi", "Usha Nair", "Vineetha S", "Winnie Jose", "Ximena K", "Yasmin M", "Zara Khan"];
 
-const LOCATIONS = ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Palakkad", "Alappuzha", "Kannur", "Kottayam", "Malappuram", "Idukki", "Wayanad", "Pathanamthitta", "Kasaragod"];
+const LOCATIONS = ["Thiruvananthapuram", "Ernakulam", "Kozhikode", "Thrissur", "Kollam", "Palakkad", "Alappuzha", "Kannur", "Kottayam", "Malappuram", "Idukki", "Wayanad", "Pathanamthitta", "Kasaragod"];
 const EDUCATIONS = ["B.Tech", "M.Tech", "MBBS", "MD", "BDS", "MBA", "MCA", "B.Com", "M.Com", "BA", "MA", "BSc", "MSc", "BBA", "LLB", "B.Ed", "PhD", "Diploma", "Plus Two", "ITI"];
 const JOBS = ["Software Engineer", "Doctor", "Teacher", "Nurse", "Bank Employee", "Government Job", "Business Owner", "Engineer", "Accountant", "Lawyer", "Pharmacist", "Dentist", "Professor", "Police Officer", "Army Officer", "Architect", "Civil Engineer", "Mechanic", "Self Employed", "Private Job"];
 const CASTES = ["Nair", "Ezhava", "Brahmin", "Muslim", "Christian", "Thiyya", "Menon", "Pillai", "Kurup", "Panicker", "General", "OBC", "SC", "ST"];
