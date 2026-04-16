@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Briefcase, Plus, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Briefcase, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { JOB_CATEGORIES, type JobDoc } from "@/lib/job-marketplace-types";
 import { createJobWithEscrow } from "@/lib/job-marketplace";
+import { JobFileUploadField } from "@/components/JobFileUploadField";
+import { uploadJobFiles } from "@/lib/job-file-upload";
 
 export const Route = createFileRoute("/retailer/jobs")({
   ssr: false,
@@ -69,6 +71,19 @@ function RetailerJobs() {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Pre-create temp ID by using timestamp; uploads happen *after* job is created so use job ID returned.
+      // Strategy: create the job first WITHOUT files, then upload using returned jobId, then update.
+      // Simpler: upload using a synthetic key derived from uploader+ts, then attach metadata.
+      const tempKey = `pre-${Date.now()}`;
+      let uploaded: { url: string; name: string; contentType: string; size: number }[] = [];
+      if (referenceFiles.length > 0) {
+        uploaded = await uploadJobFiles({
+          jobId: tempKey,
+          userId: appUser.uid,
+          kind: "doc-upload",
+          files: referenceFiles,
+        });
+      }
       await createJobWithEscrow(appUser.uid, appUser.name || appUser.email, {
         title,
         description,
@@ -77,10 +92,17 @@ function RetailerJobs() {
         budget: Number(budget),
         deadline,
         requiredDocs,
+        referenceFiles: uploaded.map((u) => ({
+          url: u.url,
+          name: u.name,
+          contentType: u.contentType,
+          size: u.size,
+        })),
       });
       toast.success("Job posted! Budget held in escrow.");
       setOpen(false);
       setTitle(""); setDescription(""); setPages(""); setBudget(""); setDeadline(""); setRequiredDocs("");
+      setReferenceFiles([]);
     } catch (err: any) {
       toast.error(err.message || "Failed to post job");
     } finally {
