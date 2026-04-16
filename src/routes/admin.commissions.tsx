@@ -431,6 +431,114 @@ function AdminCommissions() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Matrimony Commission Tab */}
+        <TabsContent value="matrimony">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Heart className="w-4 h-4 text-pink-500" /> Matrimony Commission
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Set the commission deducted from retailer wallet per matrimony profile registration.
+              </p>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {editingMat ? (
+                <div className="space-y-4 max-w-md">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Commission Type</Label>
+                    <Select
+                      value={matForm.commissionType}
+                      onValueChange={(v) => setMatForm({ ...matForm, commissionType: v as "fixed" | "percentage" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      {matForm.commissionType === "fixed" ? "Amount per Profile (₹)" : "Percentage per Profile (%)"}
+                    </Label>
+                    <Input
+                      type="number"
+                      step={matForm.commissionType === "fixed" ? "1" : "0.1"}
+                      min="0"
+                      value={matForm.commissionValue}
+                      onChange={(e) => setMatForm({ ...matForm, commissionValue: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={saveMatCommission}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingMat(false)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Commission Type</p>
+                      <Badge variant="outline" className="mt-1">
+                        {matPricing.commissionType === "fixed" ? "Fixed Amount" : "Percentage"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Per Profile Registration</p>
+                      <p className="text-2xl font-bold text-primary mt-1">
+                        {matPricing.commissionType === "fixed"
+                          ? `₹${matPricing.commissionValue}`
+                          : `${matPricing.commissionValue}%`}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1"
+                      onClick={() => {
+                        setEditingMat(true);
+                        setMatForm({
+                          commissionType: matPricing.commissionType,
+                          commissionValue: String(matPricing.commissionValue),
+                        });
+                      }}
+                    >
+                      <Pencil className="w-3 h-3" /> Edit
+                    </Button>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Matrimony Package Pricing</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Card className="border-green-200">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">Basic</p>
+                          <p className="text-lg font-bold">₹{matPricing.basicPrice}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-blue-200">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">Premium</p>
+                          <p className="text-lg font-bold">₹{matPricing.premiumPrice}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-purple-200">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">VIP</p>
+                          <p className="text-lg font-bold">₹{matPricing.vipPrice}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Edit Dialog */}
