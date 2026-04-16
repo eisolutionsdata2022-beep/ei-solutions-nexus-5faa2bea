@@ -137,14 +137,8 @@ export function generateCertificateHTML(data: CertificateData): string {
   <div class="border-inner"></div>
   <div class="content">
     <div class="logos">
-      <div class="logo-box">
-        <div class="logo-icon">SI</div>
-        <div class="logo-text">Sk<span style="color:#e67e22;">i</span>ll India<small>कौशल भारत - कुशल भारत</small></div>
-      </div>
-      <div class="logo-box logo-right">
-        <div class="logo-icon">DI</div>
-        <div class="logo-text">Digital India<small>Power To Empower</small></div>
-      </div>
+      <img class="logo-img" src="${EI_SOLUTIONS_LOGO}" alt="EI Solutions" />
+      <img class="logo-img" src="${DIGITAL_INDIA_LOGO}" alt="Digital India" />
     </div>
     <div class="title">Franchise Certificate</div>
     <div class="line-decor"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
