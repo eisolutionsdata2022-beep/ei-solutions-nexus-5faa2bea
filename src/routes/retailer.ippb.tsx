@@ -116,7 +116,7 @@ function RetailerIPPBPage() {
         </Button>
       </div>
 
-
+      {rows.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             No requests yet. Click "New Request" when a customer is in front of you.
