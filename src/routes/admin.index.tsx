@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Users, Wallet, ShoppingBag, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search } from "lucide-react";
+import { Users, Wallet, ShoppingBag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { UserSearchPanel } from "@/components/admin/UserSearchPanel";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
@@ -47,6 +47,9 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-5">
+      {/* User Search Panel */}
+      <UserSearchPanel />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={Users} label="Total Users" value={stats.users} borderColor="border-gov-blue" bgColor="bg-gov-blue/10" textColor="text-gov-blue" />
