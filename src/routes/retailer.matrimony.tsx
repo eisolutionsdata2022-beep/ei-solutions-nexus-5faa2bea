@@ -53,11 +53,12 @@ function RetailerMatrimonyDashboard() {
     if (!appUser?.uid) return;
     const q = query(
       collection(db, "matrimonyRequests"),
-      where("assignedFranchiseId", "==", appUser.uid),
-      orderBy("createdAt", "desc")
+      where("assignedFranchiseId", "==", appUser.uid)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setAssignedRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as MatrimonyRequest)));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as MatrimonyRequest));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      setAssignedRequests(list);
     });
     return unsub;
   }, [appUser?.uid]);
