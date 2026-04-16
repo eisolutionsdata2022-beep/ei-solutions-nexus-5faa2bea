@@ -4,6 +4,7 @@ import { doc, onSnapshot, collection, query, where, orderBy, limit, getDocs } fr
 import { NoticeMarquee } from "@/components/NoticeMarquee";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { useDisabledServices, ServiceBlockedDialog } from "@/components/ServicePermissionCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -78,6 +79,9 @@ function getButtonInlineStyle(style: string, color?: string): React.CSSPropertie
 
 function RetailerDashboard() {
   const { appUser } = useAuth();
+  const disabledServices = useDisabledServices();
+  const [blockedServiceName, setBlockedServiceName] = useState("");
+  const [showBlockedDialog, setShowBlockedDialog] = useState(false);
   const [balance, setBalance] = useState(0);
   const [recentTx, setRecentTx] = useState<Transaction[]>([]);
   const [applications, setApplications] = useState<ServiceRequest[]>([]);
