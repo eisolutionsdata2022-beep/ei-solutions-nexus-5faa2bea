@@ -378,7 +378,6 @@ export function generateCertificateHTML(data: CertificateData): string {
 
     <ul class="services-list">
       <li>E-Governance Services</li>
-      <li>Aadhaar Services</li>
       <li>Online Application Services</li>
       <li>Financial &amp; Loan Services</li>
       <li>Skill Development Programs</li>
