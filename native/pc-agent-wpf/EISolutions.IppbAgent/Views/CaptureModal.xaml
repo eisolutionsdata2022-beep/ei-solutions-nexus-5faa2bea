@@ -1,0 +1,22 @@
+<Window x:Class="EISolutions.IppbAgent.Views.CaptureModal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Biometric Capture Request" Height="280" Width="460"
+        WindowStartupLocation="CenterScreen" Topmost="True" ResizeMode="NoResize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Biometric Capture Requested" FontSize="18" FontWeight="Bold"/>
+        <TextBlock Grid.Row="1" x:Name="DetailsText" Margin="0,8,0,0" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="2" Text="Place customer's finger on the scanner after clicking Accept."
+                   Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Reject" Width="100" Height="34" Margin="0,0,8,0" Click="Reject_Click"/>
+            <Button Content="Accept" Width="100" Height="34" Click="Accept_Click" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
