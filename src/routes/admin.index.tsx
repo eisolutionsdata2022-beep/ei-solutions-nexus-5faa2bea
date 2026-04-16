@@ -47,6 +47,9 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-5">
+      {/* User Search Panel */}
+      <UserSearchPanel />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={Users} label="Total Users" value={stats.users} borderColor="border-gov-blue" bgColor="bg-gov-blue/10" textColor="text-gov-blue" />
