@@ -52,6 +52,7 @@ import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
+import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as HelpIppbRouteImport } from './routes/help.ippb'
@@ -301,6 +302,11 @@ const RetailerFormsRoute = RetailerFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerEiPayRoute = RetailerEiPayRouteImport.update({
+  id: '/ei-pay',
+  path: '/ei-pay',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
   id: '/cv-builder',
   path: '/cv-builder',
@@ -505,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -576,6 +583,7 @@ export interface FileRoutesByTo {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -654,6 +662,7 @@ export interface FileRoutesById {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -733,6 +742,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -804,6 +814,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -881,6 +892,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -1235,6 +1247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerFormsRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/ei-pay': {
+      id: '/retailer/ei-pay'
+      path: '/ei-pay'
+      fullPath: '/retailer/ei-pay'
+      preLoaderRoute: typeof RetailerEiPayRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/cv-builder': {
       id: '/retailer/cv-builder'
       path: '/cv-builder'
@@ -1568,6 +1587,7 @@ const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
 
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
+  RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
@@ -1589,6 +1609,7 @@ interface RetailerRouteChildren {
 
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
+  RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,

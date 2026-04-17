@@ -51,7 +51,7 @@ function EiPayPage() {
   const [config, setConfig] = useState<CscMasterConfig | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [transactions, setTransactions] = useState<CscTransaction[]>([]);
-  const [active, setActive] = useState<CscService | null>(null);
+  const [active, setActive] = useState<(CscService & { fee: number }) | null>(null);
 
   // Wallet
   useEffect(() => {
