@@ -101,13 +101,29 @@ function StaffIPPBPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Banknote className="w-6 h-6 text-gov-blue" /> IPPB – Staff Tablet
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Real-time queue of retailer-initiated IPPB Account Opening requests. Verify each step and click Next to advance.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Banknote className="w-6 h-6 text-gov-blue" /> IPPB – Staff Tablet
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Real-time queue of retailer-initiated IPPB Account Opening requests. Verify each step and click Next to advance.
+          </p>
+        </div>
+        {resumable && (
+          <Button
+            size="sm"
+            variant="default"
+            className="gap-2 animate-in fade-in"
+            onClick={() => setOpenId(resumable.id)}
+          >
+            <PlayCircle className="w-4 h-4" />
+            Resume {resumable.requestNo}
+            <Badge variant="secondary" className="ml-1 text-[10px]">
+              {STEP_LABELS[resumable.currentStep]}
+            </Badge>
+          </Button>
+        )}
       </div>
 
       <Collapsible defaultOpen={false}>
