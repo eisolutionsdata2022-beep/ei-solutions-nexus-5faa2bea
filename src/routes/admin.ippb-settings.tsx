@@ -57,7 +57,21 @@ function AdminIPPBSettingsPage() {
     }
   };
 
-  if (loading) {
+  const handleMigrate = async () => {
+    if (!appUser) return;
+    if (!confirm("Auto-cancel all in-progress IPPB requests using the OLD schema? This cannot be undone. Terminal requests (success/failed/cancelled) will be skipped.")) return;
+    setMigrating(true);
+    setMigrationResult(null);
+    try {
+      const res = await migrateLegacyIPPBRequests(appUser.uid);
+      setMigrationResult(res);
+      toast.success(`Migration done: ${res.cancelled} cancelled, ${res.skipped} skipped, ${res.errors} errors`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Migration failed");
+    } finally {
+      setMigrating(false);
+    }
+  };
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
