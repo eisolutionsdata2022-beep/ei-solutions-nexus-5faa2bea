@@ -79,6 +79,7 @@ import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-setti
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
+import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
@@ -439,6 +440,11 @@ const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   path: '/form-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
+  id: '/csc-settings',
+  path: '/csc-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCrmReportsRoute = AdminCrmReportsRouteImport.update({
   id: '/crm-reports',
   path: '/crm-reports',
@@ -485,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -557,6 +564,7 @@ export interface FileRoutesByTo {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -636,6 +644,7 @@ export interface FileRoutesById {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -716,6 +725,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -788,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -866,6 +877,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -1436,6 +1448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/csc-settings': {
+      id: '/admin/csc-settings'
+      path: '/csc-settings'
+      fullPath: '/admin/csc-settings'
+      preLoaderRoute: typeof AdminCscSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/crm-reports': {
       id: '/admin/crm-reports'
       path: '/crm-reports'
@@ -1487,6 +1506,7 @@ interface AdminRouteChildren {
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
+  AdminCscSettingsRoute: typeof AdminCscSettingsRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
@@ -1517,6 +1537,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
   AdminCrmReportsRoute: AdminCrmReportsRoute,
+  AdminCscSettingsRoute: AdminCscSettingsRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
