@@ -33,6 +33,8 @@ function AdminWalletRequests() {
   const [requests, setRequests] = useState<WalletRequest[]>([]);
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
   useEffect(() => {
     const unsub = onSnapshot(
