@@ -538,3 +538,85 @@ export async function getRequest(requestId: string): Promise<IPPBRequest | null>
   if (!snap.exists()) return null;
   return { id: snap.id, ...(snap.data() as any) } as IPPBRequest;
 }
+
+/* ============ One-time migration: cancel legacy-schema requests ============
+ * The new 19-step flow expects `currentStep` ∈ STEP_ORDER and `turn` ∈ {retailer,staff}.
+ * Old requests used legacy statuses (mobile_entered, otp_relayed, otp_verified,
+ * details_filled, biometric_captured, submitted) without `currentStep` / `turn`.
+ * Loading them in the new UI breaks step rendering. This migration auto-cancels
+ * any non-terminal request that is missing `currentStep` OR uses a legacy status,
+ * so retailers/staff start fresh on the new flow.
+ */
+
+const LEGACY_STATUSES = new Set([
+  "mobile_entered",
+  "otp_relayed",
+  "otp_verified",
+  "details_filled",
+  "biometric_captured",
+  "submitted",
+]);
+const TERMINAL_STATUSES = new Set(["success", "failed", "cancelled"]);
+
+export interface MigrationResult {
+  scanned: number;
+  cancelled: number;
+  skipped: number;
+  errors: number;
+  details: Array<{ id: string; requestNo?: string; reason: string }>;
+}
+
+export async function migrateLegacyIPPBRequests(adminId: string): Promise<MigrationResult> {
+  const result: MigrationResult = { scanned: 0, cancelled: 0, skipped: 0, errors: 0, details: [] };
+  const snap = await getDocs(collection(db, COL));
+  const validSteps = new Set(STEP_ORDER as string[]);
+
+  for (const d of snap.docs) {
+    result.scanned++;
+    const data = d.data() as any;
+    const status: string | undefined = data.status;
+    const currentStep: string | undefined = data.currentStep;
+    const isLegacyStatus = status && LEGACY_STATUSES.has(status);
+    const missingStep = !currentStep || !validSteps.has(currentStep);
+    const isTerminal = status && TERMINAL_STATUSES.has(status);
+
+    if (isTerminal) {
+      result.skipped++;
+      continue;
+    }
+    if (!isLegacyStatus && !missingStep) {
+      result.skipped++;
+      continue;
+    }
+
+    try {
+      const reason = isLegacyStatus
+        ? `Legacy status: ${status}`
+        : `Missing/invalid currentStep: ${currentStep ?? "<none>"}`;
+      await updateDoc(doc(db, COL, d.id), {
+        status: "cancelled",
+        failureReason: "Auto-cancelled by migration to 19-step flow",
+        updatedAt: new Date().toISOString(),
+        history: appendHistory(
+          Array.isArray(data.history) ? data.history : [],
+          (currentStep && validSteps.has(currentStep) ? currentStep : "basic_details") as IPPBStep,
+          adminId,
+          "staff",
+          `Migration: ${reason}`
+        ),
+        migratedAt: new Date().toISOString(),
+        migratedBy: adminId,
+      });
+      result.cancelled++;
+      result.details.push({ id: d.id, requestNo: data.requestNo, reason });
+    } catch (e) {
+      result.errors++;
+      result.details.push({
+        id: d.id,
+        requestNo: data.requestNo,
+        reason: `ERROR: ${(e as Error).message}`,
+      });
+    }
+  }
+  return result;
+}
