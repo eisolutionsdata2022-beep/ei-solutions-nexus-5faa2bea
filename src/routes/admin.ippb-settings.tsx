@@ -12,9 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Banknote, Loader2, Save, Info, AlertTriangle, Download } from "lucide-react";
+import { Banknote, Loader2, Save, Info, AlertTriangle, Download, Wrench, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { migrateLegacyIPPBRequests, type MigrationResult } from "@/lib/ippb-firebase";
 
 export const Route = createFileRoute("/admin/ippb-settings")({
   ssr: false,
@@ -26,6 +27,8 @@ function AdminIPPBSettingsPage() {
   const [cfg, setCfg] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
 
   useEffect(() => {
     getIPPBFeeConfig()
@@ -51,6 +54,22 @@ function AdminIPPBSettingsPage() {
       toast.error(e.message ?? "Failed");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleMigrate = async () => {
+    if (!appUser) return;
+    if (!confirm("Auto-cancel all in-progress IPPB requests using the OLD schema? This cannot be undone. Terminal requests (success/failed/cancelled) will be skipped.")) return;
+    setMigrating(true);
+    setMigrationResult(null);
+    try {
+      const res = await migrateLegacyIPPBRequests(appUser.uid);
+      setMigrationResult(res);
+      toast.success(`Migration done: ${res.cancelled} cancelled, ${res.skipped} skipped, ${res.errors} errors`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Migration failed");
+    } finally {
+      setMigrating(false);
     }
   };
 
@@ -152,6 +171,58 @@ function AdminIPPBSettingsPage() {
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-destructive" />
+            Legacy Data Migration — One-Time
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            പഴയ 8-step schema-യിൽ create ചെയ്ത in-progress IPPB requests പുതിയ
+            19-step UI-യിൽ break ചെയ്യും. ഈ button auto-cancel ചെയ്യും അവയെ —
+            terminal requests (success / failed / cancelled) skip ചെയ്യും.
+          </p>
+          <Button variant="destructive" onClick={handleMigrate} disabled={migrating}>
+            {migrating ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Wrench className="w-4 h-4 mr-2" />
+            )}
+            Run Migration — Cancel Legacy Requests
+          </Button>
+          {migrationResult && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4 text-success" />
+                Migration complete
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div>Scanned: <strong>{migrationResult.scanned}</strong></div>
+                <div className="text-destructive">Cancelled: <strong>{migrationResult.cancelled}</strong></div>
+                <div>Skipped: <strong>{migrationResult.skipped}</strong></div>
+                <div className="text-warning">Errors: <strong>{migrationResult.errors}</strong></div>
+              </div>
+              {migrationResult.details.length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    Show {migrationResult.details.length} affected request{migrationResult.details.length === 1 ? "" : "s"}
+                  </summary>
+                  <ul className="mt-2 space-y-1 max-h-48 overflow-auto">
+                    {migrationResult.details.map((d) => (
+                      <li key={d.id} className="font-mono">
+                        {d.requestNo ?? d.id.slice(0, 8)} — {d.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
