@@ -179,7 +179,7 @@ function InstallPage() {
             {/* Download buttons */}
             <div className="grid sm:grid-cols-2 gap-3">
               <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-d6ff6946/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
+                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors"
@@ -191,7 +191,7 @@ function InstallPage() {
                 </div>
               </a>
               <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-d6ff6946/releases"
+                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-lg border-2 border-gov-blue/40 bg-white hover:bg-gov-blue/5 p-4 transition-colors"
