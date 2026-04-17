@@ -54,10 +54,10 @@ If the secrets are absent, the build still succeeds — just unsigned.
 The current link in `src/routes/install.tsx` and `src/routes/retailer.ippb.tsx`
 points to:
 ```
-https://github.com/eisolutions/ippb-pc-agent/releases/latest/download/...
+https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases/latest/download/...
 ```
 
-Replace `eisolutions/ippb-pc-agent` with the actual `<owner>/<repo>` of the
+Replace `eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4` with the actual `<owner>/<repo>` of the
 GitHub repo that hosts this codebase (the one connected via Lovable's GitHub
 integration). The `/releases/latest/download/...` pattern always serves the
 newest release, so you never need to update the URL again after that.
