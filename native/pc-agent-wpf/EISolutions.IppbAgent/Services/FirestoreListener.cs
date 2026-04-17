@@ -1,8 +1,7 @@
 using EISolutions.IppbAgent.Models;
 using Google.Cloud.Firestore;
-using Google.Cloud.Firestore.V1;
-using Grpc.Auth;
 using Grpc.Core;
+using V1 = Google.Cloud.Firestore.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
