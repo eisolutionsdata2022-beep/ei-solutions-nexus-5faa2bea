@@ -89,37 +89,104 @@ function StaffIPPBPage() {
         </p>
       </div>
 
-      {/* Malayalam workflow guide */}
-      <Collapsible defaultOpen={false}>
+      {/* Detailed step-by-step staff workflow help */}
+      <Collapsible defaultOpen={true}>
         <Card className="border-gov-blue/30">
           <CollapsibleTrigger asChild>
             <CardHeader className="pb-3 cursor-pointer hover:bg-muted/40 transition-colors">
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Info className="w-5 h-5 text-gov-blue" />
-                  Staff Workflow & Commission (Malayalam)
+                  IPPB സ്റ്റാഫ് വർക്കിംഗ് — Step by Step Help (Malayalam)
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </CardTitle>
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="text-sm space-y-3 leading-relaxed">
+            <CardContent className="text-sm space-y-4 leading-relaxed">
               <div className="rounded-lg bg-gov-blue/5 border border-gov-blue/20 p-3">
-                <p className="font-semibold text-gov-blue mb-1">💰 Staff Commission per success</p>
+                <p className="font-semibold text-gov-blue mb-1">💰 Staff Commission</p>
                 <p>ഓരോ successful IPPB account-നും <strong>₹{fee.staffCommission}</strong> നിങ്ങളുടെ wallet-ൽ auto-credit ആകും.</p>
-                <p className="text-xs text-amber-700 mt-1">⚠ Mark Failed ആയാൽ commission ഇല്ല.</p>
+                <p className="text-xs text-amber-700 mt-1">⚠ "Mark Failed" ആയാൽ commission ഇല്ല. "Mark Success" മാത്രം commission trigger ചെയ്യും.</p>
               </div>
-              <ol className="list-decimal pl-5 space-y-1.5">
-                <li>Active tab-ൽ pending request select ചെയ്ത് <strong>"Claim This Request"</strong> click.</li>
-                <li>Customer-ന്റെ 10-digit mobile enter ചെയ്ത് IPPB tablet-ൽ same number type ചെയ്യുക → "Send OTP".</li>
-                <li>Retailer OTP relay ചെയ്യുമ്പോൾ വലിയ font-ൽ display ആകും. IPPB tablet-ൽ enter ചെയ്ത് <strong>"Verified"</strong>.</li>
-                <li>Customer details (Name, DOB, Aadhaar, PAN, Address, Nominee) fill ചെയ്യുക.</li>
-                <li>Biometric: Remote PC Agent (real MFS110) അല്ലെങ്കിൽ L1 simulation use ചെയ്യുക.</li>
-                <li>Account number generate ആയാൽ enter ചെയ്ത് <strong>"Mark Success"</strong> → Retailer wallet debit + എല്ലാ commissions distribute ആകും.</li>
-                <li>IPPB reject ചെയ്താൽ <strong>"Mark Failed"</strong>.</li>
-              </ol>
-              <p className="text-xs">
+
+              <div className="space-y-3">
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 1 — Request Claim ചെയ്യുക</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li><strong>Active</strong> tab-ൽ "Pending Pickup" status-ൽ ഉള്ള request കാണാം.</li>
+                    <li>Card click ചെയ്ത് open ചെയ്യുക.</li>
+                    <li><strong>"Claim This Request"</strong> button click ചെയ്യുക. ഇപ്പോൾ request നിങ്ങളുടെ പേരിൽ lock ആകും — മറ്റു staff-ന് കാണാൻ പറ്റില്ല.</li>
+                    <li>⚠ Claim ചെയ്തതിന് ശേഷം 30 minute-നുള്ളിൽ complete ചെയ്യണം, അല്ലെങ്കിൽ retailer cancel ചെയ്യും.</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 2 — Customer Mobile Number Enter</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li>Customer-ൽ നിന്ന് <strong>10-digit mobile number</strong> ചോദിക്കുക (Aadhaar-ൽ link ചെയ്തത് ആവണം).</li>
+                    <li>നിങ്ങളുടെ tablet-ൽ ഉള്ള <strong>real IPPB BC App</strong> തുറന്ന് same number type ചെയ്യുക.</li>
+                    <li>EI Solutions portal-ൽ same mobile number enter ചെയ്ത് <strong>"Send OTP"</strong> click ചെയ്യുക.</li>
+                    <li>Status: <em>"Mobile Entered – OTP Sent"</em> ആയി മാറും.</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 3 — OTP Receive & Verify</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li>Customer-ന്റെ phone-ൽ വരുന്ന OTP retailer-നോട് പറയും → retailer അത് portal-ൽ enter ചെയ്യും.</li>
+                    <li>നിങ്ങളുടെ screen-ൽ OTP <strong>വലിയ green text-ൽ</strong> automatically display ആകും.</li>
+                    <li>ആ OTP IPPB tablet-ൽ enter ചെയ്ത് bank-ൽ verify ചെയ്യിക്കുക.</li>
+                    <li>Bank confirm ചെയ്താൽ portal-ൽ <strong>"Mark OTP Verified"</strong> click ചെയ്യുക.</li>
+                    <li>⚠ OTP wrong ആയാൽ retailer പുതിയ OTP relay ചെയ്യാൻ പറയുക — re-enter ചെയ്യാം.</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 4 — Customer Details Fill</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li><strong>Mandatory:</strong> Full Name, Date of Birth, Aadhaar Number (12 digit), PAN, Address.</li>
+                    <li><strong>Optional:</strong> Occupation, Monthly Income, Nominee Name & Relation, Initial Deposit, DBT Mapping consent.</li>
+                    <li>എല്ലാം Aadhaar card-ലെ data യുമായി <strong>exact match</strong> ആവണം — അല്ലെങ്കിൽ IPPB reject ചെയ്യും.</li>
+                    <li><strong>"Save Details"</strong> click ചെയ്യുക.</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 5 — Biometric Capture (Fingerprint)</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li><strong>Option A (Recommended) — Real MFS110 via PC Agent:</strong> Retailer-ന്റെ PC-യിൽ EI Solutions PC Agent install ചെയ്തിട്ടുണ്ടെങ്കിൽ "Remote Capture" panel use ചെയ്യുക. Customer-ന്റെ finger LED scanner-ൽ വയ്ക്കാൻ retailer-നോട് പറയുക → real PID XML capture ആകും.</li>
+                    <li><strong>Option B — L1 Simulation:</strong> Test/training-ന് മാത്രം. Production accounts-ന് use ചെയ്യരുത്.</li>
+                    <li>Capture success ആയാൽ status: <em>"Biometric Captured"</em>.</li>
+                    <li>ആ PID XML നിങ്ങളുടെ IPPB BC App-ൽ inject/upload ചെയ്യുക (manual paste അല്ലെങ്കിൽ Interceptor APK auto-inject).</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border bg-card p-3">
+                  <p className="font-semibold text-gov-blue mb-1">Step 6 — Account Submit & Mark Result</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs">
+                    <li>IPPB BC App-ൽ "Submit Application" click ചെയ്യുക.</li>
+                    <li>Bank server response വരാൻ 10-30 seconds wait ചെയ്യുക.</li>
+                    <li><strong>Success ആയാൽ:</strong> generate ആയ <strong>Account Number</strong> portal-ൽ enter ചെയ്ത് <strong>"Mark Success"</strong> click ചെയ്യുക.</li>
+                    <li>ഇപ്പോൾ automatic ആയി: Retailer wallet-ൽ നിന്ന് ₹{fee.serviceCharge} debit + Retailer-ന് ₹{fee.retailerCommission} commission + നിങ്ങൾക്ക് ₹{fee.staffCommission} commission credit ആകും.</li>
+                    <li><strong>Failed ആയാൽ:</strong> failure reason type ചെയ്ത് <strong>"Mark Failed"</strong> click ചെയ്യുക. Retailer-ന് wallet debit ഇല്ല.</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3">
+                  <p className="font-semibold text-amber-900 mb-1">⚠ പ്രധാന നിയമങ്ങൾ</p>
+                  <ul className="list-disc pl-5 space-y-1 text-xs text-amber-900">
+                    <li>Customer-ന്റെ biometric data ഒരിക്കലും record/save ചെയ്യരുത് — UIDAI rule violation.</li>
+                    <li>OTP customer-ൽ നിന്ന് നേരിട്ട് ചോദിക്കരുത് — retailer വഴി മാത്രം relay ചെയ്യണം.</li>
+                    <li>Customer-ന്റെ Aadhaar/PAN photocopy phone-ൽ save ചെയ്യരുത്.</li>
+                    <li>Account creation success ആയില്ലെങ്കിൽ "Mark Failed" മാത്രം ചെയ്യുക — "Mark Success" തെറ്റായി click ചെയ്താൽ retailer-ന്റെ wallet wrong debit ആകും.</li>
+                    <li>Same customer-ന് same day-ൽ duplicate request സൃഷ്ടിക്കരുത്.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <p className="text-xs pt-2 border-t">
                 <Link to="/help/ippb" className="text-gov-blue underline">Full Malayalam help page →</Link>
               </p>
             </CardContent>
