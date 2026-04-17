@@ -62,6 +62,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
     { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
+    { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -70,6 +71,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
     { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
     { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
     { label: "Horoscope", to: "/retailer/horoscope", icon: Sparkles },

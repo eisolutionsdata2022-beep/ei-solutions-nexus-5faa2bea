@@ -52,6 +52,7 @@ import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
+import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as HelpIppbRouteImport } from './routes/help.ippb'
@@ -78,6 +79,7 @@ import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-setti
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
+import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
@@ -301,6 +303,11 @@ const RetailerFormsRoute = RetailerFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerEiPayRoute = RetailerEiPayRouteImport.update({
+  id: '/ei-pay',
+  path: '/ei-pay',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
   id: '/cv-builder',
   path: '/cv-builder',
@@ -433,6 +440,11 @@ const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   path: '/form-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
+  id: '/csc-settings',
+  path: '/csc-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCrmReportsRoute = AdminCrmReportsRouteImport.update({
   id: '/crm-reports',
   path: '/crm-reports',
@@ -479,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -505,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -550,6 +564,7 @@ export interface FileRoutesByTo {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -576,6 +591,7 @@ export interface FileRoutesByTo {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -628,6 +644,7 @@ export interface FileRoutesById {
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
+  '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -654,6 +671,7 @@ export interface FileRoutesById {
   '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
+  '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -707,6 +725,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -733,6 +752,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -778,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -804,6 +825,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -855,6 +877,7 @@ export interface FileRouteTypes {
     | '/admin/create-user'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
+    | '/admin/csc-settings'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -881,6 +904,7 @@ export interface FileRouteTypes {
     | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
+    | '/retailer/ei-pay'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -1235,6 +1259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerFormsRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/ei-pay': {
+      id: '/retailer/ei-pay'
+      path: '/ei-pay'
+      fullPath: '/retailer/ei-pay'
+      preLoaderRoute: typeof RetailerEiPayRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/cv-builder': {
       id: '/retailer/cv-builder'
       path: '/cv-builder'
@@ -1417,6 +1448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/csc-settings': {
+      id: '/admin/csc-settings'
+      path: '/csc-settings'
+      fullPath: '/admin/csc-settings'
+      preLoaderRoute: typeof AdminCscSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/crm-reports': {
       id: '/admin/crm-reports'
       path: '/crm-reports'
@@ -1468,6 +1506,7 @@ interface AdminRouteChildren {
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
+  AdminCscSettingsRoute: typeof AdminCscSettingsRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
@@ -1498,6 +1537,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
   AdminCrmReportsRoute: AdminCrmReportsRoute,
+  AdminCscSettingsRoute: AdminCscSettingsRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
@@ -1568,6 +1608,7 @@ const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
 
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
+  RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
@@ -1589,6 +1630,7 @@ interface RetailerRouteChildren {
 
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
+  RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,
