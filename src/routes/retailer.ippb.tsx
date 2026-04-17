@@ -311,7 +311,7 @@ function RequestCard({ req, retailerId, fee }: { req: IPPBRequest; retailerId: s
   const terminal = ["success", "failed", "cancelled"].includes(req.status);
 
   return (
-    <Card>
+    <Card id={`ippb-req-${req.id}`} className="scroll-mt-20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base font-mono">{req.requestNo}</CardTitle>
