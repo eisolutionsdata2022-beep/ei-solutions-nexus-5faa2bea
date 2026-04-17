@@ -1,8 +1,7 @@
 using EISolutions.IppbAgent.Models;
 using Google.Cloud.Firestore;
-using Google.Cloud.Firestore.V1;
-using Grpc.Auth;
 using Grpc.Core;
+using V1 = Google.Cloud.Firestore.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -33,7 +32,7 @@ public sealed class FirestoreListener
             throw new InvalidOperationException("Not signed in");
 
         var projectId = _config["Firebase:ProjectId"]!;
-        var builder = new FirestoreClientBuilder
+        var builder = new V1.FirestoreClientBuilder
         {
             ChannelCredentials = ChannelCredentials.Create(
                 ChannelCredentials.SecureSsl,
