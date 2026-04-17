@@ -48,6 +48,7 @@ import {
   Info,
   Loader2,
   Lock,
+  PlayCircle,
   Plus,
   ShieldAlert,
   ShieldCheck,
@@ -169,10 +170,38 @@ function RetailerIPPBPage() {
               : "IPPB badge ഇല്ലാത്തതിനാൽ ഇപ്പോൾ work ചെയ്യാൻ കഴിയില്ല."}
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={creating || !hasBadge}>
-          {!hasBadge ? <Lock className="w-4 h-4" /> : creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          New Request
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {(() => {
+            const terminal = ["success", "failed", "cancelled"];
+            const active = rows
+              .filter((r) => !terminal.includes(r.status))
+              .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+            const myTurn = active.find(
+              (r) => (r.turn ?? STEP_TURN[r.currentStep]) === "retailer"
+            );
+            const resume = myTurn ?? active[0];
+            if (!resume) return null;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  document
+                    .getElementById(`ippb-req-${resume.id}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                <PlayCircle className="w-4 h-4" />
+                Resume {resume.requestNo}
+              </Button>
+            );
+          })()}
+          <Button onClick={handleCreate} disabled={creating || !hasBadge}>
+            {!hasBadge ? <Lock className="w-4 h-4" /> : creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            New Request
+          </Button>
+        </div>
       </div>
 
       {!hasBadge && (
@@ -282,7 +311,7 @@ function RequestCard({ req, retailerId, fee }: { req: IPPBRequest; retailerId: s
   const terminal = ["success", "failed", "cancelled"].includes(req.status);
 
   return (
-    <Card>
+    <Card id={`ippb-req-${req.id}`} className="scroll-mt-20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base font-mono">{req.requestNo}</CardTitle>
