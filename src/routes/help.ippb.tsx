@@ -180,7 +180,7 @@ function IPPBHelpPage() {
 
           <Button asChild variant="default" className="w-full">
             <a
-              href="https://github.com/eisolutions/ippb-interceptor/releases/latest/download/EISolutionsInterceptor.apk"
+              href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-d6ff6946/releases/latest/download/EISolutionsInterceptor.apk"
               target="_blank"
               rel="noreferrer"
             >
