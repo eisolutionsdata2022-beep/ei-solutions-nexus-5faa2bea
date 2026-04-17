@@ -16,6 +16,7 @@ export const PLATFORM_SERVICES: PlatformService[] = [
   { key: "recharge-bbps", name: "Recharge & BBPS", category: "Core Services", route: "/retailer/recharge", description: "Mobile, DTH recharge and bill payments" },
   { key: "e-dis", name: "E-dis (E-Governance)", category: "Core Services", route: "/retailer/services", description: "E-district certificate services" },
   { key: "money-transfer", name: "Money Transfer", category: "Core Services", route: "/retailer/money-transfer", description: "Fund transfer services" },
+  { key: "ippb", name: "IPPB Account Opening", category: "Core Services", route: "/retailer/ippb", description: "India Post Payments Bank account opening with biometric capture" },
 
   // Professional Services
   { key: "horoscope", name: "Horoscope", category: "Professional Services", route: "/retailer/horoscope", description: "Horoscope generation service" },
