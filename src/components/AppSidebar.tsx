@@ -63,6 +63,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
     { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
     { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
+    { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },

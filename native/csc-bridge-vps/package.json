@@ -1,0 +1,20 @@
+{
+  "name": "csc-bridge-vps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EI SOLUTIONS PAY — HMAC-authenticated Puppeteer bridge to CSC Connect.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "puppeteer": "^23.11.1"
+  }
+}

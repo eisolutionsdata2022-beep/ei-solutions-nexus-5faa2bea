@@ -33,12 +33,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt } from "lucide-react";
+import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executeCscService } from "@/lib/csc-bridge.functions";
+import { downloadCscReceipt } from "@/lib/csc-receipt-pdf";
 
 export const Route = createFileRoute("/retailer/ei-pay")({
   ssr: false,
@@ -212,9 +213,20 @@ function EiPayPage() {
                       {tx.bridgeRef || "—"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">₹{tx.amount}</span>
                     <StatusBadge status={tx.status} />
+                    {tx.status === "success" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() => downloadCscReceipt(tx)}
+                        title="Download receipt"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
