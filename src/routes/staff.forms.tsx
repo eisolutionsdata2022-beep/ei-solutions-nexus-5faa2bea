@@ -22,12 +22,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { FileText, Plus, Pencil, Trash2, GripVertical, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/forms")({
+export const Route = createFileRoute("/staff/forms")({
   ssr: false,
-  component: AdminForms,
+  component: StaffForms,
 });
 
-function AdminForms() {
+function StaffForms() {
   const { appUser } = useAuth();
   const [forms, setForms] = useState<CustomForm[]>([]);
   const [editing, setEditing] = useState<Partial<CustomForm> | null>(null);
