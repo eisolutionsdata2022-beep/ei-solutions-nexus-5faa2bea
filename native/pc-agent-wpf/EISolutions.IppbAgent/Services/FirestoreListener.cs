@@ -53,7 +53,7 @@ public sealed class FirestoreListener
         {
             foreach (var change in snap.Changes)
             {
-                if (change.ChangeType != DocumentChange.Type.Added) continue;
+                if (change.ChangeType != Google.Cloud.Firestore.DocumentChange.Type.Added) continue;
                 var d = change.Document;
                 var row = new CaptureRequest
                 {
