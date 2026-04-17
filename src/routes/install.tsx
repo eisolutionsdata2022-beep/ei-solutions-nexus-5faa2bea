@@ -179,72 +179,168 @@ function InstallPage() {
             {/* Download buttons */}
             <div className="grid sm:grid-cols-2 gap-3">
               <a
-                href="https://github.com/eisolutions/ippb-pc-agent/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
+                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-d6ff6946/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors"
               >
                 <Download className="w-6 h-6 shrink-0" />
                 <div className="flex-1">
-                  <div className="font-bold text-sm">PC Agent Download</div>
-                  <div className="text-[11px] opacity-90">Windows 10/11 · ~25 MB</div>
+                  <div className="font-bold text-sm">PC Agent Download (.exe)</div>
+                  <div className="text-[11px] opacity-90">Windows 10/11 · ~25 MB · Latest Release</div>
                 </div>
               </a>
               <a
-                href="https://github.com/eisolutions/ippb-pc-agent"
+                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-d6ff6946/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-lg border-2 border-gov-blue/40 bg-white hover:bg-gov-blue/5 p-4 transition-colors"
               >
                 <Terminal className="w-6 h-6 shrink-0 text-gov-blue" />
                 <div className="flex-1">
-                  <div className="font-bold text-sm text-gov-blue">Source Code</div>
-                  <div className="text-[11px] text-muted-foreground">.NET 8 WPF · self-build</div>
+                  <div className="font-bold text-sm text-gov-blue">All Releases / Source</div>
+                  <div className="text-[11px] text-muted-foreground">GitHub · പഴയ versions + checksum</div>
                 </div>
               </a>
             </div>
 
-            <div className="rounded-lg bg-amber-100 border border-amber-300 p-3 text-xs text-amber-900 flex gap-2">
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                <strong>Status:</strong> Installer build pending. ഇപ്പോൾ source code മാത്രമേ
-                ലഭ്യമുള്ളൂ (<code className="bg-white/60 px-1 rounded">native/pc-agent-wpf/</code>).
-                Admin team build ചെയ്ത് signed installer release ചെയ്യുന്നതുവരെ retailer-മാർ
-                <strong> L1 simulation</strong> mode-ൽ continue ചെയ്യാം.
+                <strong>Note:</strong> ആദ്യത്തെ release publish ചെയ്യുന്നതുവരെ download link
+                404 കാണിക്കാം. അങ്ങനെയെങ്കിൽ <strong>"All Releases"</strong> click ചെയ്ത് latest
+                tag-ലെ <code className="bg-white/60 px-1 rounded">EISolutions.IppbAgent.Setup.exe</code>{" "}
+                manually download ചെയ്യുക.
               </span>
             </div>
 
-            {/* Install steps */}
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-gov-blue">Installation Steps:</p>
+            {/* DETAILED Install steps — step by step */}
+            <div className="space-y-3 rounded-lg border-2 border-gov-blue/30 bg-white p-4">
+              <p className="text-base font-bold text-gov-blue flex items-center gap-2">
+                <Download className="w-5 h-5" />
+                Download &amp; Install — Step-by-Step Guide
+              </p>
+
               <Step n={1}>
-                മുകളിലെ <strong>"PC Agent Download"</strong> button click ചെയ്ത്{" "}
-                <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                <strong>Browser open ചെയ്യുക</strong> (Chrome / Edge) retailer PC-യിൽ.
+              </Step>
+
+              <Step n={2}>
+                മുകളിലെ orange <strong>"PC Agent Download (.exe)"</strong> button click ചെയ്യുക.
+                ഇത് നേരിട്ട് GitHub-ൽ നിന്ന്{" "}
+                <code className="bg-muted px-1.5 py-0.5 rounded text-xs break-all">
                   EISolutions.IppbAgent.Setup.exe
                 </code>{" "}
-                download ചെയ്യുക.
+                file (~25 MB) download ചെയ്യും.
               </Step>
-              <Step n={2}>
-                Windows-ൽ <strong>SmartScreen warning</strong> വന്നാൽ → "More info" →{" "}
-                <strong>"Run anyway"</strong> click ചെയ്യുക (signed certificate add ചെയ്യുന്നതുവരെ).
-              </Step>
+
               <Step n={3}>
-                Installer follow ചെയ്യുക → Desktop-ൽ <strong>EI IPPB Agent</strong> shortcut വരും.
+                Browser-ന്റെ താഴെ <strong>"Keep"</strong> അല്ലെങ്കിൽ <strong>"Download anyway"</strong>{" "}
+                click ചെയ്യുക (Chrome ചിലപ്പോൾ unsigned exe block ചെയ്യും — ഇത് normal ആണ്).
               </Step>
+
               <Step n={4}>
-                Agent open ചെയ്യുക → retailer email + password type ചെയ്ത് login ചെയ്യുക
-                (PWA-യിലെ same credentials).
+                Download folder open ചെയ്ത് <strong>EISolutions.IppbAgent.Setup.exe</strong>-ൽ{" "}
+                <strong>double-click</strong> ചെയ്യുക.
               </Step>
+
               <Step n={5}>
-                <strong>MFS110 device</strong> USB-യിൽ connect ചെയ്യുക → Mantra RD Service
-                driver install ചെയ്യപ്പെട്ടിട്ടുണ്ടെങ്കിൽ agent automatic detect ചെയ്യും.
+                Windows <strong>SmartScreen warning</strong> വരും → <strong>"More info"</strong>{" "}
+                click ചെയ്ത് → <strong>"Run anyway"</strong> അമർത്തുക.
+                <span className="block text-xs text-muted-foreground mt-1">
+                  (Code-signing certificate add ചെയ്യുന്നതുവരെ ഈ warning കാണിക്കും — safe ആണ്.)
+                </span>
               </Step>
+
               <Step n={6}>
-                Agent system tray-ൽ <ShieldCheck className="inline w-3.5 h-3.5 text-green-600" />{" "}
-                <strong>"Listening"</strong> എന്ന് കാണിക്കും — ഇനി Staff biometric request
-                അയക്കുമ്പോൾ <strong>MFS110 LED തെളിയും</strong> + real PID block capture
-                ചെയ്ത് IPPB-യിലേക്ക് auto-inject ചെയ്യും. ✅
+                <strong>UAC prompt</strong> (Yes/No window) വന്നാൽ → <strong>"Yes"</strong> click ചെയ്യുക.
               </Step>
+
+              <Step n={7}>
+                Installer wizard വരും → <strong>"Next → Install → Finish"</strong> click ചെയ്യുക.
+                Default install location <code className="bg-muted px-1.5 py-0.5 rounded text-xs">C:\Program Files\EI Solutions\IPPB Agent\</code>.
+              </Step>
+
+              <Step n={8}>
+                Desktop-ൽ <strong>EI IPPB Agent</strong> icon വരും → <strong>double-click</strong>{" "}
+                ചെയ്ത് open ചെയ്യുക.
+              </Step>
+
+              <Step n={9}>
+                Login window-ൽ portal-ലെ <strong>same retailer email + password</strong> enter
+                ചെയ്ത് <strong>"Sign In"</strong> click ചെയ്യുക.
+              </Step>
+
+              <Step n={10}>
+                <strong>MFS110 / Mantra / Morpho fingerprint device</strong> USB port-ൽ connect
+                ചെയ്യുക. <em>Mantra RD Service driver</em> installed ആണെങ്കിൽ agent automatic
+                detect ചെയ്യും ("Device: Connected ✅").
+                <span className="block text-xs text-muted-foreground mt-1">
+                  Driver ഇല്ലെങ്കിൽ:{" "}
+                  <a
+                    href="https://download.mantratecmis.com/Downloads/RDService/MFS110/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gov-blue underline"
+                  >
+                    Mantra RD Service download ചെയ്യുക
+                  </a>{" "}
+                  → install → PC restart.
+                </span>
+              </Step>
+
+              <Step n={11}>
+                Agent window-ൽ താഴെ <ShieldCheck className="inline w-3.5 h-3.5 text-green-600" />{" "}
+                <strong className="text-green-700">"Listening for capture requests…"</strong>{" "}
+                എന്ന് കാണിക്കണം. System tray-ലും (clock-ന്റെ അടുത്ത്) green icon വരും.
+              </Step>
+
+              <Step n={12}>
+                Agent <strong>minimize</strong> ചെയ്യാം — background-ൽ silently run ചെയ്യും.
+                Tray icon right-click → <strong>"Start with Windows"</strong> enable ചെയ്താൽ
+                PC restart ആയാലും automatic start ആകും.
+              </Step>
+
+              <Step n={13}>
+                <strong>Test:</strong> Browser-ൽ{" "}
+                <Link to="/retailer/ippb" className="text-gov-blue underline font-semibold">
+                  /retailer/ippb
+                </Link>{" "}
+                open ചെയ്ത് വയ്ക്കുക. Staff biometric request അയക്കുമ്പോൾ:
+                <ul className="list-disc pl-5 mt-1 space-y-0.5 text-xs">
+                  <li>🔔 Browser-ൽ beep + capture modal pops</li>
+                  <li>💡 MFS110 LED <strong>blue/red</strong> ആയി തെളിയും</li>
+                  <li>👆 Customer finger വയ്ക്കുമ്പോൾ real PID XML capture ആകും</li>
+                  <li>✅ Hash automatic ആയി staff tablet-ലേക്ക് relay ആകും</li>
+                </ul>
+              </Step>
+            </div>
+
+            {/* Troubleshooting */}
+            <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+              <p className="font-bold text-sm">🔧 Common Issues / Troubleshooting:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <strong>"Device: Not detected"</strong> → Mantra RD Service running ആണോ check
+                  ചെയ്യുക (Services.msc → "Mantra RD Service" → Start). USB cable replug ചെയ്യുക.
+                </li>
+                <li>
+                  <strong>Login fail ആകുന്നു</strong> → Portal-ൽ same email/password work
+                  ചെയ്യുന്നുണ്ടോ test ചെയ്യുക. Internet connection check ചെയ്യുക.
+                </li>
+                <li>
+                  <strong>"Listening" കാണുന്നില്ല</strong> → Windows Firewall-ൽ EI IPPB Agent-ന്
+                  permission allow ചെയ്യുക. Antivirus temporarily disable ചെയ്ത് retry.
+                </li>
+                <li>
+                  <strong>Modal pop ആകുന്നില്ല</strong> → Browser tab active ആയിരിക്കണം. Same
+                  retailer account-ൽ login ആണോ confirm ചെയ്യുക.
+                </li>
+                <li>
+                  <strong>Update ചെയ്യാൻ:</strong> പുതിയ release വന്നാൽ വീണ്ടും download → install
+                  (overwrite). Settings retain ആകും.
+                </li>
+              </ul>
             </div>
 
             <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-900 flex gap-2">
