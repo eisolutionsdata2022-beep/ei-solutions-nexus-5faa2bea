@@ -32,7 +32,7 @@ public sealed class FirestoreListener
             throw new InvalidOperationException("Not signed in");
 
         var projectId = _config["Firebase:ProjectId"]!;
-        var builder = new FirestoreClientBuilder
+        var builder = new V1.FirestoreClientBuilder
         {
             ChannelCredentials = ChannelCredentials.Create(
                 ChannelCredentials.SecureSsl,
