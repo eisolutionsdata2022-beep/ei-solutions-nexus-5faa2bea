@@ -246,8 +246,7 @@ function RetailerIPPBPage() {
                     <label className="flex items-start gap-2 text-xs cursor-pointer">
                       <Checkbox checked={applyAck} onCheckedChange={(v) => setApplyAck(!!v)} />
                       <span>
-                        IPPB workflow + fee structure ഞാൻ വായിച്ചു മനസ്സിലാക്കി —{" "}
-                        <Link to="/help/ippb" target="_blank" className="text-gov-blue underline">Help page</Link>
+                        IPPB workflow + fee structure ഞാൻ വായിച്ചു മനസ്സിലാക്കി
                       </span>
                     </label>
                     <Button type="submit" disabled={applying} className="w-full">
