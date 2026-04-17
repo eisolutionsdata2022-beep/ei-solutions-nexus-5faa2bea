@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/wallet-requests")({
@@ -33,6 +33,8 @@ function AdminWalletRequests() {
   const [requests, setRequests] = useState<WalletRequest[]>([]);
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -76,15 +78,69 @@ function AdminWalletRequests() {
         <p className="text-muted-foreground">Approve or reject retailer wallet top-up requests.</p>
       </div>
 
-      {requests.length === 0 ? (
+      {/* Search & filters */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by Transaction ID, UPI ID, email, or amount..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted text-muted-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["all", "pending", "approved", "rejected"] as const).map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={statusFilter === s ? "default" : "outline"}
+                onClick={() => setStatusFilter(s)}
+                className="capitalize"
+              >
+                {s} {s !== "all" && `(${requests.filter((r) => r.status === s).length})`}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {(() => {
+        const q = search.trim().toLowerCase();
+        const filtered = requests.filter((r) => {
+          if (statusFilter !== "all" && r.status !== statusFilter) return false;
+          if (!q) return true;
+          return (
+            (r.transactionId || "").toLowerCase().includes(q) ||
+            (r.upiId || "").toLowerCase().includes(q) ||
+            (r.userEmail || "").toLowerCase().includes(q) ||
+            String(r.amount).includes(q) ||
+            (r.paymentMethod || "").toLowerCase().includes(q) ||
+            r.id.toLowerCase().includes(q)
+          );
+        });
+        return filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">No wallet requests yet.</p>
+            <p className="text-muted-foreground">
+              {requests.length === 0 ? "No wallet requests yet." : "No requests match your search."}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {requests.map((req) => (
+          {filtered.map((req) => (
             <Card key={req.id}>
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -133,7 +189,8 @@ function AdminWalletRequests() {
             </Card>
           ))}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
