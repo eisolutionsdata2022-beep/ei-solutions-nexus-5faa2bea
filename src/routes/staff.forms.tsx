@@ -24,10 +24,10 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/staff/forms")({
   ssr: false,
-  component: AdminForms,
+  component: StaffForms,
 });
 
-function AdminForms() {
+function StaffForms() {
   const { appUser } = useAuth();
   const [forms, setForms] = useState<CustomForm[]>([]);
   const [editing, setEditing] = useState<Partial<CustomForm> | null>(null);
