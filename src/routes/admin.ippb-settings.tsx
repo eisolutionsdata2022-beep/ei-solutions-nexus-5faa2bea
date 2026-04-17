@@ -27,6 +27,8 @@ function AdminIPPBSettingsPage() {
   const [cfg, setCfg] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
 
   useEffect(() => {
     getIPPBFeeConfig()
