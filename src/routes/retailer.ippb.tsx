@@ -277,17 +277,34 @@ function RetailerIPPBPage() {
             PC Agent install ചെയ്താൽ browser-ന് പകരം real fingerprint device-ൽ നിന്ന് capture ചെയ്യാം.
           </p>
         </div>
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className="border-amber-500 text-amber-900 hover:bg-amber-200"
-        >
-          <Link to="/install">
-            <Download className="w-4 h-4" />
-            Download PC Agent
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            asChild
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            <a
+              href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => toast.success("PC Agent download തുടങ്ങി — ~161 MB")}
+            >
+              <Download className="w-4 h-4" />
+              Download .exe (161 MB)
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="border-amber-500 text-amber-900 hover:bg-amber-200"
+          >
+            <Link to="/install">
+              <Info className="w-4 h-4" />
+              Install Guide
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {rows.length === 0 && (
