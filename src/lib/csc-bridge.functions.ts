@@ -134,7 +134,7 @@ export type CscExecuteResult =
       success: true;
       bridgeRef: string;
       message: string;
-      raw: Record<string, unknown>;
+      rawJson: string;
     }
   | {
       success: false;
@@ -206,7 +206,7 @@ export const executeCscService = createServerFn({ method: "POST" })
         success: true,
         bridgeRef: typeof json.ref === "string" ? json.ref : `CSC${Date.now()}`,
         message: typeof json.message === "string" ? json.message : "Transaction successful",
-        raw: json,
+        rawJson: JSON.stringify(json),
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Bridge unreachable";
