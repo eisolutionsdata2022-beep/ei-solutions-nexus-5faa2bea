@@ -10,7 +10,12 @@ import {
   subscribeCaptureRequest,
   type CaptureRequest,
 } from "@/lib/ippb-biometric-relay";
-import { staffCaptureBiometric } from "@/lib/ippb-firebase";
+import {
+  staffCaptureBiometric1,
+  staffCaptureBiometric2,
+  staffCaptureBiometricFinal,
+} from "@/lib/ippb-firebase";
+import type { IPPBStep } from "@/lib/ippb-types";
 import { Button } from "@/components/ui/button";
 import { Fingerprint, Loader2, Radio, X } from "lucide-react";
 import { toast } from "sonner";
