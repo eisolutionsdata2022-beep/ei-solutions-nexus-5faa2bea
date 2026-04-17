@@ -55,7 +55,6 @@ import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
-import { Route as HelpIppbRouteImport } from './routes/help.ippb'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
@@ -319,11 +318,6 @@ const MatrimonyProfileIdRoute = MatrimonyProfileIdRouteImport.update({
   path: '/$profileId',
   getParentRoute: () => MatrimonyRoute,
 } as any)
-const HelpIppbRoute = HelpIppbRouteImport.update({
-  id: '/help/ippb',
-  path: '/help/ippb',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -522,7 +516,6 @@ export interface FileRoutesByFullPath {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
-  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
@@ -596,7 +589,6 @@ export interface FileRoutesByTo {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
-  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
@@ -677,7 +669,6 @@ export interface FileRoutesById {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
-  '/help/ippb': typeof HelpIppbRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
@@ -759,7 +750,6 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
-    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
@@ -833,7 +823,6 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
-    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
@@ -913,7 +902,6 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
-    | '/help/ippb'
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
@@ -964,7 +952,6 @@ export interface RootRouteChildren {
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
   TrainerRoute: typeof TrainerRouteWithChildren
-  HelpIppbRoute: typeof HelpIppbRoute
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
 }
 
@@ -1291,13 +1278,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/matrimony/$profileId'
       preLoaderRoute: typeof MatrimonyProfileIdRouteImport
       parentRoute: typeof MatrimonyRoute
-    }
-    '/help/ippb': {
-      id: '/help/ippb'
-      path: '/help/ippb'
-      fullPath: '/help/ippb'
-      preLoaderRoute: typeof HelpIppbRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/distributor/wallet': {
       id: '/distributor/wallet'
@@ -1728,7 +1708,6 @@ const rootRouteChildren: RootRouteChildren = {
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
   TrainerRoute: TrainerRouteWithChildren,
-  HelpIppbRoute: HelpIppbRoute,
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
 }
 export const routeTree = rootRouteImport
