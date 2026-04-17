@@ -1,25 +1,38 @@
-import { createFileRoute } from "@tanstack/react-router";
+/**
+ * Staff IPPB page — IPPB BC App tablet operator's view.
+ * Shows live queue. Open a request → see all completed sections + the
+ * current step's action card. For retailer-turn steps, staff sees a
+ * "Waiting for Retailer" lock. For staff-turn steps, staff fills/clicks Next.
+ */
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
-  staffCaptureBiometric,
+  staffCaptureBiometric1,
+  staffCaptureBiometric2,
+  staffCaptureBiometricFinal,
   staffClaimRequest,
-  staffEnterMobileAndSendOTP,
-  staffMarkOTPVerified,
-  staffSaveDetails,
-  staffSubmitAccount,
+  staffNextOTP,
+  staffNextPersonalInfo,
+  staffSubmitAccountInfo,
+  staffSubmitDBT,
+  staffSubmitFinalAccount,
+  staffSubmitWelcomeKit,
   subscribeStaffQueue,
 } from "@/lib/ippb-firebase";
 import {
   IPPB_STATUS_LABELS,
-  type IPPBCustomerDetails,
+  STEP_LABELS,
+  STEP_TURN,
   type IPPBRequest,
+  type IPPBStep,
 } from "@/lib/ippb-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -28,21 +41,15 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { StepIndicator } from "@/components/ippb/StepIndicator";
+import { TurnLockCard } from "@/components/ippb/TurnLockCard";
+import { CompletedStepsSummary } from "@/components/ippb/CompletedStepsSummary";
 import { RemoteCapturePanel } from "@/components/ippb/RemoteCapturePanel";
 import { toast } from "sonner";
 import {
-  Banknote,
-  CheckCircle2,
-  ChevronDown,
-  Fingerprint,
-  Info,
-  KeyRound,
-  Loader2,
-  Smartphone,
-  XCircle,
+  Banknote, ChevronDown, CheckCircle2, Fingerprint, Info, Loader2, XCircle,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { getIPPBFeeConfig, DEFAULT_IPPB_FEE, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
+import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 
 export const Route = createFileRoute("/staff/ippb")({
   ssr: false,
@@ -61,10 +68,7 @@ function StaffIPPBPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("active");
   const [fee, setFee] = useState<IPPBFeeConfig>(DEFAULT_IPPB_FEE);
 
-  useEffect(() => {
-    return subscribeStaffQueue(setRows);
-  }, []);
-
+  useEffect(() => subscribeStaffQueue(setRows), []);
   useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
   const filtered = useMemo(() => {
@@ -75,7 +79,6 @@ function StaffIPPBPage() {
   }, [rows, tab]);
 
   const opened = rows.find((r) => r.id === openId) ?? null;
-
   if (!appUser) return null;
 
   return (
@@ -85,110 +88,34 @@ function StaffIPPBPage() {
           <Banknote className="w-6 h-6 text-gov-blue" /> IPPB – Staff Tablet
         </h1>
         <p className="text-sm text-muted-foreground">
-          Live queue of retailer-initiated IPPB Account Opening requests.
+          Real-time queue of retailer-initiated IPPB Account Opening requests. Verify each step and click Next to advance.
         </p>
       </div>
 
-      {/* Detailed step-by-step staff workflow help */}
-      <Collapsible defaultOpen={true}>
+      <Collapsible defaultOpen={false}>
         <Card className="border-gov-blue/30">
           <CollapsibleTrigger asChild>
-            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/40 transition-colors">
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/40">
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Info className="w-5 h-5 text-gov-blue" />
-                  IPPB സ്റ്റാഫ് വർക്കിംഗ് — Step by Step Help (Malayalam)
+                  Staff Workflow Guide (19 Steps)
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </CardTitle>
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="text-sm space-y-4 leading-relaxed">
-              <div className="rounded-lg bg-gov-blue/5 border border-gov-blue/20 p-3">
-                <p className="font-semibold text-gov-blue mb-1">💰 Staff Commission</p>
-                <p>ഓരോ successful IPPB account-നും <strong>₹{fee.staffCommission}</strong> നിങ്ങളുടെ wallet-ൽ auto-credit ആകും.</p>
-                <p className="text-xs text-amber-700 mt-1">⚠ "Mark Failed" ആയാൽ commission ഇല്ല. "Mark Success" മാത്രം commission trigger ചെയ്യും.</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 1 — Request Claim ചെയ്യുക</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li><strong>Active</strong> tab-ൽ "Pending Pickup" status-ൽ ഉള്ള request കാണാം.</li>
-                    <li>Card click ചെയ്ത് open ചെയ്യുക.</li>
-                    <li><strong>"Claim This Request"</strong> button click ചെയ്യുക. ഇപ്പോൾ request നിങ്ങളുടെ പേരിൽ lock ആകും — മറ്റു staff-ന് കാണാൻ പറ്റില്ല.</li>
-                    <li>⚠ Claim ചെയ്തതിന് ശേഷം 30 minute-നുള്ളിൽ complete ചെയ്യണം, അല്ലെങ്കിൽ retailer cancel ചെയ്യും.</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 2 — Customer Mobile Number Enter</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li>Customer-ൽ നിന്ന് <strong>10-digit mobile number</strong> ചോദിക്കുക (Aadhaar-ൽ link ചെയ്തത് ആവണം).</li>
-                    <li>നിങ്ങളുടെ tablet-ൽ ഉള്ള <strong>real IPPB BC App</strong> തുറന്ന് same number type ചെയ്യുക.</li>
-                    <li>EI Solutions portal-ൽ same mobile number enter ചെയ്ത് <strong>"Send OTP"</strong> click ചെയ്യുക.</li>
-                    <li>Status: <em>"Mobile Entered – OTP Sent"</em> ആയി മാറും.</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 3 — OTP Receive & Verify</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li>Customer-ന്റെ phone-ൽ വരുന്ന OTP retailer-നോട് പറയും → retailer അത് portal-ൽ enter ചെയ്യും.</li>
-                    <li>നിങ്ങളുടെ screen-ൽ OTP <strong>വലിയ green text-ൽ</strong> automatically display ആകും.</li>
-                    <li>ആ OTP IPPB tablet-ൽ enter ചെയ്ത് bank-ൽ verify ചെയ്യിക്കുക.</li>
-                    <li>Bank confirm ചെയ്താൽ portal-ൽ <strong>"Mark OTP Verified"</strong> click ചെയ്യുക.</li>
-                    <li>⚠ OTP wrong ആയാൽ retailer പുതിയ OTP relay ചെയ്യാൻ പറയുക — re-enter ചെയ്യാം.</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 4 — Customer Details Fill</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li><strong>Mandatory:</strong> Full Name, Date of Birth, Aadhaar Number (12 digit), PAN, Address.</li>
-                    <li><strong>Optional:</strong> Occupation, Monthly Income, Nominee Name & Relation, Initial Deposit, DBT Mapping consent.</li>
-                    <li>എല്ലാം Aadhaar card-ലെ data യുമായി <strong>exact match</strong> ആവണം — അല്ലെങ്കിൽ IPPB reject ചെയ്യും.</li>
-                    <li><strong>"Save Details"</strong> click ചെയ്യുക.</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 5 — Biometric Capture (Fingerprint)</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li><strong>Option A (Recommended) — Real MFS110 via PC Agent:</strong> Retailer-ന്റെ PC-യിൽ EI Solutions PC Agent install ചെയ്തിട്ടുണ്ടെങ്കിൽ "Remote Capture" panel use ചെയ്യുക. Customer-ന്റെ finger LED scanner-ൽ വയ്ക്കാൻ retailer-നോട് പറയുക → real PID XML capture ആകും.</li>
-                    <li><strong>Option B — L1 Simulation:</strong> Test/training-ന് മാത്രം. Production accounts-ന് use ചെയ്യരുത്.</li>
-                    <li>Capture success ആയാൽ status: <em>"Biometric Captured"</em>.</li>
-                    <li>ആ PID XML നിങ്ങളുടെ IPPB BC App-ൽ inject/upload ചെയ്യുക (manual paste അല്ലെങ്കിൽ Interceptor APK auto-inject).</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border bg-card p-3">
-                  <p className="font-semibold text-gov-blue mb-1">Step 6 — Account Submit & Mark Result</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li>IPPB BC App-ൽ "Submit Application" click ചെയ്യുക.</li>
-                    <li>Bank server response വരാൻ 10-30 seconds wait ചെയ്യുക.</li>
-                    <li><strong>Success ആയാൽ:</strong> generate ആയ <strong>Account Number</strong> portal-ൽ enter ചെയ്ത് <strong>"Mark Success"</strong> click ചെയ്യുക.</li>
-                    <li>ഇപ്പോൾ automatic ആയി: Retailer wallet-ൽ നിന്ന് ₹{fee.serviceCharge} debit + Retailer-ന് ₹{fee.retailerCommission} commission + നിങ്ങൾക്ക് ₹{fee.staffCommission} commission credit ആകും.</li>
-                    <li><strong>Failed ആയാൽ:</strong> failure reason type ചെയ്ത് <strong>"Mark Failed"</strong> click ചെയ്യുക. Retailer-ന് wallet debit ഇല്ല.</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3">
-                  <p className="font-semibold text-amber-900 mb-1">⚠ പ്രധാന നിയമങ്ങൾ</p>
-                  <ul className="list-disc pl-5 space-y-1 text-xs text-amber-900">
-                    <li>Customer-ന്റെ biometric data ഒരിക്കലും record/save ചെയ്യരുത് — UIDAI rule violation.</li>
-                    <li>OTP customer-ൽ നിന്ന് നേരിട്ട് ചോദിക്കരുത് — retailer വഴി മാത്രം relay ചെയ്യണം.</li>
-                    <li>Customer-ന്റെ Aadhaar/PAN photocopy phone-ൽ save ചെയ്യരുത്.</li>
-                    <li>Account creation success ആയില്ലെങ്കിൽ "Mark Failed" മാത്രം ചെയ്യുക — "Mark Success" തെറ്റായി click ചെയ്താൽ retailer-ന്റെ wallet wrong debit ആകും.</li>
-                    <li>Same customer-ന് same day-ൽ duplicate request സൃഷ്ടിക്കരുത്.</li>
-                  </ul>
-                </div>
-              </div>
-
-              <p className="text-xs pt-2 border-t">
-                <Link to="/help/ippb" className="text-gov-blue underline">Full Malayalam help page →</Link>
-              </p>
+            <CardContent className="text-xs space-y-2 leading-relaxed">
+              <p>1. Retailer creates request → fills <strong>Basic Details</strong>.</p>
+              <p>2. Staff Claim → verify mobile/PAN/product → click <strong>Next</strong> (sends OTP).</p>
+              <p>3. Retailer relays OTP → Staff verifies in IPPB tablet → clicks <strong>Next</strong>.</p>
+              <p>4. Retailer enters Aadhaar + consent → Staff triggers <strong>Biometric 1</strong> via PC Agent.</p>
+              <p>5. Retailer fills 4 form sections (Personal, PAN/Address, Nominee, Additional). Staff verifies after each.</p>
+              <p>6. Staff fills Account Info (Initial Deposit, Scheme) + DBT Mapping → triggers <strong>Biometric 2</strong>.</p>
+              <p>7. Staff scans Welcome Kit → Retailer ticks final consent → Staff triggers <strong>Final Biometric</strong>.</p>
+              <p>8. Staff enters Account Number + Customer ID → fee charges + commissions credit automatically.</p>
+              <p className="text-amber-700 font-semibold pt-2">💰 Per success: ₹{fee.staffCommission} → your wallet</p>
             </CardContent>
           </CollapsibleContent>
         </Card>
@@ -208,40 +135,44 @@ function StaffIPPBPage() {
         </TabsList>
         <TabsContent value={tab} className="space-y-3">
           {filtered.length === 0 && (
-            <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                No requests in this view.
-              </CardContent>
-            </Card>
+            <Card><CardContent className="py-10 text-center text-muted-foreground">No requests in this view.</CardContent></Card>
           )}
-          {filtered.map((req) => (
-            <Card
-              key={req.id}
-              className="cursor-pointer hover:border-gov-blue/50 transition-colors"
-              onClick={() => setOpenId(req.id)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-base font-mono">{req.requestNo}</CardTitle>
-                  <Badge>{IPPB_STATUS_LABELS[req.status]}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="text-sm space-y-1">
-                <div>Retailer: <span className="font-medium">{req.retailerName}</span></div>
-                {req.mobileNumber && (
-                  <div className="font-mono">📱 {req.mobileNumber}</div>
-                )}
-                {req.status === "otp_relayed" && req.otpRelayed && (
-                  <div className="text-green-700 font-bold">
-                    🔑 OTP from retailer: {req.otpRelayed}
+          {filtered.map((req) => {
+            const turn = req.turn ?? STEP_TURN[req.currentStep];
+            const waitingOnRetailer = turn === "retailer" && !["success", "failed", "cancelled"].includes(req.status);
+            return (
+              <Card
+                key={req.id}
+                className="cursor-pointer hover:border-gov-blue/50"
+                onClick={() => setOpenId(req.id)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <CardTitle className="text-base font-mono">{req.requestNo}</CardTitle>
+                    <div className="flex items-center gap-1.5">
+                      {waitingOnRetailer && <Badge variant="secondary" className="text-xs">⏳ Retailer</Badge>}
+                      {turn === "staff" && !["success", "failed", "cancelled"].includes(req.status) && (
+                        <Badge variant="default" className="text-xs animate-pulse">▶ Your Turn</Badge>
+                      )}
+                      <Badge>{["success", "failed", "cancelled"].includes(req.status)
+                        ? IPPB_STATUS_LABELS[req.status]
+                        : STEP_LABELS[req.currentStep]}</Badge>
+                    </div>
                   </div>
-                )}
-                <div className="text-xs text-muted-foreground">
-                  {new Date(req.updatedAt).toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <div>Retailer: <span className="font-medium">{req.retailerName}</span></div>
+                  {req.basicDetails?.mobileNumber && (
+                    <div className="font-mono">📱 {req.basicDetails.mobileNumber}</div>
+                  )}
+                  {req.otp && req.currentStep === "otp_verify" && (
+                    <div className="text-green-700 font-bold">🔑 OTP from retailer: {req.otp}</div>
+                  )}
+                  <div className="text-xs text-muted-foreground">{new Date(req.updatedAt).toLocaleString()}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </TabsContent>
       </Tabs>
 
@@ -261,380 +192,287 @@ function StaffIPPBPage() {
   );
 }
 
-/* ------------ Processing UI ------------ */
+/* ============ Processing UI ============ */
 
 function RequestProcessor({
-  req,
-  staffId,
-  staffName,
-  onClose,
-}: {
-  req: IPPBRequest;
-  staffId: string;
-  staffName: string;
-  onClose: () => void;
-}) {
-  const [mobile, setMobile] = useState(req.mobileNumber ?? "");
-  const [busy, setBusy] = useState(false);
-  const [details, setDetails] = useState<IPPBCustomerDetails>(
-    req.customerDetails ?? {
-      fullName: "",
-      dob: "",
-      address: "",
-      aadhaar: "",
-      pan: "",
-    }
-  );
-  const [accountNo, setAccountNo] = useState("");
-
+  req, staffId, staffName, onClose,
+}: { req: IPPBRequest; staffId: string; staffName: string; onClose: () => void }) {
   const claimed = req.staffId === staffId;
-  const wrapped = async (fn: () => Promise<void>, ok?: string) => {
-    setBusy(true);
-    try {
-      await fn();
-      if (ok) toast.success(ok);
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const terminal = ["success", "failed", "cancelled"].includes(req.status);
+  const turn = req.turn ?? STEP_TURN[req.currentStep];
+  const isStaffTurn = turn === "staff" && !terminal;
 
   return (
     <div className="space-y-4">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+        <DialogTitle className="flex items-center gap-2 flex-wrap">
           <span className="font-mono text-sm">{req.requestNo}</span>
-          <Badge>{IPPB_STATUS_LABELS[req.status]}</Badge>
+          <Badge>{terminal ? IPPB_STATUS_LABELS[req.status] : STEP_LABELS[req.currentStep]}</Badge>
         </DialogTitle>
       </DialogHeader>
 
-      {/* Step 1: Claim */}
-      {!claimed && req.status !== "success" && (
+      {!terminal && <StepIndicator current={req.currentStep} />}
+
+      <CompletedStepsSummary req={req} />
+
+      {req.status === "success" && req.accountResult && (
+        <div className="rounded-lg bg-green-50 border-2 border-green-300 p-4 text-center space-y-2">
+          <CheckCircle2 className="w-12 h-12 mx-auto text-green-600" />
+          <p className="text-lg font-bold text-green-900">Account Created Successfully</p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="bg-white rounded p-2">
+              <div className="text-xs text-muted-foreground">Account Number</div>
+              <div className="font-mono font-bold">{req.accountResult.accountNumber}</div>
+            </div>
+            <div className="bg-white rounded p-2">
+              <div className="text-xs text-muted-foreground">Customer ID</div>
+              <div className="font-mono font-bold">{req.accountResult.customerId}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {req.status === "failed" && (
+        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm">
+          ❌ {req.failureReason}
+        </div>
+      )}
+
+      {!claimed && !terminal && (
         <Button
           className="w-full"
-          disabled={busy}
-          onClick={() => wrapped(() => staffClaimRequest(req.id, staffId, staffName), "Claimed")}
+          onClick={() => staffClaimRequest(req.id, staffId, staffName)
+            .then(() => toast.success("Claimed"))
+            .catch((e) => toast.error(e.message))}
         >
           Claim This Request
         </Button>
       )}
 
-      {claimed && (
-        <>
-          {/* Step 2: Mobile + OTP send */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Smartphone className="w-4 h-4" /> 1. Customer Mobile (enter in IPPB tablet)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="10-digit mobile"
-                  inputMode="numeric"
-                  maxLength={10}
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
-                />
-                <Button
-                  disabled={busy || mobile.length !== 10}
-                  onClick={() =>
-                    wrapped(
-                      () => staffEnterMobileAndSendOTP(req.id, staffId, mobile),
-                      "OTP request sent. Ask retailer to enter the OTP from customer."
-                    )
-                  }
-                >
-                  Send OTP
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                IPPB will SMS the OTP to customer. The retailer will enter it on their dashboard.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Step 3: OTP from retailer */}
-          {(req.status === "mobile_entered" || req.status === "otp_relayed") && (
-            <Card className="border-gov-blue/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <KeyRound className="w-4 h-4" /> 2. OTP relayed by Retailer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {req.otpRelayed ? (
-                  <div className="space-y-3">
-                    <div className="text-3xl font-bold font-mono tracking-widest text-center bg-gov-blue/10 py-4 rounded-lg">
-                      {req.otpRelayed}
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Type this OTP into the IPPB tablet app, then confirm result below.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        disabled={busy}
-                        onClick={() =>
-                          wrapped(
-                            () => staffMarkOTPVerified(req.id, staffId, true),
-                            "OTP verified"
-                          )
-                        }
-                      >
-                        <CheckCircle2 className="w-4 h-4" /> Verified
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="flex-1"
-                        disabled={busy}
-                        onClick={() =>
-                          wrapped(
-                            () => staffMarkOTPVerified(req.id, staffId, false),
-                            "Asked retailer to retry"
-                          )
-                        }
-                      >
-                        <XCircle className="w-4 h-4" /> Wrong – Retry
-                      </Button>
-                    </div>
-                    {req.retryCount > 0 && (
-                      <p className="text-xs text-amber-600">Retries: {req.retryCount}</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground py-4 text-center">
-                    Waiting for retailer to enter OTP…
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 4: Customer details */}
-          {["otp_verified", "details_filled", "biometric_captured"].includes(
-            req.status
-          ) && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">3. Customer Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-3">
-                <Field label="Full Name">
-                  <Input
-                    value={details.fullName}
-                    onChange={(e) => setDetails({ ...details, fullName: e.target.value })}
-                  />
-                </Field>
-                <Field label="DOB">
-                  <Input
-                    type="date"
-                    value={details.dob}
-                    onChange={(e) => setDetails({ ...details, dob: e.target.value })}
-                  />
-                </Field>
-                <Field label="Aadhaar / VID" full>
-                  <Input
-                    value={details.aadhaar}
-                    onChange={(e) => setDetails({ ...details, aadhaar: e.target.value })}
-                  />
-                </Field>
-                <Field label="PAN">
-                  <Input
-                    value={details.pan}
-                    onChange={(e) => setDetails({ ...details, pan: e.target.value.toUpperCase() })}
-                  />
-                </Field>
-                <Field label="Initial Deposit (₹)">
-                  <Input
-                    type="number"
-                    value={details.initialDeposit ?? 0}
-                    onChange={(e) =>
-                      setDetails({ ...details, initialDeposit: Number(e.target.value) })
-                    }
-                  />
-                </Field>
-                <Field label="Address" full>
-                  <Input
-                    value={details.address}
-                    onChange={(e) => setDetails({ ...details, address: e.target.value })}
-                  />
-                </Field>
-                <Field label="Nominee Name">
-                  <Input
-                    value={details.nomineeName ?? ""}
-                    onChange={(e) => setDetails({ ...details, nomineeName: e.target.value })}
-                  />
-                </Field>
-                <Field label="Nominee Relation">
-                  <Input
-                    value={details.nomineeRelation ?? ""}
-                    onChange={(e) =>
-                      setDetails({ ...details, nomineeRelation: e.target.value })
-                    }
-                  />
-                </Field>
-                <div className="col-span-2">
-                  <Button
-                    className="w-full"
-                    disabled={
-                      busy ||
-                      !details.fullName ||
-                      !details.dob ||
-                      !details.aadhaar ||
-                      !details.pan ||
-                      !details.address
-                    }
-                    onClick={() =>
-                      wrapped(
-                        () => staffSaveDetails(req.id, staffId, details),
-                        "Details saved"
-                      )
-                    }
-                  >
-                    Save Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 5: Biometric */}
-          {["details_filled", "biometric_captured"].includes(req.status) && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Fingerprint className="w-4 h-4" /> 4. Biometric Capture
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {req.biometric ? (
-                  <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm">
-                    ✅ Captured ({req.biometric.mode}) at{" "}
-                    {new Date(req.biometric.capturedAt).toLocaleTimeString()}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    L1: simulated capture. L2 (future): retailer-side fingerprint device.
-                  </p>
-                )}
-                <div className="flex flex-col gap-2">
-                  <RemoteCapturePanel
-                    ippbRequestId={req.id}
-                    staffId={staffId}
-                    retailerId={req.retailerId}
-                    alreadyCaptured={!!req.biometric}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() =>
-                      wrapped(
-                        () =>
-                          staffCaptureBiometric(req.id, staffId, {
-                            mode: "L1_SIMULATION",
-                            capturedAt: new Date().toISOString(),
-                            hash: "sim-" + Math.random().toString(36).slice(2, 10),
-                            staffConfirmed: true,
-                          }),
-                        "Biometric captured (L1 simulation)"
-                      )
-                    }
-                  >
-                    <Fingerprint className="w-4 h-4" /> Fallback: L1 Tablet Sim
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 6: Submit */}
-          {req.status === "biometric_captured" && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">5. Submit to IPPB</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Field label="Account Number (after IPPB confirms)">
-                  <Input
-                    value={accountNo}
-                    onChange={(e) => setAccountNo(e.target.value)}
-                    placeholder="e.g. 5xxxxxxxxxx"
-                  />
-                </Field>
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    disabled={busy || !accountNo}
-                    onClick={() =>
-                      wrapped(
-                        () =>
-                          staffSubmitAccount(req.id, staffId, {
-                            success: true,
-                            accountNumber: accountNo,
-                          }),
-                        "Account submitted"
-                      ).then(onClose)
-                    }
-                  >
-                    Mark Success
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="flex-1"
-                    disabled={busy}
-                    onClick={() =>
-                      wrapped(
-                        () =>
-                          staffSubmitAccount(req.id, staffId, {
-                            success: false,
-                            reason: "Submission rejected by IPPB",
-                          }),
-                        "Marked failed"
-                      ).then(onClose)
-                    }
-                  >
-                    Mark Failed
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
+      {claimed && !terminal && (
+        isStaffTurn ? (
+          <StaffStepAction req={req} staffId={staffId} />
+        ) : (
+          <TurnLockCard
+            waitingFor="retailer"
+            message={`Retailer "${STEP_LABELS[req.currentStep]}" fill ചെയ്യാൻ കാത്തിരിക്കുന്നു. Auto-refresh ആകും — submit ചെയ്താൽ Next button enable ആകും.`}
+          />
+        )
       )}
-
-      {/* History */}
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer">Workflow history</summary>
-        <ul className="mt-2 space-y-1">
-          {req.history?.map((h, i) => (
-            <li key={i}>
-              {new Date(h.at).toLocaleTimeString()} – {IPPB_STATUS_LABELS[h.status]}
-              {h.note ? ` (${h.note})` : ""}
-            </li>
-          ))}
-        </ul>
-      </details>
     </div>
   );
 }
 
-function Field({
-  label,
-  children,
-  full,
-}: {
-  label: string;
-  children: React.ReactNode;
-  full?: boolean;
-}) {
+/* ============ Per-step staff actions ============ */
+
+function StaffStepAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  switch (req.currentStep) {
+    case "otp_verify":
+      return <OTPVerifyAction req={req} staffId={staffId} />;
+    case "biometric_1":
+      return <BiometricAction req={req} staffId={staffId} step="biometric_1" title="Step 5 — Biometric 1 (Aadhaar Auth)" />;
+    case "personal_info":
+      return <SimpleNextAction req={req} staffId={staffId} title="Step 7 — Verify Personal Info" onNext={() => staffNextPersonalInfo(req.id, staffId)} />;
+    case "pan_address":
+    case "nominee_details":
+    case "additional_info":
+      // These are retailer-turn — never reaches here
+      return <TurnLockCard waitingFor="retailer" />;
+    case "account_info":
+      return <AccountInfoAction req={req} staffId={staffId} />;
+    case "dbt_mapping":
+      return <DBTAction req={req} staffId={staffId} />;
+    case "biometric_2":
+      return <BiometricAction req={req} staffId={staffId} step="biometric_2" title="Step 13 — Biometric 2 (Data Match)" />;
+    case "welcome_kit":
+      return <WelcomeKitAction req={req} staffId={staffId} />;
+    case "biometric_final":
+      return <BiometricAction req={req} staffId={staffId} step="biometric_final" title="Step 17 — Final Biometric" />;
+    case "account_created":
+      return <AccountCreatedAction req={req} staffId={staffId} />;
+    default:
+      return <TurnLockCard waitingFor="retailer" />;
+  }
+}
+
+function ActionShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className={full ? "col-span-2" : ""}>
-      <Label className="text-xs">{label}</Label>
-      <div className="mt-1">{children}</div>
-    </div>
+    <Card className="border-gov-blue/40">
+      <CardHeader className="pb-2"><CardTitle className="text-sm text-gov-blue">{title}</CardTitle></CardHeader>
+      <CardContent className="space-y-3">{children}</CardContent>
+    </Card>
+  );
+}
+
+function OTPVerifyAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <ActionShell title="Step 3 — OTP Verification">
+      <div className="text-3xl font-bold font-mono tracking-widest text-center bg-gov-blue/10 py-4 rounded-lg">
+        {req.otp ?? "------"}
+      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        Type this OTP into your IPPB BC App. Once IPPB verifies, click <strong>OTP Verified — Next</strong>.
+      </p>
+      <Button
+        className="w-full" disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try { await staffNextOTP(req.id, staffId); toast.success("Advanced"); }
+          catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "OTP Verified — Next"}
+      </Button>
+    </ActionShell>
+  );
+}
+
+function SimpleNextAction({ req, staffId, title, onNext }: {
+  req: IPPBRequest; staffId: string; title: string; onNext: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <ActionShell title={title}>
+      <p className="text-xs text-muted-foreground">
+        Customer details verify ചെയ്ത ശേഷം Next click ചെയ്യുക. Retailer അടുത്ത section fill ചെയ്യും.
+      </p>
+      <Button
+        className="w-full" disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try { await onNext(); toast.success("Advanced"); }
+          catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Next"}
+      </Button>
+    </ActionShell>
+  );
+}
+
+function BiometricAction({ req, staffId, step, title }: {
+  req: IPPBRequest; staffId: string; step: "biometric_1" | "biometric_2" | "biometric_final"; title: string;
+}) {
+  const captured = step === "biometric_1" ? req.biometric1
+    : step === "biometric_2" ? req.biometric2
+    : req.biometricFinal;
+  return (
+    <ActionShell title={title}>
+      <p className="text-xs text-muted-foreground">
+        Customer-ന്റെ finger retailer-ന്റെ MFS110 device-ൽ വയ്ക്കാൻ പറയുക. PC Agent capture ചെയ്ത് PID hash automatic ആയി save ആകും.
+      </p>
+      <RemoteCapturePanel
+        ippbRequestId={req.id}
+        staffId={staffId}
+        retailerId={req.retailerId}
+        step={step}
+        alreadyCaptured={!!captured}
+      />
+    </ActionShell>
+  );
+}
+
+function AccountInfoAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  const [initialDeposit, setInitialDeposit] = useState(req.accountInfo?.initialDeposit ?? 0);
+  const [scheme, setScheme] = useState(req.accountInfo?.scheme ?? "Regular Savings");
+  const [busy, setBusy] = useState(false);
+  return (
+    <ActionShell title="Step 11 — Account Information">
+      <div><Label>Initial Deposit (₹)</Label><Input type="number" min={0} value={initialDeposit} onChange={(e) => setInitialDeposit(Number(e.target.value))} /></div>
+      <div><Label>Scheme</Label><Input value={scheme} onChange={(e) => setScheme(e.target.value)} /></div>
+      <Button className="w-full" disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try { await staffSubmitAccountInfo(req.id, staffId, { initialDeposit, scheme }); toast.success("Saved"); }
+          catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}>
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save & Next"}
+      </Button>
+    </ActionShell>
+  );
+}
+
+function DBTAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  const [optIn, setOptIn] = useState(req.dbtMapping?.optIn ?? true);
+  const [busy, setBusy] = useState(false);
+  return (
+    <ActionShell title="Step 12 — DBT Mapping">
+      <label className="flex items-center gap-2 cursor-pointer">
+        <Checkbox checked={optIn} onCheckedChange={(v) => setOptIn(!!v)} />
+        <span className="text-sm">Customer agrees to receive DBT in IPPB account</span>
+      </label>
+      <Button className="w-full" disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try { await staffSubmitDBT(req.id, staffId, { optIn, verified: true }); toast.success("Verified"); }
+          catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}>
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : `${optIn ? "Verify & Next" : "Skip & Next"}`}
+      </Button>
+    </ActionShell>
+  );
+}
+
+function WelcomeKitAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  const [kitId, setKitId] = useState(req.welcomeKit?.kitId ?? "");
+  const [busy, setBusy] = useState(false);
+  return (
+    <ActionShell title="Step 14 — Welcome Kit">
+      <p className="text-xs text-muted-foreground">Welcome Kit-ലെ QR scan ചെയ്യുക അല്ലെങ്കിൽ Kit ID type ചെയ്യുക.</p>
+      <Input placeholder="Welcome Kit ID" value={kitId} onChange={(e) => setKitId(e.target.value)} className="font-mono" />
+      <Button className="w-full" disabled={busy || !kitId}
+        onClick={async () => {
+          setBusy(true);
+          try { await staffSubmitWelcomeKit(req.id, staffId, { kitId }); toast.success("Saved"); }
+          catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}>
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save & Next"}
+      </Button>
+    </ActionShell>
+  );
+}
+
+function AccountCreatedAction({ req, staffId }: { req: IPPBRequest; staffId: string }) {
+  const [accountNumber, setAccountNumber] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <ActionShell title="Step 18 — Final Result">
+      <p className="text-xs text-muted-foreground">
+        IPPB BC App-ൽ Submit ചെയ്തു result വന്ന ശേഷം Account Number + Customer ID ഇവിടെ enter ചെയ്യുക.
+      </p>
+      <div><Label>Account Number</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="font-mono" /></div>
+      <div><Label>Customer ID</Label><Input value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="font-mono" /></div>
+      <Button className="w-full" disabled={busy || !accountNumber || !customerId}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await staffSubmitFinalAccount(req.id, staffId, {
+              success: true, result: { accountNumber, customerId },
+            });
+            toast.success("✅ Account created — commissions credited!");
+          } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+        }}>
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Mark Success</>}
+      </Button>
+
+      <div className="border-t pt-3 space-y-2">
+        <Label className="text-xs text-red-700">Failed? Provide reason:</Label>
+        <Input placeholder="Failure reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <Button variant="destructive" className="w-full" disabled={busy || !reason}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await staffSubmitFinalAccount(req.id, staffId, { success: false, reason });
+              toast.success("Marked failed");
+            } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+          }}>
+          <XCircle className="w-4 h-4" /> Mark Failed (No Commission)
+        </Button>
+      </div>
+    </ActionShell>
   );
 }

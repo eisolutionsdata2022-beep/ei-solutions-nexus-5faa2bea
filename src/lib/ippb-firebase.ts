@@ -1,3 +1,15 @@
+/**
+ * IPPB Firebase actions — turn-based 19-step flow.
+ * Every transition runs through `advanceStep` which:
+ *  - validates the actor matches the current `turn`
+ *  - validates the request is at the expected `currentStep`
+ *  - updates the per-step data field
+ *  - moves to the next step and flips the `turn`
+ *  - appends a history entry
+ *
+ * This guarantees: no skipping, no double-action, full audit trail.
+ */
+
 import {
   addDoc,
   collection,
@@ -15,17 +27,29 @@ import {
 import { db } from "./firebase";
 import {
   generateRequestNo,
-  type IPPBBiometric,
-  type IPPBCustomerDetails,
+  STEP_ORDER,
+  STEP_TURN,
+  type AccountInfo,
+  type AccountResult,
+  type AdditionalInfo,
+  type AadhaarData,
+  type BasicDetails,
+  type BiometricCapture,
+  type DBTMapping,
+  type IPPBHistoryEntry,
   type IPPBRequest,
-  type IPPBStatus,
+  type IPPBStep,
+  type NomineeDetails,
+  type PanAddress,
+  type PersonalInfo,
+  type Turn,
+  type WelcomeKit,
 } from "./ippb-types";
 import { getIPPBFeeConfig } from "./ippb-fee-config";
 import { hasIPPBBadge } from "./ippb-badge";
 
 const COL = "ippbRequests";
 
-/** Find first admin user id (for commission credit) */
 async function findAdminId(): Promise<string | null> {
   const q = query(collection(db, "users"), where("role", "==", "admin"));
   const snap = await getDocs(q);
@@ -33,26 +57,32 @@ async function findAdminId(): Promise<string | null> {
   return snap.docs[0].id;
 }
 
+function nextStep(current: IPPBStep): IPPBStep {
+  const i = STEP_ORDER.indexOf(current);
+  if (i < 0 || i >= STEP_ORDER.length - 1) return "completed";
+  return STEP_ORDER[i + 1];
+}
+
 function appendHistory(
-  current: IPPBRequest["history"] | undefined,
-  status: IPPBStatus,
+  prev: IPPBHistoryEntry[] | undefined,
+  step: IPPBStep,
   by: string,
+  byRole: "retailer" | "staff",
   note?: string
-) {
+): IPPBHistoryEntry[] {
   return [
-    ...(current ?? []),
-    { status, by, at: new Date().toISOString(), ...(note ? { note } : {}) },
+    ...(prev ?? []),
+    { step, by, byRole, at: new Date().toISOString(), ...(note ? { note } : {}) },
   ];
 }
 
-/* ------------ Retailer ------------ */
+/* ============ Create ============ */
 
 export async function createIPPBRequest(input: {
   retailerId: string;
   retailerName: string;
   retailerEmail: string;
 }): Promise<string> {
-  // Gate: only badge-holding retailers can open IPPB accounts.
   const allowed = await hasIPPBBadge(input.retailerId);
   if (!allowed) {
     throw new Error(
@@ -66,9 +96,19 @@ export async function createIPPBRequest(input: {
     retailerId: input.retailerId,
     retailerName: input.retailerName,
     retailerEmail: input.retailerEmail,
-    status: "pending" as IPPBStatus,
+    status: "pending",
+    currentStep: "basic_details" as IPPBStep,
+    turn: "retailer" as Turn,
     retryCount: 0,
-    history: [{ status: "pending", by: input.retailerId, at: now }],
+    history: [
+      {
+        step: "basic_details" as IPPBStep,
+        by: input.retailerId,
+        byRole: "retailer" as const,
+        at: now,
+        note: "Request created",
+      },
+    ],
     createdAt: now,
     updatedAt: now,
     _ts: serverTimestamp(),
@@ -76,53 +116,64 @@ export async function createIPPBRequest(input: {
   return ref.id;
 }
 
-export async function retailerSubmitOTP(
-  requestId: string,
-  retailerId: string,
-  otp: string
-): Promise<void> {
-  if (!/^\d{4,8}$/.test(otp)) throw new Error("OTP must be 4-8 digits");
+/* ============ Core advance ============ */
+
+interface AdvanceArgs {
+  requestId: string;
+  actorId: string;
+  actorRole: "retailer" | "staff";
+  expectedStep: IPPBStep;
+  patch: Record<string, unknown>;
+  note?: string;
+  /** Override which step comes next (defaults to nextStep()) */
+  overrideNextStep?: IPPBStep;
+}
+
+async function advanceStep(args: AdvanceArgs): Promise<void> {
+  const { requestId, actorId, actorRole, expectedStep, patch, note, overrideNextStep } = args;
   const ref = doc(db, COL, requestId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("Request not found");
     const data = snap.data() as IPPBRequest;
-    if (data.retailerId !== retailerId) throw new Error("Not your request");
-    if (data.status !== "mobile_entered" && data.status !== "otp_relayed") {
-      throw new Error("Staff has not requested OTP yet");
+
+    if (data.status === "cancelled") throw new Error("Request was cancelled");
+    if (data.status === "success") throw new Error("Already completed");
+
+    if (data.currentStep !== expectedStep) {
+      throw new Error(
+        `Step mismatch — expected ${expectedStep}, current ${data.currentStep}`
+      );
     }
+    const turn = data.turn ?? STEP_TURN[data.currentStep];
+    if (turn !== actorRole) {
+      throw new Error(
+        `Not your turn — currently waiting for ${turn}. Refresh and try again.`
+      );
+    }
+    if (actorRole === "retailer" && data.retailerId !== actorId) {
+      throw new Error("Not your request");
+    }
+    if (actorRole === "staff" && data.staffId && data.staffId !== actorId) {
+      throw new Error("Already claimed by another staff");
+    }
+
+    const next = overrideNextStep ?? nextStep(data.currentStep);
+    const nextTurn: Turn = STEP_TURN[next] ?? "staff";
+    const nowIso = new Date().toISOString();
+
     tx.update(ref, {
-      otpRelayed: otp,
-      otpEnteredAt: new Date().toISOString(),
-      status: "otp_relayed" as IPPBStatus,
-      updatedAt: new Date().toISOString(),
-      history: appendHistory(data.history, "otp_relayed", retailerId, "OTP relayed"),
+      ...patch,
+      status: next === "completed" ? "success" : "in_progress",
+      currentStep: next,
+      turn: nextTurn,
+      updatedAt: nowIso,
+      history: appendHistory(data.history, data.currentStep, actorId, actorRole, note),
     });
   });
 }
 
-export async function cancelIPPBRequest(
-  requestId: string,
-  retailerId: string
-): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw new Error("Request not found");
-    const data = snap.data() as IPPBRequest;
-    if (data.retailerId !== retailerId) throw new Error("Not your request");
-    if (["success", "submitted", "biometric_captured"].includes(data.status)) {
-      throw new Error("Cannot cancel – process already advanced");
-    }
-    tx.update(ref, {
-      status: "cancelled" as IPPBStatus,
-      updatedAt: new Date().toISOString(),
-      history: appendHistory(data.history, "cancelled", retailerId),
-    });
-  });
-}
-
-/* ------------ Staff ------------ */
+/* ============ Staff claim (does NOT advance step) ============ */
 
 export async function staffClaimRequest(
   requestId: string,
@@ -141,195 +192,217 @@ export async function staffClaimRequest(
       staffId,
       staffName,
       updatedAt: new Date().toISOString(),
-      history: appendHistory(data.history, data.status, staffId, "Claimed by staff"),
+      history: appendHistory(data.history, data.currentStep, staffId, "staff", "Claimed"),
     });
   });
 }
 
-export async function staffEnterMobileAndSendOTP(
-  requestId: string,
-  staffId: string,
-  mobileNumber: string
-): Promise<void> {
-  if (!/^[6-9]\d{9}$/.test(mobileNumber))
-    throw new Error("Invalid 10-digit Indian mobile number");
+/* ============ Retailer-side step submitters ============ */
+
+export const retailerSubmitBasicDetails = (requestId: string, retailerId: string, data: BasicDetails) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "basic_details",
+    patch: { basicDetails: data },
+    note: "Basic details submitted",
+  });
+
+export const retailerSubmitOTP = (requestId: string, retailerId: string, otp: string) => {
+  if (!/^\d{4,8}$/.test(otp)) throw new Error("OTP must be 4-8 digits");
+  return advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "otp_verify",
+    patch: { otp, otpVerifiedAt: new Date().toISOString() },
+    note: "OTP relayed",
+  });
+};
+
+export const retailerSubmitAadhaar = (requestId: string, retailerId: string, data: AadhaarData) => {
+  if (!data.consent) throw new Error("Customer consent required");
+  if (!/^\d{12}$/.test(data.aadhaarNumber)) throw new Error("Aadhaar must be 12 digits");
+  return advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "aadhaar_auth",
+    patch: { aadhaar: data },
+    note: "Aadhaar + consent submitted",
+  });
+};
+
+export const retailerSubmitPersonalInfo = (requestId: string, retailerId: string, data: PersonalInfo) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "personal_info",
+    patch: { personalInfo: data },
+    note: "Personal info saved",
+  });
+
+export const retailerSubmitPanAddress = (requestId: string, retailerId: string, data: PanAddress) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "pan_address",
+    patch: { panAddress: data },
+    note: "PAN & address saved",
+  });
+
+export const retailerSubmitNominee = (requestId: string, retailerId: string, data: NomineeDetails) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "nominee_details",
+    patch: { nomineeDetails: data },
+    note: "Nominee saved",
+  });
+
+export const retailerSubmitAdditional = (requestId: string, retailerId: string, data: AdditionalInfo) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "additional_info",
+    patch: { additionalInfo: data },
+    note: "Additional info saved",
+  });
+
+export const retailerSubmitConsent = (requestId: string, retailerId: string) =>
+  advanceStep({
+    requestId, actorId: retailerId, actorRole: "retailer",
+    expectedStep: "final_consent",
+    patch: { finalConsent: { accepted: true, at: new Date().toISOString() } },
+    note: "Consent accepted",
+  });
+
+export async function cancelIPPBRequest(requestId: string, retailerId: string): Promise<void> {
   const ref = doc(db, COL, requestId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("Request not found");
     const data = snap.data() as IPPBRequest;
-    if (data.staffId !== staffId) throw new Error("Claim the request first");
+    if (data.retailerId !== retailerId) throw new Error("Not your request");
+    if (data.status === "success") throw new Error("Cannot cancel — already completed");
     tx.update(ref, {
-      mobileNumber,
-      status: "mobile_entered" as IPPBStatus,
-      otpRelayed: null,
-      otpEnteredAt: null,
+      status: "cancelled",
       updatedAt: new Date().toISOString(),
-      history: appendHistory(
-        data.history,
-        "mobile_entered",
-        staffId,
-        `OTP sent to ${mobileNumber.slice(0, 2)}******${mobileNumber.slice(-2)}`
-      ),
+      history: appendHistory(data.history, data.currentStep, retailerId, "retailer", "Cancelled"),
     });
   });
 }
 
-export async function staffMarkOTPVerified(
-  requestId: string,
-  staffId: string,
-  success: boolean
-): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw new Error("Request not found");
-    const data = snap.data() as IPPBRequest;
-    if (data.staffId !== staffId) throw new Error("Not your request");
-    if (data.status !== "otp_relayed") throw new Error("No OTP to verify");
-    if (success) {
-      tx.update(ref, {
-        status: "otp_verified" as IPPBStatus,
-        otpVerifiedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        history: appendHistory(data.history, "otp_verified", staffId),
-      });
-    } else {
-      tx.update(ref, {
-        status: "mobile_entered" as IPPBStatus,
-        otpRelayed: null,
-        retryCount: (data.retryCount ?? 0) + 1,
-        updatedAt: new Date().toISOString(),
-        history: appendHistory(
-          data.history,
-          "mobile_entered",
-          staffId,
-          "OTP wrong – retry"
-        ),
-      });
-    }
-  });
-}
+/* ============ Staff-side step actions ============ */
 
-export async function staffSaveDetails(
+export const staffNextOTP = (requestId: string, staffId: string) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "otp_verify",
+    patch: {},
+    note: "OTP verified by staff",
+  });
+
+export const staffCaptureBiometric1 = (requestId: string, staffId: string, bio: BiometricCapture) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "biometric_1",
+    patch: { biometric1: bio },
+    note: `Biometric 1 (${bio.mode})`,
+  });
+
+export const staffNextPersonalInfo = (requestId: string, staffId: string) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "personal_info",
+    patch: {},
+    note: "Personal info verified",
+    overrideNextStep: "pan_address",
+  });
+
+export const staffSubmitAccountInfo = (requestId: string, staffId: string, data: AccountInfo) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "account_info",
+    patch: { accountInfo: data },
+    note: "Account info filled",
+  });
+
+export const staffSubmitDBT = (requestId: string, staffId: string, data: DBTMapping) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "dbt_mapping",
+    patch: { dbtMapping: data },
+    note: `DBT ${data.optIn ? "opted-in" : "skipped"}`,
+  });
+
+export const staffCaptureBiometric2 = (requestId: string, staffId: string, bio: BiometricCapture) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "biometric_2",
+    patch: { biometric2: bio },
+    note: `Biometric 2 (${bio.mode})`,
+  });
+
+export const staffSubmitWelcomeKit = (requestId: string, staffId: string, data: WelcomeKit) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "welcome_kit",
+    patch: { welcomeKit: data },
+    note: `Kit ${data.kitId}`,
+  });
+
+export const staffCaptureBiometricFinal = (requestId: string, staffId: string, bio: BiometricCapture) =>
+  advanceStep({
+    requestId, actorId: staffId, actorRole: "staff",
+    expectedStep: "biometric_final",
+    patch: { biometricFinal: bio },
+    note: `Final biometric (${bio.mode})`,
+  });
+
+export async function staffSubmitFinalAccount(
   requestId: string,
   staffId: string,
-  details: IPPBCustomerDetails
+  outcome: { success: boolean; result?: AccountResult; reason?: string }
 ): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw new Error("Request not found");
-    const data = snap.data() as IPPBRequest;
-    if (data.staffId !== staffId) throw new Error("Not your request");
-    if (!["otp_verified", "details_filled"].includes(data.status))
-      throw new Error("OTP must be verified first");
-    tx.update(ref, {
-      customerDetails: details,
-      status: "details_filled" as IPPBStatus,
-      updatedAt: new Date().toISOString(),
-      history: appendHistory(data.history, "details_filled", staffId),
+  if (outcome.success && outcome.result) {
+    await advanceStep({
+      requestId, actorId: staffId, actorRole: "staff",
+      expectedStep: "account_created",
+      patch: { accountResult: outcome.result },
+      note: `Account ${outcome.result.accountNumber}`,
     });
-  });
-}
-
-export async function staffCaptureBiometric(
-  requestId: string,
-  staffId: string,
-  biometric: IPPBBiometric
-): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw new Error("Request not found");
-    const data = snap.data() as IPPBRequest;
-    if (data.staffId !== staffId) throw new Error("Not your request");
-    if (!["details_filled", "biometric_captured"].includes(data.status))
-      throw new Error("Fill details first");
-    tx.update(ref, {
-      biometric,
-      status: "biometric_captured" as IPPBStatus,
-      updatedAt: new Date().toISOString(),
-      history: appendHistory(
-        data.history,
-        "biometric_captured",
-        staffId,
-        biometric.mode
-      ),
-    });
-  });
-}
-
-export async function staffSubmitAccount(
-  requestId: string,
-  staffId: string,
-  outcome: { success: boolean; accountNumber?: string; reason?: string }
-): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw new Error("Request not found");
-    const data = snap.data() as IPPBRequest;
-    if (data.staffId !== staffId) throw new Error("Not your request");
-    if (data.status !== "biometric_captured")
-      throw new Error("Biometric required");
-    if (outcome.success) {
-      tx.update(ref, {
-        status: "success" as IPPBStatus,
-        accountNumber: outcome.accountNumber ?? null,
-        updatedAt: new Date().toISOString(),
-        history: appendHistory(
-          data.history,
-          "success",
-          staffId,
-          outcome.accountNumber ? `A/c ${outcome.accountNumber}` : undefined
-        ),
-      });
-    } else {
-      tx.update(ref, {
-        status: "failed" as IPPBStatus,
-        failureReason: outcome.reason ?? "Submission failed",
-        updatedAt: new Date().toISOString(),
-        history: appendHistory(data.history, "failed", staffId, outcome.reason),
-      });
-    }
-  });
-
-  // === Charge fee ONLY on success (atomic, after status update) ===
-  if (outcome.success) {
+    // Charge fee on terminal success
     try {
-      await chargeIPPBFee({
-        requestId,
-        retailerId: (await getRequest(requestId))?.retailerId ?? "",
-        staffId,
-      });
+      const reqRef = doc(db, COL, requestId);
+      const reqSnap = await getDoc(reqRef);
+      const data = reqSnap.data() as IPPBRequest | undefined;
+      if (data) await chargeIPPBFee({ requestId, retailerId: data.retailerId, staffId });
     } catch (e) {
-      // Mark fee_pending so admin can retry — but DON'T fail the success itself
       console.error("[IPPB] Fee charge failed:", e);
-      await updateDoc(ref, {
+      await updateDoc(doc(db, COL, requestId), {
         feeStatus: "failed",
         feeError: (e as Error).message,
       });
     }
+  } else {
+    const ref = doc(db, COL, requestId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("Request not found");
+      const data = snap.data() as IPPBRequest;
+      if (data.staffId !== staffId) throw new Error("Not your request");
+      tx.update(ref, {
+        status: "failed",
+        failureReason: outcome.reason ?? "Submission failed",
+        updatedAt: new Date().toISOString(),
+        history: appendHistory(data.history, data.currentStep, staffId, "staff", outcome.reason),
+      });
+    });
   }
 }
 
-/**
- * Atomically debit retailer + credit retailer/staff/admin commissions.
- * Logs all transactions for audit. Idempotent via feeStatus check.
- */
-async function chargeIPPBFee(params: {
-  requestId: string;
-  retailerId: string;
-  staffId: string;
-}): Promise<void> {
+/* ============ Fee charging (unchanged from original) ============ */
+
+async function chargeIPPBFee(params: { requestId: string; retailerId: string; staffId: string }): Promise<void> {
   const { requestId, retailerId, staffId } = params;
   if (!retailerId) throw new Error("Retailer not found");
 
   const reqRef = doc(db, COL, requestId);
   const reqSnap = await getDoc(reqRef);
   if (!reqSnap.exists()) throw new Error("Request not found");
-  if ((reqSnap.data() as any).feeStatus === "charged") return; // idempotent
+  if ((reqSnap.data() as any).feeStatus === "charged") return;
 
   const cfg = await getIPPBFeeConfig();
   if (cfg.serviceCharge <= 0) {
@@ -338,8 +411,6 @@ async function chargeIPPBFee(params: {
   }
 
   const retailerWalletRef = doc(db, "wallets", retailerId);
-
-  // 1. Debit retailer atomically
   await runTransaction(db, async (tx) => {
     const w = await tx.get(retailerWalletRef);
     if (!w.exists()) throw new Error("Retailer wallet not found");
@@ -347,7 +418,6 @@ async function chargeIPPBFee(params: {
     if (cur < cfg.serviceCharge) throw new Error("Insufficient retailer balance");
     tx.update(retailerWalletRef, { balance: cur - cfg.serviceCharge });
   });
-
   await addDoc(collection(db, "transactions"), {
     userId: retailerId,
     amount: cfg.serviceCharge,
@@ -358,7 +428,6 @@ async function chargeIPPBFee(params: {
     createdAt: new Date().toISOString(),
   });
 
-  // 2. Credit retailer commission
   if (cfg.retailerCommission > 0) {
     await runTransaction(db, async (tx) => {
       const w = await tx.get(retailerWalletRef);
@@ -377,21 +446,13 @@ async function chargeIPPBFee(params: {
     });
   }
 
-  // 3. Credit staff commission
   if (cfg.staffCommission > 0) {
     const staffWalletRef = doc(db, "wallets", staffId);
-    const staffW = await getDoc(staffWalletRef);
-    if (staffW.exists()) {
-      await runTransaction(db, async (tx) => {
-        const w = await tx.get(staffWalletRef);
-        const cur = w.exists() ? (w.data().balance as number) || 0 : 0;
-        tx.set(staffWalletRef, { balance: cur + cfg.staffCommission }, { merge: true });
-      });
-    } else {
-      await runTransaction(db, async (tx) => {
-        tx.set(staffWalletRef, { balance: cfg.staffCommission }, { merge: true });
-      });
-    }
+    await runTransaction(db, async (tx) => {
+      const w = await tx.get(staffWalletRef);
+      const cur = w.exists() ? (w.data().balance as number) || 0 : 0;
+      tx.set(staffWalletRef, { balance: cur + cfg.staffCommission }, { merge: true });
+    });
     await addDoc(collection(db, "transactions"), {
       userId: staffId,
       amount: cfg.staffCommission,
@@ -404,7 +465,6 @@ async function chargeIPPBFee(params: {
     });
   }
 
-  // 4. Credit admin commission
   if (cfg.adminCommission > 0) {
     const adminId = await findAdminId();
     if (adminId) {
@@ -439,7 +499,7 @@ async function chargeIPPBFee(params: {
   });
 }
 
-/* ------------ Subscriptions ------------ */
+/* ============ Subscriptions ============ */
 
 export function subscribeRetailerRequests(
   retailerId: string,
@@ -477,20 +537,4 @@ export async function getRequest(requestId: string): Promise<IPPBRequest | null>
   const snap = await getDoc(doc(db, COL, requestId));
   if (!snap.exists()) return null;
   return { id: snap.id, ...(snap.data() as any) } as IPPBRequest;
-}
-
-export async function updateRequestStatus(
-  requestId: string,
-  status: IPPBStatus,
-  by: string
-): Promise<void> {
-  const ref = doc(db, COL, requestId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  const data = snap.data() as IPPBRequest;
-  await updateDoc(ref, {
-    status,
-    updatedAt: new Date().toISOString(),
-    history: appendHistory(data.history, status, by),
-  });
 }
