@@ -1,0 +1,19 @@
+[Unit]
+Description=EI SOLUTIONS PAY — CSC Bridge (Puppeteer)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/csc-bridge
+EnvironmentFile=/opt/csc-bridge/.env
+ExecStart=/usr/bin/node /opt/csc-bridge/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+# Puppeteer needs a writable home for the user-data-dir
+Environment=HOME=/root
+
+[Install]
+WantedBy=multi-user.target
