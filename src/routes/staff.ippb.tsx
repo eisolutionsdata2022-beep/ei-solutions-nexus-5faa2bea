@@ -47,9 +47,10 @@ import { CompletedStepsSummary } from "@/components/ippb/CompletedStepsSummary";
 import { RemoteCapturePanel } from "@/components/ippb/RemoteCapturePanel";
 import { toast } from "sonner";
 import {
-  Banknote, ChevronDown, CheckCircle2, Fingerprint, Info, Loader2, XCircle,
+  Banknote, ChevronDown, CheckCircle2, Fingerprint, Info, Loader2, PlayCircle, XCircle,
 } from "lucide-react";
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
+import { useIPPBStaffNotifications } from "@/hooks/use-ippb-staff-notifications";
 
 export const Route = createFileRoute("/staff/ippb")({
   ssr: false,
@@ -71,12 +72,29 @@ function StaffIPPBPage() {
   useEffect(() => subscribeStaffQueue(setRows), []);
   useEffect(() => { getIPPBFeeConfig().then(setFee); }, []);
 
+  // 🔔 Real-time toast + chime when a retailer advances a step → staff's turn.
+  useIPPBStaffNotifications(rows, appUser?.uid);
+
   const filtered = useMemo(() => {
     const terminal = ["success", "failed", "cancelled"];
     return rows.filter((r) =>
       tab === "active" ? !terminal.includes(r.status) : terminal.includes(r.status)
     );
   }, [rows, tab]);
+
+  // Most recent in-progress request that is on staff's turn (or unclaimed).
+  const resumable = useMemo(() => {
+    const terminal = ["success", "failed", "cancelled"];
+    const active = rows
+      .filter((r) => !terminal.includes(r.status))
+      .filter((r) => !r.staffId || r.staffId === appUser?.uid)
+      .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+    // Prefer one where it's currently staff's turn
+    const staffTurn = active.find(
+      (r) => (r.turn ?? STEP_TURN[r.currentStep]) === "staff"
+    );
+    return staffTurn ?? active[0] ?? null;
+  }, [rows, appUser?.uid]);
 
   const opened = rows.find((r) => r.id === openId) ?? null;
   if (!appUser) return null;
