@@ -34,6 +34,7 @@ import { Route as StaffPerformanceRouteImport } from './routes/staff.performance
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
+import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
@@ -76,7 +77,6 @@ import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-dispute
 import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
-import { Route as AdminFormsRouteImport } from './routes/admin.forms'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
@@ -209,6 +209,11 @@ const StaffIppbRoute = StaffIppbRouteImport.update({
 const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
   id: '/horoscope-requests',
   path: '/horoscope-requests',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffFormsRoute = StaffFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
@@ -423,11 +428,6 @@ const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   path: '/horoscope-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFormsRoute = AdminFormsRouteImport.update({
-  id: '/forms',
-  path: '/forms',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   id: '/form-analytics',
   path: '/form-analytics',
@@ -480,7 +480,6 @@ export interface FileRoutesByFullPath {
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -523,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -551,7 +551,6 @@ export interface FileRoutesByTo {
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -594,6 +593,7 @@ export interface FileRoutesByTo {
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -629,7 +629,6 @@ export interface FileRoutesById {
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/forms': typeof AdminFormsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -672,6 +671,7 @@ export interface FileRoutesById {
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
+  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -708,7 +708,6 @@ export interface FileRouteTypes {
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/form-analytics'
-    | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -751,6 +750,7 @@ export interface FileRouteTypes {
     | '/retailer/work'
     | '/retailer/work-badge'
     | '/staff/form-submissions'
+    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -779,7 +779,6 @@ export interface FileRouteTypes {
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/form-analytics'
-    | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -822,6 +821,7 @@ export interface FileRouteTypes {
     | '/retailer/work'
     | '/retailer/work-badge'
     | '/staff/form-submissions'
+    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -856,7 +856,6 @@ export interface FileRouteTypes {
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/form-analytics'
-    | '/admin/forms'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -899,6 +898,7 @@ export interface FileRouteTypes {
     | '/retailer/work'
     | '/retailer/work-badge'
     | '/staff/form-submissions'
+    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -1107,6 +1107,13 @@ declare module '@tanstack/react-router' {
       path: '/horoscope-requests'
       fullPath: '/staff/horoscope-requests'
       preLoaderRoute: typeof StaffHoroscopeRequestsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/forms': {
+      id: '/staff/forms'
+      path: '/forms'
+      fullPath: '/staff/forms'
+      preLoaderRoute: typeof StaffFormsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/staff/form-submissions': {
@@ -1403,13 +1410,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHoroscopeSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/forms': {
-      id: '/admin/forms'
-      path: '/forms'
-      fullPath: '/admin/forms'
-      preLoaderRoute: typeof AdminFormsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/form-analytics': {
       id: '/admin/form-analytics'
       path: '/form-analytics'
@@ -1469,7 +1469,6 @@ interface AdminRouteChildren {
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
-  AdminFormsRoute: typeof AdminFormsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
   AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
@@ -1500,7 +1499,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
-  AdminFormsRoute: AdminFormsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
   AdminIppbSettingsRoute: AdminIppbSettingsRoute,
@@ -1616,6 +1614,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 
 interface StaffRouteChildren {
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
+  StaffFormsRoute: typeof StaffFormsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
@@ -1628,6 +1627,7 @@ interface StaffRouteChildren {
 
 const StaffRouteChildren: StaffRouteChildren = {
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
+  StaffFormsRoute: StaffFormsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,

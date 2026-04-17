@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { FileText, Plus, Pencil, Trash2, GripVertical, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/forms")({
+export const Route = createFileRoute("/staff/forms")({
   ssr: false,
   component: AdminForms,
 });
