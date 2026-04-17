@@ -24,16 +24,21 @@ interface Props {
   ippbRequestId: string;
   staffId: string;
   retailerId: string;
+  /** Which biometric slot to write into when capture completes. */
+  step: "biometric_1" | "biometric_2" | "biometric_final";
   alreadyCaptured?: boolean;
   disabled?: boolean;
+  onCaptured?: () => void;
 }
 
 export function RemoteCapturePanel({
   ippbRequestId,
   staffId,
   retailerId,
+  step,
   alreadyCaptured,
   disabled,
+  onCaptured,
 }: Props) {
   const [captureId, setCaptureId] = useState<string | null>(null);
   const [row, setRow] = useState<CaptureRequest | null>(null);
@@ -46,20 +51,24 @@ export function RemoteCapturePanel({
     return subscribeCaptureRequest(ippbRequestId, captureId, setRow);
   }, [ippbRequestId, captureId]);
 
-  // Once retailer returns the capture, persist into the IPPB request once.
   useEffect(() => {
     if (!row || handled.current) return;
     if (row.status === "captured" && row.hash) {
       handled.current = true;
       (async () => {
         try {
-          await staffCaptureBiometric(ippbRequestId, staffId, {
-            mode: row.mode === "L2_RD_SERVICE" ? "L2_DEVICE" : "L1_SIMULATION",
+          const bio = {
+            mode: row.mode === "L2_RD_SERVICE" ? "L2_DEVICE" as const : "L1_SIMULATION" as const,
             capturedAt: row.capturedAt ?? new Date().toISOString(),
             hash: row.hash!,
             deviceId: row.deviceModel,
             staffConfirmed: true,
-          });
+          };
+          const fn =
+            step === "biometric_1" ? staffCaptureBiometric1 :
+            step === "biometric_2" ? staffCaptureBiometric2 :
+            staffCaptureBiometricFinal;
+          await fn(ippbRequestId, staffId, bio);
           toast.success(
             row.mode === "L2_RD_SERVICE"
               ? "Biometric received from retailer (L2 RD Service)"
@@ -67,6 +76,7 @@ export function RemoteCapturePanel({
           );
           setCaptureId(null);
           setRow(null);
+          onCaptured?.();
         } catch (e: any) {
           toast.error(e.message ?? "Failed to save biometric");
         }
@@ -78,7 +88,7 @@ export function RemoteCapturePanel({
       setCaptureId(null);
       setRow(null);
     }
-  }, [row, ippbRequestId, staffId]);
+  }, [row, ippbRequestId, staffId, step, onCaptured]);
 
   const trigger = async () => {
     setBusy(true);
