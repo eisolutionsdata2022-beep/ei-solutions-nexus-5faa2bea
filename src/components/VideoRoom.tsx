@@ -1,42 +1,25 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
-  createPeerConnection,
-  createRoom,
-  closeRoom,
+  ensureRoom,
+  closeRoomIfEmpty,
   isRoomActive,
   addParticipant,
   removeParticipant,
   onParticipants,
-  storeOffer,
-  storeAnswer,
-  onAnswer,
-  onOffer,
-  addIceCandidate,
-  onIceCandidates,
+  onHosts,
   type RoomParticipant,
+  type LiveHost,
 } from "@/lib/webrtc";
-import { collection, onSnapshot, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { TrainingChat } from "@/components/training/TrainingChat";
 import { TrainingQA } from "@/components/training/TrainingQA";
 import { TrainingAIBot } from "@/components/training/TrainingAIBot";
+import { TrainerHostTile } from "@/components/training/TrainerHostTile";
+import { HostViewerTile } from "@/components/training/HostViewerTile";
+import { ReviewSubmitDialog } from "@/components/training/ReviewSubmitDialog";
 import {
-  Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  MonitorUp,
-  PhoneOff,
-  MessageCircle,
-  HelpCircle,
-  Bot,
-  Users,
-  LayoutGrid,
-  Maximize2,
-  Minimize2,
-  X,
+  PhoneOff, MessageCircle, HelpCircle, Bot, Users, X, Star,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,27 +34,19 @@ type SidebarTab = "chat" | "qa" | "bot" | "participants" | null;
 
 export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoomProps) {
   const { appUser } = useAuth();
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-
-  const [cameraOn, setCameraOn] = useState(role === "trainer");
-  const [micOn, setMicOn] = useState(role === "trainer");
-  const [screenSharing, setScreenSharing] = useState(false);
+  const [hosts, setHosts] = useState<LiveHost[]>([]);
   const [participants, setParticipants] = useState<RoomParticipant[]>([]);
-  const [connected, setConnected] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>(null);
-  const [gridView, setGridView] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const unsubsRef = useRef<Array<() => void>>([]);
+  const [iAmLive, setIAmLive] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
   const isTrainer = role === "trainer";
 
-  // Timer
+  // session timer
   useEffect(() => {
-    const interval = setInterval(() => setElapsed((prev) => prev + 1), 1000);
-    return () => clearInterval(interval);
+    const i = setInterval(() => setElapsed((p) => p + 1), 1000);
+    return () => clearInterval(i);
   }, []);
 
   const formatTime = (s: number) => {
@@ -81,289 +56,174 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
     return `${h > 0 ? h + ":" : ""}${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const cleanup = useCallback(() => {
-    unsubsRef.current.forEach((u) => u());
-    unsubsRef.current = [];
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((t) => t.stop());
-      localStreamRef.current = null;
-    }
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-  }, []);
-
-  // Participants listener
-  useEffect(() => {
-    const unsub = onParticipants(trainingId, setParticipants);
-    unsubsRef.current.push(unsub);
-    return () => unsub();
-  }, [trainingId]);
-
-  // Initialize WebRTC
+  // setup room + participant
   useEffect(() => {
     if (!appUser) return;
-    const init = async () => {
+    let active = true;
+    (async () => {
       try {
         if (isTrainer) {
-          await createRoom(trainingId, appUser.uid, appUser.name || appUser.email);
-          await addParticipant(trainingId, appUser.uid, appUser.name || appUser.email, "trainer");
-
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-          localStreamRef.current = stream;
-          if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-          const unsub = onParticipants(trainingId, async (parts) => {
-            const retailers = parts.filter((p) => p.role === "retailer");
-            for (const retailer of retailers) {
-              if (pcRef.current) continue;
-              const offerUnsub = onOffer(trainingId, retailer.id, async (offer) => {
-                const pc = createPeerConnection();
-                pcRef.current = pc;
-                stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-                pc.onicecandidate = (e) => {
-                  if (e.candidate) addIceCandidate(trainingId, retailer.id, "caller", e.candidate.toJSON());
-                };
-                pc.onconnectionstatechange = () => {
-                  if (pc.connectionState === "connected") setConnected(true);
-                  if (pc.connectionState === "disconnected" || pc.connectionState === "failed") setConnected(false);
-                };
-                await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await storeAnswer(trainingId, retailer.id, answer);
-                const iceUnsub = onIceCandidates(trainingId, retailer.id, "callee", (candidate) => {
-                  pc.addIceCandidate(new RTCIceCandidate(candidate));
-                });
-                unsubsRef.current.push(iceUnsub);
-              });
-              unsubsRef.current.push(offerUnsub);
-            }
-          });
-          unsubsRef.current.push(unsub);
-          setConnected(true);
+          await ensureRoom(trainingId, appUser.uid, appUser.name || appUser.email);
         } else {
-          const active = await isRoomActive(trainingId);
-          if (!active) {
+          const ok = await isRoomActive(trainingId);
+          if (!ok && active) {
             toast.error("Live class has not started yet");
             onLeave();
             return;
           }
-          await addParticipant(trainingId, appUser.uid, appUser.name || appUser.email, "retailer");
-          const pc = createPeerConnection();
-          pcRef.current = pc;
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            localStreamRef.current = stream;
-            stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-            stream.getAudioTracks().forEach((t) => (t.enabled = false));
-          } catch { /* no mic is fine */ }
-          pc.ontrack = (e) => {
-            if (remoteVideoRef.current && e.streams[0]) remoteVideoRef.current.srcObject = e.streams[0];
-          };
-          pc.onicecandidate = (e) => {
-            if (e.candidate) addIceCandidate(trainingId, appUser.uid, "callee", e.candidate.toJSON());
-          };
-          pc.onconnectionstatechange = () => {
-            if (pc.connectionState === "connected") setConnected(true);
-            if (pc.connectionState === "disconnected" || pc.connectionState === "failed") setConnected(false);
-          };
-          pc.addTransceiver("video", { direction: "recvonly" });
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          await storeOffer(trainingId, appUser.uid, offer);
-          const answerUnsub = onAnswer(trainingId, appUser.uid, async (answer) => {
-            if (pc.signalingState === "have-local-offer") await pc.setRemoteDescription(new RTCSessionDescription(answer));
-          });
-          unsubsRef.current.push(answerUnsub);
-          const iceUnsub = onIceCandidates(trainingId, appUser.uid, "caller", (candidate) => {
-            pc.addIceCandidate(new RTCIceCandidate(candidate));
-          });
-          unsubsRef.current.push(iceUnsub);
-          setConnected(true);
         }
-      } catch (err) {
-        console.error("WebRTC init error:", err);
-        toast.error("Failed to initialize video call");
+        if (active) {
+          await addParticipant(trainingId, appUser.uid, appUser.name || appUser.email, role);
+        }
+      } catch (e) {
+        console.error("Room setup failed", e);
       }
-    };
-    init();
+    })();
+
+    const unsubH = onHosts(trainingId, setHosts);
+    const unsubP = onParticipants(trainingId, setParticipants);
+
     return () => {
+      active = false;
+      unsubH();
+      unsubP();
       if (appUser) {
-        removeParticipant(trainingId, appUser.uid);
-        if (isTrainer) closeRoom(trainingId);
+        removeParticipant(trainingId, appUser.uid).catch(() => {});
+        if (isTrainer) closeRoomIfEmpty(trainingId).catch(() => {});
       }
-      cleanup();
     };
-  }, [appUser, trainingId, isTrainer, cleanup, onLeave]);
+  }, [appUser, trainingId, isTrainer, role, onLeave]);
 
-  const toggleCamera = async () => {
-    if (!localStreamRef.current) return;
-    const videoTracks = localStreamRef.current.getVideoTracks();
-    if (videoTracks.length > 0) {
-      videoTracks.forEach((t) => (t.enabled = !t.enabled));
-      setCameraOn((prev) => !prev);
-    }
-  };
+  // Other hosts (excluding self) — that I should subscribe to as a viewer
+  const otherHosts = useMemo(
+    () => hosts.filter((h) => h.id !== appUser?.uid),
+    [hosts, appUser?.uid]
+  );
 
-  const toggleMic = () => {
-    if (!localStreamRef.current) return;
-    localStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = !t.enabled));
-    setMicOn((prev) => !prev);
-  };
-
-  const toggleScreenShare = async () => {
-    if (!isTrainer || !pcRef.current) return;
-    try {
-      if (!screenSharing) {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
-        if (sender) await sender.replaceTrack(screenTrack);
-        screenTrack.onended = () => {
-          const camTrack = localStreamRef.current?.getVideoTracks()[0];
-          if (camTrack && sender) sender.replaceTrack(camTrack);
-          setScreenSharing(false);
-        };
-        setScreenSharing(true);
-      } else {
-        const camTrack = localStreamRef.current?.getVideoTracks()[0];
-        const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
-        if (camTrack && sender) await sender.replaceTrack(camTrack);
-        setScreenSharing(false);
-      }
-    } catch (err) {
-      console.error("Screen share error:", err);
-    }
-  };
+  const trainerCount = hosts.length;
+  const studentCount = participants.filter((p) => p.role === "retailer").length;
+  const onlineCount = participants.length;
 
   const handleLeave = async () => {
     if (appUser) {
-      await removeParticipant(trainingId, appUser.uid);
-      if (isTrainer) await closeRoom(trainingId);
+      await removeParticipant(trainingId, appUser.uid).catch(() => {});
+      if (isTrainer) await closeRoomIfEmpty(trainingId).catch(() => {});
     }
-    cleanup();
+    if (!isTrainer) {
+      // ask retailer for review before leaving
+      setShowReview(true);
+      return;
+    }
     onLeave();
   };
 
-  const toggleSidebar = (tab: SidebarTab) => {
-    setSidebarTab((prev) => (prev === tab ? null : tab));
+  const handleReviewClose = () => {
+    setShowReview(false);
+    onLeave();
   };
 
-  const handleEscalateToTrainer = async (question: string) => {
-    if (!appUser) return;
-    try {
-      await addDoc(collection(db, "trainings", trainingId, "chat"), {
-        userId: appUser.uid,
-        userName: appUser.name || appUser.email,
-        message: `🤖 [Escalated from AI Bot] ${question}`,
-        createdAt: new Date().toISOString(),
-      });
-      setSidebarTab("chat");
-    } catch {
-      toast.error("Failed to escalate");
-    }
-  };
-
-  const sidebarTabLabels: Record<string, string> = {
+  const sidebarLabels: Record<string, string> = {
     chat: "Live Chat",
     qa: "Q&A",
     bot: "AI Assistant",
-    participants: "Participants",
+    participants: "People",
   };
 
+  // grid columns based on visible tile count
+  const visibleTrainerTiles = (isTrainer ? 1 : 0) + otherHosts.length;
+  const gridCols =
+    visibleTrainerTiles <= 1 ? "grid-cols-1" :
+    visibleTrainerTiles === 2 ? "grid-cols-1 md:grid-cols-2" :
+    visibleTrainerTiles <= 4 ? "grid-cols-1 md:grid-cols-2" :
+    "grid-cols-2 lg:grid-cols-3";
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#0c0c1d] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-[radial-gradient(ellipse_at_top,_#0f1f3a_0%,_#0a0e1f_60%,_#06070f_100%)] flex flex-col">
+      {/* LED scanline overlay */}
+      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(59,130,246,0.04)_0px,rgba(59,130,246,0.04)_1px,transparent_1px,transparent_4px)] z-0" />
+
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#13132a] border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "bg-red-500"}`} />
-          <h2 className="text-white font-semibold text-sm truncate max-w-[300px]">{trainingTitle}</h2>
-          {screenSharing && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 font-medium">
-              Screen Sharing
-            </span>
-          )}
+      <div className="relative z-10 flex items-center justify-between px-4 py-2.5 bg-[#0a0f1f]/90 backdrop-blur-xl border-b border-blue-500/10">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <Star className="w-4 h-4 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-white font-bold text-sm truncate">{trainingTitle}</h2>
+            <p className="text-blue-300/60 text-[10px]">Digital Classroom · Live</p>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-white/50 text-xs font-mono">{formatTime(elapsed)}</span>
-          <span className="text-white/50 text-xs flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" /> {participants.length}
-          </span>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Stat label="Trainers" value={trainerCount} color="text-red-300" />
+          <Stat label="Students" value={studentCount} color="text-emerald-300" />
+          <Stat label="Online" value={onlineCount} color="text-blue-300" />
+          <span className="text-white/50 text-xs font-mono hidden sm:inline">{formatTime(elapsed)}</span>
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isTrainer ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`}>
-            {isTrainer ? "Trainer" : "Trainee"}
+            {isTrainer ? "Trainer" : "Student"}
           </span>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Video Area */}
-        <div className="flex-1 flex flex-col p-3 gap-3 min-w-0">
-          {/* Main Video */}
-          <div className="flex-1 relative bg-[#1a1a35] rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/5">
-            {isTrainer ? (
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-            ) : (
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+      {/* Main */}
+      <div className="relative z-10 flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col p-3 gap-3 min-w-0 overflow-y-auto">
+          {/* Trainer tiles grid */}
+          <div className={`grid ${gridCols} gap-3 auto-rows-min`}>
+            {isTrainer && (
+              <TrainerHostTile
+                trainingId={trainingId}
+                isLive={iAmLive}
+                onLiveChange={setIAmLive}
+              />
             )}
-            {isTrainer && !cameraOn && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a1a35] to-[#0c0c1d]">
+            {otherHosts.map((h) => (
+              <HostViewerTile key={h.id} trainingId={trainingId} host={h} />
+            ))}
+            {!isTrainer && otherHosts.length === 0 && (
+              <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center bg-black/30">
                 <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-3xl font-bold text-white/60">
-                      {appUser?.name?.[0]?.toUpperCase() || "T"}
-                    </span>
+                  <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-3">
+                    <Star className="w-7 h-7 text-white/30" />
                   </div>
-                  <p className="text-white/40 text-sm">Camera Off</p>
+                  <p className="text-white/50 text-sm">Waiting for trainer to start live…</p>
                 </div>
               </div>
             )}
-            <div className="absolute bottom-3 left-3 flex items-center gap-2">
-              <span className="bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-lg border border-white/10">
-                {isTrainer ? "You (Trainer)" : "Trainer"}
-              </span>
-              {!micOn && (
-                <span className="bg-red-500/80 p-1 rounded-lg">
-                  <MicOff className="w-3 h-3 text-white" />
-                </span>
-              )}
-            </div>
           </div>
 
-          {/* Participants Strip */}
-          {participants.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {participants
-                .filter((p) => p.id !== appUser?.uid)
-                .map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex-shrink-0 w-32 h-24 bg-[#1a1a35] rounded-xl flex flex-col items-center justify-center border border-white/5 hover:border-white/20 transition-colors group relative"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center text-white text-sm font-bold mb-1.5 border border-white/10">
-                      {p.name[0]?.toUpperCase()}
-                    </div>
-                    <span className="text-white/60 text-[10px] truncate max-w-[110px] font-medium">{p.name}</span>
-                    <span className="text-[8px] text-white/30 mt-0.5">{p.role}</span>
-                    {!p.hasAudio && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <MicOff className="w-2.5 h-2.5 text-red-400" />
+          {/* Students strip */}
+          {studentCount > 0 && (
+            <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/5 p-2.5">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-white/60 text-[11px] uppercase tracking-wider font-semibold">Students Online</p>
+                <span className="text-blue-300 text-[10px]">{studentCount}</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {participants
+                  .filter((p) => p.role === "retailer")
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex-shrink-0 flex flex-col items-center gap-1 min-w-[60px]"
+                      title={p.name}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/30 to-blue-500/30 flex items-center justify-center text-white text-xs font-bold border border-white/10">
+                        {p.name[0]?.toUpperCase()}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <span className="text-white/50 text-[9px] truncate max-w-[60px]">{p.name.split(" ")[0]}</span>
+                    </div>
+                  ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* Sidebar */}
         {sidebarTab && (
-          <div className="w-80 bg-[#13132a] border-l border-white/5 flex flex-col animate-in slide-in-from-right-2 duration-200">
+          <div className="w-80 bg-[#0a0f1f]/95 backdrop-blur-xl border-l border-white/5 flex flex-col animate-in slide-in-from-right-2 duration-200">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <h3 className="text-white text-sm font-semibold">{sidebarTabLabels[sidebarTab] || ""}</h3>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white" onClick={() => setSidebarTab(null)}>
+              <h3 className="text-white text-sm font-semibold">{sidebarLabels[sidebarTab] || ""}</h3>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10" onClick={() => setSidebarTab(null)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -371,16 +231,13 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
               {sidebarTab === "chat" && <TrainingChat trainingId={trainingId} />}
               {sidebarTab === "qa" && <TrainingQA trainingId={trainingId} role={role} />}
               {sidebarTab === "bot" && (
-                <TrainingAIBot
-                  trainingTitle={trainingTitle}
-                  onEscalateToTrainer={!isTrainer ? handleEscalateToTrainer : undefined}
-                />
+                <TrainingAIBot trainingTitle={trainingTitle} />
               )}
               {sidebarTab === "participants" && (
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2 overflow-y-auto">
                   {participants.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center text-white text-xs font-bold border border-white/10">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold border border-white/10 ${p.role === "trainer" ? "bg-gradient-to-br from-amber-500/40 to-red-500/40" : "bg-gradient-to-br from-emerald-500/30 to-blue-500/30"}`}>
                         {p.name[0]?.toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -388,10 +245,6 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
                           {p.name} {p.id === appUser?.uid && "(You)"}
                         </p>
                         <p className="text-[10px] text-white/40 capitalize">{p.role}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {p.hasAudio ? <Mic className="w-3 h-3 text-emerald-400" /> : <MicOff className="w-3 h-3 text-red-400" />}
-                        {p.hasVideo ? <Video className="w-3 h-3 text-emerald-400" /> : <VideoOff className="w-3 h-3 text-white/20" />}
                       </div>
                     </div>
                   ))}
@@ -402,122 +255,67 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
         )}
       </div>
 
-      {/* Bottom Controls */}
-      <div className="flex items-center justify-between px-6 py-3 bg-[#13132a] border-t border-white/5">
-        {/* Left: Info */}
-        <div className="flex items-center gap-2 w-48">
-          <span className="text-white/40 text-[10px] hidden md:block">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+      {/* Bottom controls */}
+      <div className="relative z-10 flex items-center justify-between px-4 py-3 bg-[#0a0f1f]/90 backdrop-blur-xl border-t border-blue-500/10">
+        <div className="text-white/40 text-[10px] hidden md:block">
+          {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
-
-        {/* Center: Media Controls */}
         <div className="flex items-center gap-2">
-          {isTrainer && (
-            <ControlButton
-              active={cameraOn}
-              icon={cameraOn ? Video : VideoOff}
-              label={cameraOn ? "Camera On" : "Camera Off"}
-              onClick={toggleCamera}
-              danger={!cameraOn}
-            />
-          )}
-
-          <ControlButton
-            active={micOn}
-            icon={micOn ? Mic : MicOff}
-            label={micOn ? "Mic On" : "Mic Off"}
-            onClick={toggleMic}
-            danger={!micOn}
-          />
-
-          {isTrainer && (
-            <ControlButton
-              active={screenSharing}
-              icon={MonitorUp}
-              label={screenSharing ? "Stop Sharing" : "Share Screen"}
-              onClick={toggleScreenShare}
-              highlight={screenSharing}
-            />
-          )}
-
-          <div className="w-px h-8 bg-white/10 mx-1" />
-
           <Button
             onClick={handleLeave}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
+            className="bg-red-600 hover:bg-red-700 text-white px-5 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
           >
             <PhoneOff className="w-4 h-4 mr-2" />
-            {isTrainer ? "End Session" : "Leave"}
+            {isTrainer ? "Exit Room" : "Leave"}
           </Button>
         </div>
-
-        {/* Right: Sidebar Toggles */}
-        <div className="flex items-center gap-1 w-48 justify-end">
-          <SidebarButton icon={Users} label="People" active={sidebarTab === "participants"} onClick={() => toggleSidebar("participants")} count={participants.length} />
-          <SidebarButton icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => toggleSidebar("chat")} />
-          <SidebarButton icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => toggleSidebar("qa")} />
-          <SidebarButton icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => toggleSidebar("bot")} />
+        <div className="flex items-center gap-1">
+          <SidebarBtn icon={Users} label="People" active={sidebarTab === "participants"} count={onlineCount} onClick={() => setSidebarTab(sidebarTab === "participants" ? null : "participants")} />
+          <SidebarBtn icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => setSidebarTab(sidebarTab === "chat" ? null : "chat")} />
+          <SidebarBtn icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => setSidebarTab(sidebarTab === "qa" ? null : "qa")} />
+          <SidebarBtn icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => setSidebarTab(sidebarTab === "bot" ? null : "bot")} />
         </div>
       </div>
+
+      {/* Review on exit (retailer only) */}
+      {showReview && !isTrainer && (
+        <ReviewSubmitDialog
+          open={showReview}
+          trainingId={trainingId}
+          trainingTitle={trainingTitle}
+          onClose={handleReviewClose}
+        />
+      )}
     </div>
   );
 }
 
-function ControlButton({
-  active,
-  icon: Icon,
-  label,
-  onClick,
-  danger,
-  highlight,
-}: {
-  active: boolean;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
-  highlight?: boolean;
-}) {
+function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <button
-      onClick={onClick}
-      className={`group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200
-        ${danger ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/30" : ""}
-        ${highlight ? "bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30" : ""}
-        ${!danger && !highlight ? "bg-white/5 hover:bg-white/10 border border-white/10" : ""}
-      `}
-      title={label}
-    >
-      <Icon className={`w-4 h-4 ${danger ? "text-red-400" : highlight ? "text-blue-400" : "text-white"}`} />
-      <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] text-white/50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-        {label}
-      </span>
-    </button>
+    <div className="flex flex-col items-center px-2 hidden sm:flex">
+      <span className={`text-sm font-bold leading-none ${color}`}>{value}</span>
+      <span className="text-[9px] text-white/40 uppercase tracking-wider">{label}</span>
+    </div>
   );
 }
 
-function SidebarButton({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-  count,
-}: {
+function SidebarBtn({ icon: Icon, label, active, count, onClick }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   active: boolean;
-  onClick: () => void;
   count?: number;
+  onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center w-12 h-10 rounded-lg transition-all duration-200
-        ${active ? "bg-white/10 border border-white/20" : "hover:bg-white/5 border border-transparent"}
-      `}
+      className={`relative flex flex-col items-center justify-center w-12 h-10 rounded-lg transition-all ${
+        active ? "bg-blue-500/20 border border-blue-500/40" : "hover:bg-white/5 border border-transparent"
+      }`}
       title={label}
     >
-      <Icon className={`w-4 h-4 ${active ? "text-white" : "text-white/50"}`} />
-      <span className={`text-[8px] mt-0.5 ${active ? "text-white" : "text-white/40"}`}>{label}</span>
+      <Icon className={`w-4 h-4 ${active ? "text-blue-300" : "text-white/60"}`} />
+      <span className={`text-[8px] mt-0.5 ${active ? "text-blue-200" : "text-white/40"}`}>{label}</span>
       {count !== undefined && count > 0 && (
         <span className="absolute -top-0.5 -right-0.5 bg-blue-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
           {count}
