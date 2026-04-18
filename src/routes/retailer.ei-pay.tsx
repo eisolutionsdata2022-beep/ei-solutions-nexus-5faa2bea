@@ -92,8 +92,10 @@ function EiPayPage() {
 
   const services = useMemo(() => {
     const disabled = new Set(config?.disabledServices ?? []);
+    const modeOv = config?.modeOverrides ?? {};
     return CSC_SERVICES.map((s) => ({
       ...s,
+      mode: modeOv[s.key] ?? s.mode,
       disabled: disabled.has(s.key),
       fee: config?.feeOverrides?.[s.key] ?? s.defaultFee,
     }));

@@ -19,6 +19,8 @@ export interface CscMasterConfig {
   disabledServices: string[];
   /** Optional fee overrides per service key (₹). */
   feeOverrides: Record<string, number>;
+  /** Optional mode overrides per service key (admin can switch bridge ↔ redirect). */
+  modeOverrides?: Record<string, "bridge" | "redirect">;
   updatedAt: string;
   updatedBy: string;
 }
