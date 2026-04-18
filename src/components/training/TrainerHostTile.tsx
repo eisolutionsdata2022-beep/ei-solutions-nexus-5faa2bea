@@ -39,6 +39,13 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const unsubsRef = useRef<Array<() => void>>([]);
 
+  // audio mixing (mic + system audio when screen-sharing)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const screenAudioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const mixedAudioTrackRef = useRef<MediaStreamTrack | null>(null);
+
   const [mode, setMode] = useState<LiveMode>("camera");
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
@@ -55,6 +62,55 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     });
   };
 
+  // replace audio track on all existing peer connections
+  const replaceAudioOnPeers = (aud: MediaStreamTrack | null) => {
+    peersRef.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "audio");
+      if (sender && aud) sender.replaceTrack(aud).catch(() => {});
+    });
+  };
+
+  // ensure a single AudioContext + destination for mixing
+  const ensureMixGraph = (): MediaStreamAudioDestinationNode => {
+    if (!audioCtxRef.current) {
+      const Ctx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+      audioCtxRef.current = new Ctx();
+    }
+    if (!audioDestRef.current) {
+      audioDestRef.current = audioCtxRef.current.createMediaStreamDestination();
+    }
+    return audioDestRef.current;
+  };
+
+  // (re)connect mic into mix graph
+  const connectMicToMix = () => {
+    const cam = cameraStreamRef.current;
+    if (!cam) return;
+    const dest = ensureMixGraph();
+    micSourceRef.current?.disconnect();
+    const micStream = new MediaStream(cam.getAudioTracks());
+    if (micStream.getAudioTracks().length === 0) return;
+    micSourceRef.current = audioCtxRef.current!.createMediaStreamSource(micStream);
+    micSourceRef.current.connect(dest);
+    mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
+  };
+
+  // connect screen audio into mix graph
+  const connectScreenAudioToMix = (screenStream: MediaStream) => {
+    if (screenStream.getAudioTracks().length === 0) return;
+    const dest = ensureMixGraph();
+    screenAudioSourceRef.current?.disconnect();
+    const sa = new MediaStream(screenStream.getAudioTracks());
+    screenAudioSourceRef.current = audioCtxRef.current!.createMediaStreamSource(sa);
+    screenAudioSourceRef.current.connect(dest);
+    mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
+  };
+
+  const disconnectScreenAudio = () => {
+    screenAudioSourceRef.current?.disconnect();
+    screenAudioSourceRef.current = null;
+  };
+
   // build a single broadcast stream (audio + video track that we swap)
   const ensureBroadcastStream = (videoTrack: MediaStreamTrack | null): MediaStream => {
     if (!broadcastStreamRef.current) broadcastStreamRef.current = new MediaStream();
@@ -62,8 +118,12 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     // remove old video tracks
     bs.getVideoTracks().forEach((t) => bs.removeTrack(t));
     if (videoTrack) bs.addTrack(videoTrack);
-    // ensure audio
-    if (bs.getAudioTracks().length === 0 && cameraStreamRef.current) {
+    // ensure audio — prefer mixed track (mic + system audio), fall back to raw mic
+    bs.getAudioTracks().forEach((t) => bs.removeTrack(t));
+    const mixed = mixedAudioTrackRef.current;
+    if (mixed) {
+      bs.addTrack(mixed);
+    } else if (cameraStreamRef.current) {
       const at = cameraStreamRef.current.getAudioTracks()[0];
       if (at) bs.addTrack(at);
     }
@@ -75,6 +135,8 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     if (cameraStreamRef.current) return cameraStreamRef.current;
     const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     cameraStreamRef.current = s;
+    // route mic through the mix graph so we can later add system audio
+    connectMicToMix();
     return s;
   };
 
@@ -146,6 +208,15 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     setScreenSharing(false);
     broadcastStreamRef.current?.getTracks().forEach((t) => t.stop());
     broadcastStreamRef.current = null;
+    // tear down audio mix graph
+    micSourceRef.current?.disconnect();
+    micSourceRef.current = null;
+    screenAudioSourceRef.current?.disconnect();
+    screenAudioSourceRef.current = null;
+    mixedAudioTrackRef.current = null;
+    audioDestRef.current = null;
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     try { await endLive(trainingId, appUser.uid); } catch {}
     onLiveChange(false);
@@ -225,17 +296,37 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
       return;
     }
     try {
-      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const s = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        // request system/tab audio — browser may ignore (e.g. window source) but with no error
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        } as MediaTrackConstraints,
+      });
       screenStreamRef.current = s;
       const vid = s.getVideoTracks()[0];
       // auto-stop when user ends share via browser UI
       vid.onended = () => { void stopScreenShare(); };
+
+      // mix system audio in if the browser actually delivered an audio track
+      const hasSysAudio = s.getAudioTracks().length > 0;
+      if (hasSysAudio) {
+        connectMicToMix(); // make sure mic is in the graph
+        connectScreenAudioToMix(s);
+        // swap the mixed track onto every peer's audio sender
+        if (mixedAudioTrackRef.current) replaceAudioOnPeers(mixedAudioTrackRef.current);
+        // auto-cleanup if user stops only the audio share
+        s.getAudioTracks()[0].onended = () => disconnectScreenAudio();
+      }
+
       const stream = ensureBroadcastStream(vid);
       replaceVideoOnPeers(vid);
       if (videoRef.current) videoRef.current.srcObject = stream;
       setScreenSharing(true);
       await updateHost(trainingId, appUser.uid, { mode: "camera", cameraOn: true });
-      toast.success("Screen sharing started");
+      toast.success(hasSysAudio ? "Screen + system audio sharing started" : "Screen sharing started (no system audio)");
     } catch (err: any) {
       if (err?.name !== "NotAllowedError") {
         console.error(err);
@@ -249,6 +340,8 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     if (s) s.getTracks().forEach((t) => t.stop());
     screenStreamRef.current = null;
     setScreenSharing(false);
+    // unhook system audio from the mix; mic-only continues
+    disconnectScreenAudio();
     // restore previous source (avatar canvas or camera)
     let vid: MediaStreamTrack | null = null;
     if (mode === "avatar" && avatarStreamRef.current) {
