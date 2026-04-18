@@ -24,6 +24,7 @@ import {
   Briefcase,
   ShieldCheck,
   Gavel,
+  CalendarDays,
 } from "lucide-react";
 
 interface NavItem {
@@ -71,6 +72,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "PAN Portal Settings", to: "/admin/pan-settings", icon: ShieldCheck },
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
+    { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
