@@ -81,13 +81,16 @@ function StaffDmtQueue() {
 
   return (
     <div className="space-y-5 max-w-6xl">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Banknote className="w-6 h-6 text-primary" /> DMT Processing Queue
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Manually transfer funds from your bank, then mark each request as success (with UTR) or failed (auto-refund).
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Banknote className="w-6 h-6 text-primary" /> DMT Processing Queue
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Manually transfer funds from your bank, then mark each request as success (with UTR) or failed (auto-refund).
+          </p>
+        </div>
+        <ExportPanel transfers={all} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
