@@ -15,8 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Upload, RotateCcw, Heart } from "lucide-react";
+import { Pencil, Upload, RotateCcw, Heart, ListChecks } from "lucide-react";
 import { toast } from "sonner";
+import { FEE_EDITABLE_SERVICES } from "@/lib/platform-services";
 
 export const Route = createFileRoute("/admin/commissions")({
   ssr: false,
@@ -238,6 +239,9 @@ function AdminCommissions() {
           </TabsTrigger>
           <TabsTrigger value="matrimony" className="text-xs">
             <Heart className="w-3 h-3 mr-1" /> Matrimony
+          </TabsTrigger>
+          <TabsTrigger value="all_fees" className="text-xs">
+            <ListChecks className="w-3 h-3 mr-1" /> All Service Fees
           </TabsTrigger>
         </TabsList>
 
