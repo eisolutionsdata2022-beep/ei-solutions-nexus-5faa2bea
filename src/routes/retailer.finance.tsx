@@ -43,6 +43,7 @@ import {
   MessageCircle,
   Loader2,
   X,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -74,6 +75,7 @@ import {
   addLoan,
   recordPayment,
   closeLoan,
+  renewLoan,
   addCashEntry,
   saveFinanceSettings,
   uploadSettingsAsset,
@@ -635,6 +637,7 @@ function LoansTab({
   createdBy: string;
 }) {
   const [showNew, setShowNew] = useState(false);
+  const [renewing, setRenewing] = useState<FinanceLoan | null>(null);
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -684,7 +687,7 @@ function LoansTab({
                   <Stat label="Loan Date" value={new Date(l.loanDate).toLocaleDateString("en-IN")} />
                   <Stat label="Due" value={new Date(l.dueDate).toLocaleDateString("en-IN")} />
                 </div>
-                <div className="flex gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {settings && cust && (
                     <Button
                       size="sm"
@@ -692,6 +695,15 @@ function LoansTab({
                       onClick={() => downloadPledgeReceipt(l, cust, settings)}
                     >
                       <Receipt className="w-3.5 h-3.5 mr-1" /> Pledge PDF
+                    </Button>
+                  )}
+                  {l.status === "Active" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRenewing(l)}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> Renew
                     </Button>
                   )}
                   {cust && (
@@ -709,6 +721,16 @@ function LoansTab({
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1" /> WhatsApp
                     </Button>
+                  )}
+                  {l.renewedToLoanNo && (
+                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
+                      → {l.renewedToLoanNo}
+                    </Badge>
+                  )}
+                  {l.renewedFromLoanNo && (
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                      ← {l.renewedFromLoanNo}
+                    </Badge>
                   )}
                 </div>
               </CardContent>
@@ -728,7 +750,194 @@ function LoansTab({
         settings={settings}
         createdBy={createdBy}
       />
+
+      {renewing && (
+        <RenewLoanDialog
+          oldLoan={renewing}
+          settings={settings}
+          retailerId={retailerId}
+          actor={createdBy}
+          onClose={() => setRenewing(null)}
+        />
+      )}
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RENEW LOAN — settle interest+penalty on old loan, open a fresh one against same gold
+// ──────────────────────────────────────────────────────────────────────────
+function RenewLoanDialog({
+  oldLoan,
+  settings,
+  retailerId,
+  actor,
+  onClose,
+}: {
+  oldLoan: FinanceLoan;
+  settings: FinanceSettings | null;
+  retailerId: string;
+  actor: string;
+  onClose: () => void;
+}) {
+  const due = useMemo(() => computeOutstanding(oldLoan), [oldLoan]);
+
+  // Settlement of old loan
+  const [interestPaid, setInterestPaid] = useState<number>(due.interest);
+  const [penaltyPaid, setPenaltyPaid] = useState<number>(due.penalty);
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Bank">("Cash");
+  const [paymentReference, setPaymentReference] = useState("");
+
+  // New loan terms — default to old loan's terms but editable
+  const [newRatePerGram, setNewRatePerGram] = useState<number>(
+    settings?.defaultGoldRatePerGram || oldLoan.marketRatePerGram,
+  );
+  const [newLtv, setNewLtv] = useState<number>(
+    settings?.defaultLtvPercent || oldLoan.ltvPercent,
+  );
+  const [newInterestRate, setNewInterestRate] = useState<number>(
+    settings?.defaultInterestRate || oldLoan.interestRate,
+  );
+  const [newTenureMonths, setNewTenureMonths] = useState<number>(oldLoan.tenureMonths);
+  const [newLoanAmount, setNewLoanAmount] = useState<number>(oldLoan.loanAmount);
+  const [remarks, setRemarks] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const newValuation = useMemo(
+    () => totalValuation(oldLoan.goldItems, newRatePerGram),
+    [oldLoan.goldItems, newRatePerGram],
+  );
+  const eligible = useMemo(
+    () => eligibleLoanAmount(oldLoan.goldItems, newRatePerGram, newLtv),
+    [oldLoan.goldItems, newRatePerGram, newLtv],
+  );
+  const newEmi = useMemo(
+    () => calculateEMI(newLoanAmount, newInterestRate, newTenureMonths),
+    [newLoanAmount, newInterestRate, newTenureMonths],
+  );
+  const newPayable = totalPayable(newEmi, newTenureMonths);
+  const settlementTotal = interestPaid + penaltyPaid;
+
+  async function submit() {
+    if (newLoanAmount <= 0) return toast.error("New loan amount must be positive");
+    if (newLoanAmount > eligible)
+      return toast.error(`New loan exceeds eligible ${formatINR(eligible)}`);
+    if (interestPaid < 0 || penaltyPaid < 0)
+      return toast.error("Settlement amounts cannot be negative");
+
+    setSaving(true);
+    try {
+      const result = await renewLoan({
+        oldLoan,
+        retailerId,
+        interestPaid,
+        penaltyPaid,
+        principalCarryOver: oldLoan.outstandingPrincipal,
+        paymentMode,
+        paymentReference,
+        newLoanAmount,
+        newInterestRate,
+        newTenureMonths,
+        newMarketRatePerGram: newRatePerGram,
+        newLtvPercent: newLtv,
+        newGoldValuation: newValuation,
+        newMonthlyEmi: newEmi,
+        newTotalPayable: newPayable,
+        remarks,
+        actor,
+      });
+      toast.success(
+        `Renewed: ${oldLoan.loanNo} → ${result.newLoanNo} · Receipt ${result.receiptNo}`,
+      );
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Renewal failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Renew Loan · {oldLoan.loanNo}</DialogTitle>
+          <DialogDescription>
+            Settle interest & penalty on the old loan, then open a fresh loan against the
+            same {oldLoan.totalNetWeight.toFixed(2)}g of gold.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Old loan summary */}
+          <div className="border rounded-md p-3 bg-muted/30">
+            <p className="text-xs font-semibold mb-2">Old Loan Settlement</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <Stat label="Outstanding" value={formatINR(due.principal)} />
+              <Stat label="Interest Due" value={formatINR(due.interest)} />
+              <Stat label="Penalty" value={formatINR(due.penalty)} />
+              <Stat label="Total Due" value={formatINR(due.totalDue)} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <NumField label="Interest Collected" value={interestPaid} onChange={setInterestPaid} />
+              <NumField label="Penalty Collected" value={penaltyPaid} onChange={setPenaltyPaid} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label className="text-xs">Payment Mode</Label>
+                <Select value={paymentMode} onValueChange={(v) => setPaymentMode(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_MODES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Field label="Reference (optional)" value={paymentReference} onChange={setPaymentReference} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Settlement receipt: <strong>{formatINR(settlementTotal)}</strong>
+              {oldLoan.outstandingPrincipal > 0 && (
+                <> · Principal carried to new loan: <strong>{formatINR(oldLoan.outstandingPrincipal)}</strong></>
+              )}
+            </p>
+          </div>
+
+          {/* New loan terms */}
+          <div className="border rounded-md p-3">
+            <p className="text-xs font-semibold mb-2">New Loan Terms</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <NumField label="Rate ₹/g (24k)" value={newRatePerGram} onChange={setNewRatePerGram} />
+              <NumField label="LTV %" value={newLtv} onChange={setNewLtv} />
+              <NumField label="Interest % p.a." value={newInterestRate} onChange={setNewInterestRate} />
+              <NumField label="Tenure (months)" value={newTenureMonths} onChange={setNewTenureMonths} />
+            </div>
+            <div className="bg-muted/40 rounded-md p-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs mt-3">
+              <Stat label="Re-Valuation" value={formatINR(newValuation)} />
+              <Stat label="Eligible" value={formatINR(eligible)} />
+              <Stat label="Net Wt" value={`${oldLoan.totalNetWeight.toFixed(2)}g`} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+              <NumField label="New Loan Amount" value={newLoanAmount} onChange={setNewLoanAmount} />
+              <Stat label="Monthly EMI" value={formatINR(newEmi)} />
+              <Stat label="Total Payable" value={formatINR(newPayable)} />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Remarks</Label>
+            <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} placeholder={`Renewed from ${oldLoan.loanNo}`} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+            <RotateCcw className="w-4 h-4 mr-1" /> Renew Loan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

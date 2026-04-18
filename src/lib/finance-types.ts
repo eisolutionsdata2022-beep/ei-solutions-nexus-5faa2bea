@@ -67,6 +67,12 @@ export interface FinanceLoan {
   remarks?: string;
   releasedAt?: string;             // when gold returned
   releasedSignatureUrl?: string;
+  // Renewal lineage
+  renewedFromLoanId?: string;      // points to the previous loan this one renewed
+  renewedFromLoanNo?: string;
+  renewedToLoanId?: string;        // set on the OLD loan when it gets renewed
+  renewedToLoanNo?: string;
+  renewedAt?: string;              // ISO timestamp on the old loan
   createdAt: string;
   updatedAt: string;
   createdBy: string;

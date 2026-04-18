@@ -289,6 +289,132 @@ export async function closeLoan(
   });
 }
 
+// ─── Renewal ────────────────────────────────────────────────────────────────
+/**
+ * Renew an existing loan: settles outstanding interest+penalty against the old
+ * loan, marks it 'Renewed', then creates a fresh loan against the same gold
+ * items with the new tenure and rate.
+ *
+ * Returns the new loan id + loan no, and the receipt no for the settlement.
+ */
+export async function renewLoan(params: {
+  oldLoan: FinanceLoan;
+  retailerId: string;
+  // settlement of old loan
+  interestPaid: number;
+  penaltyPaid: number;
+  principalCarryOver: number;       // usually = oldLoan.outstandingPrincipal
+  paymentMode: "Cash" | "UPI" | "Bank";
+  paymentReference?: string;
+  // new loan terms
+  newLoanAmount: number;
+  newInterestRate: number;
+  newTenureMonths: number;
+  newMarketRatePerGram: number;
+  newLtvPercent: number;
+  newGoldValuation: number;
+  newMonthlyEmi: number;
+  newTotalPayable: number;
+  remarks?: string;
+  actor: string;                    // email / uid
+}): Promise<{ newLoanId: string; newLoanNo: string; receiptNo: string }> {
+  const {
+    oldLoan,
+    retailerId,
+    interestPaid,
+    penaltyPaid,
+    principalCarryOver,
+    paymentMode,
+    paymentReference,
+    newLoanAmount,
+    newInterestRate,
+    newTenureMonths,
+    newMarketRatePerGram,
+    newLtvPercent,
+    newGoldValuation,
+    newMonthlyEmi,
+    newTotalPayable,
+    remarks,
+    actor,
+  } = params;
+
+  const now = new Date().toISOString();
+  const due = new Date();
+  due.setMonth(due.getMonth() + newTenureMonths);
+
+  const [newLoanNo, receiptNo] = await Promise.all([
+    getNextLoanNo(retailerId),
+    getNextReceiptNo(retailerId),
+  ]);
+
+  // 1) Create the new loan first so we can link the old loan to it
+  const newLoanData: Omit<FinanceLoan, "id"> = {
+    retailerId,
+    loanNo: newLoanNo,
+    customerId: oldLoan.customerId,
+    customerName: oldLoan.customerName,
+    customerMobile: oldLoan.customerMobile,
+    goldItems: oldLoan.goldItems,
+    totalGrossWeight: oldLoan.totalGrossWeight,
+    totalNetWeight: oldLoan.totalNetWeight,
+    averagePurity: oldLoan.averagePurity,
+    marketRatePerGram: newMarketRatePerGram,
+    goldValuation: newGoldValuation,
+    ltvPercent: newLtvPercent,
+    loanAmount: newLoanAmount,
+    interestRate: newInterestRate,
+    tenureMonths: newTenureMonths,
+    loanDate: now,
+    dueDate: due.toISOString(),
+    monthlyEmi: newMonthlyEmi,
+    totalPayable: newTotalPayable,
+    status: "Active",
+    totalPaid: 0,
+    outstandingPrincipal: newLoanAmount,
+    remarks: remarks?.trim() || `Renewed from ${oldLoan.loanNo}`,
+    renewedFromLoanId: oldLoan.id,
+    renewedFromLoanNo: oldLoan.loanNo,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: actor,
+  };
+  const newLoanRef = await addDoc(collection(db, "financeLoans"), newLoanData);
+
+  // 2) Mark the old loan as Renewed and link forward
+  await updateDoc(doc(db, "financeLoans", oldLoan.id), {
+    status: "Renewed",
+    outstandingPrincipal: 0,
+    totalPaid: (oldLoan.totalPaid || 0) + interestPaid + penaltyPaid + principalCarryOver,
+    renewedToLoanId: newLoanRef.id,
+    renewedToLoanNo: newLoanNo,
+    renewedAt: now,
+    updatedAt: now,
+  });
+
+  // 3) Record a 'Renewal' payment receipt against the OLD loan
+  const settlementAmount = interestPaid + penaltyPaid + principalCarryOver;
+  await addDoc(collection(db, "financePayments"), {
+    retailerId,
+    loanId: oldLoan.id,
+    loanNo: oldLoan.loanNo,
+    customerId: oldLoan.customerId,
+    customerName: oldLoan.customerName,
+    receiptNo,
+    type: "Renewal",
+    amount: settlementAmount,
+    principalComponent: principalCarryOver,
+    interestComponent: interestPaid,
+    penaltyComponent: penaltyPaid,
+    paymentMode,
+    reference: paymentReference?.trim() || `Renewed to ${newLoanNo}`,
+    notes: `Carried over to new loan ${newLoanNo}`,
+    collectedBy: actor,
+    collectedAt: now,
+  });
+
+  return { newLoanId: newLoanRef.id, newLoanNo, receiptNo };
+}
+
 // ─── Cash book ──────────────────────────────────────────────────────────────
 export async function addCashEntry(e: Omit<CashEntry, "id">): Promise<string> {
   const ref = await addDoc(collection(db, "financeCashBook"), e);
