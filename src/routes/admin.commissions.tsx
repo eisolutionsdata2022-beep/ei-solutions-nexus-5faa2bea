@@ -15,8 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Upload, RotateCcw, Heart } from "lucide-react";
+import { Pencil, Upload, RotateCcw, Heart, ListChecks } from "lucide-react";
 import { toast } from "sonner";
+import { FEE_EDITABLE_SERVICES } from "@/lib/platform-services";
 
 export const Route = createFileRoute("/admin/commissions")({
   ssr: false,
@@ -151,7 +152,41 @@ function AdminCommissions() {
     } catch { toast.error("Failed to update"); }
   };
 
-  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); fetchMatPricing(); }, []);
+  // All-services flat fee state
+  const [allFees, setAllFees] = useState<Record<string, number>>({});
+  const [editingFee, setEditingFee] = useState<string | null>(null);
+  const [feeInput, setFeeInput] = useState("");
+
+  const fetchAllFees = async () => {
+    const map: Record<string, number> = {};
+    await Promise.all(
+      FEE_EDITABLE_SERVICES.map(async (s) => {
+        try {
+          const docKey = s.key.replace(/-/g, "_");
+          const snap = await getDoc(doc(db, "platformFees", docKey));
+          map[s.key] = snap.exists() ? Number(snap.data().fee ?? s.defaultFee ?? 0) : (s.defaultFee ?? 0);
+        } catch {
+          map[s.key] = s.defaultFee ?? 0;
+        }
+      }),
+    );
+    setAllFees(map);
+  };
+
+  const saveServiceFee = async (key: string) => {
+    const fee = parseFloat(feeInput);
+    if (isNaN(fee) || fee < 0) { toast.error("Invalid fee"); return; }
+    try {
+      const docKey = key.replace(/-/g, "_");
+      await setDoc(doc(db, "platformFees", docKey), { fee, serviceKey: key, updatedAt: new Date().toISOString() }, { merge: true });
+      toast.success("Fee updated");
+      setAllFees((p) => ({ ...p, [key]: fee }));
+      setEditingFee(null);
+      setFeeInput("");
+    } catch { toast.error("Failed to update fee"); }
+  };
+
+  useEffect(() => { fetchRates(); fetchEdisFees(); fetchCvFee(); fetchTrainerFee(); fetchMatPricing(); fetchAllFees(); }, []);
 
   const openEdit = (rate: CommissionRate) => {
     setEditRate(rate);
@@ -238,6 +273,9 @@ function AdminCommissions() {
           </TabsTrigger>
           <TabsTrigger value="matrimony" className="text-xs">
             <Heart className="w-3 h-3 mr-1" /> Matrimony
+          </TabsTrigger>
+          <TabsTrigger value="all_fees" className="text-xs">
+            <ListChecks className="w-3 h-3 mr-1" /> All Service Fees
           </TabsTrigger>
         </TabsList>
 
@@ -536,6 +574,84 @@ function AdminCommissions() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* All Service Fees Tab */}
+        <TabsContent value="all_fees">
+          <Card>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <ListChecks className="w-4 h-4" /> All Retailer Service Fees
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Set the flat fee (₹) deducted from retailer wallet per use. Recharge/BBPS uses operator-based commissions in their own tabs.
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-xs font-bold text-left px-4 py-2">Service</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Category</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Current Fee (₹)</th>
+                      <th className="text-xs font-bold text-left px-4 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FEE_EDITABLE_SERVICES.map((svc) => {
+                      const current = allFees[svc.key] ?? svc.defaultFee ?? 0;
+                      return (
+                        <tr key={svc.key} className="border-b">
+                          <td className="text-xs font-medium px-4 py-2">
+                            {svc.name}
+                            <p className="text-[10px] text-muted-foreground font-normal">{svc.description}</p>
+                          </td>
+                          <td className="px-4 py-2">
+                            <Badge variant="outline" className="text-[10px]">{svc.category}</Badge>
+                          </td>
+                          <td className="px-4 py-2">
+                            {editingFee === svc.key ? (
+                              <Input
+                                type="number"
+                                step="1"
+                                min="0"
+                                value={feeInput}
+                                onChange={(e) => setFeeInput(e.target.value)}
+                                className="h-7 w-24 text-xs"
+                                autoFocus
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold">
+                                {current === 0 ? "Free" : `₹${current}`}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {editingFee === svc.key ? (
+                              <div className="flex gap-1">
+                                <Button size="sm" className="h-7 text-xs" onClick={() => saveServiceFee(svc.key)}>Save</Button>
+                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setEditingFee(null); setFeeInput(""); }}>Cancel</Button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs gap-1"
+                                onClick={() => { setEditingFee(svc.key); setFeeInput(String(current)); }}
+                              >
+                                <Pencil className="w-3 h-3" /> Edit
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
