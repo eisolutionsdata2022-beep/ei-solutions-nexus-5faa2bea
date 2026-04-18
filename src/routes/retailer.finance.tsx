@@ -307,10 +307,12 @@ function DashboardTab({
 function CustomersTab({
   retailerId,
   customers,
+  loans,
   createdBy,
 }: {
   retailerId: string;
   customers: FinanceCustomer[];
+  loans: FinanceLoan[];
   createdBy: string;
 }) {
   const [search, setSearch] = useState("");
