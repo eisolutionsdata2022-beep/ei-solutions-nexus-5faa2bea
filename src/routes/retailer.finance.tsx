@@ -75,6 +75,7 @@ import {
   addLoan,
   recordPayment,
   closeLoan,
+  renewLoan,
   addCashEntry,
   saveFinanceSettings,
   uploadSettingsAsset,
