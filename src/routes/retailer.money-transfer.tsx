@@ -457,7 +457,7 @@ function TransferFlow({ cfg, balance }: { cfg: DmtConfig; balance: number }) {
               <div className="bg-muted/50 border rounded-lg p-3 text-sm space-y-1">
                 <Row k="Amount to beneficiary" v={`₹${parseFloat(amount).toFixed(2)}`} />
                 <Row k="Service charge" v={`₹${charges.charge.toFixed(2)}`} />
-                <Row k="GST ({pct}%)".replace("{pct}", String(cfg.gstPercent))} v={`₹${charges.gst.toFixed(2)}`} />
+                <Row k={`GST (${cfg.gstPercent}%)`} v={`₹${charges.gst.toFixed(2)}`} />
                 <div className="border-t pt-1 mt-1 font-semibold flex justify-between">
                   <span>Total wallet debit</span>
                   <span className="text-primary">₹{charges.totalDebit.toFixed(2)}</span>
