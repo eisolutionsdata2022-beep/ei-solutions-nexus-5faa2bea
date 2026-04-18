@@ -82,6 +82,7 @@ import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-setti
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -459,6 +460,11 @@ const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   path: '/form-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -518,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -595,6 +602,7 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -679,6 +687,7 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -764,6 +773,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -841,6 +851,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -924,6 +935,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -1517,6 +1529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -1584,6 +1603,7 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
@@ -1617,6 +1637,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
