@@ -390,6 +390,18 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
         >
           Pick Avatar
         </button>
+        <button
+          onClick={screenSharing ? stopScreenShare : startScreenShare}
+          disabled={!isLive}
+          className={`h-8 px-2.5 rounded-lg flex items-center gap-1 border text-[11px] font-medium transition-colors disabled:opacity-40 ${
+            screenSharing
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30"
+              : "bg-white/5 border-white/10 hover:bg-white/10 text-white"
+          }`}
+          title={screenSharing ? "Stop sharing" : "Share screen"}
+        >
+          {screenSharing ? <><MonitorOff className="w-3.5 h-3.5" /> Stop Share</> : <><MonitorUp className="w-3.5 h-3.5" /> Share Screen</>}
+        </button>
       </div>
 
       <AvatarPickerDialog
