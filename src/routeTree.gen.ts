@@ -47,6 +47,7 @@ import { Route as RetailerServicesRouteImport } from './routes/retailer.services
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
+import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
@@ -71,6 +72,8 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
 import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
+import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
+import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
@@ -284,6 +287,11 @@ const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
   path: '/page-tools',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerMyServicesRoute = RetailerMyServicesRouteImport.update({
+  id: '/my-services',
+  path: '/my-services',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
   id: '/money-transfer',
   path: '/money-transfer',
@@ -405,6 +413,17 @@ const AdminServiceApplicationsRoute =
     path: '/service-applications',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminServiceActivationsConfigRoute =
+  AdminServiceActivationsConfigRouteImport.update({
+    id: '/service-activations-config',
+    path: '/service-activations-config',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminServiceActivationsRoute = AdminServiceActivationsRouteImport.update({
+  id: '/service-activations',
+  path: '/service-activations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRechargeTransactionsRoute =
   AdminRechargeTransactionsRouteImport.update({
     id: '/recharge-transactions',
@@ -543,6 +562,8 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-activations': typeof AdminServiceActivationsRoute
+  '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
@@ -567,6 +588,7 @@ export interface FileRoutesByFullPath {
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -622,6 +644,8 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-activations': typeof AdminServiceActivationsRoute
+  '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
@@ -646,6 +670,7 @@ export interface FileRoutesByTo {
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -708,6 +733,8 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
+  '/admin/service-activations': typeof AdminServiceActivationsRoute
+  '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
   '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
@@ -732,6 +759,7 @@ export interface FileRoutesById {
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
+  '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
@@ -795,6 +823,8 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/recharge-transactions'
+    | '/admin/service-activations'
+    | '/admin/service-activations-config'
     | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
@@ -819,6 +849,7 @@ export interface FileRouteTypes {
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
+    | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/recharge'
@@ -874,6 +905,8 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/recharge-transactions'
+    | '/admin/service-activations'
+    | '/admin/service-activations-config'
     | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
@@ -898,6 +931,7 @@ export interface FileRouteTypes {
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
+    | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/recharge'
@@ -959,6 +993,8 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/recharge-transactions'
+    | '/admin/service-activations'
+    | '/admin/service-activations-config'
     | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
@@ -983,6 +1019,7 @@ export interface FileRouteTypes {
     | '/retailer/kyc'
     | '/retailer/matrimony'
     | '/retailer/money-transfer'
+    | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/recharge'
@@ -1296,6 +1333,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerPageToolsRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/my-services': {
+      id: '/retailer/my-services'
+      path: '/my-services'
+      fullPath: '/retailer/my-services'
+      preLoaderRoute: typeof RetailerMyServicesRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/money-transfer': {
       id: '/retailer/money-transfer'
       path: '/money-transfer'
@@ -1462,6 +1506,20 @@ declare module '@tanstack/react-router' {
       path: '/service-applications'
       fullPath: '/admin/service-applications'
       preLoaderRoute: typeof AdminServiceApplicationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/service-activations-config': {
+      id: '/admin/service-activations-config'
+      path: '/service-activations-config'
+      fullPath: '/admin/service-activations-config'
+      preLoaderRoute: typeof AdminServiceActivationsConfigRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/service-activations': {
+      id: '/admin/service-activations'
+      path: '/service-activations'
+      fullPath: '/admin/service-activations'
+      preLoaderRoute: typeof AdminServiceActivationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/recharge-transactions': {
@@ -1635,6 +1693,8 @@ interface AdminRouteChildren {
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanSettingsRoute: typeof AdminPanSettingsRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
+  AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
+  AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
   AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
   AdminServicePlansRoute: typeof AdminServicePlansRoute
@@ -1670,6 +1730,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanSettingsRoute: AdminPanSettingsRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
+  AdminServiceActivationsRoute: AdminServiceActivationsRoute,
+  AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
   AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
   AdminServicePlansRoute: AdminServicePlansRoute,
@@ -1739,6 +1801,7 @@ interface RetailerRouteChildren {
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
+  RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
@@ -1763,6 +1826,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
+  RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,

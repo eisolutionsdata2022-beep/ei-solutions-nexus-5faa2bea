@@ -43,6 +43,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
     { label: "Services", to: "/admin/services", icon: ShoppingBag },
     { label: "Service Plans", to: "/admin/service-plans", icon: ShieldCheck },
+    { label: "Activation Charges", to: "/admin/service-activations-config", icon: Sparkles },
+    { label: "Activations Log", to: "/admin/service-activations", icon: BarChart3 },
     { label: "Service Buttons", to: "/admin/service-buttons", icon: ShoppingBag },
     { label: "Recharge Txns", to: "/admin/recharge-transactions", icon: ArrowLeftRight },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
@@ -75,6 +77,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
     { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
     { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
