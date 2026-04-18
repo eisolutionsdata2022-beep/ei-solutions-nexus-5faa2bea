@@ -294,16 +294,45 @@ function AdminCscSettings() {
           {CSC_SERVICES.map((svc) => {
             const enabled = !disabled.has(svc.key);
             const fee = config?.feeOverrides?.[svc.key] ?? svc.defaultFee;
+            const effectiveMode = config?.modeOverrides?.[svc.key] ?? svc.mode;
             return (
               <div
                 key={svc.key}
-                className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">{svc.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">{svc.name}</p>
+                    <Badge
+                      variant={effectiveMode === "bridge" ? "default" : "secondary"}
+                      className="text-[10px] uppercase"
+                    >
+                      {effectiveMode}
+                    </Badge>
+                  </div>
                   <p className="truncate text-xs text-muted-foreground">{svc.description}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 rounded-md border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={effectiveMode === "bridge" ? "default" : "ghost"}
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setMode(svc.key, "bridge")}
+                    >
+                      Bridge
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={effectiveMode === "redirect" ? "default" : "ghost"}
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setMode(svc.key, "redirect")}
+                    >
+                      Redirect
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-1 text-xs">
                     <span className="text-muted-foreground">Fee ₹</span>
                     <Input
