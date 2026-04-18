@@ -67,6 +67,7 @@ import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-r
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
+import { Route as AdminTrainingReviewsRouteImport } from './routes/admin.training-reviews'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
@@ -387,6 +388,11 @@ const AdminTrainingSettingsRoute = AdminTrainingSettingsRouteImport.update({
   path: '/training-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTrainingReviewsRoute = AdminTrainingReviewsRouteImport.update({
+  id: '/training-reviews',
+  path: '/training-reviews',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTrainingEarningsRoute = AdminTrainingEarningsRouteImport.update({
   id: '/training-earnings',
   path: '/training-earnings',
@@ -569,6 +575,7 @@ export interface FileRoutesByFullPath {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
+  '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -651,6 +658,7 @@ export interface FileRoutesByTo {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
+  '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -740,6 +748,7 @@ export interface FileRoutesById {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
+  '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -830,6 +839,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/training-earnings'
+    | '/admin/training-reviews'
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
@@ -912,6 +922,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/training-earnings'
+    | '/admin/training-reviews'
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
@@ -1000,6 +1011,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/training-earnings'
+    | '/admin/training-reviews'
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
@@ -1473,6 +1485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTrainingSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/training-reviews': {
+      id: '/admin/training-reviews'
+      path: '/training-reviews'
+      fullPath: '/admin/training-reviews'
+      preLoaderRoute: typeof AdminTrainingReviewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/training-earnings': {
       id: '/admin/training-earnings'
       path: '/training-earnings'
@@ -1700,6 +1719,7 @@ interface AdminRouteChildren {
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
+  AdminTrainingReviewsRoute: typeof AdminTrainingReviewsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
   AdminTrainingsRoute: typeof AdminTrainingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1737,6 +1757,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
+  AdminTrainingReviewsRoute: AdminTrainingReviewsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
   AdminTrainingsRoute: AdminTrainingsRoute,
   AdminUsersRoute: AdminUsersRoute,
