@@ -385,6 +385,7 @@ function CustomersTab({
         customer={viewing}
         onOpenChange={(o) => !o && setViewing(null)}
         retailerId={retailerId}
+        loans={loans}
       />
     </div>
   );
