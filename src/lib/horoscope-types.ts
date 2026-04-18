@@ -1,7 +1,17 @@
 export type HoroscopeStatus = "Pending" | "Processing" | "Generated" | "Delivered";
 export type Gender = "Male" | "Female" | "Other";
+export type HoroscopeProduct = "standard" | "premium" | "palmistry";
+export type PdfTemplate = "classic" | "premium";
+export type HoroscopeLanguage = "Malayalam" | "English" | "Hindi" | "Both";
+export type Hand = "left" | "right";
 
 export const HOROSCOPE_STATUSES: HoroscopeStatus[] = ["Pending", "Processing", "Generated", "Delivered"];
+
+export const PRODUCT_LABELS: Record<HoroscopeProduct, { ml: string; en: string; emoji: string }> = {
+  standard: { ml: "ജാതകം", en: "Standard Horoscope", emoji: "🪔" },
+  premium: { ml: "സമ്പൂർണ ജാതകം", en: "Premium Complete Horoscope", emoji: "🕉️" },
+  palmistry: { ml: "കൈരേഖ ശാസ്ത്രം", en: "Palmistry / Palm Reading", emoji: "🤲" },
+};
 
 export const STATUS_COLORS: Record<HoroscopeStatus, string> = {
   Pending: "bg-yellow-100 text-yellow-800",
@@ -87,20 +97,77 @@ export interface HoroscopePrediction {
   severity?: "positive" | "neutral" | "negative";
 }
 
+export interface DashaPeriod {
+  planet: string;        // e.g. "Jupiter"
+  planetMl: string;
+  startYear: number;
+  endYear: number;
+  years: number;
+}
+
+export interface PremiumExtras {
+  lifeStages?: string[];
+  marriagePeriod?: string;
+  childrenLuck?: string;
+  educationOutlook?: string;
+  careerGrowth?: string;
+  foreignTravel?: string;
+  wealthPeriods?: string[];
+  healthWarnings?: string[];
+  enemyObstacles?: string[];
+  turningPoints?: string[];
+  yearlyOutlook?: string[];
+  dashaTimeline?: DashaPeriod[];
+  gocharaSummary?: string;
+  remedies?: {
+    poojas?: string[];
+    temples?: string[];
+    shanti?: string[];
+    daanam?: string[];
+    mantras?: string[];
+    vrathas?: string[];
+    goodDays?: string[];
+    badDays?: string[];
+  };
+}
+
+export interface PalmistryReading {
+  lifeLine: string;
+  headLine: string;
+  heartLine: string;
+  fateLine: string;
+  marriageLine: string;
+  wealthLine: string;
+  careerOutlook: string;
+  healthIndicators: string;
+  personality: string;
+  futureGrowth: string;
+  marks?: string;
+  comparison?: string; // when both hands provided
+  language: HoroscopeLanguage;
+}
+
 export interface HoroscopeRequest {
   id: string;
   userId: string;
   userName: string;
+  product: HoroscopeProduct;
+  pdfTemplate?: PdfTemplate;
   customerName: string;
   gender: Gender;
-  dateOfBirth: string;
-  timeOfBirth: string;
-  placeOfBirth: string;
-  birthStar?: string; // Nakshatra name
-  language: "Malayalam" | "English" | "Both";
+  // birth details (not required for palmistry)
+  dateOfBirth?: string;
+  timeOfBirth?: string;
+  placeOfBirth?: string;
+  birthStar?: string;
+  language: HoroscopeLanguage;
   status: HoroscopeStatus;
   chart?: HoroscopeChart;
   predictions?: HoroscopePrediction[];
+  premiumExtras?: PremiumExtras;
+  // palmistry
+  palmImages?: { left?: string; right?: string }; // data URLs
+  palmistry?: PalmistryReading;
   pdfUrl?: string;
   amount: number;
   transactionId?: string;
@@ -109,17 +176,50 @@ export interface HoroscopeRequest {
   processedBy?: string;
   processedByName?: string;
   deliveredAt?: string;
-  godImage?: string; // base64 data URL of uploaded god image
+  godImage?: string; // base64 data URL
+}
+
+export interface HoroscopeProductPricing {
+  enabled: boolean;
+  price: number;
+  commissionPercentage: number;
 }
 
 export interface HoroscopeSettings {
+  // ── Legacy (kept for backwards compatibility — mirror of standard) ──
   pricePerHoroscope: number;
   commissionPercentage: number;
   serviceEnabled: boolean;
+  // ── New per-product pricing ──
+  products?: Record<HoroscopeProduct, HoroscopeProductPricing>;
 }
 
+export const DEFAULT_PRODUCT_PRICING: Record<HoroscopeProduct, HoroscopeProductPricing> = {
+  standard: { enabled: true, price: 99, commissionPercentage: 20 },
+  premium: { enabled: true, price: 499, commissionPercentage: 25 },
+  palmistry: { enabled: true, price: 199, commissionPercentage: 25 },
+};
+
 export const DEFAULT_SETTINGS: HoroscopeSettings = {
-  pricePerHoroscope: 299,
+  pricePerHoroscope: 99,
   commissionPercentage: 20,
   serviceEnabled: true,
+  products: DEFAULT_PRODUCT_PRICING,
 };
+
+/** Helper — read a product's effective pricing, falling back to defaults / legacy. */
+export function getProductPricing(
+  s: HoroscopeSettings | null | undefined,
+  product: HoroscopeProduct
+): HoroscopeProductPricing {
+  const fromSettings = s?.products?.[product];
+  if (fromSettings) return fromSettings;
+  if (product === "standard" && s) {
+    return {
+      enabled: s.serviceEnabled,
+      price: s.pricePerHoroscope,
+      commissionPercentage: s.commissionPercentage,
+    };
+  }
+  return DEFAULT_PRODUCT_PRICING[product];
+}
