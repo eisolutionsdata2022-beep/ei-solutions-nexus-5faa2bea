@@ -141,6 +141,9 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     cameraStreamRef.current = null;
     avatarStreamRef.current?.getTracks().forEach((t) => t.stop());
     avatarStreamRef.current = null;
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+    setScreenSharing(false);
     broadcastStreamRef.current?.getTracks().forEach((t) => t.stop());
     broadcastStreamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -213,14 +216,57 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   // when avatar canvas stream is ready, swap track on peers
   const handleAvatarStream = (s: MediaStream) => {
     avatarStreamRef.current = s;
-    if (mode !== "avatar") return;
+    if (mode !== "avatar" || screenSharing) return;
     const vid = s.getVideoTracks()[0];
     const stream = ensureBroadcastStream(vid);
-    peersRef.current.forEach((pc) => {
-      const sender = pc.getSenders().find((s2) => s2.track?.kind === "video");
-      if (sender && vid) sender.replaceTrack(vid).catch(() => {});
-    });
+    replaceVideoOnPeers(vid);
     if (videoRef.current) videoRef.current.srcObject = stream;
+  };
+
+  // ============ SCREEN SHARE ============
+  const startScreenShare = async () => {
+    if (!isLive || !appUser) {
+      toast.error("Start Live first");
+      return;
+    }
+    try {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      screenStreamRef.current = s;
+      const vid = s.getVideoTracks()[0];
+      // auto-stop when user ends share via browser UI
+      vid.onended = () => { void stopScreenShare(); };
+      const stream = ensureBroadcastStream(vid);
+      replaceVideoOnPeers(vid);
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setScreenSharing(true);
+      await updateHost(trainingId, appUser.uid, { mode: "camera", cameraOn: true });
+      toast.success("Screen sharing started");
+    } catch (err: any) {
+      if (err?.name !== "NotAllowedError") {
+        console.error(err);
+        toast.error(err?.message || "Failed to share screen");
+      }
+    }
+  };
+
+  const stopScreenShare = async () => {
+    const s = screenStreamRef.current;
+    if (s) s.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+    setScreenSharing(false);
+    // restore previous source (avatar canvas or camera)
+    let vid: MediaStreamTrack | null = null;
+    if (mode === "avatar" && avatarStreamRef.current) {
+      vid = avatarStreamRef.current.getVideoTracks()[0] || null;
+    } else if (cameraStreamRef.current) {
+      vid = cameraStreamRef.current.getVideoTracks()[0] || null;
+    }
+    const stream = ensureBroadcastStream(vid);
+    replaceVideoOnPeers(vid);
+    if (videoRef.current) {
+      videoRef.current.srcObject = mode === "camera" ? cameraStreamRef.current : stream;
+    }
+    toast.info("Screen sharing stopped");
   };
 
   const onPickAvatar = async (a: AvatarOption) => {
