@@ -156,6 +156,16 @@ function AdminCscSettings() {
     );
   };
 
+  const setMode = async (key: string, mode: "bridge" | "redirect") => {
+    const overrides = { ...(config?.modeOverrides ?? {}), [key]: mode };
+    await setDoc(
+      doc(db, "csc_config", "master"),
+      { modeOverrides: overrides, updatedAt: new Date().toISOString() },
+      { merge: true },
+    );
+    toast.success(`Mode updated → ${mode}`);
+  };
+
   const disabled = new Set(config?.disabledServices ?? []);
 
   return (
