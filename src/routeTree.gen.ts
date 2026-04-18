@@ -37,6 +37,7 @@ import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
+import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
@@ -88,6 +89,7 @@ import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
+import { Route as AdminDmtSettingsRouteImport } from './routes/admin.dmt-settings'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -236,6 +238,11 @@ const StaffFormsRoute = StaffFormsRouteImport.update({
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   id: '/form-submissions',
   path: '/form-submissions',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffDmtRoute = StaffDmtRouteImport.update({
+  id: '/dmt',
+  path: '/dmt',
   getParentRoute: () => StaffRoute,
 } as any)
 const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
@@ -496,6 +503,11 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDmtSettingsRoute = AdminDmtSettingsRouteImport.update({
+  id: '/dmt-settings',
+  path: '/dmt-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -555,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -606,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -638,6 +652,7 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -689,6 +704,7 @@ export interface FileRoutesByTo {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -728,6 +744,7 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -779,6 +796,7 @@ export interface FileRoutesById {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -819,6 +837,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -870,6 +889,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -902,6 +922,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -953,6 +974,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -991,6 +1013,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -1042,6 +1065,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1273,6 +1297,13 @@ declare module '@tanstack/react-router' {
       path: '/form-submissions'
       fullPath: '/staff/form-submissions'
       preLoaderRoute: typeof StaffFormSubmissionsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/dmt': {
+      id: '/staff/dmt'
+      path: '/dmt'
+      fullPath: '/staff/dmt'
+      preLoaderRoute: typeof StaffDmtRouteImport
       parentRoute: typeof StaffRoute
     }
     '/retailer/work-badge': {
@@ -1632,6 +1663,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dmt-settings': {
+      id: '/admin/dmt-settings'
+      path: '/dmt-settings'
+      fullPath: '/admin/dmt-settings'
+      preLoaderRoute: typeof AdminDmtSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -1699,6 +1737,7 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
+  AdminDmtSettingsRoute: typeof AdminDmtSettingsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
@@ -1737,6 +1776,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
+  AdminDmtSettingsRoute: AdminDmtSettingsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
@@ -1866,6 +1906,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
@@ -1879,6 +1920,7 @@ interface StaffRouteChildren {
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,

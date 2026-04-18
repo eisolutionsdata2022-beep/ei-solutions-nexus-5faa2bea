@@ -70,6 +70,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Portal Settings", to: "/admin/pan-settings", icon: ShieldCheck },
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
+    { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -87,7 +88,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Matrimony", to: "/retailer/matrimony", icon: Users },
     { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
     { label: "My Wallet", to: "/retailer/wallet", icon: Wallet },
-    { label: "Money Transfer", to: "/retailer/money-transfer", icon: Banknote },
+    { label: "Money Transfer (DMT)", to: "/retailer/money-transfer", icon: ArrowLeftRight },
     { label: "CV Builder", to: "/retailer/cv-builder", icon: CVIcon },
     { label: "Trainings", to: "/retailer/trainings", icon: GraduationCap },
     { label: "KYC", to: "/retailer/kyc", icon: CheckCircle },
@@ -114,6 +115,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Form Builder", to: "/staff/forms", icon: FileText },
     { label: "Form Submissions", to: "/staff/form-submissions", icon: FileText },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
+    { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
@@ -123,6 +125,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
+    { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
   ],
 };
 
