@@ -199,16 +199,11 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const switchToCamera = async () => {
     setMode("camera");
     const cam = cameraStreamRef.current;
-    if (cam && isLive) {
+    if (cam && isLive && !screenSharing) {
       const vid = cam.getVideoTracks()[0];
-      const stream = ensureBroadcastStream(vid);
-      // replace track on every existing peer
-      peersRef.current.forEach((pc) => {
-        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-        if (sender && vid) sender.replaceTrack(vid).catch(() => {});
-      });
+      ensureBroadcastStream(vid);
+      replaceVideoOnPeers(vid);
       if (videoRef.current) videoRef.current.srcObject = cam;
-      void stream;
     }
     if (isLive && appUser) await updateHost(trainingId, appUser.uid, { mode: "camera", cameraOn: true });
   };
