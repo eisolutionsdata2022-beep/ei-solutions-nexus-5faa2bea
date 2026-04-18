@@ -94,6 +94,7 @@ import {
   downloadPledgeReceipt,
   downloadPaymentReceipt,
   downloadClosureCertificate,
+  downloadRenewalHistoryPdf,
 } from "@/lib/finance-receipt-pdf";
 import { CameraCaptureDialog } from "@/components/finance/CameraCaptureDialog";
 import { SignaturePadDialog } from "@/components/finance/SignaturePadDialog";
