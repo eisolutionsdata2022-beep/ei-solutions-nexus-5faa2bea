@@ -43,7 +43,9 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const micGainRef = useRef<GainNode | null>(null);
   const screenAudioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const screenGainRef = useRef<GainNode | null>(null);
   const mixedAudioTrackRef = useRef<MediaStreamTrack | null>(null);
 
   const [mode, setMode] = useState<LiveMode>("camera");
@@ -53,6 +55,8 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const [pickerOpen, setPickerOpen] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [screenSharing, setScreenSharing] = useState(false);
+  const [micVolume, setMicVolume] = useState(1); // 0..1.5
+  const [systemVolume, setSystemVolume] = useState(1); // 0..1.5
 
   // replace video track on all existing peer connections
   const replaceVideoOnPeers = (vid: MediaStreamTrack | null) => {
@@ -82,34 +86,50 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     return audioDestRef.current;
   };
 
-  // (re)connect mic into mix graph
+  // (re)connect mic → micGain → destination
   const connectMicToMix = () => {
     const cam = cameraStreamRef.current;
     if (!cam) return;
     const dest = ensureMixGraph();
     micSourceRef.current?.disconnect();
+    micGainRef.current?.disconnect();
     const micStream = new MediaStream(cam.getAudioTracks());
     if (micStream.getAudioTracks().length === 0) return;
     micSourceRef.current = audioCtxRef.current!.createMediaStreamSource(micStream);
-    micSourceRef.current.connect(dest);
+    micGainRef.current = audioCtxRef.current!.createGain();
+    micGainRef.current.gain.value = micOn ? micVolume : 0;
+    micSourceRef.current.connect(micGainRef.current).connect(dest);
     mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
   };
 
-  // connect screen audio into mix graph
+  // connect screen audio → screenGain → destination
   const connectScreenAudioToMix = (screenStream: MediaStream) => {
     if (screenStream.getAudioTracks().length === 0) return;
     const dest = ensureMixGraph();
     screenAudioSourceRef.current?.disconnect();
+    screenGainRef.current?.disconnect();
     const sa = new MediaStream(screenStream.getAudioTracks());
     screenAudioSourceRef.current = audioCtxRef.current!.createMediaStreamSource(sa);
-    screenAudioSourceRef.current.connect(dest);
+    screenGainRef.current = audioCtxRef.current!.createGain();
+    screenGainRef.current.gain.value = systemVolume;
+    screenAudioSourceRef.current.connect(screenGainRef.current).connect(dest);
     mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
   };
 
   const disconnectScreenAudio = () => {
     screenAudioSourceRef.current?.disconnect();
     screenAudioSourceRef.current = null;
+    screenGainRef.current?.disconnect();
+    screenGainRef.current = null;
   };
+
+  // live-update gain when sliders move
+  useEffect(() => {
+    if (micGainRef.current) micGainRef.current.gain.value = micOn ? micVolume : 0;
+  }, [micVolume, micOn]);
+  useEffect(() => {
+    if (screenGainRef.current) screenGainRef.current.gain.value = systemVolume;
+  }, [systemVolume]);
 
   // build a single broadcast stream (audio + video track that we swap)
   const ensureBroadcastStream = (videoTrack: MediaStreamTrack | null): MediaStream => {
@@ -211,8 +231,12 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     // tear down audio mix graph
     micSourceRef.current?.disconnect();
     micSourceRef.current = null;
+    micGainRef.current?.disconnect();
+    micGainRef.current = null;
     screenAudioSourceRef.current?.disconnect();
     screenAudioSourceRef.current = null;
+    screenGainRef.current?.disconnect();
+    screenGainRef.current = null;
     mixedAudioTrackRef.current = null;
     audioDestRef.current = null;
     audioCtxRef.current?.close().catch(() => {});
@@ -495,6 +519,42 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
         >
           {screenSharing ? <><MonitorOff className="w-3.5 h-3.5" /> Stop Share</> : <><MonitorUp className="w-3.5 h-3.5" /> Share Screen</>}
         </button>
+
+        {/* audio mix sliders */}
+        <div className="flex items-center gap-2 ml-1 px-2 h-8 rounded-lg border border-white/10 bg-white/5">
+          <label className="flex items-center gap-1.5 text-[10px] text-white/70" title="Microphone volume">
+            <Mic className="w-3 h-3" />
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.05}
+              value={micVolume}
+              onChange={(e) => setMicVolume(parseFloat(e.target.value))}
+              disabled={!isLive}
+              className="w-16 accent-blue-400 disabled:opacity-40"
+            />
+            <span className="w-7 text-right tabular-nums">{Math.round(micVolume * 100)}%</span>
+          </label>
+          <div className="w-px h-4 bg-white/10" />
+          <label
+            className={`flex items-center gap-1.5 text-[10px] ${screenSharing ? "text-white/70" : "text-white/30"}`}
+            title={screenSharing ? "System audio volume" : "Start screen share to enable"}
+          >
+            <MonitorUp className="w-3 h-3" />
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.05}
+              value={systemVolume}
+              onChange={(e) => setSystemVolume(parseFloat(e.target.value))}
+              disabled={!screenSharing}
+              className="w-16 accent-emerald-400 disabled:opacity-40"
+            />
+            <span className="w-7 text-right tabular-nums">{Math.round(systemVolume * 100)}%</span>
+          </label>
+        </div>
       </div>
 
       <AvatarPickerDialog
