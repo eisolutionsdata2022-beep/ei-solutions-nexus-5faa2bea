@@ -627,8 +627,132 @@ function CustomerDetailDialog({
             })}
           </div>
         </div>
+
+        {/* Loan & Renewal History */}
+        <div className="border-t pt-3">
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+            <RotateCcw className="w-3.5 h-3.5" /> Loan & Renewal History
+          </p>
+          {renewalChains.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No loans yet for this customer.</p>
+          ) : (
+            <div className="space-y-3">
+              {renewalChains.map((chain, idx) => (
+                <RenewalChainTimeline key={chain[0].id} chain={chain} index={idx} />
+              ))}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Renewal-chain helpers ─────────────────────────────────────────────────
+/**
+ * Group a customer's loans into renewal chains. Each chain is an ordered list
+ * starting from the original loan (no `renewedFromLoanId`) and following
+ * `renewedToLoanId` until it ends. Standalone loans become single-item chains.
+ */
+function buildRenewalChains(loans: FinanceLoan[]): FinanceLoan[][] {
+  const byId = new Map(loans.map((l) => [l.id, l]));
+  const chains: FinanceLoan[][] = [];
+  const seen = new Set<string>();
+  // Roots: loans with no parent renewal link
+  const roots = loans
+    .filter((l) => !l.renewedFromLoanId || !byId.has(l.renewedFromLoanId))
+    .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+  for (const root of roots) {
+    const chain: FinanceLoan[] = [];
+    let cur: FinanceLoan | undefined = root;
+    while (cur && !seen.has(cur.id)) {
+      chain.push(cur);
+      seen.add(cur.id);
+      cur = cur.renewedToLoanId ? byId.get(cur.renewedToLoanId) : undefined;
+    }
+    chains.push(chain);
+  }
+  // Newest chain (latest loan) first
+  chains.sort(
+    (a, b) =>
+      (b[b.length - 1].createdAt || "").localeCompare(a[a.length - 1].createdAt || ""),
+  );
+  return chains;
+}
+
+function RenewalChainTimeline({ chain, index }: { chain: FinanceLoan[]; index: number }) {
+  const isRenewalChain = chain.length > 1;
+  return (
+    <div className="border rounded-md p-3 bg-muted/20">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold">
+          {isRenewalChain ? `Renewal Chain #${index + 1}` : `Loan #${index + 1}`}
+          <span className="ml-2 text-muted-foreground font-normal">
+            {isRenewalChain ? `${chain.length} loans` : "standalone"}
+          </span>
+        </p>
+        <Badge variant="outline" className={LOAN_STATUS_COLORS[chain[chain.length - 1].status]}>
+          Current: {chain[chain.length - 1].status}
+        </Badge>
+      </div>
+
+      <ol className="relative border-l-2 border-gov-blue/30 ml-2 space-y-3">
+        {chain.map((loan, i) => {
+          const isLast = i === chain.length - 1;
+          const isFirst = i === 0;
+          return (
+            <li key={loan.id} className="ml-4 relative">
+              <span
+                className={`absolute -left-[1.45rem] top-1 w-3 h-3 rounded-full border-2 ${
+                  isLast
+                    ? "bg-gov-blue border-gov-blue"
+                    : "bg-background border-gov-blue/60"
+                }`}
+              />
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="font-bold text-sm">{loan.loanNo}</span>
+                <Badge
+                  variant="outline"
+                  className={`${LOAN_STATUS_COLORS[loan.status]} text-[10px] py-0 px-1.5`}
+                >
+                  {loan.status}
+                </Badge>
+                {isFirst && isRenewalChain && (
+                  <span className="text-[10px] text-muted-foreground">(original)</span>
+                )}
+                {isLast && isRenewalChain && (
+                  <span className="text-[10px] text-muted-foreground">(latest)</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-0.5 mt-1 text-[11px]">
+                <span><span className="text-muted-foreground">Loan:</span> <strong>{formatINR(loan.loanAmount)}</strong></span>
+                <span><span className="text-muted-foreground">Rate:</span> {loan.interestRate}% · {loan.tenureMonths}m</span>
+                <span><span className="text-muted-foreground">Date:</span> {new Date(loan.loanDate).toLocaleDateString("en-IN")}</span>
+                <span>
+                  <span className="text-muted-foreground">
+                    {loan.status === "Active" ? "Outstanding:" : loan.status === "Closed" ? "Closed:" : "Renewed:"}
+                  </span>{" "}
+                  {loan.status === "Active"
+                    ? formatINR(loan.outstandingPrincipal)
+                    : loan.status === "Closed"
+                      ? loan.releasedAt
+                        ? new Date(loan.releasedAt).toLocaleDateString("en-IN")
+                        : "—"
+                      : loan.renewedAt
+                        ? new Date(loan.renewedAt).toLocaleDateString("en-IN")
+                        : "—"}
+                </span>
+              </div>
+              {!isLast && (
+                <div className="mt-1.5 text-[11px] text-gov-blue flex items-center gap-1">
+                  <RotateCcw className="w-3 h-3" /> renewed →
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
