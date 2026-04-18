@@ -126,6 +126,18 @@ function AdminDmtSettings() {
               <Input type="number" value={cfg.gstPercent} onChange={(e) => setCfg({ ...cfg, gstPercent: +e.target.value })} />
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            <div>
+              <Label>Retailer commission % (of base charge)</Label>
+              <Input type="number" min={0} max={100}
+                value={cfg.retailerCommissionPercent}
+                onChange={(e) => setCfg({ ...cfg, retailerCommissionPercent: +e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Auto-credited to retailer wallet on each successful transfer.
+                Example: charge ₹20 × {cfg.retailerCommissionPercent}% = ₹{((20 * (cfg.retailerCommissionPercent || 0)) / 100).toFixed(2)} commission.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
