@@ -25,7 +25,6 @@ import {
   type DmtConfig,
   DEFAULT_DMT_CONFIG,
   currentMonthKey,
-  calculateDmtCharges,
 } from "./dmt-types";
 
 // ── Config ──────────────────────────────────────────────────────────────
