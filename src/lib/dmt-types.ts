@@ -59,6 +59,7 @@ export interface DmtTransfer {
   staffId?: string; // who processed
   staffName?: string;
   processedAt?: string;
+  retailerCommission?: number; // amount credited to retailer wallet on success
   createdAt: string;
 }
 

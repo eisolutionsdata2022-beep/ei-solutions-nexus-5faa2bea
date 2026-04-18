@@ -25,6 +25,7 @@ import {
   type DmtConfig,
   DEFAULT_DMT_CONFIG,
   currentMonthKey,
+  calculateDmtCharges,
 } from "./dmt-types";
 
 // ── Config ──────────────────────────────────────────────────────────────
@@ -163,10 +164,30 @@ export async function markTransferProcessing(id: string, staffId: string, staffN
   });
 }
 
-export async function markTransferSuccess(id: string, utr: string) {
-  await updateDoc(doc(db, "dmtTransfers", id), {
+export async function markTransferSuccess(id: string, utr: string): Promise<void> {
+  const ref = doc(db, "dmtTransfers", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Transfer not found");
+  const t = snap.data() as DmtTransfer;
+  if (t.status === "success") return;
+
+  // Pay retailer commission from base charge
+  const cfg = await loadDmtConfig();
+  const pct = Math.max(0, Math.min(100, cfg.retailerCommissionPercent || 0));
+  const commission = +((t.charge * pct) / 100).toFixed(2);
+
+  if (commission > 0) {
+    await atomicCredit(t.retailerId, commission, {
+      source: "dmt_commission",
+      description: `DMT commission · ${t.beneficiaryName} (${pct}% of ₹${t.charge})`,
+      transferId: id,
+    });
+  }
+
+  await updateDoc(ref, {
     status: "success",
     utr,
+    retailerCommission: commission,
   });
 }
 
