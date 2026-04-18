@@ -530,11 +530,13 @@ function CustomerDetailDialog({
   onOpenChange,
   retailerId,
   loans,
+  settings,
 }: {
   customer: FinanceCustomer | null;
   onOpenChange: (open: boolean) => void;
   retailerId: string;
   loans: FinanceLoan[];
+  settings: FinanceSettings | null;
 }) {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
