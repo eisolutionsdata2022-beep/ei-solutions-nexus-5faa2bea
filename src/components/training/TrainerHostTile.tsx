@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AvatarStream, getAvatarById, AVATAR_2D, type AvatarOption } from "./AvatarStream";
 import { AvatarPickerDialog } from "./AvatarPickerDialog";
-import { Video, VideoOff, Mic, MicOff, User2, Sparkles, Radio, Square, Maximize2 } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, User2, Sparkles, Radio, Square, Maximize2, MonitorUp, MonitorOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -34,6 +34,7 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const audioOnlyStreamRef = useRef<MediaStream | null>(null);
   const avatarStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const broadcastStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const unsubsRef = useRef<Array<() => void>>([]);
@@ -44,6 +45,15 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const [avatarId, setAvatarId] = useState<string>(AVATAR_2D[0].id);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
+  const [screenSharing, setScreenSharing] = useState(false);
+
+  // replace video track on all existing peer connections
+  const replaceVideoOnPeers = (vid: MediaStreamTrack | null) => {
+    peersRef.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && vid) sender.replaceTrack(vid).catch(() => {});
+    });
+  };
 
   // build a single broadcast stream (audio + video track that we swap)
   const ensureBroadcastStream = (videoTrack: MediaStreamTrack | null): MediaStream => {
