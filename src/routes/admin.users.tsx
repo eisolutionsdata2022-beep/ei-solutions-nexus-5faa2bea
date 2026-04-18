@@ -2,8 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ShieldCheck } from "lucide-react";
+import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
 
 export const Route = createFileRoute("/admin/users")({
   ssr: false,
@@ -12,6 +15,7 @@ export const Route = createFileRoute("/admin/users")({
 
 function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
+  const [permUser, setPermUser] = useState<{ id: string; name?: string; email?: string } | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -40,6 +44,7 @@ function AdminUsers() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Email</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">KYC Status</th>
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">Permissions</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,16 +63,34 @@ function AdminUsers() {
                         {u.kycStatus || "N/A"}
                       </Badge>
                     </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setPermUser({ id: u.id, name: u.name, email: u.email })}
+                      >
+                        <ShieldCheck className="w-3 h-3" /> Manage Services
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
-                  <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
+                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      {permUser && (
+        <UserServicePermissionsDialog
+          open={!!permUser}
+          onClose={() => setPermUser(null)}
+          user={permUser}
+        />
+      )}
     </div>
   );
 }
