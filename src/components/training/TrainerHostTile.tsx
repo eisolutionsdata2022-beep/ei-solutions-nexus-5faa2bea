@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AvatarStream, getAvatarById, AVATAR_2D, type AvatarOption } from "./AvatarStream";
 import { AvatarPickerDialog } from "./AvatarPickerDialog";
-import { Video, VideoOff, Mic, MicOff, User2, Sparkles, Radio, Square, Maximize2 } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, User2, Sparkles, Radio, Square, Maximize2, MonitorUp, MonitorOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -34,6 +34,7 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const audioOnlyStreamRef = useRef<MediaStream | null>(null);
   const avatarStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const broadcastStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const unsubsRef = useRef<Array<() => void>>([]);
@@ -44,6 +45,15 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const [avatarId, setAvatarId] = useState<string>(AVATAR_2D[0].id);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
+  const [screenSharing, setScreenSharing] = useState(false);
+
+  // replace video track on all existing peer connections
+  const replaceVideoOnPeers = (vid: MediaStreamTrack | null) => {
+    peersRef.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && vid) sender.replaceTrack(vid).catch(() => {});
+    });
+  };
 
   // build a single broadcast stream (audio + video track that we swap)
   const ensureBroadcastStream = (videoTrack: MediaStreamTrack | null): MediaStream => {
@@ -131,6 +141,9 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     cameraStreamRef.current = null;
     avatarStreamRef.current?.getTracks().forEach((t) => t.stop());
     avatarStreamRef.current = null;
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+    setScreenSharing(false);
     broadcastStreamRef.current?.getTracks().forEach((t) => t.stop());
     broadcastStreamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -186,16 +199,11 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const switchToCamera = async () => {
     setMode("camera");
     const cam = cameraStreamRef.current;
-    if (cam && isLive) {
+    if (cam && isLive && !screenSharing) {
       const vid = cam.getVideoTracks()[0];
-      const stream = ensureBroadcastStream(vid);
-      // replace track on every existing peer
-      peersRef.current.forEach((pc) => {
-        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-        if (sender && vid) sender.replaceTrack(vid).catch(() => {});
-      });
+      ensureBroadcastStream(vid);
+      replaceVideoOnPeers(vid);
       if (videoRef.current) videoRef.current.srcObject = cam;
-      void stream;
     }
     if (isLive && appUser) await updateHost(trainingId, appUser.uid, { mode: "camera", cameraOn: true });
   };
@@ -203,14 +211,57 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   // when avatar canvas stream is ready, swap track on peers
   const handleAvatarStream = (s: MediaStream) => {
     avatarStreamRef.current = s;
-    if (mode !== "avatar") return;
+    if (mode !== "avatar" || screenSharing) return;
     const vid = s.getVideoTracks()[0];
     const stream = ensureBroadcastStream(vid);
-    peersRef.current.forEach((pc) => {
-      const sender = pc.getSenders().find((s2) => s2.track?.kind === "video");
-      if (sender && vid) sender.replaceTrack(vid).catch(() => {});
-    });
+    replaceVideoOnPeers(vid);
     if (videoRef.current) videoRef.current.srcObject = stream;
+  };
+
+  // ============ SCREEN SHARE ============
+  const startScreenShare = async () => {
+    if (!isLive || !appUser) {
+      toast.error("Start Live first");
+      return;
+    }
+    try {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      screenStreamRef.current = s;
+      const vid = s.getVideoTracks()[0];
+      // auto-stop when user ends share via browser UI
+      vid.onended = () => { void stopScreenShare(); };
+      const stream = ensureBroadcastStream(vid);
+      replaceVideoOnPeers(vid);
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setScreenSharing(true);
+      await updateHost(trainingId, appUser.uid, { mode: "camera", cameraOn: true });
+      toast.success("Screen sharing started");
+    } catch (err: any) {
+      if (err?.name !== "NotAllowedError") {
+        console.error(err);
+        toast.error(err?.message || "Failed to share screen");
+      }
+    }
+  };
+
+  const stopScreenShare = async () => {
+    const s = screenStreamRef.current;
+    if (s) s.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+    setScreenSharing(false);
+    // restore previous source (avatar canvas or camera)
+    let vid: MediaStreamTrack | null = null;
+    if (mode === "avatar" && avatarStreamRef.current) {
+      vid = avatarStreamRef.current.getVideoTracks()[0] || null;
+    } else if (cameraStreamRef.current) {
+      vid = cameraStreamRef.current.getVideoTracks()[0] || null;
+    }
+    const stream = ensureBroadcastStream(vid);
+    replaceVideoOnPeers(vid);
+    if (videoRef.current) {
+      videoRef.current.srcObject = mode === "camera" ? cameraStreamRef.current : stream;
+    }
+    toast.info("Screen sharing stopped");
   };
 
   const onPickAvatar = async (a: AvatarOption) => {
@@ -338,6 +389,18 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
           className="h-8 px-2.5 rounded-lg flex items-center gap-1 border border-white/10 bg-white/5 hover:bg-white/10 text-white text-[11px]"
         >
           Pick Avatar
+        </button>
+        <button
+          onClick={screenSharing ? stopScreenShare : startScreenShare}
+          disabled={!isLive}
+          className={`h-8 px-2.5 rounded-lg flex items-center gap-1 border text-[11px] font-medium transition-colors disabled:opacity-40 ${
+            screenSharing
+              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30"
+              : "bg-white/5 border-white/10 hover:bg-white/10 text-white"
+          }`}
+          title={screenSharing ? "Stop sharing" : "Share screen"}
+        >
+          {screenSharing ? <><MonitorOff className="w-3.5 h-3.5" /> Stop Share</> : <><MonitorUp className="w-3.5 h-3.5" /> Share Screen</>}
         </button>
       </div>
 
