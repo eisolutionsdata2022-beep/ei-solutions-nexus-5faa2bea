@@ -90,6 +90,7 @@ import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horos
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminDmtSettingsRouteImport } from './routes/admin.dmt-settings'
+import { Route as AdminDmtDailyDigestRouteImport } from './routes/admin.dmt-daily-digest'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -508,6 +509,11 @@ const AdminDmtSettingsRoute = AdminDmtSettingsRouteImport.update({
   path: '/dmt-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDmtDailyDigestRoute = AdminDmtDailyDigestRouteImport.update({
+  id: '/dmt-daily-digest',
+  path: '/dmt-daily-digest',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -567,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
   '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -652,6 +659,7 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
   '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -744,6 +752,7 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
   '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -837,6 +846,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-daily-digest'
     | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
@@ -922,6 +932,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-daily-digest'
     | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
@@ -1013,6 +1024,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/dmt-daily-digest'
     | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
@@ -1670,6 +1682,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDmtSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dmt-daily-digest': {
+      id: '/admin/dmt-daily-digest'
+      path: '/dmt-daily-digest'
+      fullPath: '/admin/dmt-daily-digest'
+      preLoaderRoute: typeof AdminDmtDailyDigestRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -1737,6 +1756,7 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
+  AdminDmtDailyDigestRoute: typeof AdminDmtDailyDigestRoute
   AdminDmtSettingsRoute: typeof AdminDmtSettingsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
@@ -1776,6 +1796,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
+  AdminDmtDailyDigestRoute: AdminDmtDailyDigestRoute,
   AdminDmtSettingsRoute: AdminDmtSettingsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,

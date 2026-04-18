@@ -24,6 +24,7 @@ import {
   Briefcase,
   ShieldCheck,
   Gavel,
+  CalendarDays,
 } from "lucide-react";
 
 interface NavItem {
