@@ -292,7 +292,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
 
 function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="flex flex-col items-center px-2 hidden sm:flex">
+    <div className="hidden sm:flex flex-col items-center px-2">
       <span className={`text-sm font-bold leading-none ${color}`}>{value}</span>
       <span className="text-[9px] text-white/40 uppercase tracking-wider">{label}</span>
     </div>
