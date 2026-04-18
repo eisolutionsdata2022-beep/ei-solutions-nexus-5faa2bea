@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download } from "lucide-react";
+import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, ExternalLink, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
@@ -124,6 +124,33 @@ function EiPayPage() {
         </div>
       </div>
 
+      {/* Quick CSC login */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex items-start gap-3">
+            <Globe className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">First time using CSC services?</p>
+              <p className="text-muted-foreground">
+                Login once to your CSC Digital Seva account — all redirect services below will then
+                work seamlessly in the same browser session.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              window.open("https://digitalseva.csc.gov.in/", "_blank", "noopener,noreferrer");
+              toast.success("Opening CSC Digital Seva login…");
+            }}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" /> CSC Login
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Bridge readiness banner */}
       {configLoaded && !bridgeReady && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
@@ -142,11 +169,17 @@ function EiPayPage() {
         </Card>
       )}
 
-      {/* Services grid */}
+      {/* Bridge services (auto-pay) */}
       <div>
-        <h2 className="mb-3 text-lg font-bold text-foreground">Available Services</h2>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground">⚡ Auto-Pay Services</h2>
+          <Badge variant="secondary" className="text-[10px]">No PIN required</Badge>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Paid directly from your EI Solutions wallet. Receipt generated instantly.
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {services.map((svc) => {
+          {services.filter((s) => s.mode === "bridge").map((svc) => {
             const Icon = svc.icon;
             return (
               <button
@@ -171,6 +204,58 @@ function EiPayPage() {
                 <p className="mt-2 text-[11px] font-medium text-muted-foreground">
                   Fee ₹{svc.fee}
                 </p>
+                {svc.disabled && (
+                  <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
+                    Disabled
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Redirect services (CSC portal) */}
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground">🔗 CSC Portal Services</h2>
+          <Badge variant="outline" className="text-[10px]">PIN required · Opens CSC</Badge>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          These services open the official CSC portal in a new tab. Login with your CSC ID and pay
+          using your CSC Wallet PIN. No EI Solutions wallet debit.
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {services.filter((s) => s.mode === "redirect").map((svc) => {
+            const Icon = svc.icon;
+            const handleClick = () => {
+              if (svc.disabled || !svc.cscUrl) return;
+              window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
+              toast.success(`Opening ${svc.name} in CSC portal…`);
+            };
+            return (
+              <button
+                key={svc.key}
+                disabled={svc.disabled || !svc.cscUrl}
+                onClick={handleClick}
+                className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
+                  svc.disabled
+                    ? "cursor-not-allowed opacity-50"
+                    : "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                }`}
+              >
+                <div
+                  className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${svc.gradient} text-white shadow`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-semibold leading-tight text-foreground">{svc.name}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {svc.description}
+                </p>
+                <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-primary">
+                  <ExternalLink className="h-3 w-3" /> Open CSC portal
+                </div>
                 {svc.disabled && (
                   <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
                     Disabled
