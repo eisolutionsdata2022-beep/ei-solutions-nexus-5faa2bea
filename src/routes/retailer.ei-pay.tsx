@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, ExternalLink, Globe } from "lucide-react";
+import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
