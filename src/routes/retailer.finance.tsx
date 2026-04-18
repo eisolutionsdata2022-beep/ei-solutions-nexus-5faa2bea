@@ -310,11 +310,13 @@ function CustomersTab({
   retailerId,
   customers,
   loans,
+  settings,
   createdBy,
 }: {
   retailerId: string;
   customers: FinanceCustomer[];
   loans: FinanceLoan[];
+  settings: FinanceSettings | null;
   createdBy: string;
 }) {
   const [search, setSearch] = useState("");
