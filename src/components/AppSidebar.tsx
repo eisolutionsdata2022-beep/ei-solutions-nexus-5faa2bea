@@ -125,6 +125,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
+    { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
   ],
 };
 
