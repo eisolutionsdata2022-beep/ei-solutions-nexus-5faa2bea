@@ -315,3 +315,215 @@ export function downloadClosureCertificate(
   const pdf = generateClosurePdf(loan, customer, settings);
   pdf.save(`Closure_${loan.loanNo}.pdf`);
 }
+
+// ── RENEWAL HISTORY STATEMENT ─────────────────────────────────────────────
+/**
+ * Render a customer's full loan & renewal history as a branded PDF statement.
+ * Each renewal chain (or standalone loan) gets its own page.
+ *
+ * `chains` is an ordered list of chains, each chain ordered oldest → newest
+ * (e.g. [[LN-0001, LN-0007, LN-0014], [LN-0023]]).
+ */
+export function generateRenewalHistoryPdf(
+  customer: FinanceCustomer,
+  chains: FinanceLoan[][],
+  settings: FinanceSettings,
+): jsPDF {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  if (chains.length === 0) {
+    drawHeader(pdf, settings, "LOAN & RENEWAL HISTORY", customer.customerCode);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...MUTED);
+    pdf.text("No loan history available for this customer.", 14, 60);
+    drawFooter(pdf, settings);
+    return pdf;
+  }
+
+  chains.forEach((chain, idx) => {
+    if (idx > 0) pdf.addPage();
+    drawHeader(pdf, settings, "LOAN & RENEWAL HISTORY", customer.customerCode);
+
+    let y = 42;
+
+    // Customer summary band
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(10, y, pageW - 20, 22, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...NAVY);
+    pdf.text("CUSTOMER", 14, y + 6);
+    pdf.setFontSize(13);
+    pdf.text(customer.fullName, 14, y + 13);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...TEXT);
+    pdf.text(
+      `${customer.customerCode} · ${customer.mobile}${customer.aadhaarNo ? " · Aadhaar: " + customer.aadhaarNo : ""}`,
+      14,
+      y + 19,
+    );
+    y += 30;
+
+    // Chain title
+    const isChain = chain.length > 1;
+    const first = chain[0];
+    const last = chain[chain.length - 1];
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...NAVY);
+    pdf.text(
+      isChain
+        ? `Renewal Chain ${idx + 1} — ${chain.length} loans`
+        : `Loan ${idx + 1}`,
+      14,
+      y,
+    );
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...MUTED);
+    pdf.text(
+      `${first.loanNo} (${new Date(first.loanDate).toLocaleDateString("en-IN")})` +
+        (isChain
+          ? `  →  ${last.loanNo} (${new Date(last.loanDate).toLocaleDateString("en-IN")})`
+          : ""),
+      14,
+      y + 5,
+    );
+    y += 12;
+
+    // Chain summary stats
+    const totalInterestPaid = chain.reduce(
+      (s, l) => s + Math.max(0, (l.totalPaid || 0) - (l.loanAmount || 0)),
+      0,
+    );
+    const tenureSpanDays = Math.floor(
+      (new Date(last.releasedAt || last.dueDate || last.loanDate).getTime() -
+        new Date(first.loanDate).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+
+    pdf.setFillColor(...NAVY);
+    pdf.rect(10, y, pageW - 20, 16, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    const cellW = (pageW - 20) / 4;
+    const cells: Array<[string, string]> = [
+      ["Original Loan", formatINR(first.loanAmount)],
+      ["Latest Loan", formatINR(last.loanAmount)],
+      ["Total Interest Paid", formatINR(totalInterestPaid)],
+      ["Span", `${tenureSpanDays} days`],
+    ];
+    cells.forEach((c, i) => {
+      pdf.text(c[0], 14 + i * cellW, y + 5.5);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text(c[1], 14 + i * cellW, y + 12);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+    });
+    y += 22;
+
+    // Timeline table header
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...MUTED);
+    pdf.setDrawColor(...BORDER);
+    pdf.line(14, y, pageW - 14, y);
+    y += 5;
+    pdf.text("#", 14, y);
+    pdf.text("LOAN NO", 22, y);
+    pdf.text("DATE", 50, y);
+    pdf.text("AMOUNT", 75, y);
+    pdf.text("RATE", 105, y);
+    pdf.text("TENURE", 122, y);
+    pdf.text("STATUS", 145, y);
+    pdf.text("CLOSED/RENEWED", 168, y);
+    y += 3;
+    pdf.line(14, y, pageW - 14, y);
+    y += 5;
+
+    // Timeline rows
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...TEXT);
+    chain.forEach((loan, i) => {
+      // Page-break safety
+      if (y > pageH - 50) {
+        pdf.addPage();
+        drawHeader(pdf, settings, "LOAN & RENEWAL HISTORY (cont.)", customer.customerCode);
+        y = 50;
+      }
+      const closedAt =
+        loan.status === "Closed" && loan.releasedAt
+          ? new Date(loan.releasedAt).toLocaleDateString("en-IN")
+          : loan.status === "Renewed" && loan.renewedAt
+            ? `→ ${loan.renewedToLoanNo || ""}`
+            : loan.status === "Active"
+              ? `Outstanding ${formatINR(loan.outstandingPrincipal)}`
+              : "—";
+
+      pdf.text(String(i + 1), 14, y);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(loan.loanNo, 22, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(new Date(loan.loanDate).toLocaleDateString("en-IN"), 50, y);
+      pdf.text(formatINR(loan.loanAmount), 75, y);
+      pdf.text(`${loan.interestRate}%`, 105, y);
+      pdf.text(`${loan.tenureMonths}m`, 122, y);
+      pdf.text(loan.status, 145, y);
+      pdf.text(closedAt.slice(0, 24), 168, y);
+      y += 6;
+
+      // Connector arrow between loans
+      if (i < chain.length - 1) {
+        pdf.setTextColor(...MUTED);
+        pdf.setFontSize(7);
+        pdf.text("↓ renewed", 26, y);
+        pdf.setFontSize(9);
+        pdf.setTextColor(...TEXT);
+        y += 5;
+      }
+    });
+
+    y += 4;
+    pdf.line(14, y, pageW - 14, y);
+    y += 8;
+
+    // Latest loan gold pledge summary
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...NAVY);
+    pdf.text(`Gold Pledged (as of ${last.loanNo})`, 14, y);
+    y += 6;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...TEXT);
+    last.goldItems.forEach((g) => {
+      if (y > pageH - 40) return;
+      pdf.text(
+        `• ${g.itemName} — ${g.count} pc(s), ${g.grossWeight.toFixed(2)}g gross / ${g.netWeight.toFixed(2)}g net (${g.purity}k)`,
+        18,
+        y,
+      );
+      y += 5;
+    });
+
+    drawFooter(pdf, settings);
+  });
+
+  return pdf;
+}
+
+export function downloadRenewalHistoryPdf(
+  customer: FinanceCustomer,
+  chains: FinanceLoan[][],
+  settings: FinanceSettings,
+) {
+  const pdf = generateRenewalHistoryPdf(customer, chains, settings);
+  pdf.save(`History_${customer.customerCode}_${customer.fullName.replace(/\s+/g, "_")}.pdf`);
+}
