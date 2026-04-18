@@ -525,12 +525,20 @@ function CustomerDetailDialog({
   customer,
   onOpenChange,
   retailerId,
+  loans,
 }: {
   customer: FinanceCustomer | null;
   onOpenChange: (open: boolean) => void;
   retailerId: string;
+  loans: FinanceLoan[];
 }) {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
+  const customerLoans = useMemo(
+    () => (customer ? loans.filter((l) => l.customerId === customer.id) : []),
+    [loans, customer],
+  );
+  const renewalChains = useMemo(() => buildRenewalChains(customerLoans), [customerLoans]);
 
   async function uploadDoc(kind: "aadhaarFront" | "aadhaarBack" | "pan", file: File) {
     if (!customer) return;
