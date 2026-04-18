@@ -231,8 +231,12 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     // tear down audio mix graph
     micSourceRef.current?.disconnect();
     micSourceRef.current = null;
+    micGainRef.current?.disconnect();
+    micGainRef.current = null;
     screenAudioSourceRef.current?.disconnect();
     screenAudioSourceRef.current = null;
+    screenGainRef.current?.disconnect();
+    screenGainRef.current = null;
     mixedAudioTrackRef.current = null;
     audioDestRef.current = null;
     audioCtxRef.current?.close().catch(() => {});
@@ -515,6 +519,42 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
         >
           {screenSharing ? <><MonitorOff className="w-3.5 h-3.5" /> Stop Share</> : <><MonitorUp className="w-3.5 h-3.5" /> Share Screen</>}
         </button>
+
+        {/* audio mix sliders */}
+        <div className="flex items-center gap-2 ml-1 px-2 h-8 rounded-lg border border-white/10 bg-white/5">
+          <label className="flex items-center gap-1.5 text-[10px] text-white/70" title="Microphone volume">
+            <Mic className="w-3 h-3" />
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.05}
+              value={micVolume}
+              onChange={(e) => setMicVolume(parseFloat(e.target.value))}
+              disabled={!isLive}
+              className="w-16 accent-blue-400 disabled:opacity-40"
+            />
+            <span className="w-7 text-right tabular-nums">{Math.round(micVolume * 100)}%</span>
+          </label>
+          <div className="w-px h-4 bg-white/10" />
+          <label
+            className={`flex items-center gap-1.5 text-[10px] ${screenSharing ? "text-white/70" : "text-white/30"}`}
+            title={screenSharing ? "System audio volume" : "Start screen share to enable"}
+          >
+            <MonitorUp className="w-3 h-3" />
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.05}
+              value={systemVolume}
+              onChange={(e) => setSystemVolume(parseFloat(e.target.value))}
+              disabled={!screenSharing}
+              className="w-16 accent-emerald-400 disabled:opacity-40"
+            />
+            <span className="w-7 text-right tabular-nums">{Math.round(systemVolume * 100)}%</span>
+          </label>
+        </div>
       </div>
 
       <AvatarPickerDialog
