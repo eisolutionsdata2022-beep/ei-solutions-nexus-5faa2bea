@@ -73,6 +73,7 @@ export interface DmtConfig {
   maxPerTxn: number;
   customerMonthlyLimit: number;
   gstPercent: number; // e.g. 18
+  retailerCommissionPercent: number; // e.g. 40 → 40% of base charge credited to retailer
   slabs: DmtChargeSlab[]; // sorted ascending
   modes: DmtMode[];
   apiReady?: boolean; // true when API integration plugged in
@@ -84,6 +85,7 @@ export const DEFAULT_DMT_CONFIG: DmtConfig = {
   maxPerTxn: 25000,
   customerMonthlyLimit: 25000,
   gstPercent: 18,
+  retailerCommissionPercent: 40,
   modes: ["IMPS", "NEFT"],
   slabs: [
     { upTo: 1000, fee: 10 },
