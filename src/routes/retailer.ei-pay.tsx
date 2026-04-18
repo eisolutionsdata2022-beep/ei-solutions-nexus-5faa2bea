@@ -126,33 +126,6 @@ function EiPayPage() {
         </div>
       </div>
 
-      {/* Quick CSC login */}
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <div className="flex items-start gap-3">
-            <Globe className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <div className="text-sm">
-              <p className="font-semibold text-foreground">First time using CSC services?</p>
-              <p className="text-muted-foreground">
-                Login once to your CSC Digital Seva account — all redirect services below will then
-                work seamlessly in the same browser session.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => {
-              window.open("https://digitalseva.csc.gov.in/", "_blank", "noopener,noreferrer");
-              toast.success("Opening CSC Digital Seva login…");
-            }}
-            className="gap-2"
-          >
-            <ExternalLink className="h-4 w-4" /> CSC Login
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Bridge readiness banner */}
       {configLoaded && !bridgeReady && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
