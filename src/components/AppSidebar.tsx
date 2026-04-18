@@ -64,6 +64,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
     { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
+    { label: "PAN Portal Settings", to: "/admin/pan-settings", icon: ShieldCheck },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -73,6 +74,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
+    { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
     { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
     { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
     { label: "Horoscope", to: "/retailer/horoscope", icon: Sparkles },
