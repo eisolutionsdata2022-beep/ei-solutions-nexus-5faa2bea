@@ -43,12 +43,14 @@ import {
   Receipt,
   ExternalLink,
   IdCard,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
 import type { PanMasterConfig, PanTransaction } from "@/lib/pan-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
+import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -222,6 +224,24 @@ function PanPortalPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">₹{tx.totalDebited}</span>
                     <PanStatusBadge status={tx.status} />
+                    {tx.status === "success" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => {
+                          try {
+                            downloadPanReceipt(tx);
+                          } catch (err) {
+                            console.error("[PAN receipt]", err);
+                            toast.error("Failed to generate receipt");
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3" />
+                        Receipt
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
