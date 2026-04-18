@@ -637,6 +637,7 @@ function LoansTab({
   createdBy: string;
 }) {
   const [showNew, setShowNew] = useState(false);
+  const [renewing, setRenewing] = useState<FinanceLoan | null>(null);
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
