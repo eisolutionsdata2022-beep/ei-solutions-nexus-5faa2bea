@@ -39,6 +39,13 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const unsubsRef = useRef<Array<() => void>>([]);
 
+  // audio mixing (mic + system audio when screen-sharing)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const screenAudioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const mixedAudioTrackRef = useRef<MediaStreamTrack | null>(null);
+
   const [mode, setMode] = useState<LiveMode>("camera");
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
@@ -53,6 +60,55 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
       const sender = pc.getSenders().find((s) => s.track?.kind === "video");
       if (sender && vid) sender.replaceTrack(vid).catch(() => {});
     });
+  };
+
+  // replace audio track on all existing peer connections
+  const replaceAudioOnPeers = (aud: MediaStreamTrack | null) => {
+    peersRef.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === "audio");
+      if (sender && aud) sender.replaceTrack(aud).catch(() => {});
+    });
+  };
+
+  // ensure a single AudioContext + destination for mixing
+  const ensureMixGraph = (): MediaStreamAudioDestinationNode => {
+    if (!audioCtxRef.current) {
+      const Ctx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+      audioCtxRef.current = new Ctx();
+    }
+    if (!audioDestRef.current) {
+      audioDestRef.current = audioCtxRef.current.createMediaStreamDestination();
+    }
+    return audioDestRef.current;
+  };
+
+  // (re)connect mic into mix graph
+  const connectMicToMix = () => {
+    const cam = cameraStreamRef.current;
+    if (!cam) return;
+    const dest = ensureMixGraph();
+    micSourceRef.current?.disconnect();
+    const micStream = new MediaStream(cam.getAudioTracks());
+    if (micStream.getAudioTracks().length === 0) return;
+    micSourceRef.current = audioCtxRef.current!.createMediaStreamSource(micStream);
+    micSourceRef.current.connect(dest);
+    mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
+  };
+
+  // connect screen audio into mix graph
+  const connectScreenAudioToMix = (screenStream: MediaStream) => {
+    if (screenStream.getAudioTracks().length === 0) return;
+    const dest = ensureMixGraph();
+    screenAudioSourceRef.current?.disconnect();
+    const sa = new MediaStream(screenStream.getAudioTracks());
+    screenAudioSourceRef.current = audioCtxRef.current!.createMediaStreamSource(sa);
+    screenAudioSourceRef.current.connect(dest);
+    mixedAudioTrackRef.current = dest.stream.getAudioTracks()[0] || null;
+  };
+
+  const disconnectScreenAudio = () => {
+    screenAudioSourceRef.current?.disconnect();
+    screenAudioSourceRef.current = null;
   };
 
   // build a single broadcast stream (audio + video track that we swap)
