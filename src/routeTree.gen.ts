@@ -54,6 +54,7 @@ import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
+import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
@@ -316,6 +317,11 @@ const RetailerFormsRoute = RetailerFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerFinanceRoute = RetailerFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerEiPayRoute = RetailerEiPayRouteImport.update({
   id: '/ei-pay',
   path: '/ei-pay',
@@ -539,6 +545,7 @@ export interface FileRoutesByFullPath {
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
+  '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -615,6 +622,7 @@ export interface FileRoutesByTo {
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
+  '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -698,6 +706,7 @@ export interface FileRoutesById {
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
+  '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
@@ -782,6 +791,7 @@ export interface FileRouteTypes {
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
+    | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -858,6 +868,7 @@ export interface FileRouteTypes {
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
+    | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -940,6 +951,7 @@ export interface FileRouteTypes {
     | '/matrimony/$profileId'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
+    | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
@@ -1309,6 +1321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerFormsRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/finance': {
+      id: '/retailer/finance'
+      path: '/finance'
+      fullPath: '/retailer/finance'
+      preLoaderRoute: typeof RetailerFinanceRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/ei-pay': {
       id: '/retailer/ei-pay'
       path: '/ei-pay'
@@ -1670,6 +1689,7 @@ const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
 interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerEiPayRoute: typeof RetailerEiPayRoute
+  RetailerFinanceRoute: typeof RetailerFinanceRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
@@ -1693,6 +1713,7 @@ interface RetailerRouteChildren {
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerEiPayRoute: RetailerEiPayRoute,
+  RetailerFinanceRoute: RetailerFinanceRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,

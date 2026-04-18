@@ -65,6 +65,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Portal Settings", to: "/admin/pan-settings", icon: ShieldCheck },
+    { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -91,6 +92,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
     { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
     { label: "IPPB Account", to: "/retailer/ippb", icon: Banknote },
+    { label: "Finance", to: "/retailer/finance", icon: Banknote },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
