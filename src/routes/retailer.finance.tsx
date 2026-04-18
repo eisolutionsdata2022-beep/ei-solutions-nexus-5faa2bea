@@ -687,7 +687,7 @@ function LoansTab({
                   <Stat label="Loan Date" value={new Date(l.loanDate).toLocaleDateString("en-IN")} />
                   <Stat label="Due" value={new Date(l.dueDate).toLocaleDateString("en-IN")} />
                 </div>
-                <div className="flex gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {settings && cust && (
                     <Button
                       size="sm"
@@ -695,6 +695,15 @@ function LoansTab({
                       onClick={() => downloadPledgeReceipt(l, cust, settings)}
                     >
                       <Receipt className="w-3.5 h-3.5 mr-1" /> Pledge PDF
+                    </Button>
+                  )}
+                  {l.status === "Active" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRenewing(l)}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> Renew
                     </Button>
                   )}
                   {cust && (
@@ -712,6 +721,16 @@ function LoansTab({
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1" /> WhatsApp
                     </Button>
+                  )}
+                  {l.renewedToLoanNo && (
+                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
+                      → {l.renewedToLoanNo}
+                    </Badge>
+                  )}
+                  {l.renewedFromLoanNo && (
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                      ← {l.renewedFromLoanNo}
+                    </Badge>
                   )}
                 </div>
               </CardContent>
