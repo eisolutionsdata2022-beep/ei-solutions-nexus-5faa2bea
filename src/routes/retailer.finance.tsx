@@ -164,6 +164,7 @@ function FinancePage() {
           <CustomersTab
             retailerId={retailerId}
             customers={customers}
+            loans={loans}
             createdBy={appUser.email}
           />
         </TabsContent>
