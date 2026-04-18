@@ -236,3 +236,183 @@ function QueueRow({ t, onClick, compact }: { t: DmtTransfer; onClick: () => void
     </Card>
   );
 }
+
+// ── Export Panel ──────────────────────────────────────────────────────
+function ExportPanel({ transfers }: { transfers: DmtTransfer[] }) {
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState(() => new Date().toISOString().slice(0, 10));
+  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [retailerFilter, setRetailerFilter] = useState<string>("all");
+  const [groupBy, setGroupBy] = useState<"none" | "retailer">("none");
+
+  const retailers = useMemo(() => {
+    const set = new Map<string, string>();
+    transfers.forEach((t) => set.set(t.retailerId, t.retailerEmail));
+    return Array.from(set.entries()).map(([id, email]) => ({ id, email }));
+  }, [transfers]);
+
+  const filtered = useMemo(() => {
+    const fromDt = new Date(`${from}T00:00:00`).getTime();
+    const toDt = new Date(`${to}T23:59:59`).getTime();
+    return transfers.filter((t) => {
+      const ts = new Date(t.createdAt).getTime();
+      if (ts < fromDt || ts > toDt) return false;
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (retailerFilter !== "all" && t.retailerId !== retailerFilter) return false;
+      return true;
+    });
+  }, [transfers, from, to, statusFilter, retailerFilter]);
+
+  const buildRows = () =>
+    filtered.map((t) => ({
+      "Txn ID": t.id ?? "",
+      Date: new Date(t.createdAt).toLocaleString(),
+      Retailer: t.retailerEmail,
+      Customer: t.customerName,
+      "Customer Mobile": t.customerMobile,
+      Beneficiary: t.beneficiaryName,
+      Account: t.beneficiaryAccount,
+      IFSC: t.beneficiaryIfsc,
+      Bank: t.beneficiaryBank,
+      Mode: t.mode,
+      "Amount (₹)": t.amount,
+      "Charge (₹)": t.charge,
+      "GST (₹)": t.gst,
+      "Total Debit (₹)": t.totalDebit,
+      "Retailer Commission (₹)": t.retailerCommission ?? 0,
+      Status: t.status,
+      UTR: t.utr ?? "",
+      "Failure Reason": t.failureReason ?? "",
+      "Refund Ref": t.refundRef ?? "",
+      "Processed By": t.staffName ?? "",
+      Purpose: t.purpose ?? "",
+    }));
+
+  const downloadXlsx = () => {
+    if (filtered.length === 0) { toast.error("No transfers in selected range"); return; }
+    const wb = XLSX.utils.book_new();
+    const rows = buildRows();
+
+    if (groupBy === "retailer") {
+      const grouped = new Map<string, typeof rows>();
+      rows.forEach((r) => {
+        const list = grouped.get(r.Retailer) || [];
+        list.push(r);
+        grouped.set(r.Retailer, list);
+      });
+      // Summary sheet
+      const summary = Array.from(grouped.entries()).map(([retailer, rs]) => {
+        const success = rs.filter((r) => r.Status === "success");
+        return {
+          Retailer: retailer,
+          "Total Txns": rs.length,
+          Success: success.length,
+          Failed: rs.filter((r) => r.Status === "failed" || r.Status === "refunded").length,
+          Pending: rs.filter((r) => r.Status === "pending" || r.Status === "processing").length,
+          "Amount Transferred (₹)": success.reduce((s, r) => s + (r["Amount (₹)"] as number), 0),
+          "Charges Earned (₹)": success.reduce(
+            (s, r) => s + (r["Charge (₹)"] as number) + (r["GST (₹)"] as number), 0
+          ),
+          "Retailer Commission Paid (₹)": success.reduce(
+            (s, r) => s + (r["Retailer Commission (₹)"] as number), 0
+          ),
+        };
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
+      grouped.forEach((rs, retailer) => {
+        const safe = retailer.replace(/[^A-Za-z0-9]/g, "_").slice(0, 25) || "retailer";
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rs), safe);
+      });
+    } else {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Transfers");
+    }
+
+    const fname = `DMT_Settlement_${from}_to_${to}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast.success(`Exported ${filtered.length} txns`);
+  };
+
+  const downloadCsv = () => {
+    if (filtered.length === 0) { toast.error("No transfers in selected range"); return; }
+    const ws = XLSX.utils.json_to_sheet(buildRows());
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `DMT_Settlement_${from}_to_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} txns`);
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <FileSpreadsheet className="w-4 h-4 mr-1" /> Export Settlement
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Settlement Report Export</DialogTitle>
+            <DialogDescription>Filter by date, status, and retailer for finance reconciliation.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+              <div><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="success">Success only</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Retailer</Label>
+              <Select value={retailerFilter} onValueChange={setRetailerFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All retailers</SelectItem>
+                  {retailers.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>{r.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Group by</Label>
+              <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Single sheet</SelectItem>
+                  <SelectItem value="retailer">Per-retailer sheets + summary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-sm text-muted-foreground bg-muted/50 rounded p-2">
+              {filtered.length} transfer{filtered.length === 1 ? "" : "s"} match.
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={downloadCsv}>
+              <Download className="w-4 h-4 mr-1" /> CSV
+            </Button>
+            <Button onClick={downloadXlsx}>
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel (.xlsx)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
