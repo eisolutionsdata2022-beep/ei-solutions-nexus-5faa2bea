@@ -94,6 +94,7 @@ import {
   downloadPledgeReceipt,
   downloadPaymentReceipt,
   downloadClosureCertificate,
+  downloadRenewalHistoryPdf,
 } from "@/lib/finance-receipt-pdf";
 import { CameraCaptureDialog } from "@/components/finance/CameraCaptureDialog";
 import { SignaturePadDialog } from "@/components/finance/SignaturePadDialog";
@@ -165,6 +166,7 @@ function FinancePage() {
             retailerId={retailerId}
             customers={customers}
             loans={loans}
+            settings={settings}
             createdBy={appUser.email}
           />
         </TabsContent>
@@ -309,11 +311,13 @@ function CustomersTab({
   retailerId,
   customers,
   loans,
+  settings,
   createdBy,
 }: {
   retailerId: string;
   customers: FinanceCustomer[];
   loans: FinanceLoan[];
+  settings: FinanceSettings | null;
   createdBy: string;
 }) {
   const [search, setSearch] = useState("");
@@ -389,6 +393,7 @@ function CustomersTab({
         onOpenChange={(o) => !o && setViewing(null)}
         retailerId={retailerId}
         loans={loans}
+        settings={settings}
       />
     </div>
   );
@@ -526,11 +531,13 @@ function CustomerDetailDialog({
   onOpenChange,
   retailerId,
   loans,
+  settings,
 }: {
   customer: FinanceCustomer | null;
   onOpenChange: (open: boolean) => void;
   retailerId: string;
   loans: FinanceLoan[];
+  settings: FinanceSettings | null;
 }) {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
@@ -630,9 +637,20 @@ function CustomerDetailDialog({
 
         {/* Loan & Renewal History */}
         <div className="border-t pt-3">
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1">
-            <RotateCcw className="w-3.5 h-3.5" /> Loan & Renewal History
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold flex items-center gap-1">
+              <RotateCcw className="w-3.5 h-3.5" /> Loan & Renewal History
+            </p>
+            {renewalChains.length > 0 && settings && customer && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => downloadRenewalHistoryPdf(customer, renewalChains, settings)}
+              >
+                <Download className="w-3.5 h-3.5 mr-1" /> Export PDF
+              </Button>
+            )}
+          </div>
           {renewalChains.length === 0 ? (
             <p className="text-xs text-muted-foreground">No loans yet for this customer.</p>
           ) : (
