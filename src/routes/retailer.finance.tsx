@@ -165,6 +165,7 @@ function FinancePage() {
             retailerId={retailerId}
             customers={customers}
             loans={loans}
+            settings={settings}
             createdBy={appUser.email}
           />
         </TabsContent>
