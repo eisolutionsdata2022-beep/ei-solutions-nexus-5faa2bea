@@ -26,6 +26,7 @@ import {
   Gavel,
   CalendarDays,
   Award,
+  BookOpen,
 } from "lucide-react";
 
 interface NavItem {
