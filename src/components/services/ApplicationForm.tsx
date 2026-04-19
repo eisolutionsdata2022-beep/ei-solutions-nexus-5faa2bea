@@ -82,6 +82,14 @@ export function ApplicationForm({ balance, feeOverrides = {}, onSubmit, onBack }
   };
 
   const handleFileChange = (idx: number, file: File | null) => {
+    if (file && file.size > 10 * 1024 * 1024) {
+      // Storage rules cap each file at 10 MB. Reject early with a clear toast
+      // so the user fixes it before submission rather than after a long upload.
+      import("sonner").then(({ toast }) =>
+        toast.error(`"${file.name}" is ${(file.size / 1024 / 1024).toFixed(1)} MB. Max is 10 MB per file.`)
+      );
+      return;
+    }
     setDocuments((prev) => prev.map((d, i) => (i === idx ? { ...d, file } : d)));
   };
 
