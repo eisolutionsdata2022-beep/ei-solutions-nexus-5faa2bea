@@ -13,8 +13,59 @@ import {
   getDocumentStatusLabel,
   ServiceApplicationRecord,
 } from "@/lib/e-district";
-import { Download, ExternalLink, Eye, FileText, X } from "lucide-react";
+import { Archive, Download, ExternalLink, Eye, FileText, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import JSZip from "jszip";
+
+function sanitizeFileName(name: string): string {
+  return (name || "file").replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_");
+}
+
+async function downloadAllAsZip(
+  docs: { url: string; fileName: string; name: string }[],
+  zipName: string,
+) {
+  const zip = new JSZip();
+  const used = new Set<string>();
+  let failed = 0;
+
+  await Promise.all(
+    docs.map(async (doc, idx) => {
+      try {
+        const res = await fetch(doc.url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        let name = sanitizeFileName(doc.fileName || `${doc.name}_${idx + 1}`);
+        if (used.has(name)) {
+          const dot = name.lastIndexOf(".");
+          name = dot > 0
+            ? `${name.slice(0, dot)}_${idx + 1}${name.slice(dot)}`
+            : `${name}_${idx + 1}`;
+        }
+        used.add(name);
+        zip.file(name, blob);
+      } catch {
+        failed += 1;
+      }
+    }),
+  );
+
+  if (Object.keys(zip.files).length === 0) {
+    throw new Error("All files failed to download");
+  }
+
+  const archive = await zip.generateAsync({ type: "blob" });
+  const blobUrl = URL.createObjectURL(archive);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = `${sanitizeFileName(zipName)}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+
+  return { failed };
+}
 
 type PreviewKind = "image" | "pdf" | "other";
 
