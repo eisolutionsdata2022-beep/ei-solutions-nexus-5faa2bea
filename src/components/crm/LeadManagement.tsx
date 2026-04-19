@@ -25,6 +25,7 @@ export function LeadManagement() {
   const [staffFilter, setStaffFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showAdd, setShowAdd] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   useEffect(() => {
@@ -93,14 +94,19 @@ export function LeadManagement() {
           <h1 className="text-2xl font-bold text-foreground">Lead Management</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} leads found</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => setShowAdd(true)} size="sm">
             <Plus className="h-4 w-4 mr-1" /> Add Lead
           </Button>
           {!isStaffOnly && (
-            <Button onClick={exportToExcel} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-1" /> Export
-            </Button>
+            <>
+              <Button onClick={() => setShowBulk(true)} variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-1" /> Bulk Upload
+              </Button>
+              <Button onClick={exportToExcel} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-1" /> Export
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -194,6 +200,7 @@ export function LeadManagement() {
       </Card>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} staff={staff} />
+      <BulkUploadLeadsDialog open={showBulk} onOpenChange={setShowBulk} staff={staff} />
       {selectedLead && (
         <LeadDetailDialog
           lead={selectedLead}
