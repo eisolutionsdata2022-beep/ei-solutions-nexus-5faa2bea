@@ -49,6 +49,26 @@ function AdminReferralPage() {
   const totalPaidOut = payouts.reduce((s, p) => s + (p.referrerReward || 0) + (p.newUserReward || 0), 0);
   const totalCollected = payouts.reduce((s, p) => s + (p.activationFee || 0), 0);
 
+  // ── This-month leaderboard ──
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const leaderboard = (() => {
+    const map = new Map<string, { uid: string; code?: string; earnings: number; count: number }>();
+    for (const p of payouts) {
+      if (!p.referrerUid || !p.paidAt?.startsWith(monthKey)) continue;
+      if (!(p.referrerReward > 0)) continue;
+      const row = map.get(p.referrerUid) ?? { uid: p.referrerUid, code: p.referrerCode, earnings: 0, count: 0 };
+      row.earnings += p.referrerReward || 0;
+      row.count += 1;
+      if (!row.code && p.referrerCode) row.code = p.referrerCode;
+      map.set(p.referrerUid, row);
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.earnings - a.earnings || b.count - a.count)
+      .slice(0, 10);
+  })();
+  const monthLabel = now.toLocaleString(undefined, { month: "long", year: "numeric" });
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -105,6 +125,49 @@ function AdminReferralPage() {
             </div>
           </div>
           <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Config"}</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>🏆 Top 10 Referrers — {monthLabel}</CardTitle>
+          <CardDescription>Ranked by referral earnings this calendar month.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No referral payouts yet this month.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 px-2 w-12">Rank</th>
+                    <th className="text-left py-2 px-2">Referrer</th>
+                    <th className="text-right py-2 px-2">Successful Referrals</th>
+                    <th className="text-right py-2 px-2">Earnings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((row, i) => (
+                    <tr key={row.uid} className="border-b last:border-0">
+                      <td className="py-2 px-2 font-bold">
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                      </td>
+                      <td className="py-2 px-2">
+                        {row.code ? (
+                          <Badge variant="outline" className="font-mono">{row.code}</Badge>
+                        ) : (
+                          <span className="font-mono text-xs text-muted-foreground">{row.uid.slice(0, 8)}…</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-right font-medium">{row.count}</td>
+                      <td className="py-2 px-2 text-right font-bold text-primary">₹{row.earnings.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
