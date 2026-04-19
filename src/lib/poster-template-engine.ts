@@ -9,6 +9,9 @@ import bgFestival from "@/assets/poster-bg-festival.jpg";
 import bgDigital from "@/assets/poster-bg-digital.jpg";
 import bgUrgent from "@/assets/poster-bg-urgent.jpg";
 import bgGovt from "@/assets/poster-bg-govt.jpg";
+import bgMatrimony from "@/assets/poster-bg-matrimony.jpg";
+import bgHoroscope from "@/assets/poster-bg-horoscope.jpg";
+import bgJanasevana from "@/assets/poster-bg-janasevana.jpg";
 
 // ============================================================================
 // TYPES
@@ -18,6 +21,7 @@ export type ServiceCategory =
   | "PAN Card" | "Money Transfer" | "AEPS" | "Recharge" | "Bill Payment"
   | "Insurance" | "Loan" | "Travel Booking" | "PVC Card" | "Aadhaar Services"
   | "GST" | "Banking" | "Education" | "Health Card" | "Job Services"
+  | "Janasevana" | "Matrimony" | "Horoscope"
   | "All Services";
 
 export type PosterStyle =
@@ -28,7 +32,10 @@ export type PosterStyle =
   | "corporate"     // navy + gold premium
   | "minimal"       // lots of whitespace, single accent
   | "tricolor"      // saffron-white-green band
-  | "circuit";      // digital/tech background
+  | "circuit"       // digital/tech background
+  | "elegantMatch"  // matrimony — soft mandala border + couple silhouette
+  | "goldAuthority" // janasevana — emblem + gold seal + tricolor
+  | "cosmicMystic"; // horoscope — celestial chart + zodiac wheel
 
 export type PosterFormat = "a4" | "story" | "square";
 
@@ -188,6 +195,12 @@ const CATEGORY_DEFAULTS: Record<ServiceCategory, { services: string[]; icon: str
     services: ["Ayushman Bharat Card", "ABHA Health ID", "ESIC Card", "Health Insurance", "Doctor Consultation", "Medicine Discount Card"] },
   "Job Services":      { icon: "💼", subHeading: "JOB & CAREER SERVICES",
     services: ["Resume Building", "Job Portal Registration", "Government Job Forms", "Skill Development", "Interview Preparation", "Career Counselling"] },
+  "Janasevana":        { icon: "🏛️", subHeading: "ജനസേവന കേന്ദ്രം · GOVERNMENT SERVICES",
+    services: ["Birth / Death Certificate", "Income / Caste Certificate", "Ration Card Service", "Voter ID & EPIC", "Pension Application", "Online Govt Forms", "Land Records / Pokkuvaravu", "Utility Bill Payment"] },
+  "Matrimony":         { icon: "💍", subHeading: "വിവാഹ സേവനം · TRUSTED MATCHMAKING",
+    services: ["Premium Profile Registration", "Verified Match Suggestions", "Photo & Bio-data Print", "Horoscope Matching (10 Porutham)", "Family Background Check", "Confidential Service", "Bride / Groom Search", "Dowry-Free Matches"] },
+  "Horoscope":         { icon: "🔮", subHeading: "ജാതകം · ASTROLOGY SERVICES",
+    services: ["Janma Kundali / Birth Chart", "Marriage Compatibility (10 Porutham)", "Career & Business Predictions", "Daily / Weekly Horoscope", "Vasthu Consultation", "Muhurtham (Auspicious Time)", "Numerology Reading", "Remedies & Pooja Guidance"] },
   "All Services":      { icon: "✨", subHeading: "EI SOLUTIONS — ALL DIGITAL SERVICES",
     services: ["Aadhaar / PAN Services", "Money Transfer & AEPS", "All Bill Payments", "Insurance & Loan", "Travel & Recharge", "Government Services"] },
 };
@@ -529,6 +542,165 @@ const renderers: Record<PosterStyle, Renderer> = {
       </div>
     </div>`;
   },
+
+  // ─────────────────────────────────────── ELEGANT MATCH (Matrimony) ──────────
+  elegantMatch: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgMatrimony}) center/cover, ${p.bg};
+      font-family:'Playfair Display','Georgia','Noto Sans Malayalam',serif;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,rgba(124,45,18,0.85),transparent);"></div>
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;color:#FFF7ED;">
+        ${logoBlock(data, accent, 44)}
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:11px;letter-spacing:4px;font-weight:600;opacity:0.95;">
+            ${safe(data.tagline || "MATRIMONY · വിവാഹ സേവനം")}
+          </div>
+        </div>
+        ${data.cspId ? `<div style="background:rgba(0,0,0,0.45);color:#FACC15;padding:3px 9px;
+          border-radius:4px;font-size:10px;font-weight:700;font-family:Inter,sans-serif;">
+          ID: ${safe(data.cspId)}</div>` : `<div style="width:44px;"></div>`}
+      </div>
+
+      <div style="position:absolute;top:${h * 0.16}px;left:0;right:0;text-align:center;padding:0 30px;">
+        <div style="font-size:22px;color:#9A3412;letter-spacing:6px;margin-bottom:6px;">❀ ❀ ❀</div>
+        <h1 style="font-size:${format === "story" ? 36 : 42}px;font-weight:700;color:#7C2D12;
+          margin:6px 0;line-height:1.05;font-style:italic;">${safe(data.heading)}</h1>
+        <div style="display:inline-flex;align-items:center;gap:12px;margin:8px 0;">
+          <div style="height:1px;width:50px;background:#C2410C;"></div>
+          <span style="font-size:18px;color:#C2410C;">💍</span>
+          <div style="height:1px;width:50px;background:#C2410C;"></div>
+        </div>
+        <p style="font-size:13px;color:#9A3412;font-weight:600;margin:0;letter-spacing:1px;
+          font-family:'Inter',sans-serif;">${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.43}px;left:36px;right:36px;background:rgba(255,255,255,0.95);
+        border:2px solid #C2410C;border-radius:6px;padding:20px 22px;
+        box-shadow:0 6px 24px rgba(124,45,18,0.18);font-family:Inter,sans-serif;">
+        <div style="text-align:center;font-size:10px;letter-spacing:3px;color:#9A3412;
+          font-weight:800;margin-bottom:10px;">— OUR SERVICES —</div>
+        ${svgChecklist(data.services.slice(0, 8), "#C2410C", 13, 23)}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;font-family:Inter,sans-serif;">
+        ${contactStrip(data, "#7C2D12", "#FACC15", format)}
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:9px;
+        background:#FACC15;color:#7C2D12;font-size:11px;font-weight:800;letter-spacing:3px;
+        font-family:Inter,sans-serif;">
+        ❀ ${safe(data.brandName || "EI SOLUTIONS MATRIMONY")} · CONFIDENTIAL & TRUSTED ❀
+      </div>
+    </div>`;
+  },
+
+  // ─────────────────────────────────────── GOLD AUTHORITY (Janasevana) ────────
+  goldAuthority: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgJanasevana}) center/cover, #FFFFFF;
+      font-family:'Inter','Noto Sans Malayalam',sans-serif;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;display:flex;height:6px;">
+        <div style="flex:1;background:#FF9933;"></div>
+        <div style="flex:1;background:#FFFFFF;"></div>
+        <div style="flex:1;background:#138808;"></div>
+      </div>
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;">
+        ${logoBlock(data, "#000080", 48)}
+        <div style="text-align:right;">
+          <div style="font-size:9px;color:#000080;letter-spacing:2px;font-weight:700;">GOVERNMENT AUTHORIZED</div>
+          ${data.cspId ? `<div style="font-size:13px;font-weight:900;color:#000080;">CSP: ${safe(data.cspId)}</div>` : ""}
+        </div>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.13}px;left:0;right:0;text-align:center;padding:0 28px;">
+        <div style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#FACC15);
+          color:#000080;padding:6px 18px;border-radius:3px;font-size:11px;font-weight:900;
+          letter-spacing:3px;border:1px solid #000080;">
+          ⚜️ ${safe(data.tagline || "ജനസേവന കേന്ദ്രം")} ⚜️
+        </div>
+        <h1 style="font-size:${format === "story" ? 32 : 38}px;font-weight:900;color:#000080;
+          margin:14px 0 4px;line-height:1.05;">${safe(data.heading)}</h1>
+        <div style="display:inline-flex;align-items:center;gap:10px;margin:6px 0;">
+          <div style="height:2px;width:40px;background:#FF9933;"></div>
+          <div style="height:2px;width:40px;background:#138808;"></div>
+        </div>
+        <p style="font-size:12px;color:#1A1A1A;font-weight:700;margin:0;letter-spacing:1px;">
+          ${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.42}px;left:30px;right:30px;background:#FFFFFF;
+        border-top:5px solid #FF9933;border-bottom:5px solid #138808;padding:18px 22px;
+        box-shadow:0 6px 24px rgba(0,0,0,0.15);">
+        <div style="text-align:center;font-size:10px;letter-spacing:3px;color:#000080;
+          font-weight:900;margin-bottom:12px;">★ AVAILABLE SERVICES ★</div>
+        ${svgChecklist(data.services.slice(0, 8), "#000080", 13, 23)}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;">
+        ${contactStrip(data, "#000080", "#FFFFFF", format)}
+      </div>
+      <div style="position:absolute;bottom:9px;left:0;right:0;text-align:center;padding:8px;
+        background:#000080;color:#D4AF37;font-size:11px;font-weight:800;letter-spacing:2px;">
+        ⚜️ ${safe(data.brandName || "EI SOLUTIONS")} · सत्यमेव जयते ⚜️
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;display:flex;height:9px;">
+        <div style="flex:1;background:#FF9933;"></div>
+        <div style="flex:1;background:#FFFFFF;"></div>
+        <div style="flex:1;background:#138808;"></div>
+      </div>
+    </div>`;
+  },
+
+  // ─────────────────────────────────────── COSMIC MYSTIC (Horoscope) ──────────
+  cosmicMystic: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgHoroscope}) center/cover, #0F172A;
+      font-family:'Inter','Noto Sans Malayalam',sans-serif;position:relative;overflow:hidden;color:#F5E6B3;">
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;">
+        ${logoBlock(data, "#D4AF37", 44)}
+        ${data.cspId ? `<div style="background:rgba(212,175,55,0.15);border:1px solid #D4AF37;
+          color:#D4AF37;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;">
+          ID: ${safe(data.cspId)}</div>` : ""}
+      </div>
+
+      <div style="position:absolute;top:${h * 0.14}px;left:0;right:0;text-align:center;padding:0 32px;">
+        <div style="display:inline-block;border:1px solid #D4AF37;color:#D4AF37;
+          padding:5px 18px;font-size:11px;font-weight:700;letter-spacing:4px;border-radius:2px;">
+          ✦ ${safe(data.tagline || "ജാതക സേവനം · VEDIC ASTROLOGY")} ✦
+        </div>
+        <h1 style="font-size:${format === "story" ? 32 : 38}px;font-weight:900;color:#F5E6B3;
+          margin:14px 0 6px;line-height:1.05;font-family:'Cinzel',Georgia,serif;
+          text-shadow:0 0 20px rgba(212,175,55,0.4);">${safe(data.heading)}</h1>
+        <div style="font-size:18px;color:#D4AF37;letter-spacing:8px;margin:4px 0;">⭒ ☽ ⭒</div>
+        <p style="font-size:12px;color:#E8D080;font-weight:600;margin:0;letter-spacing:2px;">
+          ${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.46}px;left:32px;right:32px;
+        background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);
+        border:1px solid #D4AF37;border-radius:8px;padding:18px 22px;
+        box-shadow:0 0 40px rgba(212,175,55,0.25);">
+        <div style="text-align:center;font-size:10px;letter-spacing:4px;color:#D4AF37;
+          font-weight:800;margin-bottom:10px;">— SERVICES —</div>
+        ${svgChecklist(data.services.slice(0, 8), "#D4AF37", 13, 23)
+          .replace(/color:#222/g, "color:#F5E6B3")}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;">
+        ${contactStrip(data, "#D4AF37", "#0F172A", format)}
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:10px;
+        background:#0F172A;color:#D4AF37;font-size:11px;font-weight:700;letter-spacing:3px;
+        border-top:1px solid #D4AF37;">
+        ✦ ${safe(data.brandName || "EI SOLUTIONS")} · JYOTISHA SERVICES ✦
+      </div>
+    </div>`;
+  },
 };
 
 // ============================================================================
@@ -540,11 +712,13 @@ function thumbnail(palette: PosterPalette, accent: string, style: PosterStyle, l
     modern: palette.primary, trust: palette.primary, festive: "#7C2D12",
     urgent: "#B91C1C", corporate: "#0D2A5C", minimal: palette.primary,
     tricolor: "#000080", circuit: palette.primary,
+    elegantMatch: "#7C2D12", goldAuthority: "#000080", cosmicMystic: "#0F172A",
   };
   const bgColors: Record<PosterStyle, string> = {
     modern: palette.bg, trust: palette.bg, festive: "#FFF7E6",
     urgent: "#FEF2F2", corporate: "#0D2A5C", minimal: palette.bg,
     tricolor: "#FFFFFF", circuit: "#EFF6FF",
+    elegantMatch: "#FDF6EC", goldAuthority: "#FFFFFF", cosmicMystic: "#0F172A",
   };
   const bg = bgColors[style];
   const header = headerColors[style];
@@ -594,7 +768,7 @@ function make(
 }
 
 // ============================================================================
-// TEMPLATE REGISTRY — 80 templates across 15 categories + All Services
+// TEMPLATE REGISTRY — 140+ templates with priority on Janasevana / Matrimony / Banking
 // ============================================================================
 
 const CATEGORIES: ServiceCategory[] = [
@@ -603,8 +777,7 @@ const CATEGORIES: ServiceCategory[] = [
   "GST", "Banking", "Education", "Health Card", "Job Services",
 ];
 
-// Per category we ship 5 variants (modern, trust, festive, urgent, corporate/minimal/tricolor/circuit rotated)
-// Different palette per variant for visual diversity.
+// Per category we ship 5 variants (modern, trust, festive, urgent, corporate).
 const VARIANTS: Array<{ style: PosterStyle; suffix: string; tags: string[]; paletteRotation: (keyof typeof PALETTES)[] }> = [
   { style: "modern",    suffix: "Modern Clean",   tags: ["office", "premium"],
     paletteRotation: ["navyGold", "electricBlue", "oceanTeal", "midnightCyan", "charcoalLime"] },
@@ -621,13 +794,13 @@ const VARIANTS: Array<{ style: PosterStyle; suffix: string; tags: string[]; pale
 // Build base 75 (15 cat × 5 variants)
 const BUILT: PosterTemplate[] = [];
 CATEGORIES.forEach((cat, ci) => {
-  VARIANTS.forEach((v, vi) => {
+  VARIANTS.forEach((v) => {
     const palette = v.paletteRotation[ci % v.paletteRotation.length];
     BUILT.push(make(cat, v.style, palette, v.suffix, v.tags));
   });
 });
 
-// Add 5 "All Services" hero variants to round to 80
+// 5 "All Services" hero variants
 [
   make("All Services", "minimal",  "charcoalLime",     "All-In-One Minimal",  ["minimal", "premium"]),
   make("All Services", "tricolor", "saffronWhiteGreen","Digital India Tricolor", ["govt", "premium"]),
@@ -636,16 +809,98 @@ CATEGORIES.forEach((cat, ci) => {
   make("All Services", "festive",  "marigold",         "Mega Festival",       ["festival", "premium"]),
 ].forEach(t => BUILT.push(t));
 
+// ─────────────── PRIORITY: BANKING / FINANCE (extras → 12 total) ──────────────
+[
+  make("Banking", "corporate", "goldOnBlack",      "Black Gold Banking",  ["premium", "corporate", "finance"]),
+  make("Banking", "circuit",   "midnightCyan",     "Digital Banking Hub", ["digital", "premium", "finance"]),
+  make("Banking", "minimal",   "navyGold",         "Pristine Banking",    ["minimal", "premium", "finance"]),
+  make("Banking", "tricolor",  "saffronWhiteGreen","Bharat Banking",      ["govt", "trust", "finance"]),
+  make("Banking", "festive",   "marigold",         "Festive Banking Offer", ["festival", "offer", "finance"]),
+  make("Banking", "urgent",    "rubyRed",          "Cash Out Now",        ["urgent", "offer", "finance"]),
+  make("Banking", "modern",    "electricBlue",     "Smart Banking",       ["office", "premium", "finance"]),
+  // Money Transfer / AEPS / Loan / Insurance extras (finance umbrella)
+  make("Money Transfer", "corporate", "goldOnBlack",      "Premium DMT Service",   ["premium", "finance", "trust"]),
+  make("Money Transfer", "urgent",    "crimsonBlack",     "Send Money Fast",       ["urgent", "offer", "finance"]),
+  make("Money Transfer", "circuit",   "midnightCyan",     "Instant IMPS Digital",  ["digital", "finance", "premium"]),
+  make("Money Transfer", "minimal",   "navyGold",         "Trusted Transfer",      ["minimal", "trust", "finance"]),
+  make("AEPS",          "corporate", "goldOnBlack",       "Premium AEPS Center",   ["premium", "finance"]),
+  make("AEPS",          "circuit",   "midnightCyan",      "Digital Cash Withdraw", ["digital", "finance"]),
+  make("AEPS",          "tricolor",  "saffronWhiteGreen", "Bharat AEPS",           ["govt", "finance"]),
+  make("Loan",          "corporate", "goldOnBlack",       "Elite Loan Services",   ["premium", "corporate", "finance"]),
+  make("Loan",          "urgent",    "crimsonBlack",      "Loan in 24 Hours",      ["urgent", "offer", "finance"]),
+  make("Loan",          "minimal",   "burgundyCream",     "Quick Loan Approval",   ["minimal", "trust", "finance"]),
+  make("Insurance",     "corporate", "navyGold",          "Premium Insurance",     ["premium", "trust", "finance"]),
+  make("Insurance",     "trust",     "forestGold",        "Family Shield",         ["trust", "finance"]),
+  make("Insurance",     "minimal",   "midnightCyan",      "Smart Insurance",       ["minimal", "premium", "finance"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── PRIORITY: JANASEVANA (12 templates) ────────────────────────
+[
+  make("Janasevana", "goldAuthority", "saffronWhiteGreen", "Authority Premium",     ["govt", "trust", "premium"]),
+  make("Janasevana", "goldAuthority", "navyGold",          "Tricolor Trust",        ["govt", "trust", "premium"]),
+  make("Janasevana", "goldAuthority", "forestGold",        "Government Authorized", ["govt", "trust", "office"]),
+  make("Janasevana", "tricolor",      "saffronWhiteGreen", "Digital India Sevana",  ["govt", "premium"]),
+  make("Janasevana", "tricolor",      "navyGold",          "Bharat Sevana Kendra",  ["govt", "trust"]),
+  make("Janasevana", "trust",         "navyGold",          "Trusted Janasevana",    ["trust", "office", "govt"]),
+  make("Janasevana", "trust",         "forestGold",        "Verified Service Hub",  ["trust", "office", "govt"]),
+  make("Janasevana", "corporate",     "goldOnBlack",       "Premium Janasevana",    ["premium", "corporate", "govt"]),
+  make("Janasevana", "modern",        "navyGold",          "Modern Service Center", ["office", "premium", "govt"]),
+  make("Janasevana", "minimal",       "navyGold",          "Clean Authority",       ["minimal", "premium", "govt"]),
+  make("Janasevana", "urgent",        "rubyRed",           "Apply Today!",          ["urgent", "offer", "govt"]),
+  make("Janasevana", "festive",       "saffronEmerald",    "Independence Special",  ["festival", "govt", "premium"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── PRIORITY: MATRIMONY (12 templates) ─────────────────────────
+[
+  make("Matrimony", "elegantMatch", "burgundyCream", "Elegant Matchmaker",       ["matrimony", "premium", "trust"]),
+  make("Matrimony", "elegantMatch", "marigold",      "Royal Matrimony",          ["matrimony", "premium", "festival"]),
+  make("Matrimony", "elegantMatch", "rubyRed",       "Sacred Bond",              ["matrimony", "premium", "trust"]),
+  make("Matrimony", "elegantMatch", "royalPurple",   "Premium Marriage Bureau",  ["matrimony", "premium", "corporate"]),
+  make("Matrimony", "festive",      "marigold",      "Wedding Season Special",   ["matrimony", "festival", "premium"]),
+  make("Matrimony", "festive",      "rubyRed",       "Auspicious Match",         ["matrimony", "festival"]),
+  make("Matrimony", "trust",        "burgundyCream", "Trusted Matchmaking",      ["matrimony", "trust", "office"]),
+  make("Matrimony", "corporate",    "royalPurple",   "Royal Wedding Services",   ["matrimony", "premium", "corporate"]),
+  make("Matrimony", "minimal",      "burgundyCream", "Refined Matrimony",        ["matrimony", "minimal", "premium"]),
+  make("Matrimony", "modern",       "rubyRed",       "Modern Matchmaker",        ["matrimony", "office", "premium"]),
+  make("Matrimony", "urgent",       "marigold",      "Limited Free Profiles",    ["matrimony", "urgent", "offer"]),
+  make("Matrimony", "elegantMatch", "forestGold",    "Kerala Matrimony Premium", ["matrimony", "premium", "trust"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── HOROSCOPE (10 templates) ───────────────────────────────────
+[
+  make("Horoscope", "cosmicMystic", "midnightCyan",  "Cosmic Mystic Premium",  ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "goldOnBlack",   "Black Gold Astrology",   ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "royalPurple",   "Royal Vedic Reading",    ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "navyGold",      "Janma Kundali Service",  ["horoscope", "premium", "trust"]),
+  make("Horoscope", "festive",      "marigold",      "Auspicious Horoscope",   ["horoscope", "festival", "mystic"]),
+  make("Horoscope", "trust",        "burgundyCream", "Trusted Astrologer",     ["horoscope", "trust", "office"]),
+  make("Horoscope", "corporate",    "goldOnBlack",   "Elite Jyotisha",         ["horoscope", "premium", "corporate"]),
+  make("Horoscope", "minimal",      "midnightCyan",  "Simple Star Chart",      ["horoscope", "minimal", "premium"]),
+  make("Horoscope", "urgent",       "rubyRed",       "Predictions Today",      ["horoscope", "urgent", "offer"]),
+  make("Horoscope", "modern",       "royalPurple",   "Modern Astrology Hub",   ["horoscope", "office", "premium"]),
+].forEach(t => BUILT.push(t));
+
 export const ALL_POSTER_TEMPLATES: PosterTemplate[] = BUILT;
 
-export const POSTER_CATEGORIES = ["All", ...CATEGORIES, "All Services"] as const;
+// Categories shown in gallery filter (priority categories listed first)
+export const POSTER_CATEGORIES = [
+  "All",
+  "Janasevana", "Matrimony", "Banking", "Loan", "Money Transfer", "AEPS", "Insurance",
+  "PAN Card", "Aadhaar Services", "Recharge", "Bill Payment", "Travel Booking",
+  "PVC Card", "GST", "Education", "Health Card", "Job Services", "Horoscope",
+  "All Services",
+] as const;
+
 export const POSTER_QUICK_FILTERS: Array<{ label: string; value: string }> = [
-  { label: "🏢 Office", value: "office" },
+  { label: "🏛️ Janasevana", value: "govt" },
+  { label: "💍 Matrimony", value: "matrimony" },
+  { label: "🏦 Finance", value: "finance" },
+  { label: "🔮 Horoscope", value: "horoscope" },
+  { label: "👑 Premium", value: "premium" },
   { label: "🎉 Festival", value: "festival" },
   { label: "🔥 Urgent / Offer", value: "urgent" },
-  { label: "👑 Premium", value: "premium" },
   { label: "🛡️ Trust", value: "trust" },
-  { label: "🇮🇳 Govt Style", value: "govt" },
+  { label: "🏢 Office", value: "office" },
   { label: "💻 Digital", value: "digital" },
   { label: "🎨 Minimal", value: "minimal" },
 ];
