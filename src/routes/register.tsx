@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { resolveReferralCode, attachReferralToUser } from "@/lib/referral-firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/register")({
   ssr: false,
   component: RegisterPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    ref: typeof s.ref === "string" ? s.ref : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Register — EI Solutions CSC Platform" },
@@ -22,12 +26,36 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch({ from: "/register" });
   const [form, setForm] = useState({
     name: "", email: "", phone: "", password: "", confirmPassword: "",
-    shopName: "", address: "",
+    shopName: "", address: "", referralCode: "",
   });
+  const [referrerName, setReferrerName] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Pre-fill referral code from ?ref=
+  useEffect(() => {
+    if (search.ref) {
+      setForm((f) => ({ ...f, referralCode: search.ref!.toUpperCase() }));
+    }
+  }, [search.ref]);
+
+  // Resolve referrer name for display
+  useEffect(() => {
+    const code = form.referralCode.trim().toUpperCase();
+    if (!code) { setReferrerName(null); return; }
+    let cancelled = false;
+    resolveReferralCode(code).then(async (uid) => {
+      if (cancelled || !uid) { setReferrerName(uid ? "Valid referrer" : null); return; }
+      const { getDoc, doc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      const snap = await getDoc(doc(db, "users", uid));
+      if (!cancelled) setReferrerName(snap.exists() ? (snap.data().name || "Valid referrer") : null);
+    });
+    return () => { cancelled = true; };
+  }, [form.referralCode]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,13 +72,29 @@ function RegisterPage() {
 
     setLoading(true);
     try {
+      // Resolve referrer first (so we don't create user with bogus code reference)
+      let referrerUid: string | null = null;
+      if (form.referralCode.trim()) {
+        referrerUid = await resolveReferralCode(form.referralCode);
+        if (!referrerUid) {
+          setError("Invalid referral code.");
+          setLoading(false);
+          return;
+        }
+      }
       await register(form.email, form.password, {
         name: form.name,
         phone: form.phone,
         role: "retailer",
       });
-      toast.success("Account created successfully!");
-      navigate({ to: "/retailer" as any });
+      // Attach referral after user doc exists
+      if (referrerUid) {
+        const { auth } = await import("@/lib/firebase");
+        const newUid = auth.currentUser?.uid;
+        if (newUid) await attachReferralToUser(newUid, referrerUid);
+      }
+      toast.success("Account created! Activate your account to unlock services.");
+      navigate({ to: "/retailer/activate" as any });
     } catch (err: any) {
       const msg = err?.code === "auth/email-already-in-use"
         ? "This email is already registered."
@@ -103,6 +147,20 @@ function RegisterPage() {
               <div className="space-y-2">
                 <Label>Address</Label>
                 <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Referral Code <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input
+                  value={form.referralCode}
+                  onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase() })}
+                  placeholder="REF-XXXXXX"
+                />
+                {form.referralCode && referrerName && (
+                  <p className="text-xs text-green-600">✓ Referred by {referrerName}</p>
+                )}
+                {form.referralCode && !referrerName && (
+                  <p className="text-xs text-destructive">Code not found</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

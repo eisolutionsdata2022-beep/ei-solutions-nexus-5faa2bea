@@ -27,6 +27,7 @@ import {
   CalendarDays,
   Award,
   BookOpen,
+  Gift,
 } from "lucide-react";
 
 interface NavItem {
@@ -77,6 +78,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
+    { label: "Referrals", to: "/admin/referrals", icon: Gift },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -86,6 +88,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
     { label: "Profile", to: "/retailer/profile", icon: User },
+    { label: "Refer & Earn", to: "/retailer/referrals", icon: Gift },
     { label: "Staff", to: "/retailer/staff", icon: Users },
     { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
