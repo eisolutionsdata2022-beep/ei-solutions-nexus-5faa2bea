@@ -102,6 +102,7 @@ import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
+import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 
 const TrainerRoute = TrainerRouteImport.update({
@@ -573,6 +574,12 @@ const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
   path: '/chat-inbox',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCertificateReissuesRoute =
+  AdminCertificateReissuesRouteImport.update({
+    id: '/certificate-reissues',
+    path: '/certificate-reissues',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
@@ -591,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -680,6 +688,7 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -777,6 +786,7 @@ export interface FileRoutesById {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -875,6 +885,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -964,6 +975,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/nsdl-callback'
     | '/register'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -1060,6 +1072,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -1813,6 +1826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChatInboxRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/certificate-reissues': {
+      id: '/admin/certificate-reissues'
+      path: '/certificate-reissues'
+      fullPath: '/admin/certificate-reissues'
+      preLoaderRoute: typeof AdminCertificateReissuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/retailer/jobs/$jobId': {
       id: '/retailer/jobs/$jobId'
       path: '/$jobId'
@@ -1824,6 +1844,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
@@ -1864,6 +1885,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
