@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import { Users, Wallet, ShoppingBag, TrendingUp, ShieldCheck, UserPlus, Sparkles, ArrowRight, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserSearchPanel } from "@/components/admin/UserSearchPanel";
+import { LegacyCleanupCard } from "@/components/admin/LegacyCleanupCard";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
@@ -161,6 +162,9 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Legacy Cleanup */}
+      <LegacyCleanupCard />
     </div>
   );
 }
