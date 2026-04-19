@@ -145,67 +145,96 @@ function RetailerProfile() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Header card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="relative">
-              {appUser.photoURL ? (
-                <img src={appUser.photoURL} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-gov-blue/20" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gov-blue text-white flex items-center justify-center text-3xl font-bold">
-                  {(appUser.name || appUser.email)[0].toUpperCase()}
+      {/* Premium identity hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-premium-gradient p-6 sm:p-8 text-white shadow-premium">
+        <div className="pointer-events-none absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/15 blur-3xl animate-blob" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl animate-blob [animation-delay:-7s]" aria-hidden />
+        <div className="relative flex flex-col md:flex-row gap-6 items-start">
+          {/* Avatar */}
+          <div className="relative">
+            {appUser.photoURL ? (
+              <img
+                src={appUser.photoURL}
+                alt=""
+                className="w-28 h-28 rounded-full object-cover ring-4 ring-white/40 shadow-premium"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-white/15 backdrop-blur-md ring-4 ring-white/40 text-white flex items-center justify-center text-4xl font-bold shadow-premium">
+                {(appUser.name || appUser.email)[0].toUpperCase()}
+              </div>
+            )}
+            <label className="absolute bottom-0 right-0 bg-white text-foreground rounded-full p-2 cursor-pointer shadow-md hover:scale-105 transition-transform">
+              <Camera className="w-3.5 h-3.5" />
+              <input type="file" accept="image/*" className="hidden" onChange={onPhotoUpload} />
+            </label>
+          </div>
+
+          {/* Identity details */}
+          <div className="flex-1 space-y-3 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{appUser.name || "—"}</h1>
+              <Badge className="capitalize bg-white/20 backdrop-blur ring-1 ring-white/30 text-white hover:bg-white/30">
+                {appUser.role}
+              </Badge>
+              <Badge
+                className={`capitalize ring-1 ring-white/30 text-white ${
+                  appUser.kycStatus === "approved" ? "bg-emerald-500/30" :
+                  appUser.kycStatus === "rejected" ? "bg-rose-500/30" : "bg-amber-500/30"
+                }`}
+              >
+                KYC: {appUser.kycStatus || "pending"}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-white/90">
+              <div className="flex items-center gap-2">
+                <IdCard className="w-4 h-4 opacity-80" />
+                <span className="font-mono font-bold text-white">{vleId}</span>
+              </div>
+              <div className="flex items-center gap-2 truncate">
+                <Mail className="w-4 h-4 opacity-80 shrink-0" />
+                <span className="truncate">{appUser.email}</span>
+              </div>
+              {appUser.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 opacity-80" /> {appUser.phone}
                 </div>
               )}
-              <label className="absolute bottom-0 right-0 bg-gov-blue text-white rounded-full p-1.5 cursor-pointer hover:opacity-90">
-                <Camera className="w-3.5 h-3.5" />
-                <input type="file" accept="image/*" className="hidden" onChange={onPhotoUpload} />
-              </label>
-            </div>
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-foreground">{appUser.name || "—"}</h1>
-                <Badge variant="secondary" className="capitalize">{appUser.role}</Badge>
-                <Badge variant={
-                  appUser.kycStatus === "approved" ? "default" :
-                  appUser.kycStatus === "rejected" ? "destructive" : "secondary"
-                } className="capitalize">
-                  KYC: {appUser.kycStatus || "pending"}
-                </Badge>
+              {joinDate && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 opacity-80" /> Joined {new Date(joinDate).toLocaleDateString("en-IN")}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 opacity-80" /> Staff: <span className="font-semibold">{staffCount}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2"><IdCard className="w-4 h-4" /> <span className="font-mono font-bold text-foreground">{vleId}</span></div>
-                <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> {appUser.email}</div>
-                {appUser.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4" /> {appUser.phone}</div>}
-                {joinDate && <div className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Joined {new Date(joinDate).toLocaleDateString("en-IN")}</div>}
-                <div className="flex items-center gap-2"><UserIcon className="w-4 h-4" /> Staff: <span className="font-semibold text-foreground">{staffCount}</span></div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 w-full md:w-auto">
-              <Button
-                onClick={() =>
-                  downloadVleIdCard({
-                    name: appUser.name || appUser.email,
-                    vleId,
-                    email: appUser.email,
-                    phone: appUser.phone,
-                    joinDate,
-                    kycStatus: appUser.kycStatus,
-                  })
-                }
-                className="bg-gov-blue text-white"
-              >
-                <Download className="w-4 h-4 mr-2" /> VLE ID Card (PDF)
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/retailer/staff">
-                  <UserIcon className="w-4 h-4 mr-2" /> Manage Staff
-                </Link>
-              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Action buttons */}
+          <div className="flex flex-col gap-2 w-full md:w-auto">
+            <Button
+              onClick={() =>
+                downloadVleIdCard({
+                  name: appUser.name || appUser.email,
+                  vleId,
+                  email: appUser.email,
+                  phone: appUser.phone,
+                  joinDate,
+                  kycStatus: appUser.kycStatus,
+                })
+              }
+              className="bg-white text-foreground hover:bg-white/90 font-bold shadow-md"
+            >
+              <Download className="w-4 h-4 mr-2" /> VLE ID Card (PDF)
+            </Button>
+            <Button asChild variant="outline" className="bg-white/10 backdrop-blur border-white/30 text-white hover:bg-white/20 hover:text-white">
+              <Link to="/retailer/staff">
+                <UserIcon className="w-4 h-4 mr-2" /> Manage Staff
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* PSA ID Status */}
       <Card className={psa ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-dashed"}>
