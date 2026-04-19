@@ -34,7 +34,7 @@ export const Route = createFileRoute("/retailer/profile")({
 
 function RetailerProfile() {
   const { appUser, user } = useAuth();
-  const vleId = generateVleId(appUser?.uid);
+  const vleId = generateVleId(appUser?.uid, appUser?.phone);
   const [editName, setEditName] = useState(false);
   const [editAddr, setEditAddr] = useState(false);
   const [editPwd, setEditPwd] = useState(false);

@@ -30,7 +30,8 @@ function OperatorDashboard() {
 
   if (!appUser) return null;
   const parentId = (appUser as any)?.parentRetailerId;
-  const vleId = generateVleId(parentId);
+  const parentPhone = (parent as any)?.phone || (parent as any)?.mobile || null;
+  const vleId = generateVleId(parentId, parentPhone);
 
   if (!parentId) {
     return (
