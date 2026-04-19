@@ -17,7 +17,6 @@ import {
   LogOut,
   User,
   BarChart3,
-  Download,
   CheckCircle,
   MessageSquare,
   BotMessageSquare,
@@ -159,48 +158,69 @@ export function AppSidebar() {
   if (!appUser) return null;
 
   const items = navByRole[appUser.role] || [];
+  const initial = (appUser.name || appUser.email || "U").charAt(0).toUpperCase();
 
   return (
-    <aside className="hidden lg:flex flex-col w-56 bg-card border-r border-border min-h-0">
-      {/* User welcome */}
-      <div className="p-4 bg-gov-blue text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <User className="w-5 h-5" />
+    <aside className="hidden lg:flex flex-col w-60 bg-card border-r border-border min-h-0 relative">
+      {/* Subtle gradient accent on the right edge */}
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent"
+        aria-hidden
+      />
+
+      {/* User welcome — premium gradient header */}
+      <div className="relative overflow-hidden bg-premium-gradient text-white p-4">
+        <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-white/10 blur-2xl" aria-hidden />
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-white/15 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center text-base font-bold shadow-md">
+            {initial}
           </div>
           <div className="min-w-0">
-            <p className="text-xs opacity-70">Welcome</p>
+            <p className="text-[10px] uppercase tracking-wider text-white/75 font-semibold">Welcome back</p>
             <p className="text-sm font-bold truncate">{appUser.name || appUser.email.split("@")[0]}</p>
+            <p className="text-[10px] text-white/70 truncate capitalize">{appUser.role}</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
         {items.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to as any}
-              className={`flex items-center gap-3 px-4 py-2.5 text-sm border-l-4 transition-colors ${
+              className={`relative group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                 isActive
-                  ? "border-gov-blue bg-gov-blue-light text-gov-blue font-semibold"
-                  : "border-transparent text-foreground/80 hover:bg-muted hover:text-foreground"
+                  ? "bg-premium-gradient text-white font-semibold shadow-premium"
+                  : "text-foreground/75 hover:bg-muted/70 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
-              <item.icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
+              {/* Left active accent bar */}
+              {isActive && (
+                <span
+                  className="absolute -left-2 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-white/80 shadow-glow"
+                  aria-hidden
+                />
+              )}
+              <item.icon
+                className={`w-4 h-4 shrink-0 transition-transform ${
+                  isActive ? "text-white" : "text-muted-foreground group-hover:text-primary group-hover:scale-110"
+                }`}
+              />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t border-border">
+      <div className="p-3 border-t border-border bg-background/50 backdrop-blur-sm">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm w-full bg-gov-gold text-white font-semibold hover:opacity-90 transition-opacity"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm w-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-semibold shadow-sm hover:shadow-premium hover:opacity-95 active:scale-[0.98] transition-all"
         >
           <LogOut className="w-4 h-4" />
           Logout
