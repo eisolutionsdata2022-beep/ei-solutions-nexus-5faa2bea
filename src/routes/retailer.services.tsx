@@ -260,6 +260,13 @@ function ApplicationForm({
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [progress, setProgress] = useState<Record<string, EdisUploadProgress>>({});
 
+  const overallProgress = () => {
+    const required = service.requiredDocuments;
+    if (required.length === 0) return 0;
+    const sum = required.reduce((acc, name) => acc + (progress[name]?.percent || 0), 0);
+    return Math.round(sum / required.length);
+  };
+
   const fee = service.fee;
   const insufficient = balance < fee;
 
@@ -547,7 +554,11 @@ function ApplicationForm({
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={() => setStep(2)} disabled={submitting}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
               <Button onClick={handleSubmit} disabled={submitting || insufficient}>
-                {submitting ? "Submitting..." : insufficient ? "Insufficient Balance" : <>Submit <IndianRupee className="w-4 h-4 ml-1" /></>}
+                {submitting
+                  ? `Uploading… ${overallProgress()}%`
+                  : insufficient
+                    ? "Insufficient Balance"
+                    : <>Submit <IndianRupee className="w-4 h-4 ml-1" /></>}
               </Button>
             </div>
           </>
