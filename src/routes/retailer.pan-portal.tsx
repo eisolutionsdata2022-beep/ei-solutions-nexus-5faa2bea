@@ -112,6 +112,7 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
+  const vleId = useMemo(() => generateVleId(appUser?.uid), [appUser?.uid]);
 
   return (
     <div className="space-y-6">
