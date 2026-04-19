@@ -20,13 +20,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/referrals")({
   ssr: false,
-  component: () => (
-    <RouteGuard allowedRoles={["retailer"]}>
-      <DashboardLayout>
-        <ReferralPanel />
-      </DashboardLayout>
-    </RouteGuard>
-  ),
+  component: ReferralPanel,
 });
 
 function ReferralPanel() {

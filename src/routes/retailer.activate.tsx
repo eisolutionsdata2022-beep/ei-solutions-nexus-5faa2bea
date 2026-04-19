@@ -18,13 +18,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/activate")({
   ssr: false,
-  component: () => (
-    <RouteGuard allowedRoles={["retailer"]}>
-      <DashboardLayout>
-        <ActivatePage />
-      </DashboardLayout>
-    </RouteGuard>
-  ),
+  component: ActivatePage,
 });
 
 function ActivatePage() {

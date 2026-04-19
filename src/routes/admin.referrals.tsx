@@ -21,13 +21,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/referrals")({
   ssr: false,
-  component: () => (
-    <RouteGuard allowedRoles={["admin"]}>
-      <DashboardLayout>
-        <AdminReferralPage />
-      </DashboardLayout>
-    </RouteGuard>
-  ),
+  component: AdminReferralPage,
 });
 
 function AdminReferralPage() {
