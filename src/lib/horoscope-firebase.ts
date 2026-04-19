@@ -30,12 +30,18 @@ export function subscribeHoroscopeRequests(
   callback: (reqs: HoroscopeRequest[]) => void,
   userId?: string
 ) {
+  // NOTE: when filtering by userId we deliberately skip server-side orderBy
+  // to avoid requiring a composite Firestore index. Sort client-side instead.
   const q = userId
-    ? query(collection(db, "horoscopeRequests"), where("userId", "==", userId), orderBy("createdAt", "desc"))
+    ? query(collection(db, "horoscopeRequests"), where("userId", "==", userId))
     : query(collection(db, "horoscopeRequests"), orderBy("createdAt", "desc"));
 
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as HoroscopeRequest)));
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() } as HoroscopeRequest));
+    if (userId) {
+      rows.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    }
+    callback(rows);
   });
 }
 
