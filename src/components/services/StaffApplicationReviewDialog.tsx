@@ -68,6 +68,7 @@ export function StaffApplicationReviewDialog({
   const [status, setStatus] = useState<ApplicationStatus>("Pending");
   const [govApplicationNo, setGovApplicationNo] = useState("");
   const [staffRemark, setStaffRemark] = useState("");
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (!application) return;
