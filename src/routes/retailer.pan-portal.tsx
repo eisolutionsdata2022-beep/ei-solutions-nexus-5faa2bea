@@ -124,7 +124,7 @@ function PanPortalPage() {
               <IdCard className="h-7 w-7" /> PAN PORTAL
             </h1>
             <p className="mt-1 text-sm text-white/80">
-              NSDL · UTI · PSA · Coupons — all PAN services in one dashboard.
+              EI SOLUTIONS PAN Services — NSDL · UTI · PSA · Coupons in one dashboard.
             </p>
           </div>
           <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
@@ -145,8 +145,8 @@ function PanPortalPage() {
                 Service temporarily unavailable
               </p>
               <p className="mt-1 text-amber-800 dark:text-amber-300/90">
-                Admin needs to configure the PAN API key and endpoint URLs before services can be
-                executed. You can browse the catalog below.
+                The EI SOLUTIONS admin needs to configure the PAN service credentials and endpoint
+                URLs before services can be executed. You can browse the catalog below.
               </p>
             </div>
           </CardContent>
