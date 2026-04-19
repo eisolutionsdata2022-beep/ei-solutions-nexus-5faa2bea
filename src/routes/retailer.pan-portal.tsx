@@ -44,6 +44,7 @@ import {
   ExternalLink,
   IdCard,
   Download,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
@@ -129,11 +130,30 @@ function PanPortalPage() {
               EI SOLUTIONS PAN Services — NSDL · UTI · PSA · Coupons in one dashboard.
             </p>
           </div>
-          <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
-              <Wallet className="h-4 w-4" /> Wallet
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(vleId).then(
+                  () => toast.success(`VLE ID copied: ${vleId}`),
+                  () => toast.error("Could not copy VLE ID"),
+                );
+              }}
+              className="group rounded-xl bg-white/15 px-5 py-3 text-left backdrop-blur transition hover:bg-white/25 active:scale-[0.98]"
+              title="Click to copy your VLE ID"
+            >
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
+                <IdCard className="h-4 w-4" /> Your VLE ID
+                <Copy className="h-3 w-3 opacity-60 transition group-hover:opacity-100" />
+              </div>
+              <p className="mt-1 font-mono text-2xl font-bold tracking-wider">{vleId}</p>
+            </button>
+            <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
+                <Wallet className="h-4 w-4" /> Wallet
+              </div>
+              <p className="mt-1 text-2xl font-bold">₹{balance.toFixed(2)}</p>
             </div>
-            <p className="mt-1 text-2xl font-bold">₹{balance.toFixed(2)}</p>
           </div>
         </div>
       </div>
