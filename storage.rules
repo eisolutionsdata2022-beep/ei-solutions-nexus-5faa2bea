@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// =====================================================================
+// EI Solutions — Firebase Storage Security Rules
+// ---------------------------------------------------------------------
+// Deploy with:  firebase deploy --only storage
+// =====================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ---------- helpers ---------------------------------------------
+    function isAuthed() { return request.auth != null; }
+
+    function isStaffish() {
+      return isAuthed() && firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      ).data.role in ["staff", "manager", "admin"];
+    }
+
+    function isAdmin() {
+      return isAuthed() && firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      ).data.role == "admin";
+    }
+
+    function isImageOrPdf() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType == 'application/pdf';
+    }
+
+    function under10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // ---------- E-dis service documents ------------------------------
+    // Path: serviceDocuments/{userId}/{appNo}/{file}
+    // Owner uploads + reads; staff/admin can read for review.
+    match /serviceDocuments/{userId}/{appNo}/{file=**} {
+      allow read:   if isAuthed() && (request.auth.uid == userId || isStaffish());
+      allow write:  if isAuthed()
+                    && request.auth.uid == userId
+                    && isImageOrPdf()
+                    && under10MB();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- KYC documents ----------------------------------------
+    // Path: kyc/{userId}/{file}
+    match /kyc/{userId}/{file=**} {
+      allow read:   if isAuthed() && (request.auth.uid == userId || isStaffish());
+      allow write:  if isAuthed()
+                    && request.auth.uid == userId
+                    && isImageOrPdf()
+                    && under10MB();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Job marketplace files --------------------------------
+    match /jobFiles/{userId}/{file=**} {
+      allow read:   if isAuthed();
+      allow write:  if isAuthed()
+                    && request.auth.uid == userId
+                    && under10MB();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Public / generic uploads (logos, posters, etc.) ------
+    match /public/{file=**} {
+      allow read:  if true;
+      allow write: if isAdmin() && under10MB();
+    }
+
+    // ---------- CMS / landing assets (admin only) --------------------
+    match /landing-cms/{file=**} {
+      allow read:  if true;
+      allow write: if isAdmin() && under10MB();
+    }
+
+    // ---------- Default deny -----------------------------------------
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
