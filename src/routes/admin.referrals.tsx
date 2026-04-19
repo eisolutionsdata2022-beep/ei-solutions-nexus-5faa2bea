@@ -129,6 +129,49 @@ function AdminReferralPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle>🏆 Top 10 Referrers — {monthLabel}</CardTitle>
+          <CardDescription>Ranked by referral earnings this calendar month.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No referral payouts yet this month.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 px-2 w-12">Rank</th>
+                    <th className="text-left py-2 px-2">Referrer</th>
+                    <th className="text-right py-2 px-2">Successful Referrals</th>
+                    <th className="text-right py-2 px-2">Earnings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((row, i) => (
+                    <tr key={row.uid} className="border-b last:border-0">
+                      <td className="py-2 px-2 font-bold">
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                      </td>
+                      <td className="py-2 px-2">
+                        {row.code ? (
+                          <Badge variant="outline" className="font-mono">{row.code}</Badge>
+                        ) : (
+                          <span className="font-mono text-xs text-muted-foreground">{row.uid.slice(0, 8)}…</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-right font-medium">{row.count}</td>
+                      <td className="py-2 px-2 text-right font-bold text-primary">₹{row.earnings.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Activation & Payout Log ({payouts.length})</CardTitle></CardHeader>
         <CardContent>
           {payouts.length === 0 ? (
