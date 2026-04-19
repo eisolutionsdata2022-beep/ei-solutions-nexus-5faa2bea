@@ -1,42 +1,58 @@
 ---
-name: CV Builder Studio
-description: 50+ professional CV templates across 16 categories with template-first gallery, live preview, font/color customization, draft persistence, ₹10 paid PDF download
+name: Retailer Tools
+description: Page Tools hub at /retailer/page-tools — Poster Editor (80 templates × 8 styles × WhatsApp share + Story/Square formats), CV Builder (57 templates), JPG-to-PDF, Service Billing
 type: feature
 ---
 
-# CV Builder Studio (`/retailer/cv-builder`)
+# Retailer Tools (`/retailer/page-tools`)
 
-## Architecture
-Template engine in `src/lib/cv-template-engine.ts` builds **57 templates** from:
-- 7 layout renderers: `classic`, `sidebar-left`, `sidebar-right`, `header-band`, `split-top`, `minimal-line`, `card-stack`
-- 20 color palettes (navy, ocean, emerald, ruby, violet, etc.)
-- 10 Google Font pairs (Inter, Source Sans, Playfair, Space Grotesk, etc.)
-- 16 categories: Modern, Corporate, Creative, Fresher, Executive, IT, Healthcare, Gulf Job, Driver, Teacher, Accountant, Sales, Minimal, Colorful, ATS, International
+Tab hub with three tools: **Poster Editor**, **JPG to PDF**, **Service Billing**.
 
-Each `CVTemplate` exposes `generateHTML(data, customization?)` and `generatePreviewSVG()` for thumbnails.
+## Poster Editor
 
-## UX Flow (2 phases)
-1. **Gallery phase** — `TemplateGallery` shows all 57 cards with SVG thumbnails, search, category filter, quick tag filter (Fresher/Gulf/Office/Designer/Healthcare/Simple/Premium/ATS/Tech). Click card → template selected. "Continue" → enters form.
-2. **Form phase** — split layout: 5-tab form (Personal/Work/Education/Skills/Style) on left, sticky live-preview iframe on right (debounced 150ms). Fullscreen preview button opens modal. Sticky top bar: Back, Save Draft, Download.
+### Template Engine — `src/lib/poster-template-engine.ts`
+**80 templates** built programmatically from:
+- **8 layout styles**: `modern`, `trust`, `festive`, `urgent`, `corporate`, `minimal`, `tricolor`, `circuit`
+- **15 palettes** (navyGold, saffronEmerald, marigold, goldOnBlack, etc.)
+- **15 service categories** (PAN, Money Transfer, AEPS, Recharge, Bill Payment, Insurance, Loan, Travel, PVC, Aadhaar, GST, Banking, Education, Health Card, Job Services) + 5 "All Services" hero variants
 
-## Customization (`CustomizationPanel`)
-- Font scale slider 85–120%
-- 16 accent color presets + reset to template default
-- Section reorder via up/down arrows (objective/experience/education/skills/languages/certifications/additional)
+Each `PosterTemplate` exposes `render(data, custom?)` (HTML string) and `thumbnail()` (SVG).
+`CATEGORY_DEFAULTS` maps each category to its subHeading + 6-default-services list — auto-populates form when user picks a template.
 
-## Persistence
-- `src/lib/cv-draft.ts` — `saveCVDraft` / `loadCVDraft` write to `cvDrafts/{uid}` Firestore doc
-- Draft auto-restored on mount
-- One draft per user (overwrites)
+### AI Backgrounds (5 hero images in `src/assets/`)
+- `poster-bg-banking.jpg` — navy + gold corporate
+- `poster-bg-festival.jpg` — diya + marigold (festive style)
+- `poster-bg-digital.jpg` — circuit/cyan (circuit style)
+- `poster-bg-urgent.jpg` — red/yellow burst (urgent style)
+- `poster-bg-govt.jpg` — tricolor + Ashoka chakra (tricolor style)
 
-## Monetization
-- Fee from `platformFees/cv_builder` doc, default ₹10 (admin-configurable)
-- `atomicDebit` on download, then `window.open` + `print()` for PDF via browser
-- Photo + signature stored as base64 data URLs (no Storage upload needed)
+### UX Flow (2 phases)
+1. **Gallery phase** — `PosterTemplateGallery` shows 80 cards with SVG thumbnails. Search + 16 category pills + 8 quick filter chips (Office/Festival/Urgent/Premium/Trust/Govt/Digital/Minimal). Premium/Festival/Urgent badges shown on cards.
+2. **Editor phase** — split layout: left form (CSP ID, heading, sub-heading, tagline, brand name, services textarea, contact, WhatsApp, location, logo upload, accent color picker) + right live preview (scaled 0.85 in viewport).
 
-## Files
-- `src/lib/cv-template-engine.ts` — template registry (57 templates)
-- `src/lib/cv-draft.ts` — Firestore draft persistence
-- `src/components/cv/TemplateGallery.tsx` — gallery with search/filters
-- `src/components/cv/CustomizationPanel.tsx` — font/color/order controls
-- `src/routes/retailer.cv-builder.tsx` — main route, 2-phase orchestrator
+### Customization
+- **Logo upload**: data URL, max 1.5MB, replaces the "EI" text mark
+- **Accent color**: 15 presets + reset; overrides `palette.accent` in render
+- **Format toggle**: A4 (595×842) / Story 9:16 (540×960) / Square 1:1 (720×720)
+
+### Output (uses html-to-image + jspdf, dynamic imports)
+- **PDF**: `jsPDF` with custom `[w,h]` format matching the canvas
+- **PNG**: `toPng` at 3× pixel ratio
+- **WhatsApp Share**: `navigator.share({files})` if supported, else download + open `wa.me/?text=...`
+- **Print**: opens new window, auto-prints A4
+
+### Key Files
+- `src/lib/poster-template-engine.ts` — engine + 80 templates
+- `src/components/tools/PosterTemplateGallery.tsx` — gallery with search/filters
+- `src/routes/retailer.page-tools.tsx` — orchestrator (gallery ↔ editor phases)
+
+## CV Builder Studio (`/retailer/cv-builder`)
+See `mem://features/cv-builder-studio` (separate file).
+- 57 templates × 16 categories
+- Template-first gallery → 5-tab form with live preview iframe
+- ₹10 paid PDF download via `atomicDebit` + `platformFees/cv_builder`
+- Drafts persisted in `cvDrafts/{uid}` Firestore doc
+
+## Other tools (in same /retailer/page-tools route)
+- `JpgToPdfConverter` — multi-image to PDF
+- `ServiceBilling` — quick GST-style invoice generator
