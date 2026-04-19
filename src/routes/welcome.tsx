@@ -151,7 +151,7 @@ function Hero({ content, whatsapp }: { content: LandingContent; whatsapp: string
                 <BookOpen className="h-4 w-4" />
                 Open Digital Booklet
               </Link>
-              <a href={`https://wa.me/${WHATSAPP}?text=Hi%20EI%20SOLUTIONS%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0F1B14]/70 transition hover:text-[#0B6B4F]">
+              <a href={`https://wa.me/${whatsapp}?text=Hi%20${encodeURIComponent(content.contact.brand)}%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0F1B14]/70 transition hover:text-[#0B6B4F]">
                 <MessageCircle className="h-4 w-4" /> WhatsApp us
               </a>
             </div>
@@ -262,21 +262,15 @@ function MarqueeStrip() {
 }
 
 /* ─────────────────────── STATS ─────────────────────── */
-function Stats() {
-  const items = [
-    { v: "7+", l: "Years of operation", s: "since 2018" },
-    { v: "2500+", l: "Active centers", s: "across 14 districts" },
-    { v: "10L+", l: "Customers served", s: "and counting" },
-    { v: "24×7", l: "Partner support", s: "Malayalam + English" },
-  ];
+function Stats({ stats }: { stats: CmsStat[] }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
       <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 md:grid-cols-4">
-        {items.map((it) => (
-          <div key={it.l} className="bg-[#FAF7F0] p-7 transition hover:bg-white">
-            <div className="font-serif text-5xl font-bold tracking-tight text-[#0F1B14] md:text-6xl">{it.v}</div>
-            <div className="mt-3 text-[14px] font-semibold text-[#0F1B14]">{it.l}</div>
-            <div className="text-[12px] text-[#0F1B14]/55">{it.s}</div>
+        {stats.slice(0, 4).map((it) => (
+          <div key={it.label} className="bg-[#FAF7F0] p-7 transition hover:bg-white">
+            <div className="font-serif text-5xl font-bold tracking-tight text-[#0F1B14] md:text-6xl">{it.number}</div>
+            <div className="mt-3 text-[14px] font-semibold text-[#0F1B14]">{it.label}</div>
+            <div className="text-[12px] text-[#0F1B14]/55">{it.labelMl}</div>
           </div>
         ))}
       </div>
