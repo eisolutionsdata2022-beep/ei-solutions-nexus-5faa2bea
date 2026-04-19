@@ -490,6 +490,13 @@ function PanExecutionDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : f.key === "vle_id" ? (
+                <Input
+                  type="text"
+                  value={vleId}
+                  readOnly
+                  className="bg-muted/40 font-mono tracking-wider"
+                />
               ) : (
                 <Input
                   type={f.type}
