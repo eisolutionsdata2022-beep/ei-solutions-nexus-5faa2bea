@@ -32,6 +32,15 @@ const PALETTE = {
 const SERIF = `'Cormorant Garamond', 'Playfair Display', Georgia, serif`;
 
 export function CompanyBooklet() {
+  const { content } = useLandingContent();
+  const cms = {
+    hero: content.hero,
+    stats: content.stats,
+    services: content.services,
+    reviews: content.reviews,
+    contact: content.contact,
+  };
+
   const total = BOOKLET_PAGES.length;
   const [index, setIndex] = useState(0);
   const [flipping, setFlipping] = useState<"next" | "prev" | null>(null);
