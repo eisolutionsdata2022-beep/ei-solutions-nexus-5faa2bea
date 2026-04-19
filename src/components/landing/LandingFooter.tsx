@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import eiSolutionsLogo from "@/assets/ei-solutions-3d-logo.png";
+import eiBrandMark from "@/assets/ei-brand-mark.png";
 
 export function LandingFooter() {
   return (
@@ -8,7 +8,7 @@ export function LandingFooter() {
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <img src={eiSolutionsLogo} alt="EI Solutions" className="h-9 w-9 object-contain" />
+              <img src={eiBrandMark} alt="EI Solutions" width={36} height={36} loading="lazy" className="h-9 w-9 object-contain" />
               <p className="text-base font-bold tracking-tight text-foreground">
                 EI <span className="text-premium-gradient">Solutions</span>
               </p>

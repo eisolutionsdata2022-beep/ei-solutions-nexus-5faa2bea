@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import eiSolutionsLogo from "@/assets/ei-solutions-3d-logo.png";
+import eiBrandMark from "@/assets/ei-brand-mark.png";
 
 const NAV = [
   { label: "Services", href: "#services" },
@@ -32,8 +32,14 @@ export function LandingHeader() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src={eiSolutionsLogo} alt="EI Solutions" className="h-9 w-9 object-contain" />
+        <Link to="/" className="group flex items-center gap-2.5">
+          <img
+            src={eiBrandMark}
+            alt="EI Solutions"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+          />
           <div className="hidden sm:block">
             <p className="text-base font-bold leading-tight tracking-tight text-foreground">
               EI <span className="text-premium-gradient">Solutions</span>
