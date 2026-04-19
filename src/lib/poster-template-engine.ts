@@ -21,6 +21,7 @@ export type ServiceCategory =
   | "PAN Card" | "Money Transfer" | "AEPS" | "Recharge" | "Bill Payment"
   | "Insurance" | "Loan" | "Travel Booking" | "PVC Card" | "Aadhaar Services"
   | "GST" | "Banking" | "Education" | "Health Card" | "Job Services"
+  | "Janasevana" | "Matrimony" | "Horoscope"
   | "All Services";
 
 export type PosterStyle =
@@ -31,7 +32,10 @@ export type PosterStyle =
   | "corporate"     // navy + gold premium
   | "minimal"       // lots of whitespace, single accent
   | "tricolor"      // saffron-white-green band
-  | "circuit";      // digital/tech background
+  | "circuit"       // digital/tech background
+  | "elegantMatch"  // matrimony — soft mandala border + couple silhouette
+  | "goldAuthority" // janasevana — emblem + gold seal + tricolor
+  | "cosmicMystic"; // horoscope — celestial chart + zodiac wheel
 
 export type PosterFormat = "a4" | "story" | "square";
 
