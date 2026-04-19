@@ -87,7 +87,7 @@ export function CompanyBooklet() {
 
   const share = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `${COMPANY.brand} — Digital Booklet`;
+    const text = `${cms.contact.brand} — Digital Booklet`;
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       try { await (navigator as any).share({ title: text, url }); return; } catch {}
     }
