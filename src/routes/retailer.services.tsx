@@ -13,6 +13,7 @@ import {
   uploadEdisDocuments,
   type EdisServiceInfo,
   type EdisApplication,
+  type EdisUploadProgress,
 } from "@/lib/edis-types";
 import {
   createEdisApplication,
