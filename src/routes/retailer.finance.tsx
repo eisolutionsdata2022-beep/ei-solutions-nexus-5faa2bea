@@ -273,58 +273,202 @@ function DashboardTab({
     .reduce((s, l) => s + l.totalNetWeight, 0);
 
   const cards = [
-    { label: "Today Collection", value: formatINR(todayCollection), icon: Wallet, color: "text-green-600" },
-    { label: "Active Loans", value: String(active), icon: Banknote, color: "text-blue-600" },
-    { label: "Overdue", value: String(overdue), icon: AlertTriangle, color: "text-red-600" },
-    { label: "Closed Loans", value: String(closed), icon: CheckCircle2, color: "text-emerald-600" },
-    { label: "Customers", value: String(customers.length), icon: Users, color: "text-purple-600" },
-    { label: "Disbursed", value: formatINR(totalDisbursed), icon: TrendingUp, color: "text-indigo-600" },
-    { label: "Outstanding", value: formatINR(totalOutstanding), icon: Clock, color: "text-amber-600" },
-    { label: "Gold Stock", value: `${goldStock.toFixed(2)} g`, icon: Banknote, color: "text-yellow-600" },
+    { label: "Today Collection", value: formatINR(todayCollection), icon: Wallet, gradient: "from-emerald-500 to-green-600", glow: "shadow-emerald-500/20" },
+    { label: "Active Loans", value: String(active), icon: Banknote, gradient: "from-gov-blue to-gov-blue-dark", glow: "shadow-blue-500/20" },
+    { label: "Overdue", value: String(overdue), icon: AlertTriangle, gradient: "from-red-500 to-rose-600", glow: "shadow-red-500/20" },
+    { label: "Closed Loans", value: String(closed), icon: CheckCircle2, gradient: "from-teal-500 to-emerald-600", glow: "shadow-teal-500/20" },
+    { label: "Customers", value: String(customers.length), icon: Users, gradient: "from-purple-500 to-fuchsia-600", glow: "shadow-purple-500/20" },
+    { label: "Disbursed", value: formatINR(totalDisbursed), icon: TrendingUp, gradient: "from-indigo-500 to-blue-600", glow: "shadow-indigo-500/20" },
+    { label: "Outstanding", value: formatINR(totalOutstanding), icon: Clock, gradient: "from-amber-500 to-orange-600", glow: "shadow-amber-500/20" },
+    { label: "Gold Stock", value: `${goldStock.toFixed(2)} g`, icon: Banknote, gradient: "from-gov-saffron to-yellow-600", glow: "shadow-yellow-500/20" },
   ];
 
+  // Quick action tiles for easy navigation between tabs
+  const quickActions = [
+    { label: "New Customer", desc: "KYC & photo", icon: UserPlus, tab: "customers", accent: "from-purple-500/15 to-fuchsia-500/10 border-purple-500/30 text-purple-700 dark:text-purple-300" },
+    { label: "New Loan", desc: "Pledge gold", icon: Plus, tab: "loans", accent: "from-gov-blue/15 to-blue-500/10 border-gov-blue/30 text-gov-blue dark:text-blue-300" },
+    { label: "Collect EMI", desc: "Record payment", icon: Receipt, tab: "repay", accent: "from-emerald-500/15 to-green-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300" },
+    { label: "Cash Book", desc: "Daily entries", icon: Wallet, tab: "cashbook", accent: "from-amber-500/15 to-orange-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300" },
+    { label: "Reports", desc: "Analytics", icon: FileText, tab: "reports", accent: "from-indigo-500/15 to-blue-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-300" },
+    { label: "Closure", desc: "Release gold", icon: CheckCircle2, tab: "closure", accent: "from-teal-500/15 to-emerald-500/10 border-teal-500/30 text-teal-700 dark:text-teal-300" },
+  ];
+
+  function goToTab(tab: string) {
+    const trigger = document.querySelector<HTMLElement>(`[role="tab"][value="${tab}"], button[data-state][value="${tab}"]`);
+    // Fallback: find by text — Radix Tabs uses data-value
+    const node = trigger || document.querySelector<HTMLElement>(`button[role="tab"][data-radix-collection-item][value="${tab}"]`);
+    node?.click();
+    // Most reliable — query by data-value attribute that Radix sets
+    const el = document.querySelector<HTMLElement>(`[role="tab"][data-state]`);
+    if (!node && el) {
+      document.querySelectorAll<HTMLElement>('[role="tab"]').forEach((t) => {
+        if ((t.getAttribute("value") || t.textContent?.trim().toLowerCase()) === tab) t.click();
+      });
+    }
+  }
+
+  // Recent payments for mini activity feed
+  const recentPayments = [...payments]
+    .sort((a, b) => (b.collectedAt || "").localeCompare(a.collectedAt || ""))
+    .slice(0, 5);
+
+  // Mini-report: due-soon (next 7 days)
+  const today2 = new Date();
+  const in7 = new Date(today2.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const dueSoon = loans
+    .filter((l) => l.status === "Active" && new Date(l.dueDate) >= today2 && new Date(l.dueDate) <= in7)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, 5);
+
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-5 mt-4">
+      {/* Premium gradient stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {cards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <c.icon className={`w-4 h-4 ${c.color}`} />
-                <p className="text-xs text-muted-foreground">{c.label}</p>
+          <Card
+            key={c.label}
+            className={`relative overflow-hidden border-0 shadow-lg ${c.glow} hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group`}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${c.gradient} opacity-95`} />
+            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-white/15 blur-2xl group-hover:bg-white/25 transition-all" />
+            <CardContent className="relative p-4 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <c.icon className="w-4 h-4 text-white" />
+                </div>
               </div>
-              <p className="text-xl font-bold">{c.value}</p>
+              <p className="text-[11px] uppercase tracking-wide text-white/85 font-medium">{c.label}</p>
+              <p className="text-xl font-bold mt-0.5 drop-shadow-sm">{c.value}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle>Recent Loans</CardTitle></CardHeader>
+      {/* Quick actions — easy navigation */}
+      <Card className="border-border/60 bg-card/60 backdrop-blur-sm shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="w-1 h-5 bg-gradient-to-b from-gov-blue to-gov-saffron rounded-full" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {loans.slice(0, 6).map((l) => (
-              <div key={l.id} className="flex items-center justify-between p-2 border rounded-md">
-                <div>
-                  <p className="font-semibold text-sm">{l.loanNo} · {l.customerName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatINR(l.loanAmount)} · {l.totalNetWeight.toFixed(2)}g · Due{" "}
-                    {new Date(l.dueDate).toLocaleDateString("en-IN")}
-                  </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {quickActions.map((a) => (
+              <button
+                key={a.tab}
+                onClick={() => goToTab(a.tab)}
+                className={`group relative overflow-hidden rounded-xl border bg-gradient-to-br ${a.accent} p-3 text-left hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center shadow-sm">
+                    <a.icon className="w-4 h-4" />
+                  </div>
                 </div>
-                <Badge variant="outline" className={LOAN_STATUS_COLORS[l.status]}>
-                  {l.status}
-                </Badge>
-              </div>
+                <p className="text-sm font-semibold leading-tight">{a.label}</p>
+                <p className="text-[11px] opacity-75 mt-0.5">{a.desc}</p>
+              </button>
             ))}
-            {loans.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No loans yet. Create your first loan from the Loans tab.
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Two-column: Recent loans + Mini reports */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="w-1 h-5 bg-gov-blue rounded-full" />
+              Recent Loans
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {loans.slice(0, 6).map((l) => {
+                const isOverdue = l.status === "Active" && new Date(l.dueDate) < new Date();
+                return (
+                  <div
+                    key={l.id}
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-gradient-to-r from-card to-muted/20 hover:border-gov-blue/40 hover:shadow-sm transition-all"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{l.loanNo} · {l.customerName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatINR(l.loanAmount)} · {l.totalNetWeight.toFixed(2)}g · Due{" "}
+                        {new Date(l.dueDate).toLocaleDateString("en-IN")}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className={LOAN_STATUS_COLORS[isOverdue ? "Overdue" : l.status]}>
+                      {isOverdue ? "Overdue" : l.status}
+                    </Badge>
+                  </div>
+                );
+              })}
+              {loans.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No loans yet. Tap “New Loan” above to get started.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          {/* Due Soon mini-report */}
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="w-1 h-5 bg-gov-saffron rounded-full" />
+                Due in 7 Days
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                {dueSoon.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between text-xs p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40">
+                    <div>
+                      <p className="font-semibold">{l.loanNo} · {l.customerName}</p>
+                      <p className="text-muted-foreground">{formatINR(l.outstandingPrincipal)} outstanding</p>
+                    </div>
+                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">
+                      {new Date(l.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                    </Badge>
+                  </div>
+                ))}
+                {dueSoon.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-3">No loans due in the next 7 days.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent payments */}
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="w-1 h-5 bg-gov-green rounded-full" />
+                Latest Collections
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                {recentPayments.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-muted/40 transition-colors">
+                    <div>
+                      <p className="font-semibold">{p.receiptNo} · {p.customerName}</p>
+                      <p className="text-muted-foreground">{p.type} · {p.paymentMode}</p>
+                    </div>
+                    <span className="font-bold text-emerald-600">+{formatINR(p.amount)}</span>
+                  </div>
+                ))}
+                {recentPayments.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-3">No payments collected yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
