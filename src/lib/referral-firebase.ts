@@ -170,9 +170,9 @@ export async function atomicReferralActivation(args: {
       referrerWalletRef = doc(db, "wallets", referrerUid);
       const refWalletSnap = await tx.get(referrerWalletRef);
       if (refWalletSnap.exists()) {
-        referrerCurrent = refWalletSnap.data().balance || 0;
+        referrerCurrent = (refWalletSnap.data() as any).balance || 0;
         const refUserSnap = await tx.get(doc(db, "users", referrerUid));
-        referrerCode = refUserSnap.exists() ? refUserSnap.data().referralCode : undefined;
+        referrerCode = refUserSnap.exists() ? (refUserSnap.data() as any).referralCode : undefined;
       } else {
         referrerWalletRef = null; // can't credit non-existent wallet
       }
