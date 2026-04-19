@@ -539,6 +539,36 @@ function BookletCTA() {
 function LeadSection({ phone, whatsapp, email }: { phone: string; whatsapp: string; email: string }) {
   return (
     <section id="lead" className="mx-auto max-w-7xl px-4 py-24 md:px-8">
+      {/* Premium Booklet CTA */}
+      <Link
+        to="/booklet"
+        className="group relative mb-14 block overflow-hidden rounded-[28px] border border-[#D4A24C]/30 bg-gradient-to-br from-[#0F1B14] via-[#0B6B4F] to-[#0F1B14] p-1 shadow-2xl transition hover:shadow-[0_30px_80px_-20px_rgba(212,162,76,0.45)]"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(212,162,76,0.25),transparent_60%)]" />
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#D4A24C]/20 blur-3xl transition group-hover:bg-[#D4A24C]/30" />
+        <div className="relative flex flex-col items-start gap-5 rounded-[24px] bg-gradient-to-br from-[#0F1B14]/40 via-transparent to-[#0F1B14]/60 p-6 sm:flex-row sm:items-center sm:gap-7 sm:p-8 md:p-10">
+          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A24C] to-[#B8893A] shadow-lg shadow-[#D4A24C]/30 sm:h-20 sm:w-20">
+            <BookOpen className="h-8 w-8 text-[#0F1B14] sm:h-10 sm:w-10" strokeWidth={2.2} />
+          </div>
+          <div className="flex-1">
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#D4A24C]/40 bg-[#D4A24C]/10 px-3 py-1">
+              <Sparkles className="h-3 w-3 text-[#D4A24C]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A24C]">Premium Edition 2025</span>
+            </div>
+            <h3 className="font-serif text-[24px] leading-tight text-white sm:text-[30px] md:text-[34px]">
+              Explore the EI SOLUTIONS Digital Booklet
+            </h3>
+            <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-white/70 sm:text-[15px]">
+              A page-flip corporate presentation with our full story, services, earnings model, registrations & franchise process — open & explore.
+            </p>
+          </div>
+          <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D4A24C] px-6 py-3.5 font-bold text-[#0F1B14] shadow-xl transition group-hover:bg-white sm:w-auto sm:flex-shrink-0">
+            <span className="text-[14px] uppercase tracking-wider">View Booklet</span>
+            <ArrowUpRight className="h-5 w-5 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </div>
+        </div>
+      </Link>
+
       <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
         <div>
           <Eyebrow>Get started</Eyebrow>
