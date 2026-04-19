@@ -19,6 +19,7 @@ import { Route as NsdlCallbackRouteImport } from './routes/nsdl-callback'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as DistributorRouteImport } from './routes/distributor'
+import { Route as BookletRouteImport } from './routes/booklet'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainerIndexRouteImport } from './routes/trainer.index'
@@ -159,6 +160,11 @@ const InstallRoute = InstallRouteImport.update({
 const DistributorRoute = DistributorRouteImport.update({
   id: '/distributor',
   path: '/distributor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookletRoute = BookletRouteImport.update({
+  id: '/booklet',
+  path: '/booklet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -625,6 +631,7 @@ const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
   '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -727,6 +734,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/booklet': typeof BookletRoute
   '/install': typeof InstallRoute
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
@@ -825,6 +833,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
   '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -930,6 +939,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/booklet'
     | '/distributor'
     | '/install'
     | '/matrimony'
@@ -1032,6 +1042,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/booklet'
     | '/install'
     | '/nsdl-callback'
     | '/register'
@@ -1129,6 +1140,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/booklet'
     | '/distributor'
     | '/install'
     | '/matrimony'
@@ -1233,6 +1245,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  BookletRoute: typeof BookletRoute
   DistributorRoute: typeof DistributorRouteWithChildren
   InstallRoute: typeof InstallRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
@@ -1316,6 +1329,13 @@ declare module '@tanstack/react-router' {
       path: '/distributor'
       fullPath: '/distributor'
       preLoaderRoute: typeof DistributorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/booklet': {
+      id: '/booklet'
+      path: '/booklet'
+      fullPath: '/booklet'
+      preLoaderRoute: typeof BookletRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -2212,6 +2232,7 @@ const TrainerRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  BookletRoute: BookletRoute,
   DistributorRoute: DistributorRouteWithChildren,
   InstallRoute: InstallRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
