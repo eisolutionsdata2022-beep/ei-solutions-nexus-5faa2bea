@@ -218,7 +218,7 @@ export function CompanyBooklet() {
             boxShadow: `0 30px 80px -20px ${PALETTE.forestDeep}40, inset 0 0 0 1px ${PALETTE.gold}22`,
           }}
         >
-          <PageContent kind={page.kind} />
+          <PageContent kind={page.kind} cms={cms} />
 
           {/* Decorative page edge */}
           <div className="pointer-events-none absolute inset-0 rounded-[14px]" style={{ boxShadow: `inset 0 0 0 6px ${PALETTE.cream}, inset 0 0 0 7px ${PALETTE.gold}30` }} />
