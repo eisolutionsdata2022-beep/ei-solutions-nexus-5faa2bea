@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import logoImg from "@/assets/ei-solutions-3d-logo.png";
 import { useLandingContent } from "@/hooks/use-landing-content";
+import type { LandingContent, CmsStat, CmsService, CmsReview, CmsContact } from "@/lib/landing-cms";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
