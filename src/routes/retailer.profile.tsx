@@ -219,30 +219,77 @@ function RetailerProfile() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">PSA ID</p>
                 {psa ? (
                   <>
-                    <p className="text-2xl font-bold font-mono tracking-wider text-foreground">{psa.psaId}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <p className="text-2xl font-bold font-mono tracking-wider text-foreground break-all">{psa.psaId}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                       Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
                       <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
+                      {psa.source === "legacy" && (
+                        <Badge variant="outline" className="text-[10px] py-0">Migrated from old portal</Badge>
+                      )}
                     </p>
                   </>
                 ) : (
                   <>
                     <p className="text-base font-semibold text-foreground">Not yet generated</p>
                     <p className="text-xs text-muted-foreground">
-                      Purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                      New users: purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Existing member? You can link your old PSA ID instead.
                     </p>
                   </>
                 )}
               </div>
             </div>
-            {!psa && (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/retailer/pan-portal">Buy Coupons</Link>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <Button variant="outline" size="sm" onClick={() => { setLegacyId(psa?.psaId ?? ""); setLegacyOpen(true); }}>
+                <Edit3 className="w-3.5 h-3.5 mr-1" />
+                {psa ? "Update PSA ID" : "I have an existing PSA ID"}
               </Button>
-            )}
+              {!psa && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/retailer/pan-portal">Buy Coupons</Link>
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Legacy PSA ID claim dialog */}
+      <Dialog open={legacyOpen} onOpenChange={setLegacyOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{psa ? "Update PSA ID" : "Link your existing PSA ID"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              പഴയ പോർട്ടലിൽ ഉണ്ടായിരുന്ന <b>PSA ID</b> ഇവിടെ enter ചെയ്യുക. Format: <code>PSA######</code> അല്ലെങ്കിൽ <code>PSA######-9876543210</code>.
+            </p>
+            <div>
+              <Label className="text-xs">Existing PSA ID</Label>
+              <Input
+                value={legacyId}
+                onChange={(e) => setLegacyId(e.target.value.toUpperCase())}
+                placeholder="PSA482917-9876543210"
+                className="font-mono mt-1"
+                autoFocus
+              />
+            </div>
+            {(appUser as any)?.phone && (
+              <p className="text-xs text-muted-foreground">
+                Registered mobile: <span className="font-mono">{(appUser as any).phone}</span>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLegacyOpen(false)} disabled={savingLegacy}>Cancel</Button>
+            <Button onClick={submitLegacy} disabled={savingLegacy}>
+              {savingLegacy ? "Saving…" : "Save PSA ID"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edits + Certificates grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
