@@ -13,8 +13,17 @@ import {
   getDocumentStatusLabel,
   ServiceApplicationRecord,
 } from "@/lib/e-district";
-import { Download, ExternalLink, FileText } from "lucide-react";
+import { Download, ExternalLink, Eye, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+
+type PreviewKind = "image" | "pdf" | "other";
+
+function detectPreviewKind(fileName: string, url: string): PreviewKind {
+  const lower = (fileName || url).toLowerCase().split("?")[0];
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(lower)) return "image";
+  if (/\.pdf$/.test(lower)) return "pdf";
+  return "other";
+}
 
 interface StaffApplicationReviewDialogProps {
   application: ServiceApplicationRecord | null;
@@ -59,6 +68,7 @@ export function StaffApplicationReviewDialog({
   const [status, setStatus] = useState<ApplicationStatus>("Pending");
   const [govApplicationNo, setGovApplicationNo] = useState("");
   const [staffRemark, setStaffRemark] = useState("");
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (!application) return;
@@ -66,7 +76,15 @@ export function StaffApplicationReviewDialog({
     setStatus(application.status);
     setGovApplicationNo(application.govApplicationNo ?? "");
     setStaffRemark(application.rejectionReason || application.staffRemark || "");
+    setPreviewIdx(null);
   }, [application]);
+
+  const activePreview = useMemo(() => {
+    if (!application || previewIdx === null) return null;
+    const doc = application.uploadedDocuments[previewIdx];
+    if (!doc) return null;
+    return { doc, kind: detectPreviewKind(doc.fileName, doc.url) };
+  }, [application, previewIdx]);
 
   const documentMessage = useMemo(() => {
     if (!application) return "";
@@ -92,7 +110,7 @@ export function StaffApplicationReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{application?.applicationNo || "Application Review"}</DialogTitle>
           <DialogDescription>
@@ -134,36 +152,52 @@ export function StaffApplicationReviewDialog({
                   </span>
                 </div>
 
-                <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
                   {application.uploadedDocuments.length > 0 ? (
-                    application.uploadedDocuments.map((document) => (
-                      <div
-                        key={`${document.url}-${document.fileName}`}
-                        className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">{document.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{document.fileName}</p>
-                        </div>
+                    application.uploadedDocuments.map((document, idx) => {
+                      const kind = detectPreviewKind(document.fileName, document.url);
+                      const isActive = previewIdx === idx;
+                      return (
+                        <div
+                          key={`${document.url}-${document.fileName}`}
+                          className={`flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between ${
+                            isActive ? "border-primary bg-primary/5" : "bg-background"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">{document.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{document.fileName}</p>
+                          </div>
 
-                        <div className="flex shrink-0 gap-2">
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={document.url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                              View
-                            </a>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => downloadDocument(document.url, document.fileName)}
-                          >
-                            <Download className="mr-1.5 h-3.5 w-3.5" />
-                            Download
-                          </Button>
+                          <div className="flex shrink-0 flex-wrap gap-2">
+                            {kind !== "other" && (
+                              <Button
+                                size="sm"
+                                variant={isActive ? "default" : "secondary"}
+                                onClick={() => setPreviewIdx(isActive ? null : idx)}
+                              >
+                                <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                {isActive ? "Hide" : "Preview"}
+                              </Button>
+                            )}
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={document.url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                                Open
+                              </a>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadDocument(document.url, document.fileName)}
+                            >
+                              <Download className="mr-1.5 h-3.5 w-3.5" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="rounded-lg border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
                       <FileText className="mx-auto mb-2 h-5 w-5" />
@@ -175,6 +209,40 @@ export function StaffApplicationReviewDialog({
                     </div>
                   )}
                 </div>
+
+                {activePreview && (
+                  <div className="mt-3 overflow-hidden rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between border-b bg-background px-3 py-2">
+                      <p className="truncate text-xs font-medium text-foreground">
+                        Preview: {activePreview.doc.fileName}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setPreviewIdx(null)}
+                        aria-label="Close preview"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex max-h-[420px] items-center justify-center overflow-auto bg-background">
+                      {activePreview.kind === "image" ? (
+                        <img
+                          src={activePreview.doc.url}
+                          alt={activePreview.doc.fileName}
+                          className="max-h-[420px] w-auto max-w-full object-contain"
+                        />
+                      ) : activePreview.kind === "pdf" ? (
+                        <iframe
+                          src={activePreview.doc.url}
+                          title={activePreview.doc.fileName}
+                          className="h-[420px] w-full border-0"
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
 
