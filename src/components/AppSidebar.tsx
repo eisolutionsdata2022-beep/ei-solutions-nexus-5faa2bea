@@ -81,6 +81,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Profile", to: "/retailer/profile", icon: User },
+    { label: "Staff", to: "/retailer/staff", icon: Users },
     { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
     { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
@@ -128,6 +130,16 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
+  ],
+  operator: [
+    { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
+  ],
+  staffSub: [
+    { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Profile", to: "/retailer/profile", icon: User },
+    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
+    { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
+    { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
   ],
 };
 
