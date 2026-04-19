@@ -162,6 +162,9 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Legacy Cleanup */}
+      <LegacyCleanupCard />
     </div>
   );
 }
