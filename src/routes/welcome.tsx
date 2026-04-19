@@ -12,6 +12,7 @@ import {
   Send, Shield, ShieldCheck, Sparkles, Star, TrendingUp, Users, Wallet,
 } from "lucide-react";
 import logoImg from "@/assets/ei-solutions-3d-logo.png";
+import { useLandingContent } from "@/hooks/use-landing-content";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -28,29 +29,31 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomeLanding,
 });
 
-const WHATSAPP = "918921479506";
-const PHONE = "+91 89214 79506";
-const EMAIL = "support@eisoluions.xyz";
-
 /* ─────────────────────── PAGE ─────────────────────── */
 function WelcomeLanding() {
+  const { content } = useLandingContent();
+  const whatsapp = content.contact.whatsapp || "918921479506";
+  const phone = content.contact.phone || "+91 89214 79506";
+  const email = content.contact.email || "support@eisoluions.xyz";
+  const logo = content.images.logoUrl || logoImg;
+
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[#0F1B14] antialiased selection:bg-[#0B6B4F]/20">
       <Aurora />
-      <Navbar />
-      <Hero />
+      <Navbar logo={logo} brand={content.contact.brand} />
+      <Hero content={content} whatsapp={whatsapp} />
       <MarqueeStrip />
-      <Stats />
+      <Stats stats={content.stats} />
       <About />
-      <Services />
+      <Services services={content.services} />
       <Platform />
       <Opportunity />
-      <Testimonials />
+      <Testimonials reviews={content.reviews} />
       <BookletCTA />
-      <LeadSection />
-      <Contact />
-      <Footer />
-      <FloatingActions />
+      <LeadSection phone={phone} whatsapp={whatsapp} email={email} />
+      <Contact contact={content.contact} logo={logo} phone={phone} whatsapp={whatsapp} email={email} />
+      <Footer brand={content.contact.brand} legalName={content.contact.legalName} />
+      <FloatingActions phone={phone} whatsapp={whatsapp} />
     </div>
   );
 }
