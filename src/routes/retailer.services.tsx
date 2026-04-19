@@ -294,6 +294,7 @@ function ApplicationForm({
     }
 
     setSubmitting(true);
+    setProgress({}); // reset progress bars at start of upload
     const appNo = generateEdisAppNo();
     let uploaded = false;
     let debited = false;
@@ -305,6 +306,7 @@ function ApplicationForm({
         documents: service.requiredDocuments
           .filter((name) => files[name])
           .map((name) => ({ name, file: files[name]! })),
+        onProgress: (p) => setProgress((prev) => ({ ...prev, [p.docName]: p })),
       });
       const timeoutPromise = new Promise<never>((_, rej) =>
         setTimeout(() => rej(new Error("UPLOAD_TIMEOUT")), 90_000)
