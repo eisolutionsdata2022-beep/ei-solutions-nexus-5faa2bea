@@ -212,7 +212,7 @@ function RetailerDashboard() {
         <button
           type="button"
           onClick={() => {
-            const id = generateVleId(appUser?.uid);
+            const id = generateVleId(appUser?.uid, appUser?.phone);
             navigator.clipboard?.writeText(id).then(
               () => toast.success(`VLE ID copied: ${id}`),
               () => toast.error("Could not copy VLE ID"),
@@ -231,7 +231,7 @@ function RetailerDashboard() {
                 <Copy className="w-3 h-3 opacity-60" />
               </p>
               <p className="text-2xl font-bold text-foreground font-mono tracking-wider truncate">
-                {generateVleId(appUser?.uid)}
+                {generateVleId(appUser?.uid, appUser?.phone)}
               </p>
             </div>
           </div>
