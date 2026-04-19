@@ -115,7 +115,7 @@ function RetailerLayout() {
   }, [location.pathname, disabledKeys, perm, plan, activeKeys, actConfigs]);
 
   return (
-    <RouteGuard allowedRoles={["retailer"]}>
+    <RouteGuard allowedRoles={["retailer", "staffSub"]}>
       <DashboardLayout />
       <ServiceBlockedDialog
         open={showBlocked}
