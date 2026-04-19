@@ -22,8 +22,18 @@ import {
   Eye,
   Download,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type PreviewKind = "image" | "pdf" | "other";
+
+function detectPreviewKind(fileName: string, url: string): PreviewKind {
+  const lower = (fileName || url).toLowerCase().split("?")[0];
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(lower)) return "image";
+  if (/\.pdf$/.test(lower)) return "pdf";
+  return "other";
+}
 
 export const Route = createFileRoute("/staff/form-submissions")({
   ssr: false,
