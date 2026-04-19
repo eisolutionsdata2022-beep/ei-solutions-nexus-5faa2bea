@@ -10,7 +10,10 @@ import { Input } from "@/components/ui/input";
 import {
   Wallet, Search, Clock, CheckCircle, XCircle, AlertCircle,
   ArrowDownLeft, ArrowUpRight, FileText, ExternalLink, BarChart3, HelpCircle,
+  IdCard, Copy,
 } from "lucide-react";
+import { toast } from "sonner";
+import { generateVleId } from "@/lib/pan-vle-id";
 
 export const Route = createFileRoute("/retailer/")({
   ssr: false,
