@@ -49,6 +49,26 @@ function AdminReferralPage() {
   const totalPaidOut = payouts.reduce((s, p) => s + (p.referrerReward || 0) + (p.newUserReward || 0), 0);
   const totalCollected = payouts.reduce((s, p) => s + (p.activationFee || 0), 0);
 
+  // ── This-month leaderboard ──
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const leaderboard = (() => {
+    const map = new Map<string, { uid: string; code?: string; earnings: number; count: number }>();
+    for (const p of payouts) {
+      if (!p.referrerUid || !p.paidAt?.startsWith(monthKey)) continue;
+      if (!(p.referrerReward > 0)) continue;
+      const row = map.get(p.referrerUid) ?? { uid: p.referrerUid, code: p.referrerCode, earnings: 0, count: 0 };
+      row.earnings += p.referrerReward || 0;
+      row.count += 1;
+      if (!row.code && p.referrerCode) row.code = p.referrerCode;
+      map.set(p.referrerUid, row);
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.earnings - a.earnings || b.count - a.count)
+      .slice(0, 10);
+  })();
+  const monthLabel = now.toLocaleString(undefined, { month: "long", year: "numeric" });
+
   return (
     <div className="p-6 space-y-6">
       <div>
