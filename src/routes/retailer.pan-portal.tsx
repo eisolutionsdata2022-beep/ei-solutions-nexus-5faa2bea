@@ -114,7 +114,10 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  const vleId = useMemo(() => generateVleId(appUser?.uid), [appUser?.uid]);
+  const vleId = useMemo(
+    () => generateVleId(appUser?.uid, appUser?.phone),
+    [appUser?.uid, appUser?.phone],
+  );
 
   return (
     <div className="space-y-6">
@@ -442,6 +445,8 @@ function PanExecutionDialog({
             const psa = await maybeGeneratePsaId({
               uid: retailerId,
               email: retailerEmail,
+              name: appUser?.name ?? null,
+              phone: appUser?.phone ?? null,
             });
             if (psa.generated && psa.record) {
               toast.success(
