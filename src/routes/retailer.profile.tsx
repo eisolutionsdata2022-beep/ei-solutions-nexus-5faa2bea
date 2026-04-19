@@ -237,53 +237,54 @@ function RetailerProfile() {
       </div>
 
       {/* PSA ID Status */}
-      <Card className={psa ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-dashed"}>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${psa ? "bg-gradient-to-br from-emerald-500 to-green-600" : "bg-muted"}`}>
-                <Award className={`w-6 h-6 ${psa ? "text-white" : "text-muted-foreground"}`} />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">PSA ID</p>
-                {psa ? (
-                  <>
-                    <p className="text-2xl font-bold font-mono tracking-wider text-foreground break-all">{psa.psaId}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                      Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
-                      <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
-                      {psa.source === "legacy" && (
-                        <Badge variant="outline" className="text-[10px] py-0">Migrated from old portal</Badge>
-                      )}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-base font-semibold text-foreground">Not yet generated</p>
-                    <p className="text-xs text-muted-foreground">
-                      New users: purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Existing member? You can link your old PSA ID instead.
-                    </p>
-                  </>
-                )}
-              </div>
+      <div className={`relative overflow-hidden rounded-2xl glass-card p-5 ${psa ? "ring-1 ring-emerald-500/30" : ""}`}>
+        {psa && (
+          <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 opacity-20 blur-3xl" aria-hidden />
+        )}
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${psa ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
+              <Award className="w-6 h-6" />
             </div>
-            <div className="flex flex-col gap-2 sm:items-end">
-              <Button variant="outline" size="sm" onClick={() => { setLegacyId(psa?.psaId ?? ""); setLegacyOpen(true); }}>
-                <Edit3 className="w-3.5 h-3.5 mr-1" />
-                {psa ? "Update PSA ID" : "I have an existing PSA ID"}
-              </Button>
-              {!psa && (
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/retailer/pan-portal">Buy Coupons</Link>
-                </Button>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">PSA ID</p>
+              {psa ? (
+                <>
+                  <p className="text-2xl font-extrabold font-mono tracking-wider text-foreground break-all">{psa.psaId}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+                    Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
+                    <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
+                    {psa.source === "legacy" && (
+                      <Badge variant="outline" className="text-[10px] py-0">Migrated from old portal</Badge>
+                    )}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-foreground">Not yet generated</p>
+                  <p className="text-xs text-muted-foreground">
+                    New users: purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Existing member? You can link your old PSA ID instead.
+                  </p>
+                </>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col gap-2 sm:items-end">
+            <Button variant="outline" size="sm" className="backdrop-blur" onClick={() => { setLegacyId(psa?.psaId ?? ""); setLegacyOpen(true); }}>
+              <Edit3 className="w-3.5 h-3.5 mr-1" />
+              {psa ? "Update PSA ID" : "I have an existing PSA ID"}
+            </Button>
+            {!psa && (
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/retailer/pan-portal">Buy Coupons</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Legacy PSA ID claim dialog */}
       <Dialog open={legacyOpen} onOpenChange={setLegacyOpen}>
