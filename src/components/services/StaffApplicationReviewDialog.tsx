@@ -13,8 +13,17 @@ import {
   getDocumentStatusLabel,
   ServiceApplicationRecord,
 } from "@/lib/e-district";
-import { Download, ExternalLink, FileText } from "lucide-react";
+import { Download, ExternalLink, Eye, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+
+type PreviewKind = "image" | "pdf" | "other";
+
+function detectPreviewKind(fileName: string, url: string): PreviewKind {
+  const lower = (fileName || url).toLowerCase().split("?")[0];
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(lower)) return "image";
+  if (/\.pdf$/.test(lower)) return "pdf";
+  return "other";
+}
 
 interface StaffApplicationReviewDialogProps {
   application: ServiceApplicationRecord | null;
