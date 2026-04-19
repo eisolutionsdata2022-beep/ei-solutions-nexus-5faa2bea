@@ -25,7 +25,10 @@ import {
   changeUserPassword, getEditHistory, type UserEditLog,
 } from "@/lib/profile-edits";
 import { requestReissue, subscribeMyReissues, type CertificateReissueRequest } from "@/lib/certificate-reissue";
-import { getPsaIdRecord, countSuccessfulCouponPurchases, type PsaIdRecord, PSA_AUTO_THRESHOLD } from "@/lib/psa-auto-id";
+import {
+  getPsaIdRecord, countSuccessfulCouponPurchases, claimLegacyPsaId,
+  type PsaIdRecord, PSA_AUTO_THRESHOLD,
+} from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/profile")({
   ssr: false,
@@ -49,6 +52,9 @@ function RetailerProfile() {
   const [staffCount, setStaffCount] = useState(0);
   const [psa, setPsa] = useState<PsaIdRecord | null>(null);
   const [couponCount, setCouponCount] = useState(0);
+  const [legacyOpen, setLegacyOpen] = useState(false);
+  const [legacyId, setLegacyId] = useState("");
+  const [savingLegacy, setSavingLegacy] = useState(false);
 
   useEffect(() => {
     setName(appUser?.name || "");
