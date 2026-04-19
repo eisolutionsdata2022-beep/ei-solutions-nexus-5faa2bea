@@ -51,6 +51,7 @@ import type { PanMasterConfig, PanTransaction } from "@/lib/pan-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
+import { generateVleId } from "@/lib/pan-vle-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
