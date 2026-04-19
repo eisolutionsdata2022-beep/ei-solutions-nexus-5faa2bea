@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShieldCheck, Sparkles, Star } from "lucide-react";
+import cscHero from "@/assets/csc-hero-illustration.png";
 
 export function HeroSection() {
   return (
@@ -11,55 +12,97 @@ export function HeroSection() {
       <div className="pointer-events-none absolute -top-32 left-1/4 h-72 w-72 rounded-full bg-primary/30 blur-3xl animate-blob" aria-hidden />
       <div className="pointer-events-none absolute right-10 top-40 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-3xl animate-blob [animation-delay:-6s]" aria-hidden />
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-32 lg:pt-28">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-md">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Trusted CSC Platform · Powering 5,000+ Service Centers
+      <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pb-32 lg:pt-24">
+        <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
+          {/* Left: copy */}
+          <div className="lg:col-span-7 text-center lg:text-left">
+            <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Trusted CSC Platform · Powering 5,000+ Service Centers
+            </div>
+
+            <h1 className="animate-fade-up mt-6 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-7xl xl:leading-[1.05] [animation-delay:120ms]">
+              Run a complete{" "}
+              <span className="text-premium-gradient">digital service center</span>{" "}
+              from one platform
+            </h1>
+
+            <p className="animate-fade-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0 [animation-delay:200ms]">
+              EI Solutions Janasevana Kendram unifies PAN, IPPB, e‑Governance, recharge,
+              money transfer, training, CRM and more — built for retailers, distributors,
+              staff and trainers across India.
+            </p>
+
+            <div className="animate-fade-up mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start [animation-delay:280ms]">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" className="btn-premium group h-12 w-full border-0 px-7 text-base font-semibold text-white shadow-premium sm:w-auto">
+                  Start free today
+                  <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+              <Link to="/login" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="h-12 w-full border-border bg-background/70 px-7 text-base font-semibold backdrop-blur-md sm:w-auto">
+                  Sign in
+                </Button>
+              </Link>
+            </div>
+
+            <div className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs text-muted-foreground lg:justify-start [animation-delay:380ms]">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" /> Bank-grade security
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.9 / 5 retailer rating
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-primary" /> Setup in under 5 minutes
+              </span>
+            </div>
           </div>
 
-          <h1 className="animate-fade-up mt-6 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl [animation-delay:120ms]">
-            Run a complete{" "}
-            <span className="text-premium-gradient">digital service center</span>{" "}
-            from one platform
-          </h1>
+          {/* Right: illustration */}
+          <div className="animate-fade-up relative lg:col-span-5 [animation-delay:520ms]">
+            <div className="relative mx-auto aspect-square w-full max-w-[520px]">
+              {/* Glow layers */}
+              <div className="absolute inset-6 rounded-[2rem] bg-premium-gradient opacity-30 blur-3xl animate-blob" aria-hidden />
+              <div className="absolute inset-10 rounded-full bg-primary/20 blur-2xl animate-blob [animation-delay:-9s]" aria-hidden />
 
-          <p className="animate-fade-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg [animation-delay:200ms]">
-            EI Solutions Janasevana Kendram unifies PAN, IPPB, e‑Governance, recharge,
-            money transfer, training, CRM and more — built for retailers, distributors,
-            staff and trainers across India.
-          </p>
+              {/* Illustration */}
+              <img
+                src={cscHero}
+                alt="EI Solutions CSC digital workspace with services dashboard, banking, PAN, recharge and biometric icons"
+                width={1024}
+                height={1024}
+                className="relative h-full w-full object-contain drop-shadow-[0_30px_50px_hsl(216_70%_25%/0.35)]"
+              />
 
-          <div className="animate-fade-up mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row [animation-delay:280ms]">
-            <Link to="/register" className="w-full sm:w-auto">
-              <Button size="lg" className="btn-premium group h-12 w-full border-0 px-7 text-base font-semibold text-white shadow-premium sm:w-auto">
-                Start free today
-                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-            <Link to="/login" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="h-12 w-full border-border bg-background/70 px-7 text-base font-semibold backdrop-blur-md sm:w-auto">
-                Sign in
-              </Button>
-            </Link>
-          </div>
+              {/* Floating chips */}
+              <div className="absolute left-0 top-8 hidden animate-blob rounded-2xl border border-border bg-background/80 px-3 py-2 shadow-premium backdrop-blur-md sm:flex sm:items-center sm:gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">KYC</p>
+                  <p className="text-xs font-semibold text-foreground">Verified · 100%</p>
+                </div>
+              </div>
 
-          <div className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs text-muted-foreground [animation-delay:380ms]">
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Bank-grade security
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.9 / 5 retailer rating
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-primary" /> Setup in under 5 minutes
-            </span>
+              <div className="absolute -bottom-2 right-0 hidden animate-blob rounded-2xl border border-border bg-background/80 px-3 py-2 shadow-premium backdrop-blur-md [animation-delay:-7s] sm:flex sm:items-center sm:gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-premium-gradient text-white">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Today</p>
+                  <p className="text-xs font-semibold text-foreground">₹ 18,420 earned</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Floating preview card */}
-        <div className="animate-fade-up relative mx-auto mt-16 max-w-5xl [animation-delay:520ms]">
-          <div className="absolute -inset-4 rounded-3xl bg-premium-gradient opacity-30 blur-2xl" aria-hidden />
+        <div className="animate-fade-up relative mx-auto mt-20 max-w-5xl [animation-delay:620ms]">
+          <div className="absolute -inset-4 rounded-3xl bg-premium-gradient opacity-25 blur-2xl" aria-hidden />
           <div className="glass-card relative overflow-hidden rounded-2xl">
             <div className="flex items-center gap-1.5 border-b border-border/60 bg-background/40 px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
