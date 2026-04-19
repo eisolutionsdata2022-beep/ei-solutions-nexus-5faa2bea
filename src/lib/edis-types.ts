@@ -130,6 +130,23 @@ export interface EdisDocInput {
   file: File;
 }
 
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_TYPES = /^(image\/(jpeg|jpg|png|webp)|application\/pdf)$/i;
+const ALLOWED_EXT = /\.(jpe?g|png|webp|pdf)$/i;
+
+export class EdisUploadError extends Error {
+  code: "FILE_TOO_LARGE" | "INVALID_FILE_TYPE" | "STORAGE_PERMISSION_DENIED" | "STORAGE_QUOTA" | "NETWORK" | "CANCELED" | "UNKNOWN";
+  docName: string;
+  fileName: string;
+  constructor(code: EdisUploadError["code"], docName: string, fileName: string, message: string) {
+    super(message);
+    this.name = "EdisUploadError";
+    this.code = code;
+    this.docName = docName;
+    this.fileName = fileName;
+  }
+}
+
 export async function uploadEdisDocuments(opts: {
   appNo: string;
   retailerId: string;
@@ -139,6 +156,19 @@ export async function uploadEdisDocuments(opts: {
   for (let i = 0; i < opts.documents.length; i++) {
     const item = opts.documents[i];
     if (!item.file) continue;
+
+    const ct = item.file.type || "";
+    const validType = ALLOWED_TYPES.test(ct) || ALLOWED_EXT.test(item.file.name);
+    if (!validType) {
+      throw new EdisUploadError("INVALID_FILE_TYPE", item.name, item.file.name,
+        `"${item.name}" must be a JPG, PNG, WEBP or PDF file.`);
+    }
+    if (item.file.size > MAX_BYTES) {
+      const mb = (item.file.size / (1024 * 1024)).toFixed(1);
+      throw new EdisUploadError("FILE_TOO_LARGE", item.name, item.file.name,
+        `"${item.name}" is ${mb} MB. Max allowed size is 10 MB.`);
+    }
+
     const path = [
       "serviceDocuments",
       sanitize(opts.retailerId, "user"),
@@ -146,12 +176,34 @@ export async function uploadEdisDocuments(opts: {
       `${i + 1}-${sanitize(item.name, "doc")}-${sanitize(item.file.name, "file")}`,
     ].join("/");
     const storageRef = ref(storage, path);
-    const snap = await uploadBytes(storageRef, item.file, {
-      contentType: item.file.type || "application/octet-stream",
-      customMetadata: { originalFileName: item.file.name },
-    });
-    const url = await getDownloadURL(snap.ref);
-    out.push({ name: item.name, url, fileName: item.file.name });
+    try {
+      const snap = await uploadBytes(storageRef, item.file, {
+        contentType: ct || "application/octet-stream",
+        customMetadata: { originalFileName: item.file.name },
+      });
+      const url = await getDownloadURL(snap.ref);
+      out.push({ name: item.name, url, fileName: item.file.name });
+    } catch (err: any) {
+      const code: string = err?.code || "";
+      if (code === "storage/unauthorized") {
+        throw new EdisUploadError("STORAGE_PERMISSION_DENIED", item.name, item.file.name,
+          `Permission denied while uploading "${item.name}". Please re-login and try again.`);
+      }
+      if (code === "storage/quota-exceeded") {
+        throw new EdisUploadError("STORAGE_QUOTA", item.name, item.file.name,
+          `Storage quota exceeded while uploading "${item.name}". Contact support.`);
+      }
+      if (code === "storage/canceled") {
+        throw new EdisUploadError("CANCELED", item.name, item.file.name,
+          `Upload of "${item.name}" was canceled.`);
+      }
+      if (code === "storage/retry-limit-exceeded" || code === "storage/server-file-wrong-size") {
+        throw new EdisUploadError("NETWORK", item.name, item.file.name,
+          `Network problem while uploading "${item.name}". Check your internet and retry.`);
+      }
+      throw new EdisUploadError("UNKNOWN", item.name, item.file.name,
+        `Failed to upload "${item.name}": ${err?.message || code || "unknown error"}`);
+    }
   }
   return out;
 }
