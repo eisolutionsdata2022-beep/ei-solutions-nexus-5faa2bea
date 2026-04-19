@@ -2,7 +2,7 @@
  * E-dis (E-District / E-Governance) — clean v2 types & catalog.
  * Stored at Firestore collection: edisApplications
  */
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "./firebase";
 
 export type EdisStatus = "pending" | "approved" | "rejected" | "completed";
