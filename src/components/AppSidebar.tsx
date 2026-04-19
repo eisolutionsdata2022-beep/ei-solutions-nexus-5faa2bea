@@ -72,6 +72,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Portal Settings", to: "/admin/pan-settings", icon: ShieldCheck },
+    { label: "PSA ID Monitor", to: "/admin/psa-ids", icon: Award },
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },

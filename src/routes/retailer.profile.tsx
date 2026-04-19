@@ -25,6 +25,7 @@ import {
   changeUserPassword, getEditHistory, type UserEditLog,
 } from "@/lib/profile-edits";
 import { requestReissue, subscribeMyReissues, type CertificateReissueRequest } from "@/lib/certificate-reissue";
+import { getPsaIdRecord, countSuccessfulCouponPurchases, type PsaIdRecord, PSA_AUTO_THRESHOLD } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/profile")({
   ssr: false,
@@ -46,6 +47,8 @@ function RetailerProfile() {
   const [history, setHistory] = useState<UserEditLog[]>([]);
   const [reissues, setReissues] = useState<CertificateReissueRequest[]>([]);
   const [staffCount, setStaffCount] = useState(0);
+  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
+  const [couponCount, setCouponCount] = useState(0);
 
   useEffect(() => {
     setName(appUser?.name || "");
@@ -58,6 +61,8 @@ function RetailerProfile() {
     const unsub = subscribeMyReissues(appUser.uid, setReissues);
     getDocs(query(collection(db, "users"), where("parentRetailerId", "==", appUser.uid)))
       .then((snap) => setStaffCount(snap.size)).catch(() => setStaffCount(0));
+    getPsaIdRecord(appUser.uid).then(setPsa).catch(() => setPsa(null));
+    countSuccessfulCouponPurchases(appUser.uid).then(setCouponCount).catch(() => setCouponCount(0));
     return unsub;
   }, [appUser]);
 
@@ -169,6 +174,43 @@ function RetailerProfile() {
                 </Link>
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PSA ID Status */}
+      <Card className={psa ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-dashed"}>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${psa ? "bg-gradient-to-br from-emerald-500 to-green-600" : "bg-muted"}`}>
+                <Award className={`w-6 h-6 ${psa ? "text-white" : "text-muted-foreground"}`} />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">PSA ID</p>
+                {psa ? (
+                  <>
+                    <p className="text-2xl font-bold font-mono tracking-wider text-foreground">{psa.psaId}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
+                      <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-semibold text-foreground">Not yet generated</p>
+                    <p className="text-xs text-muted-foreground">
+                      Purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            {!psa && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/retailer/pan-portal">Buy Coupons</Link>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

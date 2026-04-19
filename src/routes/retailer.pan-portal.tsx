@@ -53,6 +53,7 @@ import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
 import { generateVleId } from "@/lib/pan-vle-id";
+import { maybeGeneratePsaId } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -434,6 +435,25 @@ function PanExecutionDialog({
         } else {
           toast.success(`${service.name} successful · ${result.message}`);
         }
+
+        // Auto-PSA-ID trigger: only after a SUCCESSFUL coupon-buy.
+        if (service.key === "coupon-buy" && !result.redirectUrl) {
+          try {
+            const psa = await maybeGeneratePsaId({
+              uid: retailerId,
+              email: retailerEmail,
+            });
+            if (psa.generated && psa.record) {
+              toast.success(
+                `🎉 Congratulations! Your PSA ID ${psa.record.psaId} has been generated successfully.`,
+                { duration: 8000 },
+              );
+            }
+          } catch (psaErr) {
+            console.error("[PSA auto-gen]", psaErr);
+          }
+        }
+
         onClose();
       } else {
         if (fee > 0) {

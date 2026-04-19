@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateVleId } from "@/lib/pan-vle-id";
+import { getPsaIdRecord, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/")({
   ssr: false,
@@ -90,6 +91,8 @@ function RetailerDashboard() {
   const [applications, setApplications] = useState<ServiceRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceButtons, setServiceButtons] = useState<ServiceButtonData[]>([]);
+  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
+  const [psaDismissed, setPsaDismissed] = useState(false);
 
   const statusCounts = {
     pending: applications.filter((a) => a.status === "pending").length,
@@ -133,8 +136,24 @@ function RetailerDashboard() {
       setServiceButtons(list.filter((b) => b.enabled));
     }).catch(() => {});
 
+    // Load PSA ID record (if exists)
+    getPsaIdRecord(appUser.uid).then((rec) => {
+      setPsa(rec);
+      if (rec && typeof window !== "undefined") {
+        const seenKey = `psa-banner-seen-${rec.psaId}`;
+        if (window.localStorage.getItem(seenKey) === "1") setPsaDismissed(true);
+      }
+    }).catch(() => {});
+
     return unsub;
   }, [appUser]);
+
+  const dismissPsaBanner = () => {
+    if (psa && typeof window !== "undefined") {
+      window.localStorage.setItem(`psa-banner-seen-${psa.psaId}`, "1");
+    }
+    setPsaDismissed(true);
+  };
 
   const filteredApps = applications.filter((a) =>
     !searchTerm || a.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) || a.id.includes(searchTerm)
@@ -144,6 +163,34 @@ function RetailerDashboard() {
     <div className="space-y-5">
       {/* Notice Board Marquee */}
       <NoticeMarquee />
+
+      {/* PSA ID Congratulations Banner */}
+      {psa && !psaDismissed && (
+        <div className="rounded-xl bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white shadow-lg flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">
+              🎉
+            </div>
+            <div>
+              <p className="font-bold text-lg leading-tight">
+                Congratulations! Your PSA ID has been generated successfully.
+              </p>
+              <p className="text-sm text-white/90 mt-1">
+                <span className="font-mono font-bold tracking-wider">{psa.psaId}</span>
+                {" · "}Status: ACTIVE · Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 self-end sm:self-auto">
+            <Link to="/retailer/profile">
+              <Button variant="secondary" size="sm" className="font-semibold">View in Profile</Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={dismissPsaBanner} className="text-white hover:bg-white/20">
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Wallet + VLE ID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
