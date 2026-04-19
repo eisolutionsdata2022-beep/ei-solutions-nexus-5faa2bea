@@ -9,6 +9,9 @@ import bgFestival from "@/assets/poster-bg-festival.jpg";
 import bgDigital from "@/assets/poster-bg-digital.jpg";
 import bgUrgent from "@/assets/poster-bg-urgent.jpg";
 import bgGovt from "@/assets/poster-bg-govt.jpg";
+import bgMatrimony from "@/assets/poster-bg-matrimony.jpg";
+import bgHoroscope from "@/assets/poster-bg-horoscope.jpg";
+import bgJanasevana from "@/assets/poster-bg-janasevana.jpg";
 
 // ============================================================================
 // TYPES
