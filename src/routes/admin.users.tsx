@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { ShieldCheck, Eye, Search } from "lucide-react";
 import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
+import { getEditHistory, getRecentLogins, type UserEditLog } from "@/lib/profile-edits";
+import { getStaffCounts } from "@/lib/retailer-staff";
 
 export const Route = createFileRoute("/admin/users")({
   ssr: false,
@@ -16,6 +22,11 @@ export const Route = createFileRoute("/admin/users")({
 function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [permUser, setPermUser] = useState<{ id: string; name?: string; email?: string } | null>(null);
+  const [detail, setDetail] = useState<any | null>(null);
+  const [history, setHistory] = useState<UserEditLog[]>([]);
+  const [logins, setLogins] = useState<{ id: string; timestamp: string }[]>([]);
+  const [staffCounts, setStaffCounts] = useState<Record<string, number>>({});
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetch = async () => {
@@ -23,15 +34,37 @@ function AdminUsers() {
       const list: any[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
       setUsers(list);
+      setStaffCounts(await getStaffCounts());
     };
     fetch();
   }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return users.filter((u) =>
+      !q ||
+      (u.name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q) ||
+      (u.role || "").toLowerCase().includes(q),
+    );
+  }, [users, search]);
+
+  const openDetail = async (u: any) => {
+    setDetail(u);
+    setHistory(await getEditHistory(u.id).catch(() => []));
+    setLogins(await getRecentLogins(u.id, 20).catch(() => []));
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Users</h1>
-        <p className="text-muted-foreground">All registered platform users.</p>
+        <p className="text-muted-foreground">All registered platform users — {users.length} total.</p>
+      </div>
+
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, role..." className="pl-10" />
       </div>
 
       <Card>
@@ -43,12 +76,14 @@ function AdminUsers() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Email</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">KYC Status</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">Permissions</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">KYC</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Staff</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Login</th>
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {filtered.map((u) => (
                   <tr key={u.id} className="border-b border-border/50 hover:bg-muted/30">
                     <td className="py-3 px-4 text-foreground">{u.name || "—"}</td>
                     <td className="py-3 px-4 text-foreground">{u.email}</td>
@@ -63,20 +98,29 @@ function AdminUsers() {
                         {u.kycStatus || "N/A"}
                       </Badge>
                     </td>
+                    <td className="py-3 px-4 text-muted-foreground">{staffCounts[u.id] || 0}</td>
+                    <td className="py-3 px-4 text-xs text-muted-foreground">
+                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
+                    </td>
                     <td className="py-3 px-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setPermUser({ id: u.id, name: u.name, email: u.email })}
-                      >
-                        <ShieldCheck className="w-3 h-3" /> Manage Services
-                      </Button>
+                      <div className="flex gap-1 justify-end">
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDetail(u)}>
+                          <Eye className="w-3 h-3" /> View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setPermUser({ id: u.id, name: u.name, email: u.email })}
+                        >
+                          <ShieldCheck className="w-3 h-3" /> Services
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {users.length === 0 && (
-                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -91,6 +135,62 @@ function AdminUsers() {
           user={permUser}
         />
       )}
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{detail?.name || detail?.email}</DialogTitle></DialogHeader>
+          {detail && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Email" value={detail.email} />
+                <Field label="Phone" value={detail.phone} />
+                <Field label="Role" value={detail.role} />
+                <Field label="KYC Status" value={detail.kycStatus || "pending"} />
+                <Field label="Joined" value={detail.createdAt ? new Date(detail.createdAt).toLocaleString() : "—"} />
+                <Field label="Last Login" value={detail.lastLoginAt ? new Date(detail.lastLoginAt).toLocaleString() : "—"} />
+                <Field label="Staff Added" value={String(staffCounts[detail.id] || 0)} />
+                <Field label="Address" value={detail.address || "—"} />
+              </div>
+
+              <section>
+                <h3 className="font-bold mb-2">Recent Logins ({logins.length})</h3>
+                <div className="border rounded max-h-40 overflow-y-auto">
+                  {logins.length === 0 ? (
+                    <p className="p-3 text-muted-foreground text-xs">No login records.</p>
+                  ) : logins.map((l) => (
+                    <div key={l.id} className="px-3 py-1.5 text-xs border-b last:border-0">
+                      {new Date(l.timestamp).toLocaleString()}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-bold mb-2">Edit History ({history.length})</h3>
+                <div className="border rounded max-h-40 overflow-y-auto">
+                  {history.length === 0 ? (
+                    <p className="p-3 text-muted-foreground text-xs">No edits yet.</p>
+                  ) : history.map((h) => (
+                    <div key={h.id} className="px-3 py-1.5 text-xs border-b last:border-0">
+                      <b className="capitalize">{h.field}</b>: {String(h.oldValue || "—").slice(0, 40)} → {String(h.newValue || "—").slice(0, 40)}
+                      <span className="text-muted-foreground ml-2">{new Date(h.timestamp).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-medium">{value || "—"}</p>
     </div>
   );
 }
