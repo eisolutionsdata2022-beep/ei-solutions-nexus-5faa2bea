@@ -16,12 +16,17 @@ export function DashboardLayout() {
       <div className="flex flex-1 min-h-0">
         <AppSidebar />
         <MobileSidebar />
-        <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background">
-          {isWalletPage ? <Outlet /> : (
-            <WalletGate>
-              <Outlet />
-            </WalletGate>
-          )}
+        <main className="relative flex-1 overflow-auto bg-background">
+          {/* Subtle premium background */}
+          <div className="pointer-events-none absolute inset-0 bg-hero-grad opacity-40" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-20" aria-hidden />
+          <div className="relative p-4 lg:p-6">
+            {isWalletPage ? <Outlet /> : (
+              <WalletGate>
+                <Outlet />
+              </WalletGate>
+            )}
+          </div>
         </main>
       </div>
       <PortalFooter />
