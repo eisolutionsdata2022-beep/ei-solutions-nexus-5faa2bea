@@ -110,7 +110,7 @@ export function StaffApplicationReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{application?.applicationNo || "Application Review"}</DialogTitle>
           <DialogDescription>
