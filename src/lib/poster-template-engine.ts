@@ -195,6 +195,12 @@ const CATEGORY_DEFAULTS: Record<ServiceCategory, { services: string[]; icon: str
     services: ["Ayushman Bharat Card", "ABHA Health ID", "ESIC Card", "Health Insurance", "Doctor Consultation", "Medicine Discount Card"] },
   "Job Services":      { icon: "💼", subHeading: "JOB & CAREER SERVICES",
     services: ["Resume Building", "Job Portal Registration", "Government Job Forms", "Skill Development", "Interview Preparation", "Career Counselling"] },
+  "Janasevana":        { icon: "🏛️", subHeading: "ജനസേവന കേന്ദ്രം · GOVERNMENT SERVICES",
+    services: ["Birth / Death Certificate", "Income / Caste Certificate", "Ration Card Service", "Voter ID & EPIC", "Pension Application", "Online Govt Forms", "Land Records / Pokkuvaravu", "Utility Bill Payment"] },
+  "Matrimony":         { icon: "💍", subHeading: "വിവാഹ സേവനം · TRUSTED MATCHMAKING",
+    services: ["Premium Profile Registration", "Verified Match Suggestions", "Photo & Bio-data Print", "Horoscope Matching (10 Porutham)", "Family Background Check", "Confidential Service", "Bride / Groom Search", "Dowry-Free Matches"] },
+  "Horoscope":         { icon: "🔮", subHeading: "ജാതകം · ASTROLOGY SERVICES",
+    services: ["Janma Kundali / Birth Chart", "Marriage Compatibility (10 Porutham)", "Career & Business Predictions", "Daily / Weekly Horoscope", "Vasthu Consultation", "Muhurtham (Auspicious Time)", "Numerology Reading", "Remedies & Pooja Guidance"] },
   "All Services":      { icon: "✨", subHeading: "EI SOLUTIONS — ALL DIGITAL SERVICES",
     services: ["Aadhaar / PAN Services", "Money Transfer & AEPS", "All Bill Payments", "Insurance & Loan", "Travel & Recharge", "Government Services"] },
 };
