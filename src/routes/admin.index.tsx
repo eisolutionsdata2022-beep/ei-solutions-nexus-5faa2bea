@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Users, Wallet, ShoppingBag, TrendingUp } from "lucide-react";
+import { Users, Wallet, ShoppingBag, TrendingUp, ShieldCheck, UserPlus, Sparkles, ArrowRight, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserSearchPanel } from "@/components/admin/UserSearchPanel";
 
@@ -46,49 +46,82 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div className="space-y-5">
-      {/* User Search Panel */}
-      <UserSearchPanel />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Users} label="Total Users" value={stats.users} borderColor="border-gov-blue" bgColor="bg-gov-blue/10" textColor="text-gov-blue" />
-        <StatCard icon={TrendingUp} label="Revenue" value={`₹${stats.revenue.toLocaleString()}`} borderColor="border-success" bgColor="bg-success/10" textColor="text-success" />
-        <StatCard icon={ShoppingBag} label="Services" value={stats.services} borderColor="border-gov-saffron" bgColor="bg-gov-saffron/10" textColor="text-gov-saffron" />
-        <StatCard icon={Wallet} label="Transactions" value={stats.transactions} borderColor="border-warning" bgColor="bg-warning/10" textColor="text-warning" />
+    <div className="space-y-6">
+      {/* Premium Greeting Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-premium-gradient p-6 text-white shadow-premium">
+        <div className="absolute -top-16 -right-10 h-56 w-56 rounded-full bg-white/15 blur-3xl animate-blob" />
+        <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl animate-blob [animation-delay:2s]" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-white/70 font-semibold">Admin Console</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Platform Overview</h1>
+              <p className="text-sm text-white/80 mt-1">Monitor users, revenue and live activity in real-time.</p>
+            </div>
+          </div>
+          <Link to="/admin/create-user">
+            <Button size="lg" className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 shadow-lg">
+              <UserPlus className="w-4 h-4 mr-2" /> Create User
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Recent Users Table */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-gov-blue">Recent Users</h2>
+      {/* User Search Panel */}
+      <div className="glass-card rounded-2xl p-1">
+        <UserSearchPanel />
+      </div>
+
+      {/* Premium Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <PremiumStat icon={Users} label="Total Users" value={stats.users} gradient="from-blue-500 to-indigo-600" />
+        <PremiumStat icon={TrendingUp} label="Revenue" value={`₹${stats.revenue.toLocaleString()}`} gradient="from-emerald-500 to-teal-600" />
+        <PremiumStat icon={ShoppingBag} label="Services" value={stats.services} gradient="from-amber-500 to-orange-600" />
+        <PremiumStat icon={Wallet} label="Transactions" value={stats.transactions} gradient="from-fuchsia-500 to-purple-600" />
+      </div>
+
+      {/* Recent Users — Glass Panel */}
+      <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
+            <h2 className="text-lg font-bold text-foreground">Recent Users</h2>
+          </div>
+          <Link to="/admin/users">
+            <Button variant="ghost" size="sm" className="text-xs gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Button>
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Name</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Email</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Role</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">KYC Status</th>
+              <tr className="border-b border-border/40 bg-muted/30">
+                <th className="text-left px-5 py-3 font-semibold text-foreground/70 text-xs uppercase tracking-wide">Name</th>
+                <th className="text-left px-5 py-3 font-semibold text-foreground/70 text-xs uppercase tracking-wide">Email</th>
+                <th className="text-left px-5 py-3 font-semibold text-foreground/70 text-xs uppercase tracking-wide">Role</th>
+                <th className="text-left px-5 py-3 font-semibold text-foreground/70 text-xs uppercase tracking-wide">KYC</th>
               </tr>
             </thead>
             <tbody>
               {recentUsers.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No users found.</td></tr>
+                <tr><td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">No users found.</td></tr>
               ) : (
                 recentUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-border/50 hover:bg-muted/50">
-                    <td className="px-4 py-2.5">{u.name || "—"}</td>
-                    <td className="px-4 py-2.5">{u.email}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gov-blue/10 text-gov-blue">{u.role}</span>
+                  <tr key={u.id} className="border-b border-border/30 hover:bg-muted/40 transition-colors">
+                    <td className="px-5 py-3 font-medium">{u.name || "—"}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-5 py-3">
+                      <span className="capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{u.role}</span>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <span className={`capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        u.kycStatus === "approved" ? "bg-success/10 text-success" :
+                        u.kycStatus === "approved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
                         u.kycStatus === "rejected" ? "bg-destructive/10 text-destructive" :
-                        "bg-warning/10 text-warning"
+                        "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       }`}>{u.kycStatus || "N/A"}</span>
                     </td>
                   </tr>
@@ -97,35 +130,34 @@ function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        <div className="text-center py-3 border-t border-border">
-          <Link to="/admin/users">
-            <Button variant="outline" size="sm" className="text-xs border-gov-blue text-gov-blue">View All Users</Button>
-          </Link>
-        </div>
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-            <h2 className="text-base font-bold text-gov-blue">Quick Actions</h2>
+      {/* Quick Actions + Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40">
+            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
+            <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
           </div>
-          <div className="p-5 space-y-3">
-            <Link to="/admin/create-user"><Button className="w-full bg-gov-blue hover:opacity-90 text-white font-bold">+ Create New User</Button></Link>
-            <Link to="/admin/crm-leads"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">CRM Leads</Button></Link>
-            <Link to="/admin/crm-reports"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">CRM Reports</Button></Link>
-            <Link to="/admin/kyc"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Review KYC Requests</Button></Link>
-            <Link to="/admin/wallet-requests"><Button variant="outline" className="w-full border-gov-blue text-gov-blue font-bold">Wallet Requests</Button></Link>
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <QuickLink to="/admin/create-user" label="Create User" icon={UserPlus} primary />
+            <QuickLink to="/admin/crm-leads" label="CRM Leads" icon={Users} />
+            <QuickLink to="/admin/crm-reports" label="CRM Reports" icon={Activity} />
+            <QuickLink to="/admin/kyc" label="Review KYC" icon={ShieldCheck} />
+            <QuickLink to="/admin/wallet-requests" label="Wallet Requests" icon={Wallet} />
+            <QuickLink to="/admin/services" label="Services" icon={ShoppingBag} />
           </div>
         </div>
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-            <h2 className="text-base font-bold text-gov-blue">Platform Overview</h2>
+
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40">
+            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
+            <h2 className="text-lg font-bold text-foreground">Platform Overview</h2>
           </div>
-          <div className="p-5 space-y-3 text-sm text-muted-foreground">
-            <div className="flex justify-between"><span>Active Services</span><span className="font-bold text-foreground">{stats.services}</span></div>
-            <div className="flex justify-between border-t border-border/50 pt-3"><span>Total Transactions</span><span className="font-bold text-foreground">{stats.transactions}</span></div>
-            <div className="flex justify-between border-t border-border/50 pt-3"><span>Total Revenue</span><span className="font-bold text-success">₹{stats.revenue.toLocaleString()}</span></div>
+          <div className="p-6 space-y-4">
+            <OverviewRow label="Active Services" value={stats.services.toString()} />
+            <OverviewRow label="Total Transactions" value={stats.transactions.toString()} />
+            <OverviewRow label="Total Revenue" value={`₹${stats.revenue.toLocaleString()}`} accent />
           </div>
         </div>
       </div>
@@ -133,16 +165,39 @@ function AdminDashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, borderColor, bgColor, textColor }: {
-  icon: React.ElementType; label: string; value: number | string; borderColor: string; bgColor: string; textColor: string;
-}) {
+function PremiumStat({ icon: Icon, label, value, gradient }: { icon: any; label: string; value: number | string; gradient: string }) {
   return (
-    <div className={`rounded-lg border-2 p-4 text-center ${borderColor} ${bgColor}`}>
-      <div className="flex items-center justify-center gap-1.5 mb-1">
-        <Icon className={`w-4 h-4 ${textColor}`} />
-        <span className={`text-xs font-bold ${textColor}`}>{label}</span>
+    <div className="group relative overflow-hidden rounded-2xl glass-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-premium">
+      <div className={`absolute -top-10 -right-10 h-28 w-28 rounded-full bg-gradient-to-br ${gradient} opacity-25 blur-2xl group-hover:opacity-40 transition-opacity`} />
+      <div className="relative flex items-start justify-between mb-3">
+        <p className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground">{label}</p>
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg`}>
+          <Icon className="w-5 h-5" />
+        </div>
       </div>
-      <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
+      <p className="relative text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function QuickLink({ to, label, icon: Icon, primary }: { to: string; label: string; icon: any; primary?: boolean }) {
+  return (
+    <Link to={to}>
+      <Button
+        variant={primary ? "default" : "outline"}
+        className={`w-full justify-start gap-2 ${primary ? "bg-premium-gradient text-white border-0 shadow-premium hover:opacity-90" : "bg-background/50 backdrop-blur-sm hover:bg-muted"}`}
+      >
+        <Icon className="w-4 h-4" /> {label}
+      </Button>
+    </Link>
+  );
+}
+
+function OverviewRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className={`text-lg font-bold ${accent ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{value}</span>
     </div>
   );
 }
