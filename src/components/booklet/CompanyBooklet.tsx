@@ -417,7 +417,7 @@ function PageHeader({ no, title, ml }: { no: string; title: string; ml?: string 
 
 /* ───────── Pages ───────── */
 
-function CoverPage() {
+function CoverPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-10 text-center"
       style={{ background: `linear-gradient(160deg, ${PALETTE.cream} 0%, ${PALETTE.creamSoft} 60%, #EBE2CB 100%)` }}>
@@ -466,13 +466,13 @@ function CoverPage() {
           className="text-base sm:text-xl leading-relaxed max-w-md italic"
           style={{ color: PALETTE.ink, fontFamily: SERIF }}
         >
-          {COMPANY.tagline}
+          {cms.hero.tagline}
         </p>
         <p
           className="mt-3 text-[11px] sm:text-xs max-w-md mx-auto"
           style={{ color: PALETTE.ink, opacity: 0.7, fontFamily: "Inter, sans-serif" }}
         >
-          Built in Kerala. Engineered for India.
+          {cms.hero.taglineEn}
         </p>
 
         <div
@@ -490,7 +490,7 @@ function CoverPage() {
   );
 }
 
-function IntroPage() {
+function IntroPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 p-5 sm:p-8 flex flex-col">
       <PageHeader no="01" title="About EI Solutions" ml="കമ്പനി പരിചയം" />
@@ -506,7 +506,7 @@ function IntroPage() {
       </p>
 
       <div className="grid grid-cols-2 gap-3">
-        {STATS.map((s) => (
+        {cms.stats.map((s) => (
           <div
             key={s.label}
             className="rounded-xl p-3 sm:p-4"
@@ -580,12 +580,12 @@ function RegistrationsPage() {
   );
 }
 
-function ServicesPage() {
+function ServicesPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 p-5 sm:p-8 flex flex-col">
       <PageHeader no="03" title="Our Services" ml="നമ്മുടെ സേവനങ്ങൾ" />
       <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-1 content-start">
-        {SERVICES.map((s) => (
+        {cms.services.map((s) => (
           <div
             key={s.name}
             className="rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 transition"
@@ -722,12 +722,12 @@ function WhyJoinPage() {
   );
 }
 
-function ReviewsPage() {
+function ReviewsPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 p-5 sm:p-8 flex flex-col">
       <PageHeader no="07" title="Customer Voices" ml="ഉപഭോക്താക്കളുടെ വാക്കുകൾ" />
       <div className="space-y-2.5 flex-1">
-        {REVIEWS.map((r) => (
+        {cms.reviews.map((r) => (
           <div
             key={r.name}
             className="rounded-xl p-3 sm:p-4 relative"
@@ -747,7 +747,7 @@ function ReviewsPage() {
                 className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold"
                 style={{ background: PALETTE.forest, color: PALETTE.goldSoft, fontFamily: "Inter, sans-serif" }}
               >
-                {r.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                {r.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
               </div>
               <div>
                 <div className="text-[11px] font-bold" style={{ color: PALETTE.forestDeep, fontFamily: SERIF }}>{r.name}</div>
@@ -831,7 +831,7 @@ function JoinPage() {
   );
 }
 
-function ContactPage() {
+function ContactPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 p-5 sm:p-8 flex flex-col"
       style={{ background: `linear-gradient(160deg, ${PALETTE.forest} 0%, ${PALETTE.forestDeep} 100%)`, color: PALETTE.cream }}>
@@ -853,11 +853,11 @@ function ContactPage() {
       </div>
 
       <div className="space-y-2.5 flex-1">
-        <ContactRow icon={<Phone className="h-5 w-5" />} label="Call" value={COMPANY.phone} href={`tel:${COMPANY.phone}`} />
-        <ContactRow icon={<MessageCircle className="h-5 w-5" />} label="WhatsApp" value={COMPANY.phone} href={`https://wa.me/${COMPANY.whatsapp}`} />
-        <ContactRow icon={<Mail className="h-5 w-5" />} label="Email" value={COMPANY.email} href={`mailto:${COMPANY.email}`} />
-        <ContactRow icon={<Globe className="h-5 w-5" />} label="Website" value={COMPANY.website.replace("https://", "")} href={COMPANY.website} />
-        <ContactRow icon={<MapPin className="h-5 w-5" />} label="Office" value={COMPANY.address} />
+        <ContactRow icon={<Phone className="h-5 w-5" />} label="Call" value={cms.contact.phone} href={`tel:${cms.contact.phone}`} />
+        <ContactRow icon={<MessageCircle className="h-5 w-5" />} label="WhatsApp" value={cms.contact.phone} href={`https://wa.me/${cms.contact.whatsapp}`} />
+        <ContactRow icon={<Mail className="h-5 w-5" />} label="Email" value={cms.contact.email} href={`mailto:${cms.contact.email}`} />
+        <ContactRow icon={<Globe className="h-5 w-5" />} label="Website" value={cms.contact.website.replace("https://", "")} href={cms.contact.website} />
+        <ContactRow icon={<MapPin className="h-5 w-5" />} label="Office" value={cms.contact.address} />
       </div>
     </div>
   );
@@ -898,7 +898,7 @@ function ContactRow({ icon, label, value, href }: { icon: React.ReactNode; label
   );
 }
 
-function BackCoverPage() {
+function BackCoverPage({ cms }: { cms: CmsBundle }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
       style={{ background: `linear-gradient(160deg, ${PALETTE.cream} 0%, ${PALETTE.creamSoft} 60%, #EBE2CB 100%)` }}>
@@ -923,7 +923,7 @@ function BackCoverPage() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
-            href={`https://wa.me/${COMPANY.whatsapp}`}
+            href={`https://wa.me/${cms.contact.whatsapp}`}
             target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-full font-bold px-5 py-2.5 text-sm uppercase tracking-widest transition"
             style={{ background: PALETTE.forest, color: PALETTE.cream, border: `1px solid ${PALETTE.gold}66`, fontFamily: "Inter, sans-serif" }}
