@@ -768,7 +768,7 @@ function make(
 }
 
 // ============================================================================
-// TEMPLATE REGISTRY — 80 templates across 15 categories + All Services
+// TEMPLATE REGISTRY — 140+ templates with priority on Janasevana / Matrimony / Banking
 // ============================================================================
 
 const CATEGORIES: ServiceCategory[] = [
@@ -777,8 +777,7 @@ const CATEGORIES: ServiceCategory[] = [
   "GST", "Banking", "Education", "Health Card", "Job Services",
 ];
 
-// Per category we ship 5 variants (modern, trust, festive, urgent, corporate/minimal/tricolor/circuit rotated)
-// Different palette per variant for visual diversity.
+// Per category we ship 5 variants (modern, trust, festive, urgent, corporate).
 const VARIANTS: Array<{ style: PosterStyle; suffix: string; tags: string[]; paletteRotation: (keyof typeof PALETTES)[] }> = [
   { style: "modern",    suffix: "Modern Clean",   tags: ["office", "premium"],
     paletteRotation: ["navyGold", "electricBlue", "oceanTeal", "midnightCyan", "charcoalLime"] },
@@ -795,13 +794,13 @@ const VARIANTS: Array<{ style: PosterStyle; suffix: string; tags: string[]; pale
 // Build base 75 (15 cat × 5 variants)
 const BUILT: PosterTemplate[] = [];
 CATEGORIES.forEach((cat, ci) => {
-  VARIANTS.forEach((v, vi) => {
+  VARIANTS.forEach((v) => {
     const palette = v.paletteRotation[ci % v.paletteRotation.length];
     BUILT.push(make(cat, v.style, palette, v.suffix, v.tags));
   });
 });
 
-// Add 5 "All Services" hero variants to round to 80
+// 5 "All Services" hero variants
 [
   make("All Services", "minimal",  "charcoalLime",     "All-In-One Minimal",  ["minimal", "premium"]),
   make("All Services", "tricolor", "saffronWhiteGreen","Digital India Tricolor", ["govt", "premium"]),
@@ -810,16 +809,98 @@ CATEGORIES.forEach((cat, ci) => {
   make("All Services", "festive",  "marigold",         "Mega Festival",       ["festival", "premium"]),
 ].forEach(t => BUILT.push(t));
 
+// ─────────────── PRIORITY: BANKING / FINANCE (extras → 12 total) ──────────────
+[
+  make("Banking", "corporate", "goldOnBlack",      "Black Gold Banking",  ["premium", "corporate", "finance"]),
+  make("Banking", "circuit",   "midnightCyan",     "Digital Banking Hub", ["digital", "premium", "finance"]),
+  make("Banking", "minimal",   "navyGold",         "Pristine Banking",    ["minimal", "premium", "finance"]),
+  make("Banking", "tricolor",  "saffronWhiteGreen","Bharat Banking",      ["govt", "trust", "finance"]),
+  make("Banking", "festive",   "marigold",         "Festive Banking Offer", ["festival", "offer", "finance"]),
+  make("Banking", "urgent",    "rubyRed",          "Cash Out Now",        ["urgent", "offer", "finance"]),
+  make("Banking", "modern",    "electricBlue",     "Smart Banking",       ["office", "premium", "finance"]),
+  // Money Transfer / AEPS / Loan / Insurance extras (finance umbrella)
+  make("Money Transfer", "corporate", "goldOnBlack",      "Premium DMT Service",   ["premium", "finance", "trust"]),
+  make("Money Transfer", "urgent",    "crimsonBlack",     "Send Money Fast",       ["urgent", "offer", "finance"]),
+  make("Money Transfer", "circuit",   "midnightCyan",     "Instant IMPS Digital",  ["digital", "finance", "premium"]),
+  make("Money Transfer", "minimal",   "navyGold",         "Trusted Transfer",      ["minimal", "trust", "finance"]),
+  make("AEPS",          "corporate", "goldOnBlack",       "Premium AEPS Center",   ["premium", "finance"]),
+  make("AEPS",          "circuit",   "midnightCyan",      "Digital Cash Withdraw", ["digital", "finance"]),
+  make("AEPS",          "tricolor",  "saffronWhiteGreen", "Bharat AEPS",           ["govt", "finance"]),
+  make("Loan",          "corporate", "goldOnBlack",       "Elite Loan Services",   ["premium", "corporate", "finance"]),
+  make("Loan",          "urgent",    "crimsonBlack",      "Loan in 24 Hours",      ["urgent", "offer", "finance"]),
+  make("Loan",          "minimal",   "burgundyCream",     "Quick Loan Approval",   ["minimal", "trust", "finance"]),
+  make("Insurance",     "corporate", "navyGold",          "Premium Insurance",     ["premium", "trust", "finance"]),
+  make("Insurance",     "trust",     "forestGold",        "Family Shield",         ["trust", "finance"]),
+  make("Insurance",     "minimal",   "midnightCyan",      "Smart Insurance",       ["minimal", "premium", "finance"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── PRIORITY: JANASEVANA (12 templates) ────────────────────────
+[
+  make("Janasevana", "goldAuthority", "saffronWhiteGreen", "Authority Premium",     ["govt", "trust", "premium"]),
+  make("Janasevana", "goldAuthority", "navyGold",          "Tricolor Trust",        ["govt", "trust", "premium"]),
+  make("Janasevana", "goldAuthority", "forestGold",        "Government Authorized", ["govt", "trust", "office"]),
+  make("Janasevana", "tricolor",      "saffronWhiteGreen", "Digital India Sevana",  ["govt", "premium"]),
+  make("Janasevana", "tricolor",      "navyGold",          "Bharat Sevana Kendra",  ["govt", "trust"]),
+  make("Janasevana", "trust",         "navyGold",          "Trusted Janasevana",    ["trust", "office", "govt"]),
+  make("Janasevana", "trust",         "forestGold",        "Verified Service Hub",  ["trust", "office", "govt"]),
+  make("Janasevana", "corporate",     "goldOnBlack",       "Premium Janasevana",    ["premium", "corporate", "govt"]),
+  make("Janasevana", "modern",        "navyGold",          "Modern Service Center", ["office", "premium", "govt"]),
+  make("Janasevana", "minimal",       "navyGold",          "Clean Authority",       ["minimal", "premium", "govt"]),
+  make("Janasevana", "urgent",        "rubyRed",           "Apply Today!",          ["urgent", "offer", "govt"]),
+  make("Janasevana", "festive",       "saffronEmerald",    "Independence Special",  ["festival", "govt", "premium"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── PRIORITY: MATRIMONY (12 templates) ─────────────────────────
+[
+  make("Matrimony", "elegantMatch", "burgundyCream", "Elegant Matchmaker",       ["matrimony", "premium", "trust"]),
+  make("Matrimony", "elegantMatch", "marigold",      "Royal Matrimony",          ["matrimony", "premium", "festival"]),
+  make("Matrimony", "elegantMatch", "rubyRed",       "Sacred Bond",              ["matrimony", "premium", "trust"]),
+  make("Matrimony", "elegantMatch", "royalPurple",   "Premium Marriage Bureau",  ["matrimony", "premium", "corporate"]),
+  make("Matrimony", "festive",      "marigold",      "Wedding Season Special",   ["matrimony", "festival", "premium"]),
+  make("Matrimony", "festive",      "rubyRed",       "Auspicious Match",         ["matrimony", "festival"]),
+  make("Matrimony", "trust",        "burgundyCream", "Trusted Matchmaking",      ["matrimony", "trust", "office"]),
+  make("Matrimony", "corporate",    "royalPurple",   "Royal Wedding Services",   ["matrimony", "premium", "corporate"]),
+  make("Matrimony", "minimal",      "burgundyCream", "Refined Matrimony",        ["matrimony", "minimal", "premium"]),
+  make("Matrimony", "modern",       "rubyRed",       "Modern Matchmaker",        ["matrimony", "office", "premium"]),
+  make("Matrimony", "urgent",       "marigold",      "Limited Free Profiles",    ["matrimony", "urgent", "offer"]),
+  make("Matrimony", "elegantMatch", "forestGold",    "Kerala Matrimony Premium", ["matrimony", "premium", "trust"]),
+].forEach(t => BUILT.push(t));
+
+// ─────────────── HOROSCOPE (10 templates) ───────────────────────────────────
+[
+  make("Horoscope", "cosmicMystic", "midnightCyan",  "Cosmic Mystic Premium",  ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "goldOnBlack",   "Black Gold Astrology",   ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "royalPurple",   "Royal Vedic Reading",    ["horoscope", "premium", "mystic"]),
+  make("Horoscope", "cosmicMystic", "navyGold",      "Janma Kundali Service",  ["horoscope", "premium", "trust"]),
+  make("Horoscope", "festive",      "marigold",      "Auspicious Horoscope",   ["horoscope", "festival", "mystic"]),
+  make("Horoscope", "trust",        "burgundyCream", "Trusted Astrologer",     ["horoscope", "trust", "office"]),
+  make("Horoscope", "corporate",    "goldOnBlack",   "Elite Jyotisha",         ["horoscope", "premium", "corporate"]),
+  make("Horoscope", "minimal",      "midnightCyan",  "Simple Star Chart",      ["horoscope", "minimal", "premium"]),
+  make("Horoscope", "urgent",       "rubyRed",       "Predictions Today",      ["horoscope", "urgent", "offer"]),
+  make("Horoscope", "modern",       "royalPurple",   "Modern Astrology Hub",   ["horoscope", "office", "premium"]),
+].forEach(t => BUILT.push(t));
+
 export const ALL_POSTER_TEMPLATES: PosterTemplate[] = BUILT;
 
-export const POSTER_CATEGORIES = ["All", ...CATEGORIES, "All Services"] as const;
+// Categories shown in gallery filter (priority categories listed first)
+export const POSTER_CATEGORIES = [
+  "All",
+  "Janasevana", "Matrimony", "Banking", "Loan", "Money Transfer", "AEPS", "Insurance",
+  "PAN Card", "Aadhaar Services", "Recharge", "Bill Payment", "Travel Booking",
+  "PVC Card", "GST", "Education", "Health Card", "Job Services", "Horoscope",
+  "All Services",
+] as const;
+
 export const POSTER_QUICK_FILTERS: Array<{ label: string; value: string }> = [
-  { label: "🏢 Office", value: "office" },
+  { label: "🏛️ Janasevana", value: "govt" },
+  { label: "💍 Matrimony", value: "matrimony" },
+  { label: "🏦 Finance", value: "finance" },
+  { label: "🔮 Horoscope", value: "horoscope" },
+  { label: "👑 Premium", value: "premium" },
   { label: "🎉 Festival", value: "festival" },
   { label: "🔥 Urgent / Offer", value: "urgent" },
-  { label: "👑 Premium", value: "premium" },
   { label: "🛡️ Trust", value: "trust" },
-  { label: "🇮🇳 Govt Style", value: "govt" },
+  { label: "🏢 Office", value: "office" },
   { label: "💻 Digital", value: "digital" },
   { label: "🎨 Minimal", value: "minimal" },
 ];
