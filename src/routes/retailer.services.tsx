@@ -291,17 +291,23 @@ function ApplicationForm({
     }
 
     setSubmitting(true);
+    const appNo = generateEdisAppNo();
+    let uploaded = false;
+    let debited = false;
     try {
-      const appNo = generateEdisAppNo();
-
-      // Upload first
-      const docs = await uploadEdisDocuments({
+      // Upload first (with 90s safety timeout so the button never spins forever)
+      const uploadPromise = uploadEdisDocuments({
         appNo,
         retailerId: appUser.uid,
         documents: service.requiredDocuments
           .filter((name) => files[name])
           .map((name) => ({ name, file: files[name]! })),
       });
+      const timeoutPromise = new Promise<never>((_, rej) =>
+        setTimeout(() => rej(new Error("UPLOAD_TIMEOUT")), 90_000)
+      );
+      const docs = await Promise.race([uploadPromise, timeoutPromise]);
+      uploaded = true;
 
       // Debit wallet atomically
       await atomicDebit(appUser.uid, fee, {
@@ -309,6 +315,7 @@ function ApplicationForm({
         description: `E-dis · ${service.name} · ${appNo}`,
         applicationNo: appNo,
       });
+      debited = true;
 
       // Create application
       await createEdisApplication({
@@ -332,9 +339,41 @@ function ApplicationForm({
         createdAt: new Date().toISOString(),
       });
 
+      toast.success("Application submitted! Staff will review shortly.");
       onSubmitted();
     } catch (e: any) {
-      toast.error(e?.message || "Failed to submit application");
+      // Structured upload errors from edis-types
+      if (e?.name === "EdisUploadError") {
+        const titleMap: Record<string, string> = {
+          INVALID_FILE_TYPE: "Invalid file type",
+          FILE_TOO_LARGE: "File too large",
+          STORAGE_PERMISSION_DENIED: "Permission denied",
+          STORAGE_QUOTA: "Storage full",
+          NETWORK: "Network problem",
+          CANCELED: "Upload canceled",
+          UNKNOWN: "Upload failed",
+        };
+        toast.error(titleMap[e.code] || "Upload failed", { description: e.message });
+      } else if (e?.message === "UPLOAD_TIMEOUT") {
+        toast.error("Upload timed out", {
+          description: "Your connection seems slow. Please retry with smaller files or a better network.",
+        });
+      } else if (/insufficient/i.test(String(e?.message))) {
+        toast.error("Insufficient balance", { description: `₹${fee} required to submit this application.` });
+      } else if (e?.code === "permission-denied") {
+        toast.error("Permission denied", {
+          description: "You're not allowed to submit. Please re-login and try again.",
+        });
+      } else if (debited && !uploaded) {
+        // Defensive: shouldn't normally reach here
+        toast.error("Submission failed after debit", {
+          description: "Wallet was debited but the record wasn't saved. Please contact support with App No: " + appNo,
+        });
+      } else {
+        toast.error("Failed to submit application", {
+          description: e?.message || "Please try again. If the problem persists, contact support.",
+        });
+      }
     } finally {
       setSubmitting(false);
     }
