@@ -25,6 +25,7 @@ import {
   changeUserPassword, getEditHistory, type UserEditLog,
 } from "@/lib/profile-edits";
 import { requestReissue, subscribeMyReissues, type CertificateReissueRequest } from "@/lib/certificate-reissue";
+import { getPsaIdRecord, countSuccessfulCouponPurchases, type PsaIdRecord, PSA_AUTO_THRESHOLD } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/profile")({
   ssr: false,
