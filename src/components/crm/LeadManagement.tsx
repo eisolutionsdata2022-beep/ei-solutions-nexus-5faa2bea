@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare } from "lucide-react";
+import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { subscribeLeads, subscribeStaffMembers, updateLead, deleteLead } from "@
 import { LEAD_STATUSES, STATUS_COLORS, type Lead, type StaffMember, type LeadStatus } from "@/lib/crm-types";
 import { AddLeadDialog } from "./AddLeadDialog";
 import { LeadDetailDialog } from "./LeadDetailDialog";
+import { BulkUploadLeadsDialog } from "./BulkUploadLeadsDialog";
 import * as XLSX from "xlsx";
 
 export function LeadManagement() {
