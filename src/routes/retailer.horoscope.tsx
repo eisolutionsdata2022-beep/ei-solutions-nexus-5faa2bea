@@ -20,7 +20,7 @@ import {
   addHoroscopeRequest, subscribeHoroscopeRequests,
   subscribeHoroscopeSettings,
 } from "@/lib/horoscope-firebase";
-import { atomicDebit } from "@/lib/firebase-transactions";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import type { HoroscopeRequest, HoroscopeSettings, Gender, HoroscopeProduct, PdfTemplate, HoroscopeLanguage } from "@/lib/horoscope-types";
 import { STATUS_COLORS, NAKSHATRAS, PRODUCT_LABELS, getProductPricing } from "@/lib/horoscope-types";
 
@@ -92,15 +92,17 @@ function RetailerHoroscope() {
     }
 
     setLoading(true);
+    let debited = false;
     try {
       await atomicDebit(appUser.uid, pricing.price, {
         source: "horoscope",
         description: `${PRODUCT_LABELS[product].en} for ${customerName}`,
       });
+      debited = true;
 
       const base: Omit<HoroscopeRequest, "id"> = {
         userId: appUser.uid,
-        userName: appUser.name || appUser.email,
+        userName: appUser.name || appUser.email || "Unknown",
         product,
         pdfTemplate,
         customerName,
@@ -146,7 +148,21 @@ function RetailerHoroscope() {
       toast.success("✨ Report generated! Check 'My Reports' tab.");
       resetForm();
     } catch (err: any) {
-      toast.error(err?.message || "Failed");
+      // Refund wallet if we debited but failed to deliver the report.
+      if (debited) {
+        try {
+          await atomicCredit(appUser.uid, pricing.price, {
+            source: "horoscope-refund",
+            description: `Refund: ${PRODUCT_LABELS[product].en} for ${customerName} (failed)`,
+          });
+          toast.error(`${err?.message || "Failed"} — ₹${pricing.price} refunded to wallet.`);
+        } catch (refundErr: any) {
+          console.error("Horoscope refund failed:", refundErr);
+          toast.error(`${err?.message || "Failed"} — REFUND FAILED, contact admin.`);
+        }
+      } else {
+        toast.error(err?.message || "Failed");
+      }
     } finally {
       setLoading(false);
     }
