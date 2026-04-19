@@ -140,7 +140,7 @@ export async function uploadEdisDocuments(opts: {
     const item = opts.documents[i];
     if (!item.file) continue;
     const path = [
-      "edisDocuments",
+      "serviceDocuments",
       sanitize(opts.retailerId, "user"),
       sanitize(opts.appNo, "app"),
       `${i + 1}-${sanitize(item.name, "doc")}-${sanitize(item.file.name, "file")}`,
