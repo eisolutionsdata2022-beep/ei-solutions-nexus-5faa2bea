@@ -82,6 +82,7 @@ import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.ser
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
+import { Route as AdminPsaIdsRouteImport } from './routes/admin.psa-ids'
 import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
@@ -475,6 +476,11 @@ const AdminRechargeTransactionsRoute =
     path: '/recharge-transactions',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminPsaIdsRoute = AdminPsaIdsRouteImport.update({
+  id: '/psa-ids',
+  path: '/psa-ids',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPanSettingsRoute = AdminPanSettingsRouteImport.update({
   id: '/pan-settings',
   path: '/pan-settings',
@@ -626,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
+  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -717,6 +724,7 @@ export interface FileRoutesByTo {
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
+  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -816,6 +824,7 @@ export interface FileRoutesById {
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
+  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -916,6 +925,7 @@ export interface FileRouteTypes {
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
+    | '/admin/psa-ids'
     | '/admin/recharge-transactions'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1007,6 +1017,7 @@ export interface FileRouteTypes {
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
+    | '/admin/psa-ids'
     | '/admin/recharge-transactions'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1105,6 +1116,7 @@ export interface FileRouteTypes {
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
+    | '/admin/psa-ids'
     | '/admin/recharge-transactions'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1698,6 +1710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRechargeTransactionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/psa-ids': {
+      id: '/admin/psa-ids'
+      path: '/psa-ids'
+      fullPath: '/admin/psa-ids'
+      preLoaderRoute: typeof AdminPsaIdsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pan-settings': {
       id: '/admin/pan-settings'
       path: '/pan-settings'
@@ -1885,6 +1904,7 @@ interface AdminRouteChildren {
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanSettingsRoute: typeof AdminPanSettingsRoute
+  AdminPsaIdsRoute: typeof AdminPsaIdsRoute
   AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
@@ -1926,6 +1946,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanSettingsRoute: AdminPanSettingsRoute,
+  AdminPsaIdsRoute: AdminPsaIdsRoute,
   AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
