@@ -76,7 +76,15 @@ export function StaffApplicationReviewDialog({
     setStatus(application.status);
     setGovApplicationNo(application.govApplicationNo ?? "");
     setStaffRemark(application.rejectionReason || application.staffRemark || "");
+    setPreviewIdx(null);
   }, [application]);
+
+  const activePreview = useMemo(() => {
+    if (!application || previewIdx === null) return null;
+    const doc = application.uploadedDocuments[previewIdx];
+    if (!doc) return null;
+    return { doc, kind: detectPreviewKind(doc.fileName, doc.url) };
+  }, [application, previewIdx]);
 
   const documentMessage = useMemo(() => {
     if (!application) return "";
