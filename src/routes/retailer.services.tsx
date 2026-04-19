@@ -485,22 +485,54 @@ function ApplicationForm({
             <SectionTitle title="Required Documents" />
             <p className="text-xs text-muted-foreground -mt-2">Upload all required documents below. JPG, PNG, or PDF.</p>
             <div className="space-y-3">
-              {service.requiredDocuments.map((docName) => (
-                <div key={docName} className="rounded-xl border border-border/60 p-3 bg-background/40">
-                  <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-primary" /> {docName} <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    onChange={(e) => setFiles((prev) => ({ ...prev, [docName]: e.target.files?.[0] || null }))}
-                    className="text-xs"
-                  />
-                  {files[docName] && (
-                    <p className="text-xs text-emerald-700 mt-1">✓ {files[docName]!.name}</p>
-                  )}
-                </div>
-              ))}
+              {service.requiredDocuments.map((docName) => {
+                const p = progress[docName];
+                const showBar = !!p && p.state !== "success";
+                const isError = p?.state === "error";
+                const isDone = p?.state === "success";
+                return (
+                  <div key={docName} className="rounded-xl border border-border/60 p-3 bg-background/40">
+                    <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-primary" /> {docName} <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      disabled={submitting}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setFiles((prev) => ({ ...prev, [docName]: f }));
+                        // reset progress for this doc when a new file is picked
+                        setProgress((prev) => {
+                          const next = { ...prev };
+                          delete next[docName];
+                          return next;
+                        });
+                      }}
+                      className="text-xs"
+                    />
+                    {files[docName] && !showBar && !isDone && (
+                      <p className="text-xs text-emerald-700 mt-1">✓ {files[docName]!.name}</p>
+                    )}
+                    {showBar && (
+                      <div className="mt-2 space-y-1">
+                        <Progress value={p.percent} className={isError ? "[&>div]:bg-rose-500" : ""} />
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
+                          <span className="truncate pr-2">
+                            {isError ? "Upload failed" : p.state === "paused" ? "Paused" : `Uploading ${formatBytes(p.bytesTransferred)} / ${formatBytes(p.totalBytes)}`}
+                          </span>
+                          <span className="font-semibold">{p.percent}%</span>
+                        </div>
+                      </div>
+                    )}
+                    {isDone && (
+                      <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Uploaded · {files[docName]?.name}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
