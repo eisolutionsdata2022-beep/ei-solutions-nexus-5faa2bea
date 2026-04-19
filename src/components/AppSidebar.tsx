@@ -89,7 +89,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
     { label: "Profile", to: "/retailer/profile", icon: User },
     { label: "Refer & Earn", to: "/retailer/referrals", icon: Gift },
-    { label: "Staff", to: "/retailer/staff", icon: Users },
+    { label: "Operators", to: "/retailer/staff", icon: Users },
     { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
     { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
