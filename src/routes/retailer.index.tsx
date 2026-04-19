@@ -164,6 +164,34 @@ function RetailerDashboard() {
       {/* Notice Board Marquee */}
       <NoticeMarquee />
 
+      {/* PSA ID Congratulations Banner */}
+      {psa && !psaDismissed && (
+        <div className="rounded-xl bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white shadow-lg flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">
+              🎉
+            </div>
+            <div>
+              <p className="font-bold text-lg leading-tight">
+                Congratulations! Your PSA ID has been generated successfully.
+              </p>
+              <p className="text-sm text-white/90 mt-1">
+                <span className="font-mono font-bold tracking-wider">{psa.psaId}</span>
+                {" · "}Status: ACTIVE · Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 self-end sm:self-auto">
+            <Link to="/retailer/profile">
+              <Button variant="secondary" size="sm" className="font-semibold">View in Profile</Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={dismissPsaBanner} className="text-white hover:bg-white/20">
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Wallet + VLE ID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="bg-card rounded-lg border border-border p-5 flex items-center justify-between">
