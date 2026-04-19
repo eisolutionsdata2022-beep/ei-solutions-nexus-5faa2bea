@@ -91,6 +91,8 @@ function RetailerDashboard() {
   const [applications, setApplications] = useState<ServiceRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceButtons, setServiceButtons] = useState<ServiceButtonData[]>([]);
+  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
+  const [psaDismissed, setPsaDismissed] = useState(false);
 
   const statusCounts = {
     pending: applications.filter((a) => a.status === "pending").length,
@@ -134,8 +136,24 @@ function RetailerDashboard() {
       setServiceButtons(list.filter((b) => b.enabled));
     }).catch(() => {});
 
+    // Load PSA ID record (if exists)
+    getPsaIdRecord(appUser.uid).then((rec) => {
+      setPsa(rec);
+      if (rec && typeof window !== "undefined") {
+        const seenKey = `psa-banner-seen-${rec.psaId}`;
+        if (window.localStorage.getItem(seenKey) === "1") setPsaDismissed(true);
+      }
+    }).catch(() => {});
+
     return unsub;
   }, [appUser]);
+
+  const dismissPsaBanner = () => {
+    if (psa && typeof window !== "undefined") {
+      window.localStorage.setItem(`psa-banner-seen-${psa.psaId}`, "1");
+    }
+    setPsaDismissed(true);
+  };
 
   const filteredApps = applications.filter((a) =>
     !searchTerm || a.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) || a.id.includes(searchTerm)
