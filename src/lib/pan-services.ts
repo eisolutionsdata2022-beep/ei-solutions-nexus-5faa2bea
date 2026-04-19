@@ -268,7 +268,7 @@ export const PAN_SERVICES: PanService[] = [
   {
     key: "psa-create",
     name: "PSA ID Create",
-    description: "Create a new PSA (VLE) account on mallikacyberzone",
+    description: "Create your EI SOLUTIONS PSA (VLE) account",
     icon: UserPlus,
     gradient: "from-green-500 to-emerald-600",
     endpoint: "psaCreate",
