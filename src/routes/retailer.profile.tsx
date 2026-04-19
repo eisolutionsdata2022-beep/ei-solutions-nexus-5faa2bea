@@ -178,6 +178,43 @@ function RetailerProfile() {
         </CardContent>
       </Card>
 
+      {/* PSA ID Status */}
+      <Card className={psa ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-dashed"}>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${psa ? "bg-gradient-to-br from-emerald-500 to-green-600" : "bg-muted"}`}>
+                <Award className={`w-6 h-6 ${psa ? "text-white" : "text-muted-foreground"}`} />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">PSA ID</p>
+                {psa ? (
+                  <>
+                    <p className="text-2xl font-bold font-mono tracking-wider text-foreground">{psa.psaId}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
+                      <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-semibold text-foreground">Not yet generated</p>
+                    <p className="text-xs text-muted-foreground">
+                      Purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            {!psa && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/retailer/pan-portal">Buy Coupons</Link>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Edits + Certificates grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
