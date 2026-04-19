@@ -120,6 +120,7 @@ export function StaffApplicationReviewDialog({
   const [govApplicationNo, setGovApplicationNo] = useState("");
   const [staffRemark, setStaffRemark] = useState("");
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const [zipping, setZipping] = useState(false);
 
   useEffect(() => {
     if (!application) return;
