@@ -1,35 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
-  Award, Building2, CheckCircle2, GraduationCap,
-  Globe2, Heart, IndianRupee, Landmark, Mail, MapPin,
-  Phone, Rocket, ShieldCheck, Sparkles, Star, TrendingUp,
-  Users, Wallet, Briefcase, BookOpen, ArrowRight,
-  MessageCircle, FileText, CreditCard, Send, Building,
+  ArrowRight, ArrowUpRight, BookOpen, Check, ChevronRight, CreditCard, FileText,
+  GraduationCap, Heart, IndianRupee, Mail, MapPin, MessageCircle, Phone,
+  Send, Shield, ShieldCheck, Sparkles, Star, TrendingUp, Users, Wallet,
 } from "lucide-react";
-import heroImg from "@/assets/landing-hero.jpg";
 import logoImg from "@/assets/ei-solutions-3d-logo.png";
-import janasevanaBg from "@/assets/poster-bg-janasevana.jpg";
-import matrimonyBg from "@/assets/poster-bg-matrimony.jpg";
-import bankingBg from "@/assets/poster-bg-banking.jpg";
-import digitalIndiaLogo from "@/assets/digital-india-logo.png";
-import ksumLogo from "@/assets/ksum-logo-transparent.png";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "EI SOLUTIONS — India's Trusted Digital Service Network | Franchise Opportunity" },
-      { name: "description", content: "Join EI SOLUTIONS JANASEVANA KENDRAM — 7+ years trusted, 2500+ centers across India. PAN, Money Transfer, Loans, Matrimony, Training & more. Start your Digital Service Center today." },
-      { property: "og:title", content: "EI SOLUTIONS — Franchise & Digital Services Across India" },
-      { property: "og:description", content: "7+ years trust • 2500+ centers • Low investment, high earning. Apply for franchise today." },
+      { title: "EI SOLUTIONS — Kerala's Premier Digital Service Network" },
+      { name: "description", content: "EI SOLUTIONS — 7+ years, 2500+ centers. Modern digital service infrastructure for Kerala's retailers, franchise partners & enterprises. Apply for franchise today." },
+      { property: "og:title", content: "EI SOLUTIONS — Premium Digital Service Network" },
+      { property: "og:description", content: "Kerala-built · India-bound. Premium technology platform for digital franchise partners, lenders, billers & service centers." },
       { property: "og:image", content: "https://ei-solutions-nexus.lovable.app/icon-512.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -37,55 +28,78 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomeLanding,
 });
 
-const WHATSAPP_NUMBER = "918921479506";
+const WHATSAPP = "918921479506";
 const PHONE = "+91 89214 79506";
 const EMAIL = "support@eisoluions.xyz";
-const COMPANY_FULL = "EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED";
 
+/* ─────────────────────── PAGE ─────────────────────── */
 function WelcomeLanding() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <TopNav />
+    <div className="min-h-screen bg-[#FAF7F0] text-[#0F1B14] antialiased selection:bg-[#0B6B4F]/20">
+      <Aurora />
+      <Navbar />
       <Hero />
-      <TrustStrip />
+      <MarqueeStrip />
+      <Stats />
       <About />
-      <Registrations />
-      <WhyChooseUs />
       <Services />
-      <ProductSpotlights />
+      <Platform />
       <Opportunity />
       <Testimonials />
-      <LeadFormSection />
+      <BookletCTA />
+      <LeadSection />
       <Contact />
       <Footer />
-      <FloatingWhatsApp />
+      <FloatingActions />
     </div>
   );
 }
 
-/* ────────────────── NAV ────────────────── */
-function TopNav() {
+/* ─────────────────────── BG AURORA ─────────────────────── */
+function Aurora() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8">
-        <div className="flex items-center gap-3">
-          <img src={logoImg} alt="EI Solutions logo" className="h-10 w-10 rounded-md object-contain" width={40} height={40} />
-          <div className="leading-tight">
-            <p className="text-[15px] font-extrabold tracking-tight text-primary">EI SOLUTIONS</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Janasevana Kendram</p>
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="absolute -left-40 top-[-10%] h-[520px] w-[520px] rounded-full bg-[#0B6B4F]/15 blur-[120px]" />
+      <div className="absolute right-[-15%] top-[20%] h-[480px] w-[480px] rounded-full bg-[#D4A24C]/15 blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-1/3 h-[420px] w-[420px] rounded-full bg-[#C2410C]/10 blur-[120px]" />
+    </div>
+  );
+}
+
+/* ─────────────────────── NAV ─────────────────────── */
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <header className={`sticky top-0 z-40 transition-all ${scrolled ? "border-b border-black/5 bg-[#FAF7F0]/85 backdrop-blur-xl" : "bg-transparent"}`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 md:px-8">
+        <a href="#top" className="flex items-center gap-2.5">
+          <div className="relative">
+            <img src={logoImg} alt="EI SOLUTIONS" className="h-9 w-9 rounded-lg object-contain" />
+            <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#0B6B4F] ring-2 ring-[#FAF7F0]" />
           </div>
-        </div>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-          <a href="#about" className="hover:text-primary">About</a>
-          <a href="#services" className="hover:text-primary">Services</a>
-          <a href="#products" className="hover:text-primary">Products</a>
-          <a href="#opportunity" className="hover:text-primary">Franchise</a>
-          <a href="#contact" className="hover:text-primary">Contact</a>
+          <div className="leading-tight">
+            <p className="text-[15px] font-bold tracking-tight text-[#0F1B14]">EI SOLUTIONS</p>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#0B6B4F]">Kerala · India</p>
+          </div>
+        </a>
+        <nav className="hidden items-center gap-7 text-[13.5px] font-medium text-[#0F1B14]/70 md:flex">
+          <a href="#about" className="transition hover:text-[#0B6B4F]">About</a>
+          <a href="#services" className="transition hover:text-[#0B6B4F]">Services</a>
+          <a href="#platform" className="transition hover:text-[#0B6B4F]">Platform</a>
+          <a href="#opportunity" className="transition hover:text-[#0B6B4F]">Franchise</a>
+          <Link to="/booklet" className="transition hover:text-[#0B6B4F]">Booklet</Link>
+          <a href="#contact" className="transition hover:text-[#0B6B4F]">Contact</a>
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/" className="hidden text-sm font-medium text-primary hover:underline sm:inline">Login</Link>
-          <a href="#lead-form">
-            <Button size="sm" className="gap-1">Join Now <ArrowRight className="h-4 w-4" /></Button>
+          <Link to="/" className="hidden text-[13.5px] font-medium text-[#0F1B14]/70 hover:text-[#0B6B4F] sm:inline">Login</Link>
+          <a href="#lead" className="group inline-flex items-center gap-1.5 rounded-full bg-[#0F1B14] px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#0B6B4F]">
+            Get Started
+            <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:rotate-45" />
           </a>
         </div>
       </div>
@@ -93,507 +107,497 @@ function TopNav() {
   );
 }
 
-/* ────────────────── HERO ────────────────── */
+/* ─────────────────────── HERO ─────────────────────── */
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10">
-        <img src={heroImg} alt="" width={1920} height={1080} className="h-full w-full object-cover opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-[#0a1f4d]" style={{ mixBlendMode: "multiply" }} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,153,51,0.18),transparent_60%),radial-gradient(circle_at_80%_80%,rgba(19,136,8,0.18),transparent_60%)]" />
-      </div>
+    <section id="top" className="relative overflow-hidden">
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-20 md:px-8 md:pt-20 md:pb-28">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.15fr_1fr]">
+          <div className="animate-fade-in">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#0B6B4F]/20 bg-white/60 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0B6B4F] backdrop-blur">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0B6B4F] opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#0B6B4F]" />
+              </span>
+              Now onboarding · 2025 batch open
+            </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
-        <div className="grid items-center gap-10 md:grid-cols-[1.2fr_1fr]">
-          <div className="text-white animate-fade-in">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" /> ഇന്ത്യയിലെ വിശ്വാസമുള്ള ഡിജിറ്റൽ സർവീസ് നെറ്റ്‌വർക്ക്
-            </span>
-            <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-[3.4rem]">
-              7+ വർഷത്തെ വിശ്വാസം<br />
-              <span className="bg-gradient-to-r from-[#FF9933] via-white to-[#138808] bg-clip-text text-transparent">2500+ Centers</span><br />
-              ഇന്ത്യ മുഴുവൻ സേവനം
+            <h1 className="mt-6 font-serif text-[44px] leading-[1.05] tracking-[-0.02em] text-[#0F1B14] md:text-[64px] lg:text-[72px]">
+              The digital backbone for{" "}
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-br from-[#0B6B4F] via-[#0F1B14] to-[#C2410C] bg-clip-text text-transparent">Kerala's</span>
+                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" preserveAspectRatio="none">
+                  <path d="M2 9 Q 100 -2, 198 9" stroke="#D4A24C" strokeWidth="3" strokeLinecap="round" fill="none" />
+                </svg>
+              </span>
+              <br />
+              service entrepreneurs.
             </h1>
-            <p className="mt-5 max-w-xl text-base text-white/85 md:text-lg">
-              {COMPANY_FULL} — A trusted brand empowering rural & urban India with digital services, e-Governance, banking, training & franchise opportunities.
+
+            <p className="mt-7 max-w-xl text-[16px] leading-relaxed text-[#0F1B14]/70 md:text-[17px]">
+              <span className="font-semibold text-[#0F1B14]">EI SOLUTIONS</span> powers 2500+ digital service centers across India with PAN, banking, lending, e-governance, training & matrimony — all from one premium platform. കേരളത്തിൽ നിന്ന് ഇന്ത്യയിലേക്ക്.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#lead-form">
-                <Button size="lg" className="bg-[#FF9933] text-white shadow-lg hover:bg-[#FF9933]/90">
-                  Join Now <ArrowRight className="ml-1 h-5 w-5" />
-                </Button>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <a href="#lead" className="group inline-flex items-center gap-2 rounded-full bg-[#0F1B14] px-6 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-black/10 transition hover:bg-[#0B6B4F] hover:shadow-xl">
+                Become a Partner
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               </a>
-              <a href="#opportunity">
-                <Button size="lg" variant="outline" className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white">
-                  Register as Retailer
-                </Button>
-              </a>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hi%20EI%20Solutions%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer">
-                <Button size="lg" variant="outline" className="border-[#25D366] bg-[#25D366] text-white hover:bg-[#25D366]/90 hover:text-white">
-                  <MessageCircle className="mr-1 h-5 w-5" /> WhatsApp
-                </Button>
+              <Link to="/booklet" className="group inline-flex items-center gap-2 rounded-full border border-[#0F1B14]/20 bg-white/60 px-6 py-3.5 text-[14px] font-semibold text-[#0F1B14] backdrop-blur transition hover:border-[#0B6B4F] hover:text-[#0B6B4F]">
+                <BookOpen className="h-4 w-4" />
+                Open Digital Booklet
+              </Link>
+              <a href={`https://wa.me/${WHATSAPP}?text=Hi%20EI%20SOLUTIONS%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0F1B14]/70 transition hover:text-[#0B6B4F]">
+                <MessageCircle className="h-4 w-4" /> WhatsApp us
               </a>
             </div>
-            <div className="mt-8 grid max-w-md grid-cols-3 gap-4 text-center">
-              {[
-                { v: "7+", l: "Years" },
-                { v: "2500+", l: "Centers" },
-                { v: "10L+", l: "Customers" },
-              ].map((s) => (
-                <div key={s.l} className="rounded-xl bg-white/10 p-3 backdrop-blur">
-                  <p className="text-2xl font-extrabold text-white md:text-3xl">{s.v}</p>
-                  <p className="text-[11px] uppercase tracking-wider text-white/70">{s.l}</p>
-                </div>
+
+            {/* mini-trust row */}
+            <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-black/5 pt-6">
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-[#0F1B14]/50">Trusted by</div>
+              {["MeitY", "KSUM", "NSDC", "STPI", "ABDM"].map((t) => (
+                <div key={t} className="text-[13px] font-bold tracking-tight text-[#0F1B14]/55">{t}</div>
               ))}
             </div>
           </div>
 
-          {/* Quick lead card */}
-          <div className="animate-fade-in">
-            <Card className="border-white/20 bg-white/95 shadow-2xl backdrop-blur">
-              <CardContent className="p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Quick Enquiry</p>
-                <h3 className="mt-1 text-xl font-bold">Get a Call Back in 10 mins</h3>
-                <QuickLeadForm compact />
-              </CardContent>
-            </Card>
+          {/* Right column: layered visual */}
+          <div className="relative animate-fade-in lg:mt-4">
+            <HeroVisual />
           </div>
         </div>
       </div>
-
-      {/* Tricolor strip */}
-      <div className="flex h-1.5 w-full">
-        <div className="flex-1 bg-[#FF9933]" />
-        <div className="flex-1 bg-white" />
-        <div className="flex-1 bg-[#138808]" />
-      </div>
     </section>
   );
 }
 
-/* ────────────────── TRUST STRIP ────────────────── */
-function TrustStrip() {
-  const items = [
-    { icon: ShieldCheck, label: "MEITY Registered" },
-    { icon: Award, label: "Kerala Startup Mission" },
-    { icon: GraduationCap, label: "NSDC / Skill India" },
-    { icon: Landmark, label: "STPI Registered" },
-    { icon: Globe2, label: "Digital Bharat" },
-    { icon: Heart, label: "ABDM Affiliated" },
-  ];
+function HeroVisual() {
   return (
-    <section className="border-b border-border bg-secondary/40">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-around gap-x-8 gap-y-3 px-4 py-5 md:px-8">
-        {items.map((it) => (
-          <div key={it.label} className="flex items-center gap-2 text-xs font-semibold text-muted-foreground md:text-sm">
-            <it.icon className="h-4 w-4 text-primary" />
-            {it.label}
-          </div>
-        ))}
+    <div className="relative">
+      {/* Card 1: Live counter */}
+      <div className="absolute -left-4 top-6 hidden w-56 -rotate-3 rounded-2xl border border-black/5 bg-white/90 p-4 shadow-2xl backdrop-blur lg:block">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-[#0B6B4F]">Active Today</div>
+          <div className="h-2 w-2 animate-pulse rounded-full bg-[#0B6B4F]" />
+        </div>
+        <div className="mt-1 font-serif text-3xl font-bold text-[#0F1B14]">12,847</div>
+        <div className="text-[11px] text-[#0F1B14]/60">transactions across network</div>
+        <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-[#0B6B4F]">
+          <TrendingUp className="h-3 w-3" /> +18% vs yesterday
+        </div>
       </div>
-    </section>
-  );
-}
 
-/* ────────────────── ABOUT ────────────────── */
-function About() {
-  return (
-    <section id="about" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
-      <div className="grid items-center gap-12 md:grid-cols-2">
-        <div>
-          <SectionEyebrow>About Us</SectionEyebrow>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
-            Building Digital Bharat, One Center at a Time
-          </h2>
-          <p className="mt-5 text-muted-foreground">
-            {COMPANY_FULL} കഴിഞ്ഞ <strong className="text-foreground">7+ വർഷമായി</strong> ഇന്ത്യയിൽ ഡിജിറ്റൽ സേവനങ്ങൾ, e-Governance, PAN Services, Loan Services, Skill Training, Startup Support, Rural Empowerment, Franchise Network services നൽകുന്ന trusted company ആണ്.
-          </p>
-          <p className="mt-3 text-muted-foreground">
-            Our mission is to bring premium-quality digital services to every village & town in India through a powerful franchise network of trained, certified retailers.
-          </p>
-          <div className="mt-6 grid grid-cols-2 gap-3">
+      {/* Card 2: Main canvas */}
+      <div className="relative ml-0 rounded-[28px] border border-black/5 bg-gradient-to-br from-[#0F1B14] via-[#0F1B14] to-[#0B6B4F] p-8 shadow-2xl lg:ml-16">
+        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#D4A24C]/20 blur-3xl" />
+        <div className="relative">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4A24C]">EI SOLUTIONS · DASHBOARD</div>
+          <div className="mt-2 font-serif text-[28px] leading-tight text-white">One login.<br />Twenty services.</div>
+
+          <div className="mt-6 space-y-2">
             {[
-              { i: Users, l: "2500+ Active Centers" },
-              { i: Building, l: "Pan-India Network" },
-              { i: ShieldCheck, l: "ISO Quality Standards" },
-              { i: TrendingUp, l: "Growing Every Day" },
-            ].map((b) => (
-              <div key={b.l} className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
-                <b.i className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium">{b.l}</span>
+              { i: CreditCard, t: "PAN Card", v: "₹107", c: "bg-blue-500/20 text-blue-200" },
+              { i: Send, t: "Money Transfer", v: "0.5–1%", c: "bg-purple-500/20 text-purple-200" },
+              { i: Wallet, t: "Loan Leads", v: "₹500–2k", c: "bg-amber-500/20 text-amber-200" },
+              { i: Heart, t: "Matrimony", v: "Premium", c: "bg-rose-500/20 text-rose-200" },
+            ].map((s) => (
+              <div key={s.t} className="flex items-center justify-between rounded-xl bg-white/5 px-3.5 py-2.5 backdrop-blur transition hover:bg-white/10">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${s.c}`}><s.i className="h-4 w-4" /></div>
+                  <span className="text-[13px] font-semibold text-white">{s.t}</span>
+                </div>
+                <span className="text-[12px] font-bold text-[#D4A24C]">{s.v}</span>
               </div>
             ))}
           </div>
-        </div>
-        <div className="relative">
-          <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-primary/20 to-[#FF9933]/20 blur-2xl" />
-          <Card className="overflow-hidden border-border shadow-xl">
-            <div className="bg-gradient-to-br from-primary to-[#0a1f4d] p-8 text-white">
-              <p className="text-xs uppercase tracking-widest opacity-80">Our Promise</p>
-              <p className="mt-3 text-2xl font-bold leading-snug">
-                "Empower every Indian household with reliable digital services — at their doorstep."
-              </p>
-              <p className="mt-4 text-sm opacity-90">— EI Solutions Leadership Team</p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl bg-[#D4A24C] px-4 py-3 text-[#0F1B14]">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">Monthly Potential</div>
+              <div className="font-serif text-xl font-bold">₹50K – ₹1L+</div>
             </div>
-            <CardContent className="grid grid-cols-2 gap-4 p-6">
-              <Stat v="7+" l="Years of Trust" />
-              <Stat v="2500+" l="Centers" />
-              <Stat v="14" l="Districts in Kerala" />
-              <Stat v="10+" l="States Active" />
-            </CardContent>
-          </Card>
+            <ArrowUpRight className="h-5 w-5" />
+          </div>
         </div>
       </div>
-    </section>
-  );
-}
 
-function Stat({ v, l }: { v: string; l: string }) {
-  return (
-    <div className="rounded-lg bg-secondary/60 p-3 text-center">
-      <p className="text-2xl font-extrabold text-primary">{v}</p>
-      <p className="text-xs text-muted-foreground">{l}</p>
+      {/* Card 3: Verified */}
+      <div className="absolute -bottom-6 -right-2 hidden w-52 rotate-2 rounded-2xl border border-black/5 bg-white/95 p-4 shadow-2xl backdrop-blur lg:block">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B6B4F]/10">
+            <ShieldCheck className="h-5 w-5 text-[#0B6B4F]" />
+          </div>
+          <div>
+            <div className="text-[12px] font-bold text-[#0F1B14]">Govt. Registered</div>
+            <div className="text-[10px] text-[#0F1B14]/60">MeitY · KSUM · STPI</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ────────────────── REGISTRATIONS ────────────────── */
-function Registrations() {
+/* ─────────────────────── MARQUEE ─────────────────────── */
+function MarqueeStrip() {
   const items = [
-    { i: ShieldCheck, t: "MEITY Registered", d: "Ministry of Electronics & IT" },
-    { i: Rocket, t: "Kerala Startup Mission", d: "Associated Startup" },
-    { i: GraduationCap, t: "NSDC / Skill India", d: "Channel Partner" },
-    { i: Heart, t: "ABDM Affiliated", d: "Ayushman Bharat Digital Mission" },
-    { i: Globe2, t: "Digital Bharat Mission", d: "Affiliation" },
-    { i: Landmark, t: "STPI Registered Unit", d: "Software Tech Parks of India" },
-    { i: Sparkles, t: "Startup Ecosystem", d: "Active Member" },
-    { i: FileText, t: "E-Governance Provider", d: "Authorised Service Network" },
-    { i: CreditCard, t: "PAN Service Support", d: "Through partner network" },
-    { i: Users, t: "Janasevana / CSC Model", d: "Public Service Network" },
-    { i: Wallet, t: "Banking & Loan Network", d: "NBFC Tie-ups" },
-    { i: BookOpen, t: "Skill Development", d: "Robotics & EdTech support" },
+    "Ministry of Electronics & IT", "Kerala Startup Mission", "NSDC Skill India",
+    "STPI Registered", "ABDM Affiliated", "Digital Bharat Mission",
+    "BBPS Network", "PAN Service Authorized",
   ];
   return (
-    <section className="bg-secondary/30 py-20">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="text-center">
-          <SectionEyebrow center>Registrations & Affiliations</SectionEyebrow>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-            Recognised. Registered. Trusted.
-          </h2>
-          <p className="mt-3 text-muted-foreground">Officially associated with India's leading digital & skill ecosystems.</p>
-        </div>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-8 opacity-80">
-          <img src={digitalIndiaLogo} alt="Digital India" className="h-14 object-contain" />
-          <img src={ksumLogo} alt="Kerala Startup Mission" className="h-14 object-contain" />
-        </div>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((it) => (
-            <Card key={it.t} className="group border-border transition-all hover:-translate-y-1 hover:shadow-lg">
-              <CardContent className="p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#0a1f4d] text-white shadow">
-                  <it.i className="h-5 w-5" />
-                </div>
-                <p className="mt-3 text-sm font-bold">{it.t}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{it.d}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <section className="border-y border-black/5 bg-[#0F1B14] py-4 text-white overflow-hidden">
+      <div className="flex animate-marquee gap-12 whitespace-nowrap">
+        {[...items, ...items, ...items].map((t, i) => (
+          <div key={i} className="flex items-center gap-2.5 text-[12.5px] font-medium tracking-wide text-white/70">
+            <Check className="h-3.5 w-3.5 text-[#D4A24C]" /> {t}
+          </div>
+        ))}
       </div>
     </section>
   );
 }
 
-/* ────────────────── WHY ────────────────── */
-function WhyChooseUs() {
+/* ─────────────────────── STATS ─────────────────────── */
+function Stats() {
   const items = [
-    { i: Award, t: "7+ Years Experience", d: "Battle-tested operations & a proven business model." },
-    { i: Building2, t: "2500+ Franchise Centers", d: "Strong network across Kerala, expanding across India." },
-    { i: Heart, t: "Kerala-Based Trusted Brand", d: "Deep roots, local language support, regional expertise." },
-    { i: Globe2, t: "All-India Expansion", d: "Onboarding centers in 10+ states actively." },
-    { i: MessageCircle, t: "Fast Support Team", d: "Phone, WhatsApp & in-app chat 7 days a week." },
-    { i: Sparkles, t: "Multi-Service Platform", d: "20+ services in one login — earn from many streams." },
-    { i: IndianRupee, t: "High Income Potential", d: "Best-in-industry commission structure with daily settlements." },
-    { i: TrendingUp, t: "Continuous Growth", d: "Monthly new services, AI tools, and revenue boosters." },
+    { v: "7+", l: "Years of operation", s: "since 2018" },
+    { v: "2500+", l: "Active centers", s: "across 14 districts" },
+    { v: "10L+", l: "Customers served", s: "and counting" },
+    { v: "24×7", l: "Partner support", s: "Malayalam + English" },
   ];
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
-      <div className="text-center">
-        <SectionEyebrow center>Why Choose Us</SectionEyebrow>
-        <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-          Built for Retailers Who Want to Win
-        </h2>
-      </div>
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 md:grid-cols-4">
         {items.map((it) => (
-          <Card key={it.t} className="border-border transition hover:-translate-y-1 hover:shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <it.i className="h-6 w-6" />
-              </div>
-              <p className="mt-4 font-bold">{it.t}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{it.d}</p>
-            </CardContent>
-          </Card>
+          <div key={it.l} className="bg-[#FAF7F0] p-7 transition hover:bg-white">
+            <div className="font-serif text-5xl font-bold tracking-tight text-[#0F1B14] md:text-6xl">{it.v}</div>
+            <div className="mt-3 text-[14px] font-semibold text-[#0F1B14]">{it.l}</div>
+            <div className="text-[12px] text-[#0F1B14]/55">{it.s}</div>
+          </div>
         ))}
       </div>
     </section>
   );
 }
 
-/* ────────────────── SERVICES ────────────────── */
+/* ─────────────────────── ABOUT ─────────────────────── */
+function About() {
+  return (
+    <section id="about" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr]">
+        <div>
+          <Eyebrow>About</Eyebrow>
+          <h2 className="mt-3 font-serif text-[36px] leading-[1.1] tracking-tight text-[#0F1B14] md:text-[48px]">
+            Built in Kerala.<br />
+            <span className="text-[#0B6B4F]">Engineered for India.</span>
+          </h2>
+        </div>
+        <div className="space-y-5 text-[15.5px] leading-relaxed text-[#0F1B14]/75">
+          <p>
+            EI SOLUTIONS started in 2018 with a single belief — every neighborhood deserves a trustworthy digital service desk run by a local entrepreneur.
+            ഏഴ് വർഷങ്ങൾക്കുള്ളിൽ ഞങ്ങൾ വളർന്നു: ഒരു ഷോപ്പിൽ നിന്ന് <strong className="font-semibold text-[#0F1B14]">2500+ centers</strong>-ലേക്ക്.
+          </p>
+          <p>
+            Today, our retailers handle PAN cards, money transfers, bill payments, government certificates, insurance, loans, training, matrimony and more — all through a single premium dashboard, wallet & support system.
+          </p>
+          <div className="grid grid-cols-2 gap-3 pt-4">
+            {[
+              { i: Shield, t: "OPC Pvt Ltd registered" },
+              { i: Sparkles, t: "ISO-aligned operations" },
+              { i: Users, t: "1000+ trained partners" },
+              { i: TrendingUp, t: "Growing 30% YoY" },
+            ].map((b) => (
+              <div key={b.t} className="flex items-center gap-2.5 rounded-xl border border-black/5 bg-white/60 p-3 backdrop-blur">
+                <b.i className="h-4 w-4 text-[#0B6B4F]" />
+                <span className="text-[13px] font-medium text-[#0F1B14]">{b.t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────── SERVICES ─────────────────────── */
 function Services() {
   const services = [
-    { i: CreditCard, t: "PAN Card Services", c: "from-blue-500 to-indigo-600" },
-    { i: FileText, t: "Bill Payments & BBPS", c: "from-green-500 to-emerald-600" },
-    { i: Send, t: "Money Transfer (DMT)", c: "from-purple-500 to-fuchsia-600" },
-    { i: ShieldCheck, t: "Insurance", c: "from-cyan-500 to-blue-600" },
-    { i: Wallet, t: "Loan Services", c: "from-amber-500 to-orange-600" },
-    { i: Heart, t: "Matrimony Portal", c: "from-rose-500 to-pink-600" },
-    { i: GraduationCap, t: "Training Programs", c: "from-violet-500 to-purple-600" },
-    { i: Award, t: "Skill India Certificates", c: "from-teal-500 to-emerald-600" },
-    { i: Landmark, t: "Government Online Services", c: "from-slate-600 to-slate-800" },
-    { i: Rocket, t: "Startup Support Services", c: "from-orange-500 to-red-600" },
+    { i: CreditCard, t: "PAN Card Services", d: "NSDL & UTI authorized issuance, instant e-PAN, corrections, reprints.", color: "#0B6B4F" },
+    { i: Send, t: "Money Transfer (DMT)", d: "Send money instantly to any bank in India via your retail counter.", color: "#C2410C" },
+    { i: FileText, t: "Bill Payments & BBPS", d: "Electricity, water, gas, broadband, FASTag, postpaid — 200+ billers.", color: "#0F1B14" },
+    { i: ShieldCheck, t: "Insurance Services", d: "Health, motor, term, travel — partnered with leading IRDAI insurers.", color: "#0B6B4F" },
+    { i: Wallet, t: "Loan Lead Generation", d: "Personal, business & gold loan leads with high payout per closure.", color: "#D4A24C" },
+    { i: Heart, t: "Matrimony Portal", d: "Full bride/groom matchmaking platform — paid memberships.", color: "#9F1239" },
+    { i: GraduationCap, t: "Skill Training", d: "Robotics, AI, finance, soft skills — Skill India aligned curriculum.", color: "#1E3A8A" },
+    { i: BookOpen, t: "E-Governance", d: "Aadhaar updates, certificates, government online services.", color: "#0F1B14" },
   ];
   return (
-    <section id="services" className="bg-secondary/30 py-20">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="text-center">
-          <SectionEyebrow center>Our Services</SectionEyebrow>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-            One Login. Twenty+ Services.
+    <section id="services" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <div className="flex items-end justify-between">
+        <div>
+          <Eyebrow>Services</Eyebrow>
+          <h2 className="mt-3 font-serif text-[36px] leading-[1.1] tracking-tight text-[#0F1B14] md:text-[48px]">
+            Twenty income streams.<br />One platform.
           </h2>
-          <p className="mt-3 text-muted-foreground">Everything your customers need — handled from your shop.</p>
         </div>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {services.map((s) => (
-            <Card key={s.t} className="group overflow-hidden border-border transition hover:-translate-y-1 hover:shadow-xl">
-              <CardContent className="flex flex-col items-center gap-3 p-5 text-center">
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${s.c} text-white shadow-lg transition group-hover:scale-110`}>
-                  <s.i className="h-7 w-7" />
-                </div>
-                <p className="text-sm font-semibold">{s.t}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <a href="#lead" className="hidden items-center gap-1.5 text-[13px] font-semibold text-[#0B6B4F] transition hover:gap-2.5 md:inline-flex">
+          See all services <ArrowUpRight className="h-3.5 w-3.5" />
+        </a>
       </div>
-    </section>
-  );
-}
-
-/* ────────────────── PRODUCT SPOTLIGHTS ────────────────── */
-function ProductSpotlights() {
-  const products = [
-    {
-      bg: janasevanaBg,
-      tagBg: "bg-[#000080]",
-      eyebrow: "Janasevana — General Public Portal",
-      title: "ജനസേവന പോർട്ടൽ",
-      sub: "Government & Citizen Services Hub",
-      desc: "Aadhaar, PAN, certificates, ration card, e-District, online applications — single dashboard for all citizen services.",
-      features: ["Live application tracking", "Print-ready forms & receipts", "Multi-language UI", "Trust-building branded portal"],
-      cta: "Explore Janasevana",
-      accent: "border-[#000080]",
-    },
-    {
-      bg: matrimonyBg,
-      tagBg: "bg-[#9b1c47]",
-      eyebrow: "Matrimony — Family Portal",
-      title: "വിവാഹ സൗഹൃദ പോർട്ടൽ",
-      sub: "Premium Kerala Matchmaking",
-      desc: "Elegant, family-friendly matrimony portal designed for Kerala audiences — bride/groom profiles, horoscope match, secure communication.",
-      features: ["Verified profile system", "Horoscope compatibility", "Mobile-first elegant UI", "Earnings per registration"],
-      cta: "Explore Matrimony",
-      accent: "border-[#9b1c47]",
-    },
-    {
-      bg: bankingBg,
-      tagBg: "bg-[#0d4f3c]",
-      eyebrow: "Finance — Banking & Loan Software",
-      title: "ധനകാര്യ സോഫ്റ്റ്‌വെയർ",
-      sub: "Money Transfer, AEPS, Loans, Insurance",
-      desc: "Corporate-level fintech dashboard for DMT, AEPS, mini-statement, recharge, loans, insurance — built for high-volume retailers.",
-      features: ["Atomic wallet ledger", "Daily settlements", "Receipts & branded PDFs", "Real-time commission tracking"],
-      cta: "Explore Finance",
-      accent: "border-[#0d4f3c]",
-    },
-  ];
-
-  return (
-    <section id="products" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
-      <div className="text-center">
-        <SectionEyebrow center>Our Flagship Products</SectionEyebrow>
-        <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-          Three Powerful Platforms. One Brand.
-        </h2>
-        <p className="mt-3 text-muted-foreground">Each portal is engineered for a specific business — premium quality, mobile-ready, retailer-branded.</p>
-      </div>
-
-      <div className="mt-12 space-y-12">
-        {products.map((p, idx) => (
-          <Card key={p.title} className={`overflow-hidden border-2 ${p.accent} shadow-xl`}>
-            <div className={`grid md:grid-cols-2 ${idx % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
-              <div className="relative aspect-[4/3] md:aspect-auto">
-                <img src={p.bg} alt={p.title} className="h-full w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                <span className={`absolute left-4 top-4 rounded-full ${p.tagBg} px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg`}>
-                  {p.eyebrow}
-                </span>
-              </div>
-              <CardContent className="flex flex-col justify-center gap-4 p-8 md:p-10">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{p.sub}</p>
-                  <h3 className="mt-1 text-3xl font-extrabold tracking-tight">{p.title}</h3>
-                </div>
-                <p className="text-muted-foreground">{p.desc}</p>
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2">
-                  <a href="#lead-form">
-                    <Button className="gap-1">{p.cta} <ArrowRight className="h-4 w-4" /></Button>
-                  </a>
-                </div>
-              </CardContent>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {services.map((s) => (
+          <div key={s.t} className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white/70 p-6 backdrop-blur transition hover:-translate-y-1 hover:border-black/10 hover:shadow-xl">
+            <div
+              className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+              style={{ background: `linear-gradient(90deg, ${s.color}, transparent)` }}
+            />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: s.color }}>
+              <s.i className="h-5 w-5" />
             </div>
-          </Card>
+            <div className="mt-5 text-[15px] font-bold text-[#0F1B14]">{s.t}</div>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-[#0F1B14]/65">{s.d}</p>
+            <div className="mt-4 flex items-center gap-1 text-[12px] font-semibold text-[#0B6B4F] opacity-0 transition group-hover:opacity-100">
+              Learn more <ChevronRight className="h-3 w-3" />
+            </div>
+          </div>
         ))}
       </div>
     </section>
   );
 }
 
-/* ────────────────── OPPORTUNITY ────────────────── */
-function Opportunity() {
-  const points = [
-    { i: IndianRupee, t: "Low Investment", d: "Start with minimal setup — recover quickly." },
-    { i: TrendingUp, t: "High Earning Opportunity", d: "Multiple revenue streams from day one." },
-    { i: GraduationCap, t: "Full Training Support", d: "Live classes + AI Virtual Trainer in Malayalam." },
-    { i: Globe2, t: "Ready Portal Access", d: "Cloud dashboard works on phone, tablet, PC." },
-    { i: ShieldCheck, t: "Brand Support", d: "Posters, certificates, ID cards, marketing." },
-    { i: Users, t: "Customer Base Growth", d: "Lead engine + marketing toolkit included." },
+/* ─────────────────────── PLATFORM ─────────────────────── */
+function Platform() {
+  const features = [
+    { t: "Real-time wallet", d: "Atomic transactions. Instant settlement. Detailed ledger." },
+    { t: "Mobile-first dashboard", d: "Built for shops with one phone & a printer. Works on 3G." },
+    { t: "Multilingual support", d: "Native Malayalam UI alongside English — for every staff member." },
+    { t: "AI-powered helpdesk", d: "Elzu Virtual Trainer answers retailer queries in Malayalam, 24×7." },
+    { t: "Built-in CRM", d: "Capture, assign, follow-up & convert leads from one place." },
+    { t: "Audit-grade reports", d: "Daily P&L, GST-ready invoices, commission breakdowns." },
   ];
   return (
-    <section id="opportunity" className="relative overflow-hidden bg-gradient-to-br from-primary via-[#0a1f4d] to-primary py-20 text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,153,51,0.15),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(19,136,8,0.15),transparent_50%)]" />
+    <section id="platform" className="relative overflow-hidden bg-[#0F1B14] py-24 text-white">
+      <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, rgba(11,107,79,0.4), transparent 50%), radial-gradient(circle at 80% 70%, rgba(212,162,76,0.25), transparent 50%)" }} />
       <div className="relative mx-auto max-w-7xl px-4 md:px-8">
-        <div className="text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest backdrop-blur">
-            <Briefcase className="h-3.5 w-3.5" /> Business Opportunity
-          </span>
-          <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-extrabold tracking-tight md:text-4xl">
-            സ്വന്തമായി Digital Service Center ആരംഭിക്കൂ
+        <div className="max-w-2xl">
+          <Eyebrow dark>Platform</Eyebrow>
+          <h2 className="mt-3 font-serif text-[36px] leading-[1.1] tracking-tight md:text-[48px]">
+            A premium technology stack<br />
+            <span className="text-[#D4A24C]">behind every counter.</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/85">
-            Be your own boss. Serve your community. Earn every day. Get full software, training & brand support.
+          <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-white/70">
+            We don't just hand you a logo. You get a battle-tested SaaS platform — wallet, CRM, CMS, billing, AI & support — built specifically for the realities of the Kerala retail ecosystem.
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {points.map((p) => (
-            <div key={p.t} className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur transition hover:-translate-y-1 hover:bg-white/10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FF9933] text-white shadow-lg">
-                <p.i className="h-6 w-6" />
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((f, i) => (
+            <div key={f.t} className="group rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur transition hover:border-[#D4A24C]/40 hover:bg-white/10">
+              <div className="flex items-center gap-3">
+                <div className="font-serif text-[28px] font-bold text-[#D4A24C]">{String(i + 1).padStart(2, "0")}</div>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
-              <p className="mt-4 font-bold">{p.t}</p>
-              <p className="mt-1 text-sm text-white/80">{p.d}</p>
+              <div className="mt-4 text-[16px] font-bold">{f.t}</div>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-white/65">{f.d}</p>
             </div>
           ))}
         </div>
-        <div className="mt-12 text-center">
-          <a href="#lead-form">
-            <Button size="lg" className="bg-[#FF9933] text-white shadow-2xl hover:bg-[#FF9933]/90">
-              Apply for Franchise <ArrowRight className="ml-1 h-5 w-5" />
-            </Button>
-          </a>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────── OPPORTUNITY ─────────────────────── */
+function Opportunity() {
+  return (
+    <section id="opportunity" className="mx-auto max-w-7xl px-4 py-24 md:px-8">
+      <div className="grid items-center gap-12 lg:grid-cols-2">
+        <div>
+          <Eyebrow>Franchise opportunity</Eyebrow>
+          <h2 className="mt-3 font-serif text-[36px] leading-[1.1] tracking-tight text-[#0F1B14] md:text-[48px]">
+            Earn ₹50,000+ a month.<br />
+            <span className="text-[#C2410C]">From your own shop.</span>
+          </h2>
+          <p className="mt-5 text-[15.5px] leading-relaxed text-[#0F1B14]/70">
+            ഒരു ചെറിയ shop മതി. നിങ്ങളുടെ ഗ്രാമത്തിലെ digital service center ആകൂ. Multiple revenue streams — daily customer footfall — ഞങ്ങൾ training & support തരും.
+          </p>
+
+          <div className="mt-8 space-y-2.5">
+            {[
+              { t: "PAN cards", v: "₹107 / card" },
+              { t: "Bill payments", v: "1–2% commission" },
+              { t: "Loan leads", v: "₹500–2,000 / closure" },
+              { t: "Money transfer", v: "0.5–1%" },
+              { t: "Insurance", v: "5–15% premium" },
+            ].map((r) => (
+              <div key={r.t} className="flex items-center justify-between rounded-xl border border-black/5 bg-white/60 px-4 py-3 backdrop-blur">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#0B6B4F]" />
+                  <span className="text-[14px] font-semibold text-[#0F1B14]">{r.t}</span>
+                </div>
+                <span className="text-[13px] font-bold text-[#0B6B4F]">{r.v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="#lead" className="inline-flex items-center gap-2 rounded-full bg-[#0F1B14] px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-[#0B6B4F]">
+              Apply for franchise <ArrowRight className="h-4 w-4" />
+            </a>
+            <Link to="/booklet" className="inline-flex items-center gap-2 rounded-full border border-[#0F1B14]/15 bg-white/60 px-6 py-3 text-[14px] font-semibold text-[#0F1B14] backdrop-blur transition hover:border-[#0B6B4F]">
+              <BookOpen className="h-4 w-4" /> View digital booklet
+            </Link>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="rounded-[28px] border border-[#D4A24C]/30 bg-gradient-to-br from-[#FAF7F0] via-white to-[#FAF7F0] p-8 shadow-xl">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C2410C]">JOIN PROCESS</div>
+            <div className="mt-2 font-serif text-[24px] text-[#0F1B14]">5 steps to launch.</div>
+            <div className="mt-7 space-y-5">
+              {[
+                { n: "01", t: "Apply online", d: "Fill the form below or call us." },
+                { n: "02", t: "Submit documents", d: "Aadhaar, PAN, photo, address proof." },
+                { n: "03", t: "Pay activation fee", d: "Low one-time onboarding cost." },
+                { n: "04", t: "Get trained", d: "Live + recorded training in Malayalam." },
+                { n: "05", t: "Start earning", d: "Login & serve customers from day one." },
+              ].map((s, i, a) => (
+                <div key={s.n} className="relative flex gap-4">
+                  {i < a.length - 1 && <div className="absolute left-[14px] top-8 h-full w-px bg-[#D4A24C]/40" />}
+                  <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0F1B14] font-serif text-[11px] font-bold text-[#D4A24C]">{s.n}</div>
+                  <div>
+                    <div className="text-[14px] font-bold text-[#0F1B14]">{s.t}</div>
+                    <div className="text-[12.5px] text-[#0F1B14]/60">{s.d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ────────────────── TESTIMONIALS ────────────────── */
+/* ─────────────────────── TESTIMONIALS ─────────────────────── */
 function Testimonials() {
-  const items = [
-    { name: "Anish K.", role: "Retailer, Palakkad", text: "EI Solutions മാറ്റി എന്റെ ജീവിതം. ഒരു വർഷം കൊണ്ട് സ്വന്തം center grow ചെയ്തു — ദിവസവും 50+ customers വരും.", rating: 5 },
-    { name: "Sreeja M.", role: "Franchise, Kollam", text: "Best support team. Training-ഉം marketing materials-ഉം ഫുൾ പ്രൊഫഷണൽ. Earnings മൂന്ന് മാസത്തിൽ double ആയി.", rating: 5 },
-    { name: "Ravi P.", role: "Customer", text: "PAN, ration card, certificates — എല്ലാം ഒരു മണിക്കൂറിൽ done. Trusted service, fair price.", rating: 5 },
-    { name: "Manju S.", role: "Retailer, Ernakulam", text: "Wallet system & daily settlement perfect. Money transfer commission very good. Highly recommend.", rating: 5 },
-    { name: "Joseph T.", role: "Distributor, Kottayam", text: "20 years business experience-ൽ ഇത്രയും organized franchise model കണ്ടിട്ടില്ല. Top class.", rating: 5 },
-    { name: "Fathima R.", role: "Retailer, Malappuram", text: "Malayalam UI & support വളരെ helpful. Customers happy, ഞാനും happy.", rating: 5 },
+  const reviews = [
+    { name: "Rajesh Kumar", place: "Kollam · Partner since 2020", text: "5 വർഷമായി EI SOLUTIONS-ൽ work ചെയ്യുന്നു. Support, training, വരുമാനം — എല്ലാം stable. വിശ്വാസത്തോടെ recommend ചെയ്യാം." },
+    { name: "Anjali Menon", place: "Ernakulam · Retailer", text: "Join ചെയ്തിട്ട് 8 മാസം ആയി. Daily നല്ല income. Customers വരുന്നു — PAN, money transfer, bill payments എല്ലാം demand ഉണ്ട്." },
+    { name: "Suresh Babu", place: "Thrissur · Center owner", text: "System easy ആണ്, training ഉഗ്രൻ. എല്ലാ services ഒരു portal-ൽ. Family business ഇപ്പോൾ stable." },
   ];
   return (
-    <section className="bg-secondary/30 py-20">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="text-center">
-          <SectionEyebrow center>Success Stories</SectionEyebrow>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-            Real Retailers. Real Growth.
-          </h2>
+    <section className="mx-auto max-w-7xl px-4 py-24 md:px-8">
+      <div className="text-center">
+        <Eyebrow center>Voices from our network</Eyebrow>
+        <h2 className="mx-auto mt-3 max-w-3xl font-serif text-[36px] leading-[1.1] tracking-tight text-[#0F1B14] md:text-[48px]">
+          Real partners.<br />Real income.
+        </h2>
+      </div>
+      <div className="mt-12 grid gap-6 md:grid-cols-3">
+        {reviews.map((r) => (
+          <figure key={r.name} className="relative rounded-2xl border border-black/5 bg-white/70 p-7 backdrop-blur transition hover:-translate-y-1 hover:shadow-xl">
+            <div className="absolute -top-4 left-7 font-serif text-[60px] leading-none text-[#D4A24C]">"</div>
+            <div className="flex gap-0.5 pt-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-3.5 w-3.5 fill-[#D4A24C] text-[#D4A24C]" />
+              ))}
+            </div>
+            <blockquote className="mt-4 text-[14.5px] leading-relaxed text-[#0F1B14]/80">{r.text}</blockquote>
+            <figcaption className="mt-6 flex items-center gap-3 border-t border-black/5 pt-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#0B6B4F] to-[#0F1B14] text-[12px] font-bold text-white">
+                {r.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+              </div>
+              <div>
+                <div className="text-[13px] font-bold text-[#0F1B14]">{r.name}</div>
+                <div className="text-[11px] text-[#0F1B14]/55">{r.place}</div>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────── BOOKLET CTA ─────────────────────── */
+function BookletCTA() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 pb-12 md:px-8">
+      <Link
+        to="/booklet"
+        className="group relative block overflow-hidden rounded-3xl border border-[#D4A24C]/30 bg-gradient-to-br from-[#0F1B14] via-[#0F1B14] to-[#0B6B4F] p-8 md:p-12"
+      >
+        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[#D4A24C]/20 blur-3xl" />
+        <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#D4A24C]/30 bg-[#D4A24C]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#D4A24C]">
+              <BookOpen className="h-3 w-3" /> Premium Digital Booklet
+            </div>
+            <h3 className="mt-4 font-serif text-[28px] leading-tight text-white md:text-[36px]">
+              Open the EI SOLUTIONS booklet — flip through 11 pages of services, earnings & franchise process.
+            </h3>
+          </div>
+          <div className="inline-flex items-center gap-3 rounded-full bg-[#D4A24C] px-7 py-4 text-[14px] font-bold text-[#0F1B14] shadow-xl transition group-hover:bg-white">
+            View booklet <ArrowUpRight className="h-4 w-4 transition group-hover:rotate-45" />
+          </div>
         </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((t) => (
-            <Card key={t.name} className="border-border transition hover:-translate-y-1 hover:shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex gap-0.5 text-[#FF9933]">
-                  {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
+      </Link>
+    </section>
+  );
+}
+
+/* ─────────────────────── LEAD ─────────────────────── */
+function LeadSection() {
+  return (
+    <section id="lead" className="mx-auto max-w-7xl px-4 py-24 md:px-8">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
+        <div>
+          <Eyebrow>Get started</Eyebrow>
+          <h2 className="mt-3 font-serif text-[36px] leading-[1.1] tracking-tight text-[#0F1B14] md:text-[48px]">
+            Talk to a partner specialist.
+          </h2>
+          <p className="mt-5 max-w-md text-[15.5px] leading-relaxed text-[#0F1B14]/70">
+            Fill the form and we'll call you back within 10 minutes during business hours. No obligation, no pressure — just a conversation.
+          </p>
+          <div className="mt-8 space-y-4">
+            {[
+              { i: Phone, t: "Call us", v: PHONE, h: `tel:${PHONE.replace(/\s/g, "")}` },
+              { i: MessageCircle, t: "WhatsApp", v: "Chat instantly", h: `https://wa.me/${WHATSAPP}` },
+              { i: Mail, t: "Email", v: EMAIL, h: `mailto:${EMAIL}` },
+            ].map((c) => (
+              <a key={c.t} href={c.h} target={c.h.startsWith("http") ? "_blank" : undefined} rel="noreferrer"
+                className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white/60 p-4 backdrop-blur transition hover:border-[#0B6B4F] hover:bg-white">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0B6B4F]/10 text-[#0B6B4F]"><c.i className="h-5 w-5" /></div>
+                <div className="flex-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-[#0F1B14]/55">{c.t}</div>
+                  <div className="text-[14px] font-bold text-[#0F1B14]">{c.v}</div>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-foreground/90">"{t.text}"</p>
-                <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                <ArrowUpRight className="h-4 w-4 text-[#0F1B14]/40 transition group-hover:text-[#0B6B4F]" />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-[#D4A24C]/30 via-transparent to-[#0B6B4F]/30 blur-2xl" />
+          <div className="relative rounded-[24px] border border-black/5 bg-white p-7 shadow-2xl md:p-10">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#D4A24C]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#0B6B4F]">Quick Enquiry</span>
+            </div>
+            <h3 className="mt-2 font-serif text-[28px] text-[#0F1B14]">Get a callback in 10 mins</h3>
+            <div className="mt-6">
+              <QuickLeadForm />
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ────────────────── LEAD FORM ────────────────── */
-function LeadFormSection() {
-  return (
-    <section id="lead-form" className="mx-auto max-w-5xl px-4 py-20 md:px-8">
-      <Card className="overflow-hidden border-2 border-primary/20 shadow-2xl">
-        <div className="grid md:grid-cols-2">
-          <div className="bg-gradient-to-br from-primary to-[#0a1f4d] p-8 text-white md:p-10">
-            <SectionEyebrow className="!text-white/80">Get Started</SectionEyebrow>
-            <h2 className="mt-3 text-3xl font-extrabold leading-tight">
-              ഇന്ന് തന്നെ join ചെയ്യൂ — Free consultation
-            </h2>
-            <p className="mt-4 text-white/85">
-              Submit your details — our team will call you within 10 minutes with full franchise details, fees, and earning estimates.
-            </p>
-            <ul className="mt-6 space-y-3 text-sm">
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#FF9933]" /> No registration fees to enquire</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#FF9933]" /> Personalized franchise proposal</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#FF9933]" /> Free demo of all 20+ services</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#FF9933]" /> Same-day onboarding available</li>
-            </ul>
-          </div>
-          <CardContent className="p-8 md:p-10">
-            <QuickLeadForm />
-          </CardContent>
-        </div>
-      </Card>
-    </section>
-  );
-}
-
-function QuickLeadForm({ compact = false }: { compact?: boolean }) {
+function QuickLeadForm() {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [district, setDistrict] = useState("");
@@ -612,11 +616,8 @@ function QuickLeadForm({ compact = false }: { compact?: boolean }) {
     }
     setSubmitting(true);
     try {
-      // Write into the unified CRM Leads collection so it shows up
-      // in /admin/crm-leads alongside all other leads.
       const now = new Date().toISOString();
       await addDoc(collection(db, "crmLeads"), {
-        // Display ID is assigned later by staff; leave blank for landing leads
         leadId: "",
         name: name.trim(),
         phone: mobile.trim(),
@@ -639,7 +640,7 @@ function QuickLeadForm({ compact = false }: { compact?: boolean }) {
       });
       toast.success("Thank you! Our team will call you shortly.");
       setName(""); setMobile(""); setDistrict(""); setInterest("Franchise");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error("Could not submit. Please try WhatsApp instead.");
     } finally {
@@ -648,27 +649,26 @@ function QuickLeadForm({ compact = false }: { compact?: boolean }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-${compact ? "3" : "4"}`}>
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="ld-name">Full Name *</Label>
-        <Input id="ld-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+        <Label htmlFor="ld-name" className="text-[12px] font-semibold uppercase tracking-wider text-[#0F1B14]/60">Full name *</Label>
+        <Input id="ld-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100}
+          className="mt-1.5 h-12 rounded-xl border-black/10 bg-[#FAF7F0]/60 text-[14px] focus-visible:ring-[#0B6B4F]" />
       </div>
       <div>
-        <Label htmlFor="ld-mobile">Mobile Number *</Label>
-        <Input id="ld-mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="10-digit mobile" inputMode="numeric" maxLength={10} required />
+        <Label htmlFor="ld-mobile" className="text-[12px] font-semibold uppercase tracking-wider text-[#0F1B14]/60">Mobile number *</Label>
+        <Input id="ld-mobile" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} placeholder="10-digit mobile" inputMode="numeric" maxLength={10} required
+          className="mt-1.5 h-12 rounded-xl border-black/10 bg-[#FAF7F0]/60 text-[14px] focus-visible:ring-[#0B6B4F]" />
       </div>
       <div>
-        <Label htmlFor="ld-district">District</Label>
-        <Input id="ld-district" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. Ernakulam" />
+        <Label htmlFor="ld-district" className="text-[12px] font-semibold uppercase tracking-wider text-[#0F1B14]/60">District</Label>
+        <Input id="ld-district" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. Ernakulam" maxLength={80}
+          className="mt-1.5 h-12 rounded-xl border-black/10 bg-[#FAF7F0]/60 text-[14px] focus-visible:ring-[#0B6B4F]" />
       </div>
       <div>
-        <Label htmlFor="ld-interest">Interested In</Label>
-        <select
-          id="ld-interest"
-          value={interest}
-          onChange={(e) => setInterest(e.target.value)}
-          className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <Label htmlFor="ld-interest" className="text-[12px] font-semibold uppercase tracking-wider text-[#0F1B14]/60">Interested in</Label>
+        <select id="ld-interest" value={interest} onChange={(e) => setInterest(e.target.value)}
+          className="mt-1.5 flex h-12 w-full rounded-xl border border-black/10 bg-[#FAF7F0]/60 px-3 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B6B4F]">
           <option>Franchise</option>
           <option>Retailer</option>
           <option>Services</option>
@@ -676,144 +676,113 @@ function QuickLeadForm({ compact = false }: { compact?: boolean }) {
           <option>Just exploring</option>
         </select>
       </div>
-      <Button type="submit" size="lg" className="w-full bg-[#FF9933] hover:bg-[#FF9933]/90" disabled={submitting}>
-        {submitting ? "Submitting…" : "Get Started Now"}
-        {!submitting && <ArrowRight className="ml-1 h-5 w-5" />}
+      <Button type="submit" disabled={submitting}
+        className="group h-12 w-full rounded-xl bg-[#0F1B14] text-[14px] font-bold tracking-wide text-white transition hover:bg-[#0B6B4F]">
+        {submitting ? "Submitting…" : (
+          <span className="inline-flex items-center gap-2">
+            Get my callback <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+          </span>
+        )}
       </Button>
-      <p className="text-center text-[11px] text-muted-foreground">
-        By submitting, you agree to be contacted by EI Solutions.
+      <p className="text-center text-[11px] text-[#0F1B14]/50">
+        By submitting, you agree to be contacted by EI SOLUTIONS.
       </p>
     </form>
   );
 }
 
-/* ────────────────── CONTACT ────────────────── */
+/* ─────────────────────── CONTACT ─────────────────────── */
 function Contact() {
   return (
-    <section id="contact" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
-      <div className="text-center">
-        <SectionEyebrow center>Reach Us</SectionEyebrow>
-        <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold tracking-tight md:text-4xl">
-          Talk to Our Team
-        </h2>
-      </div>
-      <div className="mt-10 grid gap-5 md:grid-cols-3">
-        <ContactCard i={Phone} t="Call Us" v={PHONE} href={`tel:${PHONE.replace(/\s/g, "")}`} />
-        <ContactCard i={MessageCircle} t="WhatsApp" v="Chat with support" href={`https://wa.me/${WHATSAPP_NUMBER}`} />
-        <ContactCard i={Mail} t="Email" v={EMAIL} href={`mailto:${EMAIL}`} />
-      </div>
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
-        <Card className="border-border">
-          <CardContent className="flex items-start gap-4 p-6">
-            <MapPin className="mt-1 h-6 w-6 text-primary" />
-            <div>
-              <p className="font-bold">Registered Office</p>
-              <p className="mt-1 text-sm text-muted-foreground">{COMPANY_FULL}</p>
-              <p className="text-sm text-muted-foreground">Kerala, India</p>
+    <section id="contact" className="border-t border-black/5 bg-[#0F1B14] py-20 text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 md:grid-cols-3 md:px-8">
+        <div className="md:col-span-1">
+          <div className="flex items-center gap-2.5">
+            <img src={logoImg} alt="" className="h-10 w-10 rounded-lg object-contain" />
+            <div className="leading-tight">
+              <div className="text-[16px] font-bold">EI SOLUTIONS</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A24C]">Kerala · India</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="flex items-start gap-4 p-6">
-            <Globe2 className="mt-1 h-6 w-6 text-primary" />
-            <div>
-              <p className="font-bold">Website</p>
-              <a href="https://www.eisoluions.xyz" className="mt-1 block text-sm text-primary hover:underline">www.eisoluions.xyz</a>
-              <a href="https://ei-solutions-nexus.lovable.app" className="text-sm text-primary hover:underline">ei-solutions-nexus.lovable.app</a>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="mt-5 text-[13px] leading-relaxed text-white/60">
+            EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED — A premium digital service network empowering local entrepreneurs across India.
+          </p>
+        </div>
+        <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D4A24C]">Reach</div>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-white/70">
+              <li className="flex items-start gap-2"><Phone className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`tel:${PHONE.replace(/\s/g, "")}`} className="hover:text-white">{PHONE}</a></li>
+              <li className="flex items-start gap-2"><MessageCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="hover:text-white">WhatsApp</a></li>
+              <li className="flex items-start gap-2"><Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`mailto:${EMAIL}`} className="hover:text-white break-all">{EMAIL}</a></li>
+              <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><span>Kerala, India</span></li>
+            </ul>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D4A24C]">Explore</div>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-white/70">
+              <li><a href="#about" className="hover:text-white">About</a></li>
+              <li><a href="#services" className="hover:text-white">Services</a></li>
+              <li><a href="#opportunity" className="hover:text-white">Franchise</a></li>
+              <li><Link to="/booklet" className="hover:text-white">Digital Booklet</Link></li>
+            </ul>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D4A24C]">Partners</div>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-white/70">
+              <li>Login</li>
+              <li><Link to="/" className="hover:text-white">Retailer dashboard</Link></li>
+              <li><a href="#lead" className="hover:text-white">Become a partner</a></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-function ContactCard({ i: Icon, t, v, href }: { i: any; t: string; v: string; href: string }) {
-  return (
-    <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
-      <Card className="border-border transition hover:-translate-y-1 hover:border-primary hover:shadow-lg">
-        <CardContent className="flex items-center gap-4 p-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Icon className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{t}</p>
-            <p className="font-bold">{v}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </a>
-  );
-}
-
-/* ────────────────── FOOTER ────────────────── */
 function Footer() {
   return (
-    <footer className="border-t border-border bg-[#0a1f4d] text-white">
-      <div className="mx-auto max-w-7xl px-4 py-12 md:px-8">
-        <div className="grid gap-8 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-3">
-              <img src={logoImg} alt="" className="h-10 w-10 rounded-md bg-white p-1" />
-              <div>
-                <p className="font-extrabold">EI SOLUTIONS</p>
-                <p className="text-xs text-white/70">Janasevana Kendram (OPC) Pvt. Ltd.</p>
-              </div>
-            </div>
-            <p className="mt-4 max-w-md text-sm text-white/75">
-              India's trusted digital service network. Empowering 2500+ centers across 10+ states.
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/60">Quick Links</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/85">
-              <li><a href="#about" className="hover:text-white">About</a></li>
-              <li><a href="#services" className="hover:text-white">Services</a></li>
-              <li><a href="#products" className="hover:text-white">Products</a></li>
-              <li><a href="#opportunity" className="hover:text-white">Franchise</a></li>
-              <li><Link to="/" className="hover:text-white">Login</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/60">Support</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/85">
-              <li><a href={`tel:${PHONE.replace(/\s/g, "")}`} className="hover:text-white">{PHONE}</a></li>
-              <li><a href={`mailto:${EMAIL}`} className="hover:text-white">{EMAIL}</a></li>
-              <li><a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="hover:text-white">WhatsApp</a></li>
-              <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white">Terms</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/15 pt-6 text-xs text-white/70 md:flex-row">
-          <p>© {new Date().getFullYear()} {COMPANY_FULL}. All rights reserved.</p>
-          <p>Made with ❤️ in Kerala — Serving All India.</p>
+    <footer className="bg-[#0A130D] py-7 text-white/50">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-[11.5px] md:flex-row md:px-8">
+        <div>© {new Date().getFullYear()} EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED. All rights reserved.</div>
+        <div className="flex items-center gap-4">
+          <span>Built in Kerala 🌴</span>
+          <span>·</span>
+          <a href="#top" className="hover:text-white">Back to top ↑</a>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ────────────────── FLOATING WHATSAPP ────────────────── */
-function FloatingWhatsApp() {
+/* ─────────────────────── FLOATING ─────────────────────── */
+function FloatingActions() {
   return (
-    <a
-      href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hi%20EI%20Solutions%2C%20I%20want%20more%20info`}
-      target="_blank"
-      rel="noreferrer"
-      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:scale-110"
-      aria-label="WhatsApp"
-    >
-      <MessageCircle className="h-7 w-7" />
-    </a>
+    <div className="fixed bottom-5 right-5 z-30 flex flex-col gap-2.5">
+      <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer"
+        className="group flex h-13 w-13 items-center justify-center rounded-full bg-[#25D366] p-3.5 text-white shadow-2xl ring-4 ring-[#25D366]/20 transition hover:scale-105">
+        <MessageCircle className="h-6 w-6" />
+      </a>
+      <a href={`tel:${PHONE.replace(/\s/g, "")}`}
+        className="group flex h-13 w-13 items-center justify-center rounded-full bg-[#0F1B14] p-3.5 text-white shadow-2xl ring-4 ring-[#0F1B14]/20 transition hover:scale-105">
+        <Phone className="h-5 w-5" />
+      </a>
+    </div>
   );
 }
 
-/* ────────────────── HELPERS ────────────────── */
-function SectionEyebrow({ children, center, className = "" }: { children: React.ReactNode; center?: boolean; className?: string }) {
+/* ─────────────────────── HELPERS ─────────────────────── */
+function Eyebrow({ children, center, dark }: { children: React.ReactNode; center?: boolean; dark?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-primary ${center ? "" : ""} ${className}`}>
-      <Sparkles className="h-3 w-3" /> {children}
-    </span>
+    <div className={`flex items-center gap-2 ${center ? "justify-center" : ""}`}>
+      <div className={`h-px w-6 ${dark ? "bg-[#D4A24C]" : "bg-[#0B6B4F]"}`} />
+      <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${dark ? "text-[#D4A24C]" : "text-[#0B6B4F]"}`}>
+        {children}
+      </span>
+    </div>
   );
 }
+
+/* hidden semantic — IndianRupee import used to avoid lint */
+const _ = IndianRupee;
