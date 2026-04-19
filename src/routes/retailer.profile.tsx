@@ -47,6 +47,8 @@ function RetailerProfile() {
   const [history, setHistory] = useState<UserEditLog[]>([]);
   const [reissues, setReissues] = useState<CertificateReissueRequest[]>([]);
   const [staffCount, setStaffCount] = useState(0);
+  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
+  const [couponCount, setCouponCount] = useState(0);
 
   useEffect(() => {
     setName(appUser?.name || "");
@@ -59,6 +61,8 @@ function RetailerProfile() {
     const unsub = subscribeMyReissues(appUser.uid, setReissues);
     getDocs(query(collection(db, "users"), where("parentRetailerId", "==", appUser.uid)))
       .then((snap) => setStaffCount(snap.size)).catch(() => setStaffCount(0));
+    getPsaIdRecord(appUser.uid).then(setPsa).catch(() => setPsa(null));
+    countSuccessfulCouponPurchases(appUser.uid).then(setCouponCount).catch(() => setCouponCount(0));
     return unsub;
   }, [appUser]);
 
