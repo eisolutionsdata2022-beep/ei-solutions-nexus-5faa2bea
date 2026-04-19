@@ -1,48 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, Download, Image, FileImage, IndianRupee } from "lucide-react";
-import posterBg1 from "@/assets/poster-template.jpeg";
-import posterBg2 from "@/assets/poster-template-2.jpeg";
-import posterBg3 from "@/assets/poster-template-3.jpeg";
-import posterBg4 from "@/assets/poster-template-4.jpeg";
+import {
+  Printer, Download, Image as ImageIcon, FileImage, IndianRupee,
+  ArrowLeft, Share2, Maximize2, Upload, Palette,
+} from "lucide-react";
+import { toast } from "sonner";
 import JpgToPdfConverter from "@/components/tools/JpgToPdfConverter";
 import ServiceBilling from "@/components/tools/ServiceBilling";
+import { PosterTemplateGallery } from "@/components/tools/PosterTemplateGallery";
+import {
+  ALL_POSTER_TEMPLATES, defaultDataForCategory, getCanvasSize,
+  type PosterTemplate, type PosterData, type PosterFormat,
+} from "@/lib/poster-template-engine";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
   component: PageToolsPage,
 });
 
-const TEMPLATES = [
-  { id: "1", name: "Classic", src: posterBg1 },
-  { id: "2", name: "Green Wave", src: posterBg2 },
-  { id: "3", name: "Tricolor", src: posterBg3 },
-  { id: "4", name: "Saffron", src: posterBg4 },
-];
-
-const DEFAULT_SERVICES = [
-  "ആധാർ സേവനങ്ങൾ",
-  "പാൻ കാർഡ് സേവനങ്ങൾ",
-  "പാസ്പോർട്ട് സേവനങ്ങൾ",
-  "ഇൻഷുറൻസ് സേവനങ്ങൾ",
-  "സ്കോളർഷിപ്പ് സേവനങ്ങൾ",
-  "ട്രെയിൻ / ഫ്ലൈറ്റ് ടിക്കറ്റ് ബുക്കിംഗ്",
-  "ബില്ല് പേയ്മെന്റ് സേവനങ്ങൾ",
-  "സർട്ടിഫിക്കറ്റ് സേവനങ്ങൾ",
-];
-
 function PageToolsPage() {
   return (
     <Tabs defaultValue="poster" className="h-full">
       <TabsList className="mb-4">
         <TabsTrigger value="poster">
-          <Image className="w-4 h-4 mr-1.5" /> Poster Editor
+          <ImageIcon className="w-4 h-4 mr-1.5" /> Poster Editor
         </TabsTrigger>
         <TabsTrigger value="jpg2pdf">
           <FileImage className="w-4 h-4 mr-1.5" /> JPG to PDF
@@ -52,7 +39,7 @@ function PageToolsPage() {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="poster" className="h-[calc(100%-60px)]">
+      <TabsContent value="poster">
         <PosterEditor />
       </TabsContent>
 
@@ -67,193 +54,379 @@ function PageToolsPage() {
   );
 }
 
+const ACCENT_PRESETS = [
+  "#D4AF37", "#FACC15", "#F59E0B", "#EF4444", "#DC2626",
+  "#7C2D12", "#138808", "#10B981", "#06B6D4", "#3B82F6",
+  "#1E40AF", "#000080", "#7B2CBF", "#000000", "#FFFFFF",
+];
+
+// =============================================================================
+// POSTER EDITOR
+// =============================================================================
+
 function PosterEditor() {
-  const [selectedTemplate, setSelectedTemplate] = useState("1");
-  const [cspId, setCspId] = useState("");
-  const [heading, setHeading] = useState("ജന സേവന കേന്ദ്രം");
-  const [subHeading, setSubHeading] = useState("EI SOLUTIONS JANASEVANA KENDRAM");
-  const [servicesText, setServicesText] = useState(DEFAULT_SERVICES.join("\n"));
-  const [contact, setContact] = useState("");
-  const [location, setLocation] = useState("");
+  const [phase, setPhase] = useState<"gallery" | "editor">("gallery");
+  const [selected, setSelected] = useState<PosterTemplate | null>(null);
+  const [format, setFormat] = useState<PosterFormat>("a4");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [accentColor, setAccentColor] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // Form data
+  const [data, setData] = useState<PosterData>({
+    cspId: "",
+    heading: "ജന സേവന കേന്ദ്രം",
+    subHeading: "EI SOLUTIONS — ALL DIGITAL SERVICES",
+    tagline: "AUTHORIZED SERVICE PARTNER",
+    services: defaultDataForCategory("All Services").services,
+    contact: "",
+    whatsapp: "",
+    location: "",
+    logoUrl: null,
+    brandName: "EI SOLUTIONS",
+  });
+
+  const handlePickTemplate = (t: PosterTemplate) => {
+    setSelected(t);
+    const def = defaultDataForCategory(t.category);
+    setData(d => ({ ...d, subHeading: def.subHeading, services: def.services }));
+    setPhase("editor");
+  };
+
+  const handleLogoUpload = (file: File | null) => {
+    if (!file) { setLogoUrl(null); return; }
+    if (file.size > 1.5 * 1024 * 1024) { toast.error("Logo must be under 1.5 MB"); return; }
+    const r = new FileReader();
+    r.onload = () => setLogoUrl(r.result as string);
+    r.readAsDataURL(file);
+  };
+
+  if (phase === "gallery") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold">🎨 Choose a Poster Template</h2>
+            <p className="text-xs text-muted-foreground">
+              {ALL_POSTER_TEMPLATES.length} professional templates · 15 service categories · Fully editable
+            </p>
+          </div>
+        </div>
+        <PosterTemplateGallery selectedId={selected?.id ?? null} onSelect={handlePickTemplate} />
+      </div>
+    );
+  }
+
+  // Editor phase
+  return (
+    <PosterEditorPhase
+      template={selected!}
+      data={{ ...data, logoUrl }}
+      setData={setData}
+      format={format}
+      setFormat={setFormat}
+      accentColor={accentColor}
+      setAccentColor={setAccentColor}
+      logoUrl={logoUrl}
+      onLogoUpload={handleLogoUpload}
+      onBack={() => setPhase("gallery")}
+      fullscreen={fullscreen}
+      setFullscreen={setFullscreen}
+    />
+  );
+}
+
+// =============================================================================
+// EDITOR PHASE
+// =============================================================================
+
+interface EditorProps {
+  template: PosterTemplate;
+  data: PosterData;
+  setData: React.Dispatch<React.SetStateAction<PosterData>>;
+  format: PosterFormat;
+  setFormat: (f: PosterFormat) => void;
+  accentColor: string | null;
+  setAccentColor: (c: string | null) => void;
+  logoUrl: string | null;
+  onLogoUpload: (f: File | null) => void;
+  onBack: () => void;
+  fullscreen: boolean;
+  setFullscreen: (b: boolean) => void;
+}
+
+function PosterEditorPhase({
+  template, data, setData, format, setFormat, accentColor, setAccentColor,
+  logoUrl, onLogoUpload, onBack, fullscreen, setFullscreen,
+}: EditorProps) {
   const posterRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const services = servicesText.split("\n").filter((s) => s.trim());
-  const currentTemplate = TEMPLATES.find((t) => t.id === selectedTemplate)!;
+  const servicesText = data.services.join("\n");
 
-  const captureDataUrl = async (type: "png" | "jpeg" = "png") => {
+  const html = useMemo(
+    () => template.render(data, { accentColor: accentColor || undefined, format }),
+    [template, data, accentColor, format],
+  );
+
+  const { w, h } = getCanvasSize(format);
+
+  const captureDataUrl = async (type: "png" | "jpeg" = "png"): Promise<string | null> => {
     const el = posterRef.current;
     if (!el) return null;
     const { toPng, toJpeg } = await import("html-to-image");
     const fn = type === "jpeg" ? toJpeg : toPng;
-    return fn(el, { pixelRatio: 3, cacheBust: true });
+    return fn(el, { pixelRatio: 3, cacheBust: true, width: w, height: h });
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      toast.loading("Generating PDF...", { id: "pdf" });
+      const imgData = await captureDataUrl("jpeg");
+      if (!imgData) return;
+      const { default: jsPDF } = await import("jspdf");
+      const orientation = format === "story" ? "portrait" : format === "square" ? "portrait" : "portrait";
+      const pdf = new jsPDF({ orientation, unit: "px", format: [w, h] });
+      pdf.addImage(imgData, "JPEG", 0, 0, w, h);
+      pdf.save(`EI-Poster-${template.category.replace(/\s/g, "-")}.pdf`);
+      toast.success("PDF downloaded", { id: "pdf" });
+    } catch (e) { console.error(e); toast.error("PDF failed", { id: "pdf" }); }
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      toast.loading("Rendering image...", { id: "img" });
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
+      const link = document.createElement("a");
+      link.download = `EI-Poster-${template.category.replace(/\s/g, "-")}.png`;
+      link.href = imgData;
+      link.click();
+      toast.success("Image downloaded", { id: "img" });
+    } catch (e) { console.error(e); toast.error("Image failed", { id: "img" }); }
+  };
+
+  const handleWhatsAppShare = async () => {
+    try {
+      toast.loading("Preparing share...", { id: "share" });
+      const imgData = await captureDataUrl("png");
+      if (!imgData) return;
+      const blob = await (await fetch(imgData)).blob();
+      const file = new File([blob], `poster-${template.category}.png`, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: data.heading, text: `${data.subHeading}\n${data.contact}` });
+        toast.success("Shared!", { id: "share" });
+      } else {
+        // Fallback: download + open WhatsApp web
+        const link = document.createElement("a");
+        link.download = `poster-${template.category}.png`;
+        link.href = imgData;
+        link.click();
+        const text = encodeURIComponent(`${data.heading}\n${data.subHeading}\n📞 ${data.contact}`);
+        window.open(`https://wa.me/?text=${text}`, "_blank");
+        toast.success("Image saved. Attach in WhatsApp.", { id: "share" });
+      }
+    } catch (e) { console.error(e); toast.error("Share failed", { id: "share" }); }
   };
 
   const handlePrint = async () => {
     try {
       const imgData = await captureDataUrl("png");
       if (!imgData) return;
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) return;
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html><head><title>Poster Print</title>
-        <style>
-          @page { size: A4 portrait; margin: 0; }
-          body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-          img { width: 100%; height: 100%; object-fit: contain; }
-        </style></head>
-        <body><img src="${imgData}" /></body></html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => { printWindow.print(); printWindow.close(); }, 600);
-    } catch (e) {
-      console.error("Print failed", e);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    try {
-      const imgData = await captureDataUrl("jpeg");
-      if (!imgData) return;
-      const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
-      pdf.save("EI-Solutions-Poster.pdf");
-    } catch (e) {
-      console.error("PDF generation failed", e);
-    }
-  };
-
-  const handleDownloadImage = async () => {
-    try {
-      const imgData = await captureDataUrl("png");
-      if (!imgData) return;
-      const link = document.createElement("a");
-      link.download = "EI-Solutions-Poster.png";
-      link.href = imgData;
-      link.click();
-    } catch (e) {
-      console.error("Image download failed", e);
-    }
+      const win = window.open("", "_blank");
+      if (!win) return;
+      win.document.write(`<!DOCTYPE html><html><head><title>Print Poster</title>
+        <style>@page{size:A4 portrait;margin:0}body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh}img{width:100%;height:100%;object-fit:contain}</style>
+        </head><body><img src="${imgData}" /></body></html>`);
+      win.document.close();
+      setTimeout(() => { win.print(); win.close(); }, 600);
+    } catch (e) { console.error(e); }
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-full">
-      <Card className="lg:w-80 shrink-0 overflow-y-auto max-h-[calc(100vh-200px)]">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">📝 Poster Editor</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="space-y-3">
+      {/* Top bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Templates
+          </Button>
           <div>
-            <Label className="mb-2 block">Template തിരഞ്ഞെടുക്കുക</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTemplate(t.id)}
-                  className={`relative rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedTemplate === t.id
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <img src={t.src} alt={t.name} className="w-full h-20 object-cover" />
-                  <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] py-0.5 text-center">
-                    {t.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label>CSP ID</Label>
-            <Input value={cspId} onChange={(e) => setCspId(e.target.value)} placeholder="CSP ID..." />
-          </div>
-          <div>
-            <Label>Heading</Label>
-            <Input value={heading} onChange={(e) => setHeading(e.target.value)} />
-          </div>
-          <div>
-            <Label>Sub Heading</Label>
-            <Input value={subHeading} onChange={(e) => setSubHeading(e.target.value)} />
-          </div>
-          <div>
-            <Label>Services (one per line)</Label>
-            <Textarea
-              rows={8}
-              value={servicesText}
-              onChange={(e) => setServicesText(e.target.value)}
-              className="text-xs"
-            />
-          </div>
-          <div>
-            <Label>Contact Number</Label>
-            <Input value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Phone number..." />
-          </div>
-          <div>
-            <Label>Location</Label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location..." />
-          </div>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <div className="flex gap-2">
-              <Button onClick={handleDownloadPDF} className="flex-1 bg-gov-blue hover:bg-gov-blue/90">
-                <Download className="w-4 h-4 mr-1" /> PDF
-              </Button>
-              <Button onClick={handleDownloadImage} className="flex-1 bg-gov-green hover:bg-gov-green/90 text-white">
-                <Image className="w-4 h-4 mr-1" /> Image
-              </Button>
-            </div>
-            <Button onClick={handlePrint} variant="outline" className="w-full">
-              <Printer className="w-4 h-4 mr-1" /> Print
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex-1 flex items-start justify-center overflow-auto">
-        <div
-          ref={posterRef}
-          className="relative bg-white shadow-xl"
-          style={{ width: 595, height: 842, fontFamily: "'Noto Sans Malayalam', sans-serif" }}
-        >
-          <img
-            src={currentTemplate.src}
-            alt="Poster template"
-            className="absolute inset-0 w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
-          <div className="absolute text-black font-bold" style={{ top: "3.2%", left: "14%", fontSize: 13 }}>
-            {cspId}
-          </div>
-          <div
-            className="absolute w-full text-center font-extrabold text-[#1a237e]"
-            style={{ top: "23%", left: 0, fontSize: 32, lineHeight: 1.2, textShadow: "0 1px 2px rgba(0,0,0,0.1)" }}
-          >
-            {heading}
-          </div>
-          <div className="absolute w-full text-center font-bold text-[#333]" style={{ top: "29.5%", left: 0, fontSize: 14 }}>
-            {subHeading}
-          </div>
-          <div className="absolute" style={{ top: "37%", left: "10%", width: "55%", fontSize: 12.5, lineHeight: 2.05 }}>
-            {services.map((s, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <span className="text-green-600 text-sm">✅</span>
-                <span className="font-bold text-[#222]">{s}</span>
-              </div>
-            ))}
-          </div>
-          <div className="absolute font-bold text-[#222]" style={{ top: "86.5%", left: "19%", fontSize: 12 }}>
-            {contact}
-          </div>
-          <div className="absolute font-bold text-[#222]" style={{ top: "89.5%", left: "19%", fontSize: 12 }}>
-            {location}
+            <p className="text-sm font-bold leading-tight">{template.name}</p>
+            <p className="text-[10px] text-muted-foreground capitalize">{template.style} · {template.category}</p>
           </div>
         </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <FormatToggle format={format} setFormat={setFormat} />
+          <Button size="sm" variant="outline" onClick={() => setFullscreen(true)}>
+            <Maximize2 className="w-3.5 h-3.5 mr-1" /> Preview
+          </Button>
+          <Button size="sm" onClick={handleDownloadPDF} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Download className="w-3.5 h-3.5 mr-1" /> PDF
+          </Button>
+          <Button size="sm" onClick={handleDownloadImage} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <ImageIcon className="w-3.5 h-3.5 mr-1" /> PNG
+          </Button>
+          <Button size="sm" onClick={handleWhatsAppShare} className="bg-green-500 hover:bg-green-600 text-white">
+            <Share2 className="w-3.5 h-3.5 mr-1" /> Share
+          </Button>
+          <Button size="sm" variant="outline" onClick={handlePrint}>
+            <Printer className="w-3.5 h-3.5 mr-1" /> Print
+          </Button>
+        </div>
       </div>
+
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Left form */}
+        <Card className="lg:w-80 shrink-0 max-h-[calc(100vh-220px)] overflow-y-auto">
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <Label className="text-xs">CSP ID</Label>
+              <Input value={data.cspId} onChange={e => setData(d => ({ ...d, cspId: e.target.value }))} placeholder="CSP12345" />
+            </div>
+            <div>
+              <Label className="text-xs">Heading</Label>
+              <Input value={data.heading} onChange={e => setData(d => ({ ...d, heading: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Sub Heading</Label>
+              <Input value={data.subHeading} onChange={e => setData(d => ({ ...d, subHeading: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Tagline (small badge)</Label>
+              <Input value={data.tagline} onChange={e => setData(d => ({ ...d, tagline: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Brand Name (footer)</Label>
+              <Input value={data.brandName} onChange={e => setData(d => ({ ...d, brandName: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Services (one per line, max 8)</Label>
+              <Textarea
+                rows={7}
+                value={servicesText}
+                onChange={e => setData(d => ({ ...d, services: e.target.value.split("\n") }))}
+                className="text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">📞 Contact</Label>
+              <Input value={data.contact} onChange={e => setData(d => ({ ...d, contact: e.target.value }))} placeholder="9876543210" />
+            </div>
+            <div>
+              <Label className="text-xs">💬 WhatsApp</Label>
+              <Input value={data.whatsapp} onChange={e => setData(d => ({ ...d, whatsapp: e.target.value }))} placeholder="9876543210" />
+            </div>
+            <div>
+              <Label className="text-xs">📍 Location</Label>
+              <Input value={data.location} onChange={e => setData(d => ({ ...d, location: e.target.value }))} placeholder="Town / Village" />
+            </div>
+
+            {/* Logo upload */}
+            <div className="pt-2 border-t">
+              <Label className="text-xs flex items-center gap-1"><Upload className="w-3 h-3" /> Custom Logo</Label>
+              <div className="flex items-center gap-2 mt-1">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="" className="w-10 h-10 object-contain border rounded bg-white" />
+                ) : (
+                  <div className="w-10 h-10 border rounded bg-muted flex items-center justify-center text-[9px] text-muted-foreground">No logo</div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => onLogoUpload(e.target.files?.[0] ?? null)}
+                />
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => fileInputRef.current?.click()}>
+                  Upload
+                </Button>
+                {logoUrl && <Button size="sm" variant="ghost" className="text-xs" onClick={() => onLogoUpload(null)}>Remove</Button>}
+              </div>
+            </div>
+
+            {/* Accent color */}
+            <div className="pt-2 border-t">
+              <Label className="text-xs flex items-center gap-1"><Palette className="w-3 h-3" /> Accent Color</Label>
+              <div className="grid grid-cols-8 gap-1 mt-1">
+                <button
+                  onClick={() => setAccentColor(null)}
+                  title="Default"
+                  className={`w-7 h-7 rounded border-2 flex items-center justify-center text-[8px] font-bold ${
+                    accentColor === null ? "border-primary ring-2 ring-primary/30" : "border-border"
+                  }`}
+                  style={{ background: "linear-gradient(135deg,#fff 50%,#000 50%)" }}
+                >
+                </button>
+                {ACCENT_PRESETS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setAccentColor(c)}
+                    title={c}
+                    className={`w-7 h-7 rounded border-2 ${
+                      accentColor === c ? "border-primary ring-2 ring-primary/30" : "border-border"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right preview */}
+        <div className="flex-1 flex items-start justify-center overflow-auto bg-muted/30 rounded-lg p-3 min-h-[400px]">
+          <div
+            ref={posterRef}
+            className="bg-white shadow-2xl"
+            style={{ width: w, height: h, transform: w > 600 ? "scale(0.85)" : "scale(1)", transformOrigin: "top center" }}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </div>
+      </div>
+
+      {/* Fullscreen preview */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-auto" onClick={() => setFullscreen(false)}>
+          <div
+            className="bg-white shadow-2xl"
+            style={{ width: w, height: h }}
+            dangerouslySetInnerHTML={{ __html: html }}
+            onClick={e => e.stopPropagation()}
+          />
+          <Button
+            className="fixed top-4 right-4"
+            variant="secondary"
+            onClick={() => setFullscreen(false)}
+          >
+            Close ✕
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormatToggle({ format, setFormat }: { format: PosterFormat; setFormat: (f: PosterFormat) => void }) {
+  const opts: Array<{ v: PosterFormat; label: string }> = [
+    { v: "a4", label: "A4" },
+    { v: "story", label: "Story 9:16" },
+    { v: "square", label: "Square 1:1" },
+  ];
+  return (
+    <div className="inline-flex rounded-md border bg-background overflow-hidden">
+      {opts.map(o => (
+        <button
+          key={o.v}
+          onClick={() => setFormat(o.v)}
+          className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+            format === o.v ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
