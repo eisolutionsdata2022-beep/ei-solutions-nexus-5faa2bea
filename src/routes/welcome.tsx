@@ -70,7 +70,7 @@ function Aurora() {
 }
 
 /* ─────────────────────── NAV ─────────────────────── */
-function Navbar() {
+function Navbar({ logo, brand }: { logo: string; brand: string }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -82,11 +82,11 @@ function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 md:px-8">
         <a href="#top" className="flex items-center gap-2.5">
           <div className="relative">
-            <img src={logoImg} alt="EI SOLUTIONS" className="h-9 w-9 rounded-lg object-contain" />
+            <img src={logo} alt={brand} className="h-9 w-9 rounded-lg object-contain" />
             <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#0B6B4F] ring-2 ring-[#FAF7F0]" />
           </div>
           <div className="leading-tight">
-            <p className="text-[15px] font-bold tracking-tight text-[#0F1B14]">EI SOLUTIONS</p>
+            <p className="text-[15px] font-bold tracking-tight text-[#0F1B14]">{brand}</p>
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#0B6B4F]">Kerala · India</p>
           </div>
         </a>
@@ -111,7 +111,7 @@ function Navbar() {
 }
 
 /* ─────────────────────── HERO ─────────────────────── */
-function Hero() {
+function Hero({ content, whatsapp }: { content: LandingContent; whatsapp: string }) {
   return (
     <section id="top" className="relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-20 md:px-8 md:pt-20 md:pb-28">
