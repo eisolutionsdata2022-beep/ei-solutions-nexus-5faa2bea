@@ -97,6 +97,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Money Transfer (DMT)", to: "/retailer/money-transfer", icon: ArrowLeftRight },
     { label: "CV Builder", to: "/retailer/cv-builder", icon: CVIcon },
     { label: "Trainings", to: "/retailer/trainings", icon: GraduationCap },
+    { label: "Training Guide", to: "/retailer/training-guide", icon: BookOpen },
     { label: "KYC", to: "/retailer/kyc", icon: CheckCircle },
     { label: "Virtual", to: "/retailer/virtual-trainer", icon: BotMessageSquare },
     { label: "Page Tools", to: "/retailer/page-tools", icon: FileText },
