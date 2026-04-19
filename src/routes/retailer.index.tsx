@@ -160,13 +160,37 @@ function RetailerDashboard() {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Notice Board Marquee */}
       <NoticeMarquee />
 
+      {/* Premium Greeting Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-premium-gradient p-6 text-white shadow-premium">
+        <div className="pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full bg-white/15 blur-3xl animate-blob" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-white/10 blur-3xl animate-blob [animation-delay:-7s]" aria-hidden />
+        <div className="relative flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80 font-semibold">Retailer Dashboard</p>
+            <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Welcome back, {appUser?.name?.split(" ")[0] || "Partner"} 👋
+            </h1>
+            <p className="mt-1 text-sm text-white/85">
+              Here's a snapshot of your business — services, wallet and recent activity at a glance.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/retailer/my-services">
+              <Button variant="secondary" className="font-semibold bg-white/95 text-foreground hover:bg-white">
+                <Sparkles className="w-4 h-4 mr-1.5" /> My Services
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* PSA ID Congratulations Banner */}
       {psa && !psaDismissed && (
-        <div className="rounded-xl bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white shadow-lg flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+        <div className="rounded-2xl bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white shadow-premium flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">
               🎉
@@ -192,23 +216,32 @@ function RetailerDashboard() {
         </div>
       )}
 
-      {/* Wallet + VLE ID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-card rounded-lg border border-border p-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-gov-blue flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-white" />
+      {/* Wallet + VLE ID — premium glass cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Wallet card */}
+        <div className="glass-card group relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5">
+          <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-premium-gradient opacity-20 blur-3xl" aria-hidden />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-premium-gradient flex items-center justify-center shadow-premium">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Wallet Balance</p>
+                <p className="text-3xl font-extrabold tracking-tight text-foreground">
+                  ₹{balance.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Wallet Balance</p>
-              <p className="text-2xl font-bold text-foreground">₹{balance.toLocaleString("en-IN", { minimumFractionDigits: 0 })}</p>
-            </div>
+            <Link to="/retailer/wallet">
+              <Button className="bg-premium-gradient text-white font-bold border-0 shadow-premium hover:opacity-95">
+                Recharge
+              </Button>
+            </Link>
           </div>
-          <Link to="/retailer/wallet">
-            <Button className="bg-gov-green hover:opacity-90 text-white font-bold">Recharge</Button>
-          </Link>
         </div>
 
+        {/* VLE ID card */}
         <button
           type="button"
           onClick={() => {
@@ -218,37 +251,43 @@ function RetailerDashboard() {
               () => toast.error("Could not copy VLE ID"),
             );
           }}
-          className="bg-card rounded-lg border border-border p-5 flex items-center justify-between text-left transition hover:border-primary/50 hover:shadow-sm active:scale-[0.99]"
+          className="glass-card group relative overflow-hidden rounded-2xl p-5 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99]"
           title="Click to copy your EI SOLUTIONS VLE ID"
         >
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0">
-              <IdCard className="w-6 h-6 text-white" />
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 opacity-20 blur-3xl" aria-hidden />
+          <div className="relative flex items-center justify-between gap-3">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0 shadow-premium">
+                <IdCard className="w-6 h-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                  EI SOLUTIONS VLE ID
+                  <Copy className="w-3 h-3 opacity-60" />
+                </p>
+                <p className="text-2xl font-extrabold text-foreground font-mono tracking-wider truncate">
+                  {generateVleId(appUser?.uid, appUser?.phone)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                EI SOLUTIONS VLE ID
-                <Copy className="w-3 h-3 opacity-60" />
-              </p>
-              <p className="text-2xl font-bold text-foreground font-mono tracking-wider truncate">
-                {generateVleId(appUser?.uid, appUser?.phone)}
-              </p>
-            </div>
+            <Link
+              to="/retailer/pan-portal"
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0"
+            >
+              <Button variant="outline" className="font-semibold backdrop-blur">PAN Portal</Button>
+            </Link>
           </div>
-          <Link
-            to="/retailer/pan-portal"
-            onClick={(e) => e.stopPropagation()}
-            className="shrink-0"
-          >
-            <Button variant="outline" className="font-semibold">PAN Portal</Button>
-          </Link>
         </button>
       </div>
 
       {/* Service Buttons */}
       {serviceButtons.length > 0 && (
-        <div className="bg-card rounded-lg border border-border p-5">
-          <p className="text-sm font-semibold text-foreground mb-3">Quick Services</p>
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-7 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <p className="text-sm font-bold text-foreground uppercase tracking-wider">Quick Services</p>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {serviceButtons.map((b) => {
               const isDisabled = disabledServices.has(b.name);
@@ -263,7 +302,7 @@ function RetailerDashboard() {
                       window.open(b.url, "_blank", "noopener,noreferrer");
                     }
                   }}
-                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] ${isDisabled ? "opacity-50 cursor-not-allowed" : ""} ${getButtonClasses(b.style, !!b.customColor)}`}
+                  className={`inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-base font-bold transition-all min-h-[56px] hover:-translate-y-0.5 hover:shadow-premium ${isDisabled ? "opacity-50 cursor-not-allowed" : ""} ${getButtonClasses(b.style, !!b.customColor)}`}
                   style={getButtonInlineStyle(b.style, b.customColor)}
                 >
                   {b.iconUrl ? (
@@ -279,57 +318,74 @@ function RetailerDashboard() {
         </div>
       )}
 
-      {/* Status Cards */}
+      {/* Status Cards — premium gradient tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatusCard icon={Clock} label="Pending" count={statusCounts.pending} borderColor="border-warning" bgColor="bg-warning/10" textColor="text-warning" />
-        <StatusCard icon={AlertCircle} label="Processing" count={0} borderColor="border-gov-saffron" bgColor="bg-gov-saffron/10" textColor="text-gov-saffron" />
-        <StatusCard icon={CheckCircle} label="Approved" count={statusCounts.approved} borderColor="border-success" bgColor="bg-success/10" textColor="text-success" />
-        <StatusCard icon={XCircle} label="Rejected" count={statusCounts.rejected} borderColor="border-destructive" bgColor="bg-destructive/10" textColor="text-destructive" />
+        <PremiumStatTile icon={Clock} label="Pending" count={statusCounts.pending} gradient="from-amber-500 to-orange-500" />
+        <PremiumStatTile icon={AlertCircle} label="Processing" count={0} gradient="from-orange-500 to-rose-500" />
+        <PremiumStatTile icon={CheckCircle} label="Approved" count={statusCounts.approved} gradient="from-emerald-500 to-teal-500" />
+        <PremiumStatTile icon={XCircle} label="Rejected" count={statusCounts.rejected} gradient="from-rose-500 to-red-600" />
       </div>
 
       {/* Search */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+          <Input
+            placeholder="Search applications by name or ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-11 rounded-xl bg-background/70 backdrop-blur border-border/70 focus-visible:ring-primary/40"
+          />
         </div>
-        <Button variant="outline" className="border-gov-blue text-gov-blue font-bold">Filter &gt;</Button>
+        <Button variant="outline" className="h-11 rounded-xl font-semibold border-border/70 backdrop-blur">
+          Filter
+        </Button>
       </div>
 
       {/* Recent Applications */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-gov-blue">Recent Applications</h2>
+      <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Recent Applications</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">{filteredApps.length} record{filteredApps.length === 1 ? "" : "s"}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Application No.</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Service Name</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Applied Date</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Status</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-gov-blue text-xs">Action</th>
+              <tr className="border-b border-border/60 bg-muted/40">
+                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Application No.</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Service Name</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Applied Date</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredApps.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No applications yet.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No applications yet.</td></tr>
               ) : (
                 filteredApps.map((app) => (
-                  <tr key={app.id} className="border-b border-border/50 hover:bg-muted/50">
-                    <td className="px-4 py-2.5 font-mono text-xs">{app.id.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-4 py-2.5">{app.serviceName || "—"}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{new Date(app.createdAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full border capitalize ${
+                  <tr key={app.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs">{app.id.slice(0, 8).toUpperCase()}</td>
+                    <td className="px-4 py-3 font-medium">{app.serviceName || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(app.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border capitalize ${
                         app.status === "approved" ? "bg-success/10 text-success border-success/30" :
                         app.status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/30" :
                         "bg-warning/10 text-warning border-warning/30"
-                      }`}>{app.status}</span>
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                          app.status === "approved" ? "bg-success" :
+                          app.status === "rejected" ? "bg-destructive" : "bg-warning"
+                        }`} />
+                        {app.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-2.5">
-                      <Button variant="outline" size="sm" className="text-xs border-gov-blue text-gov-blue h-7">
+                    <td className="px-4 py-3">
+                      <Button variant="outline" size="sm" className="text-xs h-7 rounded-lg backdrop-blur">
                         <Search className="w-3 h-3 mr-1" /> Track
                       </Button>
                     </td>
@@ -340,9 +396,9 @@ function RetailerDashboard() {
           </table>
         </div>
         {filteredApps.length > 0 && (
-          <div className="text-center py-3 border-t border-border">
+          <div className="text-center py-3 border-t border-border/60 bg-background/40">
             <Link to="/retailer/services">
-              <Button variant="outline" size="sm" className="text-xs border-gov-blue text-gov-blue">View All</Button>
+              <Button variant="outline" size="sm" className="text-xs rounded-lg">View All</Button>
             </Link>
           </div>
         )}
@@ -350,26 +406,31 @@ function RetailerDashboard() {
 
       {/* Bottom sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-            <h2 className="text-base font-bold text-gov-blue">Latest Updates</h2>
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center gap-2">
+            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Latest Updates</h2>
           </div>
           <div className="p-5 text-sm space-y-3">
             {recentTx.length === 0 ? (
               <p className="text-muted-foreground">No recent updates.</p>
             ) : (
               recentTx.slice(0, 3).map((tx) => (
-                <div key={tx.id} className="flex items-start gap-3 pb-3 border-b border-border/50 last:border-0 last:pb-0">
-                  {tx.type === "credit" ? (
-                    <ArrowDownLeft className="w-4 h-4 text-success mt-0.5 shrink-0" />
-                  ) : (
-                    <ArrowUpRight className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
-                  )}
-                  <div>
-                    <p className="text-foreground text-sm font-medium">{tx.description || tx.source}</p>
+                <div key={tx.id} className="flex items-start gap-3 pb-3 border-b border-border/40 last:border-0 last:pb-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    tx.type === "credit" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                  }`}>
+                    {tx.type === "credit" ? (
+                      <ArrowDownLeft className="w-4 h-4" />
+                    ) : (
+                      <ArrowUpRight className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground text-sm font-medium truncate">{tx.description || tx.source}</p>
                     <p className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className={`ml-auto font-semibold ${tx.type === "credit" ? "text-success" : "text-destructive"}`}>
+                  <span className={`font-bold tabular-nums ${tx.type === "credit" ? "text-success" : "text-destructive"}`}>
                     {tx.type === "credit" ? "+" : "-"}₹{tx.amount}
                   </span>
                 </div>
@@ -378,20 +439,28 @@ function RetailerDashboard() {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="bg-gov-blue-light border-b border-border px-5 py-3">
-            <h2 className="text-base font-bold text-gov-blue">Important Links</h2>
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center gap-2">
+            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Important Links</h2>
           </div>
-          <div className="p-5 space-y-3">
+          <div className="p-3">
             {[
               { icon: HelpCircle, label: "FAQs", to: "/retailer/services" },
               { icon: FileText, label: "Services List", to: "/retailer/services" },
               { icon: BarChart3, label: "Commission Chart", to: "/retailer/transactions" },
               { icon: ExternalLink, label: "KYC Verification", to: "/retailer/kyc" },
             ].map((link) => (
-              <Link key={link.label} to={link.to as any} className="flex items-center gap-3 text-sm text-gov-blue hover:underline font-medium">
-                <link.icon className="w-4 h-4" />
-                {link.label}
+              <Link
+                key={link.label}
+                to={link.to as any}
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground/80 hover:bg-muted/50 hover:text-foreground transition-all"
+              >
+                <div className="w-8 h-8 rounded-lg bg-premium-gradient/10 flex items-center justify-center text-primary group-hover:bg-premium-gradient group-hover:text-white transition-all">
+                  <link.icon className="w-4 h-4" />
+                </div>
+                <span className="flex-1">{link.label}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
             ))}
           </div>
@@ -408,16 +477,26 @@ function RetailerDashboard() {
   );
 }
 
-function StatusCard({ icon: Icon, label, count, borderColor, bgColor, textColor }: {
-  icon: React.ElementType; label: string; count: number; borderColor: string; bgColor: string; textColor: string;
+function PremiumStatTile({
+  icon: Icon, label, count, gradient,
+}: {
+  icon: React.ElementType; label: string; count: number; gradient: string;
 }) {
   return (
-    <div className={`rounded-lg border-2 p-3 text-center ${borderColor} ${bgColor}`}>
-      <div className="flex items-center justify-center gap-1.5 mb-1">
-        <Icon className={`w-3.5 h-3.5 ${textColor}`} />
-        <span className={`text-xs font-bold ${textColor}`}>{label}</span>
+    <div className="group relative overflow-hidden rounded-2xl glass-card p-4 transition-all hover:-translate-y-0.5">
+      <div
+        className={`pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-gradient-to-br ${gradient} opacity-25 blur-2xl group-hover:opacity-40 transition-opacity`}
+        aria-hidden
+      />
+      <div className="relative flex items-center justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
+          <p className="mt-1 text-3xl font-extrabold tracking-tight text-foreground tabular-nums">{count}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md text-white`}>
+          <Icon className="w-5 h-5" />
+        </div>
       </div>
-      <p className={`text-2xl font-bold ${textColor}`}>{count}</p>
     </div>
   );
 }
