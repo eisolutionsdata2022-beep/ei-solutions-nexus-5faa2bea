@@ -44,6 +44,7 @@ import {
   ExternalLink,
   IdCard,
   Download,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
