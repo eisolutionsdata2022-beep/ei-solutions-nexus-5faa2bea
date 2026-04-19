@@ -120,6 +120,29 @@ function RetailerProfile() {
     setReissueOpen(null); setReason("");
   };
 
+  const submitLegacy = async () => {
+    if (!appUser) return;
+    if (!legacyId.trim()) return toast.error("Enter your existing PSA ID");
+    setSavingLegacy(true);
+    try {
+      const rec = await claimLegacyPsaId({
+        uid: appUser.uid,
+        legacyPsaId: legacyId.trim(),
+        email: appUser.email,
+        name: appUser.name ?? null,
+        phone: (appUser as any).phone ?? null,
+      });
+      setPsa(rec);
+      toast.success(`PSA ID ${rec.psaId} linked to your account`);
+      setLegacyOpen(false);
+      setLegacyId("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save PSA ID");
+    } finally {
+      setSavingLegacy(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header card */}
