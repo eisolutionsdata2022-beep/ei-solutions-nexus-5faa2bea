@@ -131,21 +131,46 @@ function FinancePage() {
 
   if (!appUser) return null;
 
+  const activeCount = loans.filter((l) => l.status === "Active").length;
+  const overdueCount = loans.filter((l) => l.status === "Active" && new Date(l.dueDate) < new Date()).length;
+
   return (
-    <div className="container mx-auto p-4 space-y-4 max-w-7xl">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Banknote className="w-7 h-7 text-gov-blue" /> Finance
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {settings?.companyName || "Gold Loan"} · {settings?.branchName || "Main Branch"}
-          </p>
+    <div className="container mx-auto p-4 space-y-5 max-w-7xl">
+      {/* Premium gradient header */}
+      <header className="relative overflow-hidden rounded-2xl border border-gov-blue/20 bg-gradient-to-br from-gov-blue via-gov-blue-dark to-gov-blue p-5 sm:p-6 text-white shadow-lg">
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gov-saffron/30 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-gov-green/25 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-inner">
+              <Banknote className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Finance</h1>
+              <p className="text-xs sm:text-sm text-white/80">
+                {settings?.companyName || "Gold Loan"} · {settings?.branchName || "Main Branch"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/15 text-xs">
+              <span className="text-white/70">Active</span>{" "}
+              <span className="font-bold text-white">{activeCount}</span>
+            </div>
+            <div className={`px-3 py-1.5 rounded-lg backdrop-blur-sm border text-xs ${
+              overdueCount > 0
+                ? "bg-red-500/30 border-red-300/40 text-white"
+                : "bg-white/10 border-white/15 text-white"
+            }`}>
+              <span className="text-white/80">Overdue</span>{" "}
+              <span className="font-bold">{overdueCount}</span>
+            </div>
+          </div>
         </div>
       </header>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full overflow-x-auto justify-start flex-nowrap">
+        <TabsList className="w-full overflow-x-auto justify-start flex-nowrap bg-card/60 backdrop-blur-sm border border-border shadow-sm p-1 rounded-xl">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
           <TabsTrigger value="loans">Loans</TabsTrigger>
