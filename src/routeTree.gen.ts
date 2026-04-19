@@ -54,6 +54,7 @@ import { Route as RetailerServicesRouteImport } from './routes/retailer.services
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
+import { Route as RetailerPanV2RouteImport } from './routes/retailer.pan-v2'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
@@ -333,6 +334,11 @@ const RetailerRechargeRoute = RetailerRechargeRouteImport.update({
 const RetailerProfileRoute = RetailerProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerPanV2Route = RetailerPanV2RouteImport.update({
+  id: '/pan-v2',
+  path: '/pan-v2',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
@@ -683,6 +689,7 @@ export interface FileRoutesByFullPath {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -778,6 +785,7 @@ export interface FileRoutesByTo {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -881,6 +889,7 @@ export interface FileRoutesById {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -985,6 +994,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1080,6 +1090,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1182,6 +1193,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1549,6 +1561,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/retailer/profile'
       preLoaderRoute: typeof RetailerProfileRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/pan-v2': {
+      id: '/retailer/pan-v2'
+      path: '/pan-v2'
+      fullPath: '/retailer/pan-v2'
+      preLoaderRoute: typeof RetailerPanV2RouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/pan-portal': {
@@ -2092,6 +2111,7 @@ interface RetailerRouteChildren {
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
+  RetailerPanV2Route: typeof RetailerPanV2Route
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
@@ -2122,6 +2142,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
+  RetailerPanV2Route: RetailerPanV2Route,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
