@@ -541,6 +541,163 @@ const renderers: Record<PosterStyle, Renderer> = {
         ${safe(data.brandName || "EI SOLUTIONS")} · DIGITAL SERVICES
       </div>
     </div>`;
+  // ─────────────────────────────────────── ELEGANT MATCH (Matrimony) ──────────
+  elegantMatch: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgMatrimony}) center/cover, ${p.bg};
+      font-family:'Playfair Display','Georgia','Noto Sans Malayalam',serif;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,rgba(124,45,18,0.85),transparent);"></div>
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;color:#FFF7ED;">
+        ${logoBlock(data, accent, 44)}
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:11px;letter-spacing:4px;font-weight:600;opacity:0.95;">
+            ${safe(data.tagline || "MATRIMONY · വിവാഹ സേവനം")}
+          </div>
+        </div>
+        ${data.cspId ? `<div style="background:rgba(0,0,0,0.45);color:#FACC15;padding:3px 9px;
+          border-radius:4px;font-size:10px;font-weight:700;font-family:Inter,sans-serif;">
+          ID: ${safe(data.cspId)}</div>` : `<div style="width:44px;"></div>`}
+      </div>
+
+      <div style="position:absolute;top:${h * 0.16}px;left:0;right:0;text-align:center;padding:0 30px;">
+        <div style="font-size:22px;color:#9A3412;letter-spacing:6px;margin-bottom:6px;">❀ ❀ ❀</div>
+        <h1 style="font-size:${format === "story" ? 36 : 42}px;font-weight:700;color:#7C2D12;
+          margin:6px 0;line-height:1.05;font-style:italic;">${safe(data.heading)}</h1>
+        <div style="display:inline-flex;align-items:center;gap:12px;margin:8px 0;">
+          <div style="height:1px;width:50px;background:#C2410C;"></div>
+          <span style="font-size:18px;color:#C2410C;">💍</span>
+          <div style="height:1px;width:50px;background:#C2410C;"></div>
+        </div>
+        <p style="font-size:13px;color:#9A3412;font-weight:600;margin:0;letter-spacing:1px;
+          font-family:'Inter',sans-serif;">${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.43}px;left:36px;right:36px;background:rgba(255,255,255,0.95);
+        border:2px solid #C2410C;border-radius:6px;padding:20px 22px;
+        box-shadow:0 6px 24px rgba(124,45,18,0.18);font-family:Inter,sans-serif;">
+        <div style="text-align:center;font-size:10px;letter-spacing:3px;color:#9A3412;
+          font-weight:800;margin-bottom:10px;">— OUR SERVICES —</div>
+        ${svgChecklist(data.services.slice(0, 8), "#C2410C", 13, 23)}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;font-family:Inter,sans-serif;">
+        ${contactStrip(data, "#7C2D12", "#FACC15", format)}
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:9px;
+        background:#FACC15;color:#7C2D12;font-size:11px;font-weight:800;letter-spacing:3px;
+        font-family:Inter,sans-serif;">
+        ❀ ${safe(data.brandName || "EI SOLUTIONS MATRIMONY")} · CONFIDENTIAL & TRUSTED ❀
+      </div>
+    </div>`;
+  },
+
+  // ─────────────────────────────────────── GOLD AUTHORITY (Janasevana) ────────
+  goldAuthority: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgJanasevana}) center/cover, #FFFFFF;
+      font-family:'Inter','Noto Sans Malayalam',sans-serif;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;display:flex;height:6px;">
+        <div style="flex:1;background:#FF9933;"></div>
+        <div style="flex:1;background:#FFFFFF;"></div>
+        <div style="flex:1;background:#138808;"></div>
+      </div>
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;">
+        ${logoBlock(data, "#000080", 48)}
+        <div style="text-align:right;">
+          <div style="font-size:9px;color:#000080;letter-spacing:2px;font-weight:700;">GOVERNMENT AUTHORIZED</div>
+          ${data.cspId ? `<div style="font-size:13px;font-weight:900;color:#000080;">CSP: ${safe(data.cspId)}</div>` : ""}
+        </div>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.13}px;left:0;right:0;text-align:center;padding:0 28px;">
+        <div style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#FACC15);
+          color:#000080;padding:6px 18px;border-radius:3px;font-size:11px;font-weight:900;
+          letter-spacing:3px;border:1px solid #000080;">
+          ⚜️ ${safe(data.tagline || "ജനസേവന കേന്ദ്രം")} ⚜️
+        </div>
+        <h1 style="font-size:${format === "story" ? 32 : 38}px;font-weight:900;color:#000080;
+          margin:14px 0 4px;line-height:1.05;">${safe(data.heading)}</h1>
+        <div style="display:inline-flex;align-items:center;gap:10px;margin:6px 0;">
+          <div style="height:2px;width:40px;background:#FF9933;"></div>
+          <div style="height:2px;width:40px;background:#138808;"></div>
+        </div>
+        <p style="font-size:12px;color:#1A1A1A;font-weight:700;margin:0;letter-spacing:1px;">
+          ${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.42}px;left:30px;right:30px;background:#FFFFFF;
+        border-top:5px solid #FF9933;border-bottom:5px solid #138808;padding:18px 22px;
+        box-shadow:0 6px 24px rgba(0,0,0,0.15);">
+        <div style="text-align:center;font-size:10px;letter-spacing:3px;color:#000080;
+          font-weight:900;margin-bottom:12px;">★ AVAILABLE SERVICES ★</div>
+        ${svgChecklist(data.services.slice(0, 8), "#000080", 13, 23)}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;">
+        ${contactStrip(data, "#000080", "#FFFFFF", format)}
+      </div>
+      <div style="position:absolute;bottom:9px;left:0;right:0;text-align:center;padding:8px;
+        background:#000080;color:#D4AF37;font-size:11px;font-weight:800;letter-spacing:2px;">
+        ⚜️ ${safe(data.brandName || "EI SOLUTIONS")} · सत्यमेव जयते ⚜️
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;display:flex;height:9px;">
+        <div style="flex:1;background:#FF9933;"></div>
+        <div style="flex:1;background:#FFFFFF;"></div>
+        <div style="flex:1;background:#138808;"></div>
+      </div>
+    </div>`;
+  },
+
+  // ─────────────────────────────────────── COSMIC MYSTIC (Horoscope) ──────────
+  cosmicMystic: (data, p, accent, format) => {
+    const { w, h } = getCanvasSize(format);
+    return `
+    <div style="width:${w}px;height:${h}px;background:url(${bgHoroscope}) center/cover, #0F172A;
+      font-family:'Inter','Noto Sans Malayalam',sans-serif;position:relative;overflow:hidden;color:#F5E6B3;">
+      <div style="position:absolute;top:14px;left:20px;right:20px;display:flex;
+        justify-content:space-between;align-items:center;">
+        ${logoBlock(data, "#D4AF37", 44)}
+        ${data.cspId ? `<div style="background:rgba(212,175,55,0.15);border:1px solid #D4AF37;
+          color:#D4AF37;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;">
+          ID: ${safe(data.cspId)}</div>` : ""}
+      </div>
+
+      <div style="position:absolute;top:${h * 0.14}px;left:0;right:0;text-align:center;padding:0 32px;">
+        <div style="display:inline-block;border:1px solid #D4AF37;color:#D4AF37;
+          padding:5px 18px;font-size:11px;font-weight:700;letter-spacing:4px;border-radius:2px;">
+          ✦ ${safe(data.tagline || "ജാതക സേവനം · VEDIC ASTROLOGY")} ✦
+        </div>
+        <h1 style="font-size:${format === "story" ? 32 : 38}px;font-weight:900;color:#F5E6B3;
+          margin:14px 0 6px;line-height:1.05;font-family:'Cinzel',Georgia,serif;
+          text-shadow:0 0 20px rgba(212,175,55,0.4);">${safe(data.heading)}</h1>
+        <div style="font-size:18px;color:#D4AF37;letter-spacing:8px;margin:4px 0;">⭒ ☽ ⭒</div>
+        <p style="font-size:12px;color:#E8D080;font-weight:600;margin:0;letter-spacing:2px;">
+          ${safe(data.subHeading)}</p>
+      </div>
+
+      <div style="position:absolute;top:${h * 0.46}px;left:32px;right:32px;
+        background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);
+        border:1px solid #D4AF37;border-radius:8px;padding:18px 22px;
+        box-shadow:0 0 40px rgba(212,175,55,0.25);">
+        <div style="text-align:center;font-size:10px;letter-spacing:4px;color:#D4AF37;
+          font-weight:800;margin-bottom:10px;">— SERVICES —</div>
+        ${svgChecklist(data.services.slice(0, 8), "#D4AF37", 13, 23)
+          .replace(/color:#222/g, "color:#F5E6B3")}
+      </div>
+
+      <div style="position:absolute;bottom:48px;left:0;right:0;">
+        ${contactStrip(data, "#D4AF37", "#0F172A", format)}
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:10px;
+        background:#0F172A;color:#D4AF37;font-size:11px;font-weight:700;letter-spacing:3px;
+        border-top:1px solid #D4AF37;">
+        ✦ ${safe(data.brandName || "EI SOLUTIONS")} · JYOTISHA SERVICES ✦
+      </div>
+    </div>`;
   },
 };
 
