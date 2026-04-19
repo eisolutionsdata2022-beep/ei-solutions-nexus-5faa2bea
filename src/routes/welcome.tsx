@@ -12,6 +12,8 @@ import {
   Send, Shield, ShieldCheck, Sparkles, Star, TrendingUp, Users, Wallet,
 } from "lucide-react";
 import logoImg from "@/assets/ei-solutions-3d-logo.png";
+import { useLandingContent } from "@/hooks/use-landing-content";
+import type { LandingContent, CmsStat, CmsService, CmsReview, CmsContact } from "@/lib/landing-cms";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -28,29 +30,31 @@ export const Route = createFileRoute("/welcome")({
   component: WelcomeLanding,
 });
 
-const WHATSAPP = "918921479506";
-const PHONE = "+91 89214 79506";
-const EMAIL = "support@eisoluions.xyz";
-
 /* ─────────────────────── PAGE ─────────────────────── */
 function WelcomeLanding() {
+  const { content } = useLandingContent();
+  const whatsapp = content.contact.whatsapp || "918921479506";
+  const phone = content.contact.phone || "+91 89214 79506";
+  const email = content.contact.email || "support@eisoluions.xyz";
+  const logo = content.images.logoUrl || logoImg;
+
   return (
     <div className="min-h-screen bg-[#FAF7F0] text-[#0F1B14] antialiased selection:bg-[#0B6B4F]/20">
       <Aurora />
-      <Navbar />
-      <Hero />
+      <Navbar logo={logo} brand={content.contact.brand} />
+      <Hero content={content} whatsapp={whatsapp} />
       <MarqueeStrip />
-      <Stats />
+      <Stats stats={content.stats} />
       <About />
-      <Services />
+      <Services services={content.services} />
       <Platform />
       <Opportunity />
-      <Testimonials />
+      <Testimonials reviews={content.reviews} />
       <BookletCTA />
-      <LeadSection />
-      <Contact />
-      <Footer />
-      <FloatingActions />
+      <LeadSection phone={phone} whatsapp={whatsapp} email={email} />
+      <Contact contact={content.contact} logo={logo} phone={phone} whatsapp={whatsapp} email={email} />
+      <Footer brand={content.contact.brand} legalName={content.contact.legalName} />
+      <FloatingActions phone={phone} whatsapp={whatsapp} />
     </div>
   );
 }
@@ -67,7 +71,7 @@ function Aurora() {
 }
 
 /* ─────────────────────── NAV ─────────────────────── */
-function Navbar() {
+function Navbar({ logo, brand }: { logo: string; brand: string }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -79,11 +83,11 @@ function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 md:px-8">
         <a href="#top" className="flex items-center gap-2.5">
           <div className="relative">
-            <img src={logoImg} alt="EI SOLUTIONS" className="h-9 w-9 rounded-lg object-contain" />
+            <img src={logo} alt={brand} className="h-9 w-9 rounded-lg object-contain" />
             <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#0B6B4F] ring-2 ring-[#FAF7F0]" />
           </div>
           <div className="leading-tight">
-            <p className="text-[15px] font-bold tracking-tight text-[#0F1B14]">EI SOLUTIONS</p>
+            <p className="text-[15px] font-bold tracking-tight text-[#0F1B14]">{brand}</p>
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#0B6B4F]">Kerala · India</p>
           </div>
         </a>
@@ -108,7 +112,7 @@ function Navbar() {
 }
 
 /* ─────────────────────── HERO ─────────────────────── */
-function Hero() {
+function Hero({ content, whatsapp }: { content: LandingContent; whatsapp: string }) {
   return (
     <section id="top" className="relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-20 md:px-8 md:pt-20 md:pb-28">
@@ -147,7 +151,7 @@ function Hero() {
                 <BookOpen className="h-4 w-4" />
                 Open Digital Booklet
               </Link>
-              <a href={`https://wa.me/${WHATSAPP}?text=Hi%20EI%20SOLUTIONS%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0F1B14]/70 transition hover:text-[#0B6B4F]">
+              <a href={`https://wa.me/${whatsapp}?text=Hi%20${encodeURIComponent(content.contact.brand)}%2C%20I%20want%20to%20know%20more`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0F1B14]/70 transition hover:text-[#0B6B4F]">
                 <MessageCircle className="h-4 w-4" /> WhatsApp us
               </a>
             </div>
@@ -258,21 +262,15 @@ function MarqueeStrip() {
 }
 
 /* ─────────────────────── STATS ─────────────────────── */
-function Stats() {
-  const items = [
-    { v: "7+", l: "Years of operation", s: "since 2018" },
-    { v: "2500+", l: "Active centers", s: "across 14 districts" },
-    { v: "10L+", l: "Customers served", s: "and counting" },
-    { v: "24×7", l: "Partner support", s: "Malayalam + English" },
-  ];
+function Stats({ stats }: { stats: CmsStat[] }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
       <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 md:grid-cols-4">
-        {items.map((it) => (
-          <div key={it.l} className="bg-[#FAF7F0] p-7 transition hover:bg-white">
-            <div className="font-serif text-5xl font-bold tracking-tight text-[#0F1B14] md:text-6xl">{it.v}</div>
-            <div className="mt-3 text-[14px] font-semibold text-[#0F1B14]">{it.l}</div>
-            <div className="text-[12px] text-[#0F1B14]/55">{it.s}</div>
+        {stats.slice(0, 4).map((it) => (
+          <div key={it.label} className="bg-[#FAF7F0] p-7 transition hover:bg-white">
+            <div className="font-serif text-5xl font-bold tracking-tight text-[#0F1B14] md:text-6xl">{it.number}</div>
+            <div className="mt-3 text-[14px] font-semibold text-[#0F1B14]">{it.label}</div>
+            <div className="text-[12px] text-[#0F1B14]/55">{it.labelMl}</div>
           </div>
         ))}
       </div>
@@ -320,17 +318,9 @@ function About() {
 }
 
 /* ─────────────────────── SERVICES ─────────────────────── */
-function Services() {
-  const services = [
-    { i: CreditCard, t: "PAN Card Services", d: "NSDL & UTI authorized issuance, instant e-PAN, corrections, reprints.", color: "#0B6B4F" },
-    { i: Send, t: "Money Transfer (DMT)", d: "Send money instantly to any bank in India via your retail counter.", color: "#C2410C" },
-    { i: FileText, t: "Bill Payments & BBPS", d: "Electricity, water, gas, broadband, FASTag, postpaid — 200+ billers.", color: "#0F1B14" },
-    { i: ShieldCheck, t: "Insurance Services", d: "Health, motor, term, travel — partnered with leading IRDAI insurers.", color: "#0B6B4F" },
-    { i: Wallet, t: "Loan Lead Generation", d: "Personal, business & gold loan leads with high payout per closure.", color: "#D4A24C" },
-    { i: Heart, t: "Matrimony Portal", d: "Full bride/groom matchmaking platform — paid memberships.", color: "#9F1239" },
-    { i: GraduationCap, t: "Skill Training", d: "Robotics, AI, finance, soft skills — Skill India aligned curriculum.", color: "#1E3A8A" },
-    { i: BookOpen, t: "E-Governance", d: "Aadhaar updates, certificates, government online services.", color: "#0F1B14" },
-  ];
+function Services({ services }: { services: CmsService[] }) {
+  // Map CMS services to colors cyclically (icons come from CMS as emoji).
+  const colors = ["#0B6B4F", "#C2410C", "#0F1B14", "#D4A24C", "#9F1239", "#1E3A8A"];
   return (
     <section id="services" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
       <div className="flex items-end justify-between">
@@ -345,22 +335,25 @@ function Services() {
         </a>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {services.map((s) => (
-          <div key={s.t} className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white/70 p-6 backdrop-blur transition hover:-translate-y-1 hover:border-black/10 hover:shadow-xl">
-            <div
-              className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-              style={{ background: `linear-gradient(90deg, ${s.color}, transparent)` }}
-            />
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: s.color }}>
-              <s.i className="h-5 w-5" />
+        {services.map((s, idx) => {
+          const color = colors[idx % colors.length];
+          return (
+            <div key={`${s.name}-${idx}`} className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white/70 p-6 backdrop-blur transition hover:-translate-y-1 hover:border-black/10 hover:shadow-xl">
+              <div
+                className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+                style={{ background: `linear-gradient(90deg, ${color}, transparent)` }}
+              />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl text-white text-2xl shadow-sm" style={{ background: color }}>
+                <span>{s.icon}</span>
+              </div>
+              <div className="mt-5 text-[15px] font-bold text-[#0F1B14]">{s.name}</div>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-[#0F1B14]/65">{s.ml}</p>
+              <div className="mt-4 flex items-center gap-1 text-[12px] font-semibold text-[#0B6B4F] opacity-0 transition group-hover:opacity-100">
+                Learn more <ChevronRight className="h-3 w-3" />
+              </div>
             </div>
-            <div className="mt-5 text-[15px] font-bold text-[#0F1B14]">{s.t}</div>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-[#0F1B14]/65">{s.d}</p>
-            <div className="mt-4 flex items-center gap-1 text-[12px] font-semibold text-[#0B6B4F] opacity-0 transition group-hover:opacity-100">
-              Learn more <ChevronRight className="h-3 w-3" />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -480,12 +473,7 @@ function Opportunity() {
 }
 
 /* ─────────────────────── TESTIMONIALS ─────────────────────── */
-function Testimonials() {
-  const reviews = [
-    { name: "Rajesh Kumar", place: "Kollam · Partner since 2020", text: "5 വർഷമായി EI SOLUTIONS-ൽ work ചെയ്യുന്നു. Support, training, വരുമാനം — എല്ലാം stable. വിശ്വാസത്തോടെ recommend ചെയ്യാം." },
-    { name: "Anjali Menon", place: "Ernakulam · Retailer", text: "Join ചെയ്തിട്ട് 8 മാസം ആയി. Daily നല്ല income. Customers വരുന്നു — PAN, money transfer, bill payments എല്ലാം demand ഉണ്ട്." },
-    { name: "Suresh Babu", place: "Thrissur · Center owner", text: "System easy ആണ്, training ഉഗ്രൻ. എല്ലാ services ഒരു portal-ൽ. Family business ഇപ്പോൾ stable." },
-  ];
+function Testimonials({ reviews }: { reviews: CmsReview[] }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-24 md:px-8">
       <div className="text-center">
@@ -548,7 +536,7 @@ function BookletCTA() {
 }
 
 /* ─────────────────────── LEAD ─────────────────────── */
-function LeadSection() {
+function LeadSection({ phone, whatsapp, email }: { phone: string; whatsapp: string; email: string }) {
   return (
     <section id="lead" className="mx-auto max-w-7xl px-4 py-24 md:px-8">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
@@ -562,9 +550,9 @@ function LeadSection() {
           </p>
           <div className="mt-8 space-y-4">
             {[
-              { i: Phone, t: "Call us", v: PHONE, h: `tel:${PHONE.replace(/\s/g, "")}` },
-              { i: MessageCircle, t: "WhatsApp", v: "Chat instantly", h: `https://wa.me/${WHATSAPP}` },
-              { i: Mail, t: "Email", v: EMAIL, h: `mailto:${EMAIL}` },
+              { i: Phone, t: "Call us", v: phone, h: `tel:${phone.replace(/\s/g, "")}` },
+              { i: MessageCircle, t: "WhatsApp", v: "Chat instantly", h: `https://wa.me/${whatsapp}` },
+              { i: Mail, t: "Email", v: email, h: `mailto:${email}` },
             ].map((c) => (
               <a key={c.t} href={c.h} target={c.h.startsWith("http") ? "_blank" : undefined} rel="noreferrer"
                 className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white/60 p-4 backdrop-blur transition hover:border-[#0B6B4F] hover:bg-white">
@@ -692,30 +680,30 @@ function QuickLeadForm() {
 }
 
 /* ─────────────────────── CONTACT ─────────────────────── */
-function Contact() {
+function Contact({ contact, logo, phone, whatsapp, email }: { contact: CmsContact; logo: string; phone: string; whatsapp: string; email: string }) {
   return (
     <section id="contact" className="border-t border-black/5 bg-[#0F1B14] py-20 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 md:grid-cols-3 md:px-8">
         <div className="md:col-span-1">
           <div className="flex items-center gap-2.5">
-            <img src={logoImg} alt="" className="h-10 w-10 rounded-lg object-contain" />
+            <img src={logo} alt={contact.brand} className="h-10 w-10 rounded-lg object-contain" />
             <div className="leading-tight">
-              <div className="text-[16px] font-bold">EI SOLUTIONS</div>
+              <div className="text-[16px] font-bold">{contact.brand}</div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A24C]">Kerala · India</div>
             </div>
           </div>
           <p className="mt-5 text-[13px] leading-relaxed text-white/60">
-            EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED — A premium digital service network empowering local entrepreneurs across India.
+            {contact.legalName} — A premium digital service network empowering local entrepreneurs across India.
           </p>
         </div>
         <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D4A24C]">Reach</div>
             <ul className="mt-4 space-y-2.5 text-[13px] text-white/70">
-              <li className="flex items-start gap-2"><Phone className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`tel:${PHONE.replace(/\s/g, "")}`} className="hover:text-white">{PHONE}</a></li>
-              <li className="flex items-start gap-2"><MessageCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="hover:text-white">WhatsApp</a></li>
-              <li className="flex items-start gap-2"><Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`mailto:${EMAIL}`} className="hover:text-white break-all">{EMAIL}</a></li>
-              <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><span>Kerala, India</span></li>
+              <li className="flex items-start gap-2"><Phone className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`tel:${phone.replace(/\s/g, "")}`} className="hover:text-white">{phone}</a></li>
+              <li className="flex items-start gap-2"><MessageCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-white">WhatsApp</a></li>
+              <li className="flex items-start gap-2"><Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><a href={`mailto:${email}`} className="hover:text-white break-all">{email}</a></li>
+              <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /><span>{contact.address}</span></li>
             </ul>
           </div>
           <div>
@@ -741,11 +729,11 @@ function Contact() {
   );
 }
 
-function Footer() {
+function Footer({ brand, legalName }: { brand: string; legalName: string }) {
   return (
     <footer className="bg-[#0A130D] py-7 text-white/50">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-[11.5px] md:flex-row md:px-8">
-        <div>© {new Date().getFullYear()} EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED. All rights reserved.</div>
+        <div>© {new Date().getFullYear()} {legalName || brand}. All rights reserved.</div>
         <div className="flex items-center gap-4">
           <span>Built in Kerala 🌴</span>
           <span>·</span>
@@ -757,14 +745,14 @@ function Footer() {
 }
 
 /* ─────────────────────── FLOATING ─────────────────────── */
-function FloatingActions() {
+function FloatingActions({ phone, whatsapp }: { phone: string; whatsapp: string }) {
   return (
     <div className="fixed bottom-5 right-5 z-30 flex flex-col gap-2.5">
-      <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer"
+      <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer"
         className="group flex h-13 w-13 items-center justify-center rounded-full bg-[#25D366] p-3.5 text-white shadow-2xl ring-4 ring-[#25D366]/20 transition hover:scale-105">
         <MessageCircle className="h-6 w-6" />
       </a>
-      <a href={`tel:${PHONE.replace(/\s/g, "")}`}
+      <a href={`tel:${phone.replace(/\s/g, "")}`}
         className="group flex h-13 w-13 items-center justify-center rounded-full bg-[#0F1B14] p-3.5 text-white shadow-2xl ring-4 ring-[#0F1B14]/20 transition hover:scale-105">
         <Phone className="h-5 w-5" />
       </a>
