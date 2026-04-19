@@ -114,7 +114,10 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  const vleId = useMemo(() => generateVleId(appUser?.uid), [appUser?.uid]);
+  const vleId = useMemo(
+    () => generateVleId(appUser?.uid, appUser?.phone),
+    [appUser?.uid, appUser?.phone],
+  );
 
   return (
     <div className="space-y-6">
@@ -280,6 +283,8 @@ function PanPortalPage() {
         balance={balance}
         retailerId={appUser?.uid ?? ""}
         retailerEmail={appUser?.email ?? ""}
+        retailerName={appUser?.name ?? null}
+        retailerPhone={appUser?.phone ?? null}
         vleId={vleId}
         ready={ready}
       />
@@ -311,6 +316,8 @@ function PanExecutionDialog({
   balance,
   retailerId,
   retailerEmail,
+  retailerName,
+  retailerPhone,
   vleId,
   ready,
 }: {
@@ -320,6 +327,8 @@ function PanExecutionDialog({
   balance: number;
   retailerId: string;
   retailerEmail: string;
+  retailerName: string | null;
+  retailerPhone: string | null;
   vleId: string;
   ready: boolean;
 }) {
@@ -442,6 +451,8 @@ function PanExecutionDialog({
             const psa = await maybeGeneratePsaId({
               uid: retailerId,
               email: retailerEmail,
+              name: retailerName,
+              phone: retailerPhone,
             });
             if (psa.generated && psa.record) {
               toast.success(

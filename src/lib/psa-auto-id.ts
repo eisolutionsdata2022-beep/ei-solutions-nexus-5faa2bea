@@ -1,9 +1,15 @@
 /**
- * PSA Auto-ID generation.
+ * PSA Auto-ID generation + legacy claim.
  *
- * When a retailer/VLE successfully purchases their **2nd coupon** (status =
- * "success" — refunded/failed are ignored), a unique PSA ID is auto-generated
- * and persisted to `psa_ids/{uid}` exactly once.
+ * - **Auto-generate**: When a retailer/VLE successfully purchases their **2nd
+ *   coupon** (status="success" — refunded/failed are ignored), a unique PSA ID
+ *   is auto-generated and persisted to `psa_ids/{uid}` exactly once.
+ * - **Legacy claim**: Existing members who already had a PSA ID on the OLD
+ *   portal can log in here and *claim/update* their PSA ID via
+ *   `claimLegacyPsaId()` — no coupon purchase required. Stored with
+ *   `source: "legacy"` so admins can tell them apart.
+ *
+ * PSA ID format = `PSA######-<10-digit-mobile>` (matches old portal).
  *
  * Uses a Firestore transaction so concurrent triggers can never create a
  * duplicate, and rechecks the success-count inside the txn for safety.
@@ -11,6 +17,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   runTransaction,
@@ -23,12 +30,15 @@ import { generateVleId } from "@/lib/pan-vle-id";
 /** Minimum number of successful coupon purchases required to auto-generate. */
 export const PSA_AUTO_THRESHOLD = 2;
 
+export type PsaIdSource = "auto" | "legacy";
+
 export interface PsaIdRecord {
   uid: string;
   psaId: string;
   status: "active";
   generatedAt: string;
   successfulCouponCount: number;
+  source: PsaIdSource;
   email?: string | null;
   name?: string | null;
   phone?: string | null;
@@ -76,14 +86,16 @@ export async function maybeGeneratePsaId(opts: {
       return { generated: false, record: existing.data() as PsaIdRecord };
     }
 
-    // Stable, deterministic, unique-per-uid (FNV-1a hash → PSA + 6 digits).
-    const psaId = generateVleId(opts.uid);
+    // Stable, deterministic, unique-per-uid (FNV-1a hash → PSA + 6 digits)
+    // suffixed with the registered mobile number when available.
+    const psaId = generateVleId(opts.uid, opts.phone);
     const record: PsaIdRecord = {
       uid: opts.uid,
       psaId,
       status: "active",
       generatedAt: new Date().toISOString(),
       successfulCouponCount: successCount,
+      source: "auto",
       email: opts.email ?? null,
       name: opts.name ?? null,
       phone: opts.phone ?? null,
@@ -94,11 +106,53 @@ export async function maybeGeneratePsaId(opts: {
   });
 }
 
+/**
+ * LEGACY CLAIM — for users who already had a PSA ID on the OLD portal.
+ * They enter their existing PSA ID; we save it (no coupon threshold required).
+ *
+ * Idempotent: if the user already has a PSA record (auto OR legacy), the
+ * stored ID is updated to the supplied legacy ID.
+ *
+ * Validates the legacy PSA ID format loosely: must contain "PSA" + digits.
+ */
+export async function claimLegacyPsaId(opts: {
+  uid: string;
+  legacyPsaId: string;
+  email?: string | null;
+  name?: string | null;
+  phone?: string | null;
+}): Promise<PsaIdRecord> {
+  const cleaned = opts.legacyPsaId.trim().toUpperCase();
+  if (!/^PSA[\dA-Z\-]{4,}$/i.test(cleaned)) {
+    throw new Error("Invalid PSA ID format. Expected something like PSA123456 or PSA123456-9876543210.");
+  }
+
+  const psaRef = doc(db, "psa_ids", opts.uid);
+  const successCount = await countSuccessfulCouponPurchases(opts.uid).catch(() => 0);
+
+  return runTransaction(db, async (tx) => {
+    const existing = await tx.get(psaRef);
+    const record: PsaIdRecord = {
+      uid: opts.uid,
+      psaId: cleaned,
+      status: "active",
+      generatedAt: existing.exists()
+        ? (existing.data() as PsaIdRecord).generatedAt
+        : new Date().toISOString(),
+      successfulCouponCount: successCount,
+      source: "legacy",
+      email: opts.email ?? null,
+      name: opts.name ?? null,
+      phone: opts.phone ?? null,
+    };
+    tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
+    return record;
+  });
+}
+
 /** Read the stored PSA record (used by Profile + Admin). Returns null if not created yet. */
 export async function getPsaIdRecord(uid: string): Promise<PsaIdRecord | null> {
-  const snap = await getDocs(
-    query(collection(db, "psa_ids"), where("uid", "==", uid)),
-  );
-  if (snap.empty) return null;
-  return snap.docs[0].data() as PsaIdRecord;
+  const snap = await getDoc(doc(db, "psa_ids", uid));
+  if (!snap.exists()) return null;
+  return snap.data() as PsaIdRecord;
 }

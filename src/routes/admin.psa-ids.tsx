@@ -195,7 +195,12 @@ function AdminPsaIds() {
                       </TableCell>
                       <TableCell>
                         {r.psa ? (
-                          <Badge className="bg-emerald-600">ACTIVE</Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge className="bg-emerald-600">ACTIVE</Badge>
+                            <Badge variant="outline" className="text-[10px] py-0 capitalize w-fit">
+                              {r.psa.source === "legacy" ? "Migrated" : "Auto"}
+                            </Badge>
+                          </div>
                         ) : r.couponCount >= 2 ? (
                           <Badge variant="secondary">Pending sync</Badge>
                         ) : (
