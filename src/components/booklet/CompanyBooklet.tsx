@@ -350,19 +350,27 @@ const TOC_LABELS: Record<string, string> = {
 
 /* ───────── Page renderers ───────── */
 
-function PageContent({ kind }: { kind: string }) {
+type CmsBundle = {
+  hero: CmsHero;
+  stats: CmsStat[];
+  services: CmsService[];
+  reviews: CmsReview[];
+  contact: CmsContact;
+};
+
+function PageContent({ kind, cms }: { kind: string; cms: CmsBundle }) {
   switch (kind) {
-    case "cover": return <CoverPage />;
-    case "intro": return <IntroPage />;
+    case "cover": return <CoverPage cms={cms} />;
+    case "intro": return <IntroPage cms={cms} />;
     case "registrations": return <RegistrationsPage />;
-    case "services": return <ServicesPage />;
+    case "services": return <ServicesPage cms={cms} />;
     case "earnings": return <EarningsPage />;
     case "modules": return <ModulesPage />;
     case "why-join": return <WhyJoinPage />;
-    case "reviews": return <ReviewsPage />;
+    case "reviews": return <ReviewsPage cms={cms} />;
     case "join": return <JoinPage />;
-    case "contact": return <ContactPage />;
-    case "back-cover": return <BackCoverPage />;
+    case "contact": return <ContactPage cms={cms} />;
+    case "back-cover": return <BackCoverPage cms={cms} />;
     default: return null;
   }
 }
