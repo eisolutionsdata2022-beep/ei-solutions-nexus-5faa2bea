@@ -145,20 +145,57 @@ function RetailerDashboard() {
       {/* Notice Board Marquee */}
       <NoticeMarquee />
 
-      {/* Wallet Balance */}
-      <div className="bg-card rounded-lg border border-border p-5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-gov-blue flex items-center justify-center">
-            <Wallet className="w-6 h-6 text-white" />
+      {/* Wallet + VLE ID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="bg-card rounded-lg border border-border p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-gov-blue flex items-center justify-center">
+              <Wallet className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Wallet Balance</p>
+              <p className="text-2xl font-bold text-foreground">₹{balance.toLocaleString("en-IN", { minimumFractionDigits: 0 })}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium">Wallet Balance</p>
-            <p className="text-2xl font-bold text-foreground">₹{balance.toLocaleString("en-IN", { minimumFractionDigits: 0 })}</p>
-          </div>
+          <Link to="/retailer/wallet">
+            <Button className="bg-gov-green hover:opacity-90 text-white font-bold">Recharge</Button>
+          </Link>
         </div>
-        <Link to="/retailer/wallet">
-          <Button className="bg-gov-green hover:opacity-90 text-white font-bold">Recharge</Button>
-        </Link>
+
+        <button
+          type="button"
+          onClick={() => {
+            const id = generateVleId(appUser?.uid);
+            navigator.clipboard?.writeText(id).then(
+              () => toast.success(`VLE ID copied: ${id}`),
+              () => toast.error("Could not copy VLE ID"),
+            );
+          }}
+          className="bg-card rounded-lg border border-border p-5 flex items-center justify-between text-left transition hover:border-primary/50 hover:shadow-sm active:scale-[0.99]"
+          title="Click to copy your EI SOLUTIONS VLE ID"
+        >
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0">
+              <IdCard className="w-6 h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                EI SOLUTIONS VLE ID
+                <Copy className="w-3 h-3 opacity-60" />
+              </p>
+              <p className="text-2xl font-bold text-foreground font-mono tracking-wider truncate">
+                {generateVleId(appUser?.uid)}
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/retailer/pan-portal"
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0"
+          >
+            <Button variant="outline" className="font-semibold">PAN Portal</Button>
+          </Link>
+        </button>
       </div>
 
       {/* Service Buttons */}
