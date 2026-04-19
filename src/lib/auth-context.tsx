@@ -85,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const userData = { ...userDoc.data(), uid: cred.user.uid } as AppUser;
     setAppUser(userData);
+    // Fire-and-forget login activity log
+    import("./profile-edits").then((m) => m.recordLoginActivity(cred.user.uid)).catch(() => {});
     return userData;
   };
 
