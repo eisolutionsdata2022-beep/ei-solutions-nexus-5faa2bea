@@ -541,6 +541,8 @@ const renderers: Record<PosterStyle, Renderer> = {
         ${safe(data.brandName || "EI SOLUTIONS")} · DIGITAL SERVICES
       </div>
     </div>`;
+  },
+
   // ─────────────────────────────────────── ELEGANT MATCH (Matrimony) ──────────
   elegantMatch: (data, p, accent, format) => {
     const { w, h } = getCanvasSize(format);
