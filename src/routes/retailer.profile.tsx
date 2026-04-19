@@ -323,20 +323,24 @@ function RetailerProfile() {
 
       {/* Edits + Certificates grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Profile Edits</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
+        {/* Profile Edits */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center gap-2">
+            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Profile Edits</h2>
+          </div>
+          <div className="p-5 space-y-4">
             {/* Name */}
             <div>
-              <Label className="text-xs text-muted-foreground">Full Name</Label>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Full Name</Label>
               {editName ? (
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2 mt-1.5">
                   <Input value={name} onChange={(e) => setName(e.target.value)} />
-                  <Button size="sm" onClick={saveName}>Save</Button>
+                  <Button size="sm" onClick={saveName} className="bg-premium-gradient text-white border-0">Save</Button>
                   <Button size="sm" variant="outline" onClick={() => { setEditName(false); setName(appUser.name || ""); }}>Cancel</Button>
                 </div>
               ) : (
-                <div className="flex justify-between items-center mt-1">
+                <div className="flex justify-between items-center mt-1.5">
                   <p className="font-medium">{appUser.name || "—"}</p>
                   <Button size="sm" variant="ghost" onClick={() => setEditName(true)}><Edit3 className="w-3.5 h-3.5 mr-1" /> Edit</Button>
                 </div>
@@ -344,17 +348,17 @@ function RetailerProfile() {
             </div>
             {/* Address */}
             <div>
-              <Label className="text-xs text-muted-foreground">Address</Label>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Address</Label>
               {editAddr ? (
-                <div className="space-y-2 mt-1">
+                <div className="space-y-2 mt-1.5">
                   <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={saveAddress}>Save</Button>
+                    <Button size="sm" onClick={saveAddress} className="bg-premium-gradient text-white border-0">Save</Button>
                     <Button size="sm" variant="outline" onClick={() => setEditAddr(false)}>Cancel</Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-start mt-1">
+                <div className="flex justify-between items-start mt-1.5">
                   <p className="font-medium whitespace-pre-line">{address || "—"}</p>
                   <Button size="sm" variant="ghost" onClick={() => setEditAddr(true)}><Edit3 className="w-3.5 h-3.5 mr-1" /> Edit</Button>
                 </div>
@@ -362,54 +366,70 @@ function RetailerProfile() {
             </div>
             {/* Password */}
             <div>
-              <Label className="text-xs text-muted-foreground">Password</Label>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Password</Label>
               {editPwd ? (
-                <div className="space-y-2 mt-1">
+                <div className="space-y-2 mt-1.5">
                   <Input type="password" placeholder="Current password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} />
                   <Input type="password" placeholder="New password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} />
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={savePassword}>Update</Button>
+                    <Button size="sm" onClick={savePassword} className="bg-premium-gradient text-white border-0">Update</Button>
                     <Button size="sm" variant="outline" onClick={() => setEditPwd(false)}>Cancel</Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-center mt-1">
-                  <p className="font-medium">••••••••</p>
+                <div className="flex justify-between items-center mt-1.5">
+                  <p className="font-medium tracking-widest">••••••••</p>
                   <Button size="sm" variant="ghost" onClick={() => setEditPwd(true)}><Lock className="w-3.5 h-3.5 mr-1" /> Change</Button>
                 </div>
               )}
             </div>
             {/* KYC link */}
-            <div className="pt-2 border-t">
-              <Button asChild variant="outline" className="w-full">
+            <div className="pt-3 border-t border-border/50">
+              <Button asChild variant="outline" className="w-full backdrop-blur">
                 <Link to="/retailer/kyc"><RefreshCw className="w-4 h-4 mr-2" /> Update / Re-Submit KYC</Link>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Award className="w-4 h-4" /> Certificates</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between gap-3 p-3 rounded-lg border">
-              <div>
-                <p className="font-semibold">Franchise Certificate</p>
-                <p className="text-xs text-muted-foreground">Authorized franchise partner certificate</p>
+        {/* Certificates */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center gap-2">
+            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              <Award className="w-4 h-4 text-primary" /> Certificates
+            </h2>
+          </div>
+          <div className="p-5 space-y-3">
+            <div className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-border/60 bg-background/40 hover:bg-background/70 transition-colors">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-premium-gradient flex items-center justify-center text-white shrink-0">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">Franchise Certificate</p>
+                  <p className="text-xs text-muted-foreground">Authorized franchise partner</p>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => openFranchise(appUser, vleId)}>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" variant="outline" className="backdrop-blur" onClick={() => openFranchise(appUser, vleId)}>
                   <FileText className="w-3.5 h-3.5 mr-1" /> View
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setReissueOpen("franchise")}>Reissue</Button>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-3 p-3 rounded-lg border">
-              <div>
-                <p className="font-semibold">VLE Authorization Certificate</p>
-                <p className="text-xs text-muted-foreground">VLE ID certificate for PAN/PSA services</p>
+            <div className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-border/60 bg-background/40 hover:bg-background/70 transition-colors">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white shrink-0">
+                  <IdCard className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">VLE Authorization</p>
+                  <p className="text-xs text-muted-foreground">Certificate for PAN/PSA services</p>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() =>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" variant="outline" className="backdrop-blur" onClick={() =>
                   openVleCertificate({
                     name: appUser.name || appUser.email,
                     vleId,
@@ -424,40 +444,47 @@ function RetailerProfile() {
               </div>
             </div>
             {reissues.length > 0 && (
-              <div className="pt-2 border-t">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">Reissue Requests</p>
-                <div className="space-y-1">
+              <div className="pt-3 border-t border-border/50">
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">Reissue Requests</p>
+                <div className="space-y-1.5">
                   {reissues.slice(0, 5).map((r) => (
-                    <div key={r.id} className="flex items-center justify-between text-xs">
-                      <span className="capitalize">{r.type} · {new Date(r.createdAt).toLocaleDateString()}</span>
-                      <Badge variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}>{r.status}</Badge>
+                    <div key={r.id} className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg bg-muted/40">
+                      <span className="capitalize font-medium">{r.type} · {new Date(r.createdAt).toLocaleDateString()}</span>
+                      <Badge variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"} className="rounded-full">
+                        {r.status}
+                      </Badge>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Edit history */}
-      <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Edit History</CardTitle></CardHeader>
-        <CardContent>
+      <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center gap-2">
+          <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary" /> Edit History
+          </h2>
+        </div>
+        <div className="p-5">
           {history.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No edits yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">No edits yet.</p>
           ) : (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 text-sm">
               {history.slice(0, 10).map((h) => (
-                <div key={h.id} className="flex justify-between border-b last:border-0 pb-2">
-                  <span><b className="capitalize">{h.field}</b>: {String(h.oldValue || "—").slice(0, 30)} → {String(h.newValue || "—").slice(0, 30)}</span>
-                  <span className="text-muted-foreground">{new Date(h.timestamp).toLocaleString()}</span>
+                <div key={h.id} className="flex justify-between gap-3 px-3 py-2 rounded-lg hover:bg-muted/40 transition-colors">
+                  <span className="truncate"><b className="capitalize">{h.field}</b>: {String(h.oldValue || "—").slice(0, 30)} → {String(h.newValue || "—").slice(0, 30)}</span>
+                  <span className="text-muted-foreground text-xs whitespace-nowrap">{new Date(h.timestamp).toLocaleString()}</span>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Reissue dialog */}
       <Dialog open={!!reissueOpen} onOpenChange={(o) => !o && setReissueOpen(null)}>
