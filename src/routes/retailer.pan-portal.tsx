@@ -259,6 +259,7 @@ function PanPortalPage() {
         balance={balance}
         retailerId={appUser?.uid ?? ""}
         retailerEmail={appUser?.email ?? ""}
+        vleId={vleId}
         ready={ready}
       />
     </div>
@@ -289,6 +290,7 @@ function PanExecutionDialog({
   balance,
   retailerId,
   retailerEmail,
+  vleId,
   ready,
 }: {
   service: (PanService & { fee: number }) | null;
@@ -297,6 +299,7 @@ function PanExecutionDialog({
   balance: number;
   retailerId: string;
   retailerEmail: string;
+  vleId: string;
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -307,12 +310,14 @@ function PanExecutionDialog({
       const init: Record<string, string> = {};
       for (const f of service.fields) {
         if (f.defaultValue) init[f.key] = f.defaultValue;
+        // Auto-fill the user's stable VLE ID into any field keyed `vle_id`.
+        if (f.key === "vle_id") init[f.key] = vleId;
       }
       setValues(init);
     } else {
       setValues({});
     }
-  }, [service?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [service?.key, vleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!service) return null;
 
