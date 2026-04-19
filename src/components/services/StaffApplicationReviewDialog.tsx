@@ -199,9 +199,44 @@ export function StaffApplicationReviewDialog({
                     <h3 className="text-sm font-semibold text-foreground">Uploaded documents</h3>
                     <p className="text-xs text-muted-foreground">{documentMessage}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {application.uploadedDocuments.length} file(s)
-                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {application.uploadedDocuments.length} file(s)
+                    </span>
+                    {application.uploadedDocuments.length > 1 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={zipping}
+                        onClick={async () => {
+                          if (!application) return;
+                          setZipping(true);
+                          try {
+                            const { failed } = await downloadAllAsZip(
+                              application.uploadedDocuments,
+                              application.applicationNo || application.id,
+                            );
+                            if (failed > 0) {
+                              toast.warning(`ZIP downloaded — ${failed} file(s) skipped.`);
+                            } else {
+                              toast.success("ZIP downloaded.");
+                            }
+                          } catch (err: any) {
+                            toast.error(err?.message || "ZIP download failed");
+                          } finally {
+                            setZipping(false);
+                          }
+                        }}
+                      >
+                        {zipping ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Archive className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {zipping ? "Zipping…" : "Download all (ZIP)"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
