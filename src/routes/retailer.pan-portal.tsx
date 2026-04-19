@@ -505,7 +505,13 @@ function PanExecutionDialog({
                   onChange={(e) => setValues((s) => ({ ...s, [f.key]: e.target.value }))}
                 />
               )}
-              {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
+              {f.key === "vle_id" ? (
+                <p className="text-xs text-muted-foreground">
+                  Your EI SOLUTIONS VLE ID — auto-generated and locked to your account.
+                </p>
+              ) : (
+                f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
+              )}
             </div>
           ))}
 
