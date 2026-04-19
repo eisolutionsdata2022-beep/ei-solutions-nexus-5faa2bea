@@ -91,6 +91,7 @@ import { Route as AdminPsaIdsRouteImport } from './routes/admin.psa-ids'
 import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
+import { Route as AdminLandingCmsRouteImport } from './routes/admin.landing-cms'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
 import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earnings'
@@ -526,6 +527,11 @@ const AdminMatrimonyRoute = AdminMatrimonyRouteImport.update({
   path: '/matrimony',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLandingCmsRoute = AdminLandingCmsRouteImport.update({
+  id: '/landing-cms',
+  path: '/landing-cms',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/landing-cms': typeof AdminLandingCmsRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -758,6 +765,7 @@ export interface FileRoutesByTo {
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/landing-cms': typeof AdminLandingCmsRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -863,6 +871,7 @@ export interface FileRoutesById {
   '/admin/job-earnings': typeof AdminJobEarningsRoute
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/landing-cms': typeof AdminLandingCmsRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -969,6 +978,7 @@ export interface FileRouteTypes {
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
+    | '/admin/landing-cms'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1066,6 +1076,7 @@ export interface FileRouteTypes {
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
+    | '/admin/landing-cms'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1170,6 +1181,7 @@ export interface FileRouteTypes {
     | '/admin/job-earnings'
     | '/admin/job-marketplace'
     | '/admin/kyc'
+    | '/admin/landing-cms'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1835,6 +1847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMatrimonyRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/landing-cms': {
+      id: '/admin/landing-cms'
+      path: '/landing-cms'
+      fullPath: '/admin/landing-cms'
+      preLoaderRoute: typeof AdminLandingCmsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/kyc': {
       id: '/admin/kyc'
       path: '/kyc'
@@ -1998,6 +2017,7 @@ interface AdminRouteChildren {
   AdminJobEarningsRoute: typeof AdminJobEarningsRoute
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
+  AdminLandingCmsRoute: typeof AdminLandingCmsRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanSettingsRoute: typeof AdminPanSettingsRoute
@@ -2041,6 +2061,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminJobEarningsRoute: AdminJobEarningsRoute,
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,
+  AdminLandingCmsRoute: AdminLandingCmsRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanSettingsRoute: AdminPanSettingsRoute,

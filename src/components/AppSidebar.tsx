@@ -40,6 +40,7 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
+    { label: "Landing CMS", to: "/admin/landing-cms", icon: FileText },
     { label: "CRM Leads", to: "/admin/crm-leads", icon: Users },
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
     { label: "Users", to: "/admin/users", icon: Users },
