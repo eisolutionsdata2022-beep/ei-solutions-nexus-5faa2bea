@@ -16,7 +16,15 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
-export type UserRole = "admin" | "distributor" | "retailer" | "trainer" | "staff" | "manager";
+export type UserRole =
+  | "admin"
+  | "distributor"
+  | "retailer"
+  | "trainer"
+  | "staff"
+  | "manager"
+  | "operator"   // retailer's operator sub-account (separate dashboard)
+  | "staffSub";  // retailer's plain staff sub-account (limited retailer dashboard)
 
 export interface AppUser {
   uid: string;
@@ -24,10 +32,16 @@ export interface AppUser {
   role: UserRole;
   name?: string;
   phone?: string;
+  address?: string;
+  photoURL?: string;
   kycStatus?: "pending" | "approved" | "rejected";
   workBadge?: boolean;
   /** Permission to create IPPB account-opening requests (admin-approved). */
   ippbBadge?: boolean;
+  /** For staffSub / operator — the retailer they belong to. */
+  parentRetailerId?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
 interface AuthContextType {
@@ -71,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const userData = { ...userDoc.data(), uid: cred.user.uid } as AppUser;
     setAppUser(userData);
+    // Fire-and-forget login activity log
+    import("./profile-edits").then((m) => m.recordLoginActivity(cred.user.uid)).catch(() => {});
     return userData;
   };
 

@@ -13,6 +13,7 @@ import { Route as TrainerRouteImport } from './routes/trainer'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as OperatorRouteImport } from './routes/operator'
 import { Route as NsdlCallbackRouteImport } from './routes/nsdl-callback'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as InstallRouteImport } from './routes/install'
@@ -22,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainerIndexRouteImport } from './routes/trainer.index'
 import { Route as StaffIndexRouteImport } from './routes/staff.index'
 import { Route as RetailerIndexRouteImport } from './routes/retailer.index'
+import { Route as OperatorIndexRouteImport } from './routes/operator.index'
 import { Route as MatrimonyIndexRouteImport } from './routes/matrimony.index'
 import { Route as DistributorIndexRouteImport } from './routes/distributor.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -44,8 +46,10 @@ import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
+import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
+import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
@@ -98,6 +102,7 @@ import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
+import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 
 const TrainerRoute = TrainerRouteImport.update({
@@ -118,6 +123,11 @@ const RetailerRoute = RetailerRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorRoute = OperatorRouteImport.update({
+  id: '/operator',
+  path: '/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NsdlCallbackRoute = NsdlCallbackRouteImport.update({
@@ -164,6 +174,11 @@ const RetailerIndexRoute = RetailerIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RetailerRoute,
+} as any)
+const OperatorIndexRoute = OperatorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OperatorRoute,
 } as any)
 const MatrimonyIndexRoute = MatrimonyIndexRouteImport.update({
   id: '/',
@@ -276,6 +291,11 @@ const RetailerTrainingsRoute = RetailerTrainingsRouteImport.update({
   path: '/trainings',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerStaffRoute = RetailerStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerServicesRoute = RetailerServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -284,6 +304,11 @@ const RetailerServicesRoute = RetailerServicesRouteImport.update({
 const RetailerRechargeRoute = RetailerRechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerProfileRoute = RetailerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
@@ -549,6 +574,12 @@ const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
   path: '/chat-inbox',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCertificateReissuesRoute =
+  AdminCertificateReissuesRouteImport.update({
+    id: '/certificate-reissues',
+    path: '/certificate-reissues',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
@@ -562,10 +593,12 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
   '/nsdl-callback': typeof NsdlCallbackRoute
+  '/operator': typeof OperatorRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -618,8 +651,10 @@ export interface FileRoutesByFullPath {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
@@ -642,6 +677,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
+  '/operator/': typeof OperatorIndexRoute
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
@@ -652,6 +688,7 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -704,8 +741,10 @@ export interface FileRoutesByTo {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
@@ -728,6 +767,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/distributor': typeof DistributorIndexRoute
   '/matrimony': typeof MatrimonyIndexRoute
+  '/operator': typeof OperatorIndexRoute
   '/retailer': typeof RetailerIndexRoute
   '/staff': typeof StaffIndexRoute
   '/trainer': typeof TrainerIndexRoute
@@ -741,10 +781,12 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
   '/nsdl-callback': typeof NsdlCallbackRoute
+  '/operator': typeof OperatorRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -797,8 +839,10 @@ export interface FileRoutesById {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/services': typeof RetailerServicesRoute
+  '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
@@ -821,6 +865,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
+  '/operator/': typeof OperatorIndexRoute
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
@@ -835,10 +880,12 @@ export interface FileRouteTypes {
     | '/install'
     | '/matrimony'
     | '/nsdl-callback'
+    | '/operator'
     | '/register'
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -891,8 +938,10 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/services'
+    | '/retailer/staff'
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
@@ -915,6 +964,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/distributor/'
     | '/matrimony/'
+    | '/operator/'
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
@@ -925,6 +975,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/nsdl-callback'
     | '/register'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -977,8 +1028,10 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/services'
+    | '/retailer/staff'
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
@@ -1001,6 +1054,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/distributor'
     | '/matrimony'
+    | '/operator'
     | '/retailer'
     | '/staff'
     | '/trainer'
@@ -1013,10 +1067,12 @@ export interface FileRouteTypes {
     | '/install'
     | '/matrimony'
     | '/nsdl-callback'
+    | '/operator'
     | '/register'
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
@@ -1069,8 +1125,10 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/services'
+    | '/retailer/staff'
     | '/retailer/trainings'
     | '/retailer/transactions'
     | '/retailer/virtual-trainer'
@@ -1093,6 +1151,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/distributor/'
     | '/matrimony/'
+    | '/operator/'
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
@@ -1106,6 +1165,7 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
   NsdlCallbackRoute: typeof NsdlCallbackRoute
+  OperatorRoute: typeof OperatorRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
@@ -1141,6 +1201,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator': {
+      id: '/operator'
+      path: '/operator'
+      fullPath: '/operator'
+      preLoaderRoute: typeof OperatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nsdl-callback': {
@@ -1205,6 +1272,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/retailer/'
       preLoaderRoute: typeof RetailerIndexRouteImport
       parentRoute: typeof RetailerRoute
+    }
+    '/operator/': {
+      id: '/operator/'
+      path: '/'
+      fullPath: '/operator/'
+      preLoaderRoute: typeof OperatorIndexRouteImport
+      parentRoute: typeof OperatorRoute
     }
     '/matrimony/': {
       id: '/matrimony/'
@@ -1360,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerTrainingsRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/staff': {
+      id: '/retailer/staff'
+      path: '/staff'
+      fullPath: '/retailer/staff'
+      preLoaderRoute: typeof RetailerStaffRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/services': {
       id: '/retailer/services'
       path: '/services'
@@ -1372,6 +1453,13 @@ declare module '@tanstack/react-router' {
       path: '/recharge'
       fullPath: '/retailer/recharge'
       preLoaderRoute: typeof RetailerRechargeRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/profile': {
+      id: '/retailer/profile'
+      path: '/profile'
+      fullPath: '/retailer/profile'
+      preLoaderRoute: typeof RetailerProfileRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/pan-portal': {
@@ -1738,6 +1826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChatInboxRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/certificate-reissues': {
+      id: '/admin/certificate-reissues'
+      path: '/certificate-reissues'
+      fullPath: '/admin/certificate-reissues'
+      preLoaderRoute: typeof AdminCertificateReissuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/retailer/jobs/$jobId': {
       id: '/retailer/jobs/$jobId'
       path: '/$jobId'
@@ -1749,6 +1844,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
@@ -1789,6 +1885,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
@@ -1860,6 +1957,18 @@ const MatrimonyRouteWithChildren = MatrimonyRoute._addFileChildren(
   MatrimonyRouteChildren,
 )
 
+interface OperatorRouteChildren {
+  OperatorIndexRoute: typeof OperatorIndexRoute
+}
+
+const OperatorRouteChildren: OperatorRouteChildren = {
+  OperatorIndexRoute: OperatorIndexRoute,
+}
+
+const OperatorRouteWithChildren = OperatorRoute._addFileChildren(
+  OperatorRouteChildren,
+)
+
 interface RetailerJobsRouteChildren {
   RetailerJobsJobIdRoute: typeof RetailerJobsJobIdRoute
 }
@@ -1886,8 +1995,10 @@ interface RetailerRouteChildren {
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
+  RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
+  RetailerStaffRoute: typeof RetailerStaffRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
   RetailerTransactionsRoute: typeof RetailerTransactionsRoute
   RetailerVirtualTrainerRoute: typeof RetailerVirtualTrainerRoute
@@ -1911,8 +2022,10 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
+  RetailerProfileRoute: RetailerProfileRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerServicesRoute: RetailerServicesRoute,
+  RetailerStaffRoute: RetailerStaffRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
   RetailerTransactionsRoute: RetailerTransactionsRoute,
   RetailerVirtualTrainerRoute: RetailerVirtualTrainerRoute,
@@ -1978,6 +2091,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
   NsdlCallbackRoute: NsdlCallbackRoute,
+  OperatorRoute: OperatorRouteWithChildren,
   RegisterRoute: RegisterRoute,
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,

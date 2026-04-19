@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Gavel,
   CalendarDays,
+  Award,
 } from "lucide-react";
 
 interface NavItem {
@@ -73,6 +74,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
+    { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -81,6 +83,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Profile", to: "/retailer/profile", icon: User },
+    { label: "Staff", to: "/retailer/staff", icon: Users },
     { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
     { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
@@ -128,6 +132,16 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
+  ],
+  operator: [
+    { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
+  ],
+  staffSub: [
+    { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Profile", to: "/retailer/profile", icon: User },
+    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
+    { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
+    { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
   ],
 };
 

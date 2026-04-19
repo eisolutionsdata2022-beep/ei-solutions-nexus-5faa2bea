@@ -84,6 +84,14 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
   ],
+  operator: [
+    { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
+  ],
+  staffSub: [
+    { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Profile", to: "/retailer/profile" as any, icon: User },
+    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
+  ],
 };
 
 export function MobileSidebar() {

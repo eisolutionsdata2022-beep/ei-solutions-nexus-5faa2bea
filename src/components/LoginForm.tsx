@@ -25,7 +25,11 @@ export function LoginForm() {
     setLoading(true);
     try {
       const appUser = await login(email, password);
-      navigate({ to: `/${appUser.role}` as any });
+      const dest =
+        appUser.role === "operator" ? "/operator"
+        : appUser.role === "staffSub" ? "/retailer"
+        : `/${appUser.role}`;
+      navigate({ to: dest as any });
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {
