@@ -51,6 +51,7 @@ import type { PanMasterConfig, PanTransaction } from "@/lib/pan-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
+import { generateVleId } from "@/lib/pan-vle-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -111,6 +112,7 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
+  const vleId = useMemo(() => generateVleId(appUser?.uid), [appUser?.uid]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +126,7 @@ function PanPortalPage() {
               <IdCard className="h-7 w-7" /> PAN PORTAL
             </h1>
             <p className="mt-1 text-sm text-white/80">
-              NSDL · UTI · PSA · Coupons — all PAN services in one dashboard.
+              EI SOLUTIONS PAN Services — NSDL · UTI · PSA · Coupons in one dashboard.
             </p>
           </div>
           <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
@@ -145,8 +147,8 @@ function PanPortalPage() {
                 Service temporarily unavailable
               </p>
               <p className="mt-1 text-amber-800 dark:text-amber-300/90">
-                Admin needs to configure the PAN API key and endpoint URLs before services can be
-                executed. You can browse the catalog below.
+                The EI SOLUTIONS admin needs to configure the PAN service credentials and endpoint
+                URLs before services can be executed. You can browse the catalog below.
               </p>
             </div>
           </CardContent>
@@ -257,6 +259,7 @@ function PanPortalPage() {
         balance={balance}
         retailerId={appUser?.uid ?? ""}
         retailerEmail={appUser?.email ?? ""}
+        vleId={vleId}
         ready={ready}
       />
     </div>
@@ -287,6 +290,7 @@ function PanExecutionDialog({
   balance,
   retailerId,
   retailerEmail,
+  vleId,
   ready,
 }: {
   service: (PanService & { fee: number }) | null;
@@ -295,6 +299,7 @@ function PanExecutionDialog({
   balance: number;
   retailerId: string;
   retailerEmail: string;
+  vleId: string;
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -305,12 +310,14 @@ function PanExecutionDialog({
       const init: Record<string, string> = {};
       for (const f of service.fields) {
         if (f.defaultValue) init[f.key] = f.defaultValue;
+        // Auto-fill the user's stable VLE ID into any field keyed `vle_id`.
+        if (f.key === "vle_id") init[f.key] = vleId;
       }
       setValues(init);
     } else {
       setValues({});
     }
-  }, [service?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [service?.key, vleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!service) return null;
 
@@ -483,6 +490,13 @@ function PanExecutionDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : f.key === "vle_id" ? (
+                <Input
+                  type="text"
+                  value={vleId}
+                  readOnly
+                  className="bg-muted/40 font-mono tracking-wider"
+                />
               ) : (
                 <Input
                   type={f.type}
@@ -491,7 +505,13 @@ function PanExecutionDialog({
                   onChange={(e) => setValues((s) => ({ ...s, [f.key]: e.target.value }))}
                 />
               )}
-              {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
+              {f.key === "vle_id" ? (
+                <p className="text-xs text-muted-foreground">
+                  Your EI SOLUTIONS VLE ID — auto-generated and locked to your account.
+                </p>
+              ) : (
+                f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
+              )}
             </div>
           ))}
 
