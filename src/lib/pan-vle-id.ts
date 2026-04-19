@@ -4,11 +4,12 @@
  * Each logged-in user gets a STABLE 6-digit numeric suffix derived from their
  * Firebase UID, prefixed with `PSA`. Same user → same VLE ID, every time.
  *
- * Format: `PSA` + 6 digits (e.g. `PSA482917`).
+ * Format:
+ *   - Without mobile:  `PSA######`           (e.g. `PSA482917`)
+ *   - With mobile:     `PSA######-<mobile>`  (e.g. `PSA482917-9876543210`)
  *
- * This ID is auto-pasted into the VLE ID field for PSA Create / Password Reset
- * / Coupon Buy and acts as the retailer's unique identity inside the PAN
- * portal — no manual choice required.
+ * The mobile suffix is the user's REGISTERED mobile number — it makes the ID
+ * easier to identify for staff/admins and matches the legacy portal format.
  */
 
 /** FNV-1a 32-bit hash — small, fast, deterministic, no external deps. */
@@ -21,13 +22,32 @@ function fnv1a(str: string): number {
   return hash >>> 0;
 }
 
+/** Strip everything except digits; keep last 10 (Indian mobile). */
+function normalizeMobile(mobile: string | undefined | null): string {
+  if (!mobile) return "";
+  const digits = String(mobile).replace(/\D+/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
 /**
  * Generate a stable VLE ID for a given user UID.
- * Returns `PSA` + 6-digit zero-padded number in the range 100000–999999.
+ * If a registered mobile is supplied, it is appended after a hyphen.
+ *
+ * Returns `PSA` + 6-digit zero-padded number in the range 100000–999999,
+ * optionally followed by `-<10-digit-mobile>`.
  */
-export function generateVleId(uid: string | undefined | null): string {
-  if (!uid) return "PSA000000";
-  // Map hash into 100000..999999 (always 6 digits, never starts with 0)
-  const n = 100000 + (fnv1a(uid) % 900000);
-  return `PSA${n}`;
+export function generateVleId(
+  uid: string | undefined | null,
+  mobile?: string | null,
+): string {
+  const base = uid
+    ? `PSA${100000 + (fnv1a(uid) % 900000)}`
+    : "PSA000000";
+  const m = normalizeMobile(mobile);
+  return m ? `${base}-${m}` : base;
+}
+
+/** Just the numeric prefix (no mobile) — used internally for storage keys. */
+export function generateVleIdPrefix(uid: string | undefined | null): string {
+  return generateVleId(uid, null);
 }
