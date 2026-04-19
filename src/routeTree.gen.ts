@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TrainerRouteImport } from './routes/trainer'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
@@ -110,6 +111,11 @@ import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrainerRoute = TrainerRouteImport.update({
   id: '/trainer',
   path: '/trainer',
@@ -628,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/welcome': typeof WelcomeRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -723,6 +730,7 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
+  '/welcome': typeof WelcomeRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -826,6 +834,7 @@ export interface FileRoutesById {
   '/retailer': typeof RetailerRouteWithChildren
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
+  '/welcome': typeof WelcomeRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
@@ -930,6 +939,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/welcome'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -1025,6 +1035,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/nsdl-callback'
     | '/register'
+    | '/welcome'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -1127,6 +1138,7 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/welcome'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/commissions'
@@ -1230,11 +1242,19 @@ export interface RootRouteChildren {
   RetailerRoute: typeof RetailerRouteWithChildren
   StaffRoute: typeof StaffRouteWithChildren
   TrainerRoute: typeof TrainerRouteWithChildren
+  WelcomeRoute: typeof WelcomeRoute
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trainer': {
       id: '/trainer'
       path: '/trainer'
@@ -2201,6 +2221,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetailerRoute: RetailerRouteWithChildren,
   StaffRoute: StaffRouteWithChildren,
   TrainerRoute: TrainerRouteWithChildren,
+  WelcomeRoute: WelcomeRoute,
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
 }
 export const routeTree = rootRouteImport
