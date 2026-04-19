@@ -92,6 +92,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Operators", to: "/retailer/staff", icon: Users },
     { label: "My Services", to: "/retailer/my-services", icon: Sparkles },
     { label: "EI SOLUTIONS PAY", to: "/retailer/ei-pay", icon: Banknote },
+    { label: "PAN Portal v2", to: "/retailer/pan-v2", icon: Sparkles },
+    { label: "Insurance v2", to: "/retailer/insurance-v2", icon: ShieldCheck },
     { label: "PAN Portal", to: "/retailer/pan-portal", icon: CVIcon },
     { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
     { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },

@@ -54,6 +54,7 @@ import { Route as RetailerServicesRouteImport } from './routes/retailer.services
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
+import { Route as RetailerPanV2RouteImport } from './routes/retailer.pan-v2'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
@@ -62,6 +63,7 @@ import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimo
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
+import { Route as RetailerInsuranceV2RouteImport } from './routes/retailer.insurance-v2'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
@@ -335,6 +337,11 @@ const RetailerProfileRoute = RetailerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerPanV2Route = RetailerPanV2RouteImport.update({
+  id: '/pan-v2',
+  path: '/pan-v2',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
   id: '/pan-portal',
   path: '/pan-portal',
@@ -373,6 +380,11 @@ const RetailerJobsRoute = RetailerJobsRouteImport.update({
 const RetailerIppbRoute = RetailerIppbRouteImport.update({
   id: '/ippb',
   path: '/ippb',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerInsuranceV2Route = RetailerInsuranceV2RouteImport.update({
+  id: '/insurance-v2',
+  path: '/insurance-v2',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
@@ -675,6 +687,7 @@ export interface FileRoutesByFullPath {
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/insurance-v2': typeof RetailerInsuranceV2Route
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -683,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -770,6 +784,7 @@ export interface FileRoutesByTo {
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/insurance-v2': typeof RetailerInsuranceV2Route
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -778,6 +793,7 @@ export interface FileRoutesByTo {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -873,6 +889,7 @@ export interface FileRoutesById {
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
+  '/retailer/insurance-v2': typeof RetailerInsuranceV2Route
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -881,6 +898,7 @@ export interface FileRoutesById {
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
+  '/retailer/pan-v2': typeof RetailerPanV2Route
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
@@ -977,6 +995,7 @@ export interface FileRouteTypes {
     | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/insurance-v2'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -985,6 +1004,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1072,6 +1092,7 @@ export interface FileRouteTypes {
     | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/insurance-v2'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -1080,6 +1101,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1174,6 +1196,7 @@ export interface FileRouteTypes {
     | '/retailer/finance'
     | '/retailer/forms'
     | '/retailer/horoscope'
+    | '/retailer/insurance-v2'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -1182,6 +1205,7 @@ export interface FileRouteTypes {
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
+    | '/retailer/pan-v2'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
@@ -1551,6 +1575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerProfileRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/pan-v2': {
+      id: '/retailer/pan-v2'
+      path: '/pan-v2'
+      fullPath: '/retailer/pan-v2'
+      preLoaderRoute: typeof RetailerPanV2RouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/pan-portal': {
       id: '/retailer/pan-portal'
       path: '/pan-portal'
@@ -1605,6 +1636,13 @@ declare module '@tanstack/react-router' {
       path: '/ippb'
       fullPath: '/retailer/ippb'
       preLoaderRoute: typeof RetailerIppbRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/insurance-v2': {
+      id: '/retailer/insurance-v2'
+      path: '/insurance-v2'
+      fullPath: '/retailer/insurance-v2'
+      preLoaderRoute: typeof RetailerInsuranceV2RouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/horoscope': {
@@ -2084,6 +2122,7 @@ interface RetailerRouteChildren {
   RetailerFinanceRoute: typeof RetailerFinanceRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
+  RetailerInsuranceV2Route: typeof RetailerInsuranceV2Route
   RetailerIppbRoute: typeof RetailerIppbRoute
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
@@ -2092,6 +2131,7 @@ interface RetailerRouteChildren {
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
+  RetailerPanV2Route: typeof RetailerPanV2Route
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
@@ -2114,6 +2154,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerFinanceRoute: RetailerFinanceRoute,
   RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
+  RetailerInsuranceV2Route: RetailerInsuranceV2Route,
   RetailerIppbRoute: RetailerIppbRoute,
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
@@ -2122,6 +2163,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
+  RetailerPanV2Route: RetailerPanV2Route,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
