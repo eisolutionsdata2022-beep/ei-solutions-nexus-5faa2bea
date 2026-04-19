@@ -1,5 +1,5 @@
 /**
- * DMT Firestore helpers — customers, beneficiaries, transfers, config.
+ * DMT v2 — Firestore helpers using new collections (dmtCustomersV2, etc.)
  */
 import {
   collection,
@@ -9,7 +9,6 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
-  setDoc,
   query,
   where,
   orderBy,
@@ -22,34 +21,20 @@ import {
   type DmtCustomer,
   type DmtBeneficiary,
   type DmtTransfer,
-  type DmtConfig,
-  DEFAULT_DMT_CONFIG,
+  DMT_RETAILER_COMMISSION_PERCENT,
   currentMonthKey,
 } from "./dmt-types";
 
-// ── Config ──────────────────────────────────────────────────────────────
-export async function loadDmtConfig(): Promise<DmtConfig> {
-  const ref = doc(db, "config", "dmt");
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
-    return { ...DEFAULT_DMT_CONFIG, ...(snap.data() as DmtConfig) };
-  }
-  return DEFAULT_DMT_CONFIG;
-}
-
-export async function saveDmtConfig(cfg: DmtConfig): Promise<void> {
-  await setDoc(doc(db, "config", "dmt"), cfg, { merge: true });
-}
+const COL_CUSTOMERS = "dmtCustomersV2";
+const COL_BENEFICIARIES = "dmtBeneficiariesV2";
+const COL_TRANSFERS = "dmtTransfersV2";
 
 // ── Customers ───────────────────────────────────────────────────────────
-export async function findCustomerByMobile(
-  retailerId: string,
-  mobile: string
-): Promise<DmtCustomer | null> {
+export async function findCustomerByMobile(retailerId: string, mobile: string): Promise<DmtCustomer | null> {
   const q = query(
-    collection(db, "dmtCustomers"),
+    collection(db, COL_CUSTOMERS),
     where("retailerId", "==", retailerId),
-    where("mobile", "==", mobile)
+    where("mobile", "==", mobile),
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
@@ -57,28 +42,19 @@ export async function findCustomerByMobile(
   return { id: d.id, ...(d.data() as Omit<DmtCustomer, "id">) };
 }
 
-export async function createCustomer(
-  retailerId: string,
-  mobile: string,
-  name: string,
-  monthlyLimit: number
-): Promise<DmtCustomer> {
+export async function createCustomer(input: Omit<DmtCustomer, "id" | "createdAt" | "monthlyUsed" | "monthKey">): Promise<DmtCustomer> {
   const data: Omit<DmtCustomer, "id"> = {
-    retailerId,
-    mobile,
-    name,
-    kycStatus: "basic",
-    monthlyLimit,
+    ...input,
     monthlyUsed: 0,
     monthKey: currentMonthKey(),
     createdAt: new Date().toISOString(),
   };
-  const ref = await addDoc(collection(db, "dmtCustomers"), data);
+  const ref = await addDoc(collection(db, COL_CUSTOMERS), data);
   return { id: ref.id, ...data };
 }
 
-export async function bumpCustomerUsage(customerId: string, amount: number) {
-  const ref = doc(db, "dmtCustomers", customerId);
+export async function bumpCustomerUsage(customerId: string, amount: number): Promise<void> {
+  const ref = doc(db, COL_CUSTOMERS, customerId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return;
   const c = snap.data() as DmtCustomer;
@@ -87,15 +63,19 @@ export async function bumpCustomerUsage(customerId: string, amount: number) {
   await updateDoc(ref, { monthlyUsed: used, monthKey: nowKey });
 }
 
+export function listenRetailerCustomers(retailerId: string, cb: (list: DmtCustomer[]) => void): Unsubscribe {
+  const q = query(collection(db, COL_CUSTOMERS), where("retailerId", "==", retailerId));
+  return onSnapshot(q, (snap) => {
+    const list: DmtCustomer[] = [];
+    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<DmtCustomer, "id">) }));
+    list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    cb(list);
+  });
+}
+
 // ── Beneficiaries ───────────────────────────────────────────────────────
-export function listenBeneficiaries(
-  customerId: string,
-  cb: (list: DmtBeneficiary[]) => void
-): Unsubscribe {
-  const q = query(
-    collection(db, "dmtBeneficiaries"),
-    where("customerId", "==", customerId)
-  );
+export function listenBeneficiaries(customerId: string, cb: (list: DmtBeneficiary[]) => void): Unsubscribe {
+  const q = query(collection(db, COL_BENEFICIARIES), where("customerId", "==", customerId));
   return onSnapshot(q, (snap) => {
     const list: DmtBeneficiary[] = [];
     snap.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<DmtBeneficiary, "id">) }));
@@ -104,58 +84,49 @@ export function listenBeneficiaries(
   });
 }
 
-export async function addBeneficiary(b: Omit<DmtBeneficiary, "id" | "createdAt">) {
-  return addDoc(collection(db, "dmtBeneficiaries"), {
+export async function addBeneficiary(b: Omit<DmtBeneficiary, "id" | "createdAt">): Promise<string> {
+  const ref = await addDoc(collection(db, COL_BENEFICIARIES), {
     ...b,
-    createdAt: new Date().toISOString(),
-  });
-}
-
-export async function updateBeneficiary(id: string, patch: Partial<DmtBeneficiary>) {
-  await updateDoc(doc(db, "dmtBeneficiaries", id), patch);
-}
-
-export async function deleteBeneficiary(id: string) {
-  await deleteDoc(doc(db, "dmtBeneficiaries", id));
-}
-
-// ── Transfers ───────────────────────────────────────────────────────────
-export async function createTransfer(t: Omit<DmtTransfer, "id" | "createdAt" | "status">): Promise<string> {
-  const ref = await addDoc(collection(db, "dmtTransfers"), {
-    ...t,
-    status: "pending",
     createdAt: new Date().toISOString(),
   });
   return ref.id;
 }
 
-export function listenRetailerTransfers(
-  retailerId: string,
-  cb: (list: DmtTransfer[]) => void
-): Unsubscribe {
-  const q = query(
-    collection(db, "dmtTransfers"),
-    where("retailerId", "==", retailerId),
-    orderBy("createdAt", "desc")
-  );
+export async function deleteBeneficiary(id: string): Promise<void> {
+  await deleteDoc(doc(db, COL_BENEFICIARIES, id));
+}
+
+// ── Transfers ───────────────────────────────────────────────────────────
+export async function createTransfer(t: Omit<DmtTransfer, "id" | "createdAt" | "status">): Promise<string> {
+  const ref = await addDoc(collection(db, COL_TRANSFERS), {
+    ...t,
+    status: "pending" as const,
+    createdAt: new Date().toISOString(),
+  });
+  return ref.id;
+}
+
+export function listenRetailerTransfers(retailerId: string, cb: (list: DmtTransfer[]) => void): Unsubscribe {
+  const q = query(collection(db, COL_TRANSFERS), where("retailerId", "==", retailerId));
   return onSnapshot(q, (snap) => {
     const list: DmtTransfer[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as DmtTransfer) }));
+    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<DmtTransfer, "id">) }));
+    list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     cb(list);
   });
 }
 
 export function listenAllTransfers(cb: (list: DmtTransfer[]) => void): Unsubscribe {
-  const q = query(collection(db, "dmtTransfers"), orderBy("createdAt", "desc"));
+  const q = query(collection(db, COL_TRANSFERS), orderBy("createdAt", "desc"));
   return onSnapshot(q, (snap) => {
     const list: DmtTransfer[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as DmtTransfer) }));
+    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as Omit<DmtTransfer, "id">) }));
     cb(list);
   });
 }
 
-export async function markTransferProcessing(id: string, staffId: string, staffName: string) {
-  await updateDoc(doc(db, "dmtTransfers", id), {
+export async function markTransferProcessing(id: string, staffId: string, staffName: string): Promise<void> {
+  await updateDoc(doc(db, COL_TRANSFERS, id), {
     status: "processing",
     staffId,
     staffName,
@@ -163,22 +134,18 @@ export async function markTransferProcessing(id: string, staffId: string, staffN
   });
 }
 
-export async function markTransferSuccess(id: string, utr: string): Promise<void> {
-  const ref = doc(db, "dmtTransfers", id);
+export async function markTransferSuccess(id: string, utr: string, staffRemark: string = ""): Promise<void> {
+  const ref = doc(db, COL_TRANSFERS, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new Error("Transfer not found");
   const t = snap.data() as DmtTransfer;
   if (t.status === "success") return;
 
-  // Pay retailer commission from base charge
-  const cfg = await loadDmtConfig();
-  const pct = Math.max(0, Math.min(100, cfg.retailerCommissionPercent || 0));
-  const commission = +((t.charge * pct) / 100).toFixed(2);
-
+  const commission = +((t.charge * DMT_RETAILER_COMMISSION_PERCENT) / 100).toFixed(2);
   if (commission > 0) {
     await atomicCredit(t.retailerId, commission, {
       source: "dmt_commission",
-      description: `DMT commission · ${t.beneficiaryName} (${pct}% of ₹${t.charge})`,
+      description: `DMT commission · ${t.beneficiaryName} (${DMT_RETAILER_COMMISSION_PERCENT}% of ₹${t.charge})`,
       transferId: id,
     });
   }
@@ -186,32 +153,39 @@ export async function markTransferSuccess(id: string, utr: string): Promise<void
   await updateDoc(ref, {
     status: "success",
     utr,
+    staffRemark,
     retailerCommission: commission,
   });
 }
 
-/** Mark failed and auto-refund full debit amount to retailer wallet. */
-export async function markTransferFailedAndRefund(
-  id: string,
-  reason: string
-): Promise<void> {
-  const ref = doc(db, "dmtTransfers", id);
+export async function markTransferFailedAndRefund(id: string, reason: string): Promise<void> {
+  const ref = doc(db, COL_TRANSFERS, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new Error("Transfer not found");
   const t = snap.data() as DmtTransfer;
   if (t.status === "refunded" || t.status === "success") return;
 
   const refundRef = `RFD${Date.now().toString().slice(-10)}`;
-  await atomicCredit(t.retailerId, t.totalDebit, {
-    source: "dmt_refund",
-    description: `DMT refund · ${t.beneficiaryName} · ${t.beneficiaryAccount}`,
-    transferId: id,
-    refundRef,
-  });
+  if (t.walletDebited) {
+    await atomicCredit(t.retailerId, t.totalDebit, {
+      source: "dmt_refund",
+      description: `DMT refund · ${t.beneficiaryName} · ${t.beneficiaryAccount}`,
+      transferId: id,
+      refundRef,
+    });
+  }
   await updateDoc(ref, {
     status: "refunded",
     failureReason: reason,
     refundedAt: new Date().toISOString(),
     refundRef,
   });
+}
+
+export async function deleteTransfer(id: string): Promise<void> {
+  await deleteDoc(doc(db, COL_TRANSFERS, id));
+}
+
+export async function updateTransferRemark(id: string, remark: string): Promise<void> {
+  await updateDoc(doc(db, COL_TRANSFERS, id), { staffRemark: remark });
 }

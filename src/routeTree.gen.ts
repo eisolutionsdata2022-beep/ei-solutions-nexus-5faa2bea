@@ -34,7 +34,6 @@ import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
-import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
@@ -83,7 +82,6 @@ import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.traini
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
-import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
@@ -102,8 +100,6 @@ import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
-import { Route as AdminDmtSettingsRouteImport } from './routes/admin.dmt-settings'
-import { Route as AdminDmtDailyDigestRouteImport } from './routes/admin.dmt-daily-digest'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -239,12 +235,6 @@ const StaffServicesRoute = StaffServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => StaffRoute,
 } as any)
-const StaffServiceApplicationsRoute =
-  StaffServiceApplicationsRouteImport.update({
-    id: '/service-applications',
-    path: '/service-applications',
-    getParentRoute: () => StaffRoute,
-  } as any)
 const StaffReportsRoute = StaffReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -485,12 +475,6 @@ const AdminServiceButtonsRoute = AdminServiceButtonsRouteImport.update({
   path: '/service-buttons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminServiceApplicationsRoute =
-  AdminServiceApplicationsRouteImport.update({
-    id: '/service-applications',
-    path: '/service-applications',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminServiceActivationsConfigRoute =
   AdminServiceActivationsConfigRouteImport.update({
     id: '/service-activations-config',
@@ -583,16 +567,6 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDmtSettingsRoute = AdminDmtSettingsRouteImport.update({
-  id: '/dmt-settings',
-  path: '/dmt-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDmtDailyDigestRoute = AdminDmtDailyDigestRouteImport.update({
-  id: '/dmt-daily-digest',
-  path: '/dmt-daily-digest',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -663,8 +637,6 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
-  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -683,7 +655,6 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -732,7 +703,6 @@ export interface FileRoutesByFullPath {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -762,8 +732,6 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
-  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -782,7 +750,6 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -831,7 +798,6 @@ export interface FileRoutesByTo {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -869,8 +835,6 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/dmt-daily-digest': typeof AdminDmtDailyDigestRoute
-  '/admin/dmt-settings': typeof AdminDmtSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
@@ -889,7 +853,6 @@ export interface FileRoutesById {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -938,7 +901,6 @@ export interface FileRoutesById {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
   '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
@@ -977,8 +939,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/dmt-daily-digest'
-    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -997,7 +957,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1046,7 +1005,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -1076,8 +1034,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/dmt-daily-digest'
-    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -1096,7 +1052,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1145,7 +1100,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -1182,8 +1136,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/dmt-daily-digest'
-    | '/admin/dmt-settings'
     | '/admin/finance'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
@@ -1202,7 +1154,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1251,7 +1202,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
     | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
@@ -1459,13 +1409,6 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/staff/services'
       preLoaderRoute: typeof StaffServicesRouteImport
-      parentRoute: typeof StaffRoute
-    }
-    '/staff/service-applications': {
-      id: '/staff/service-applications'
-      path: '/service-applications'
-      fullPath: '/staff/service-applications'
-      preLoaderRoute: typeof StaffServiceApplicationsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/staff/reports': {
@@ -1804,13 +1747,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServiceButtonsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/service-applications': {
-      id: '/admin/service-applications'
-      path: '/service-applications'
-      fullPath: '/admin/service-applications'
-      preLoaderRoute: typeof AdminServiceApplicationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/service-activations-config': {
       id: '/admin/service-activations-config'
       path: '/service-activations-config'
@@ -1937,20 +1873,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/dmt-settings': {
-      id: '/admin/dmt-settings'
-      path: '/dmt-settings'
-      fullPath: '/admin/dmt-settings'
-      preLoaderRoute: typeof AdminDmtSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/dmt-daily-digest': {
-      id: '/admin/dmt-daily-digest'
-      path: '/dmt-daily-digest'
-      fullPath: '/admin/dmt-daily-digest'
-      preLoaderRoute: typeof AdminDmtDailyDigestRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -2026,8 +1948,6 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
-  AdminDmtDailyDigestRoute: typeof AdminDmtDailyDigestRoute
-  AdminDmtSettingsRoute: typeof AdminDmtSettingsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
@@ -2046,7 +1966,6 @@ interface AdminRouteChildren {
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
-  AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
@@ -2070,8 +1989,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
-  AdminDmtDailyDigestRoute: AdminDmtDailyDigestRoute,
-  AdminDmtSettingsRoute: AdminDmtSettingsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
@@ -2090,7 +2007,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
-  AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
@@ -2234,7 +2150,6 @@ interface StaffRouteChildren {
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
-  StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
   StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
@@ -2248,7 +2163,6 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffLeadsRoute: StaffLeadsRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
-  StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
   StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
