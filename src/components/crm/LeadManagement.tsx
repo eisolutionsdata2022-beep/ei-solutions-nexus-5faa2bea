@@ -22,6 +22,7 @@ export function LeadManagement() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -44,11 +45,18 @@ export function LeadManagement() {
     return leads.filter((l) => {
       if (statusFilter !== "all" && l.status !== statusFilter) return false;
       if (staffFilter !== "all" && l.assignedStaffId !== staffFilter) return false;
+      if (sourceFilter !== "all" && l.leadSource !== sourceFilter) return false;
       if (!s) return true;
       return [l.name, l.phone, l.leadId, l.courseInterested, l.location]
         .some((v) => v?.toLowerCase().includes(s));
     });
-  }, [leads, search, statusFilter, staffFilter]);
+  }, [leads, search, statusFilter, staffFilter, sourceFilter]);
+
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => l.leadSource && set.add(l.leadSource));
+    return Array.from(set).sort();
+  }, [leads]);
 
   const exportToExcel = () => {
     const data = filtered.map((l) => ({
