@@ -33,6 +33,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
+import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
@@ -40,6 +41,7 @@ import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
+import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
@@ -228,6 +230,11 @@ const TrainerTrainingsRoute = TrainerTrainingsRouteImport.update({
   path: '/trainings',
   getParentRoute: () => TrainerRoute,
 } as any)
+const StaffServicesRoute = StaffServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => StaffRoute,
+} as any)
 const StaffReportsRoute = StaffReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -261,6 +268,11 @@ const StaffFormsRoute = StaffFormsRouteImport.update({
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   id: '/form-submissions',
   path: '/form-submissions',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffDmtRoute = StaffDmtRouteImport.update({
+  id: '/dmt',
+  path: '/dmt',
   getParentRoute: () => StaffRoute,
 } as any)
 const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
@@ -683,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -690,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
+  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -776,6 +790,7 @@ export interface FileRoutesByTo {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -783,6 +798,7 @@ export interface FileRoutesByTo {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
+  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -877,6 +893,7 @@ export interface FileRoutesById {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -884,6 +901,7 @@ export interface FileRoutesById {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
+  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -979,6 +997,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -986,6 +1005,7 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
+    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1072,6 +1092,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1079,6 +1100,7 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
+    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1172,6 +1194,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1179,6 +1202,7 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
+    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1380,6 +1404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainerTrainingsRouteImport
       parentRoute: typeof TrainerRoute
     }
+    '/staff/services': {
+      id: '/staff/services'
+      path: '/services'
+      fullPath: '/staff/services'
+      preLoaderRoute: typeof StaffServicesRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/staff/reports': {
       id: '/staff/reports'
       path: '/reports'
@@ -1427,6 +1458,13 @@ declare module '@tanstack/react-router' {
       path: '/form-submissions'
       fullPath: '/staff/form-submissions'
       preLoaderRoute: typeof StaffFormSubmissionsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/dmt': {
+      id: '/staff/dmt'
+      path: '/dmt'
+      fullPath: '/staff/dmt'
+      preLoaderRoute: typeof StaffDmtRouteImport
       parentRoute: typeof StaffRoute
     }
     '/retailer/work-badge': {
@@ -2104,6 +2142,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
@@ -2111,10 +2150,12 @@ interface StaffRouteChildren {
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
+  StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
@@ -2122,6 +2163,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffLeadsRoute: StaffLeadsRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
+  StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
 
