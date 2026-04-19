@@ -187,32 +187,40 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ---------- landingLeads (public /welcome lead form) ------------
-    // Anyone (even unauthenticated visitors) can submit ONE lead doc
-    // with strict field validation. Reads, updates and deletes are
-    // restricted to admins only — this collection contains PII (name +
-    // mobile) so it must never be publicly listable.
-    match /landingLeads/{leadId} {
-      function validLead() {
+    // ---------- crmLeads (Lead Management — CRM) -------------------
+    // Authenticated staff/admin manage leads with full schema.
+    // Public visitors from /welcome can ALSO create leads (anonymous)
+    // but only with the strict "Landing Page" subset of fields.
+    // Reads/updates/deletes remain authenticated-only (PII protection).
+    match /crmLeads/{leadId} {
+      function validPublicLead() {
         let d = request.resource.data;
-        return d.keys().hasOnly([
-                 "name","mobile","district","interest",
-                 "source","status","createdAt"
-               ])
-            && d.keys().hasAll(["name","mobile","interest","status","createdAt"])
-            && d.name is string     && d.name.size()     >= 2  && d.name.size()     <= 80
-            && d.mobile is string   && d.mobile.matches('^[6-9][0-9]{9}$')
-            && d.district is string && d.district.size() <= 60
-            && d.interest is string && d.interest.size() <= 40
-            && d.source is string   && d.source.size()   <= 40
-            && d.status == "new"
-            && d.createdAt is string && d.createdAt.size() <= 40;
+        return d.leadSource == "Landing Page"
+            && d.status == "New"
+            && d.createdBy == "landing-page"
+            && d.name is string   && d.name.size()  >= 2 && d.name.size()  <= 80
+            && d.phone is string  && d.phone.matches('^[6-9][0-9]{9}$')
+            && d.location is string         && d.location.size()         <= 60
+            && d.courseInterested is string && d.courseInterested.size() <= 60
+            && d.assignedStaffId == ""
+            && d.paymentStatus == "Pending"
+            && d.applicationStatus == "Not Started";
       }
 
-      allow create: if validLead();
-      allow read, list: if isAdmin();
-      allow update: if isAdmin();
+      allow create: if isStaffish() || validPublicLead();
+      allow read, list: if isStaffish();
+      allow update: if isStaffish();
       allow delete: if isAdmin();
+    }
+
+    match /crmCallLogs/{logId} {
+      allow read, list, create: if isStaffish();
+      allow update, delete: if isAdmin();
+    }
+
+    match /crmLeadHistory/{histId} {
+      allow read, list, create: if isStaffish();
+      allow update, delete: if isAdmin();
     }
   }
 }

@@ -612,14 +612,30 @@ function QuickLeadForm({ compact = false }: { compact?: boolean }) {
     }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "landingLeads"), {
+      // Write into the unified CRM Leads collection so it shows up
+      // in /admin/crm-leads alongside all other leads.
+      const now = new Date().toISOString();
+      await addDoc(collection(db, "crmLeads"), {
+        // Display ID is assigned later by staff; leave blank for landing leads
+        leadId: "",
         name: name.trim(),
-        mobile: mobile.trim(),
-        district: district.trim(),
-        interest,
-        source: "welcome-landing",
-        status: "new",
-        createdAt: new Date().toISOString(),
+        phone: mobile.trim(),
+        alternatePhone: "",
+        location: district.trim(),
+        courseInterested: interest,
+        leadSource: "Landing Page",
+        assignedStaffId: "",
+        assignedStaffName: "Unassigned",
+        status: "New",
+        followUpDate: "",
+        followUpTime: "",
+        remarks: `Submitted from /welcome landing page${interest ? ` — interested in ${interest}` : ""}`,
+        paymentStatus: "Pending",
+        applicationStatus: "Not Started",
+        documents: [],
+        createdAt: now,
+        updatedAt: now,
+        createdBy: "landing-page",
       });
       toast.success("Thank you! Our team will call you shortly.");
       setName(""); setMobile(""); setDistrict(""); setInterest("Franchise");

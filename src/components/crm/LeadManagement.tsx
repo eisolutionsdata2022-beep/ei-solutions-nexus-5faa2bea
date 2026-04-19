@@ -22,6 +22,7 @@ export function LeadManagement() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -44,11 +45,18 @@ export function LeadManagement() {
     return leads.filter((l) => {
       if (statusFilter !== "all" && l.status !== statusFilter) return false;
       if (staffFilter !== "all" && l.assignedStaffId !== staffFilter) return false;
+      if (sourceFilter !== "all" && l.leadSource !== sourceFilter) return false;
       if (!s) return true;
       return [l.name, l.phone, l.leadId, l.courseInterested, l.location]
         .some((v) => v?.toLowerCase().includes(s));
     });
-  }, [leads, search, statusFilter, staffFilter]);
+  }, [leads, search, statusFilter, staffFilter, sourceFilter]);
+
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => l.leadSource && set.add(l.leadSource));
+    return Array.from(set).sort();
+  }, [leads]);
 
   const exportToExcel = () => {
     const data = filtered.map((l) => ({
@@ -97,7 +105,7 @@ export function LeadManagement() {
       </div>
 
       <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+        <CardContent className="grid gap-3 p-4 md:grid-cols-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, phone, ID..." className="pl-9" />
@@ -107,6 +115,13 @@ export function LeadManagement() {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger><SelectValue placeholder="All Sources" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              {sources.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           {!isStaffOnly && (
