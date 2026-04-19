@@ -55,6 +55,7 @@ import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
+import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
@@ -335,6 +336,11 @@ const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
 const RetailerMyServicesRoute = RetailerMyServicesRouteImport.update({
   id: '/my-services',
   path: '/my-services',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
+  id: '/money-transfer',
+  path: '/money-transfer',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerMatrimonyRoute = RetailerMatrimonyRouteImport.update({
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
@@ -753,6 +760,7 @@ export interface FileRoutesByTo {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
@@ -853,6 +861,7 @@ export interface FileRoutesById {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
+  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
@@ -954,6 +963,7 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
+    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
@@ -1046,6 +1056,7 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
+    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
@@ -1145,6 +1156,7 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
+    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
@@ -1520,6 +1532,13 @@ declare module '@tanstack/react-router' {
       path: '/my-services'
       fullPath: '/retailer/my-services'
       preLoaderRoute: typeof RetailerMyServicesRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/money-transfer': {
+      id: '/retailer/money-transfer'
+      path: '/money-transfer'
+      fullPath: '/retailer/money-transfer'
+      preLoaderRoute: typeof RetailerMoneyTransferRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/matrimony': {
@@ -2031,6 +2050,7 @@ interface RetailerRouteChildren {
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
+  RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
@@ -2060,6 +2080,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,
+  RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
