@@ -222,5 +222,31 @@ service cloud.firestore {
       allow read, list, create: if isStaffish();
       allow update, delete: if isAdmin();
     }
+
+    // ---------- horoscopeSettings (global pricing & toggles) --------
+    // Public read (retailer needs current pricing to render the form),
+    // admin-only write.
+    match /horoscopeSettings/{doc} {
+      allow read:  if isAuthed();
+      allow write: if isAdmin();
+    }
+
+    // ---------- horoscopeRequests (Standard / Premium / Palmistry) --
+    // Retailer creates own requests after debiting their wallet client-
+    // side via runTransaction. Staff/admin can read all to process the
+    // queue. Retailer can read their own requests. Updates allowed for
+    // staff (status changes) or for the owning retailer (post-create
+    // metadata, e.g. PDF URL). No deletes.
+    match /horoscopeRequests/{rid} {
+      allow read:   if isAuthed() && (
+                      resource.data.userId == request.auth.uid
+                   || isStaffish());
+      allow create: if isAuthed()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthed() && (
+                      isStaffish()
+                   || resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
   }
 }
