@@ -4,10 +4,12 @@ import {
   Phone, MessageCircle, Mail, Globe, MapPin, Star, CheckCircle2, Sparkles, Leaf,
 } from "lucide-react";
 import {
-  BOOKLET_PAGES, COMPANY, STATS, REGISTRATIONS, SERVICES, EARNINGS,
-  MODULES, WHY_JOIN, REVIEWS, JOIN_STEPS, REQUIRED_DOCS,
+  BOOKLET_PAGES, REGISTRATIONS, EARNINGS,
+  MODULES, WHY_JOIN, JOIN_STEPS, REQUIRED_DOCS,
 } from "@/lib/booklet-content";
 import { Link } from "@tanstack/react-router";
+import { useLandingContent } from "@/hooks/use-landing-content";
+import type { CmsContact, CmsHero, CmsStat, CmsService, CmsReview } from "@/lib/landing-cms";
 
 const FLIP_MS = 600;
 
