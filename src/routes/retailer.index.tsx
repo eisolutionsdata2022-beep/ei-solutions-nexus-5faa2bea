@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateVleId } from "@/lib/pan-vle-id";
+import { getPsaIdRecord, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/")({
   ssr: false,
