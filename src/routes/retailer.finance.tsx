@@ -1989,14 +1989,108 @@ function ReportsTab({
     URL.revokeObjectURL(url);
   }
 
+  async function exportXLSX() {
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+
+      const totalCollectedX = filteredPayments.reduce((s, p) => s + p.amount, 0);
+      const summary = [
+        ["Finance Report"],
+        ["Generated", new Date().toLocaleString("en-IN")],
+        ["Date Range", `${from || "All"} → ${to || "All"}`],
+        [],
+        ["Customers", customers.length],
+        ["Total Loans", loans.length],
+        ["Active Loans", loans.filter((l) => l.status === "Active").length],
+        ["Closed Loans", loans.filter((l) => l.status === "Closed").length],
+        ["Filtered Payments", filteredPayments.length],
+        ["Total Collected (₹)", totalCollectedX],
+        ["Total Disbursed (₹)", loans.reduce((s, l) => s + l.loanAmount, 0)],
+        ["Outstanding (₹)", loans.filter((l) => l.status === "Active").reduce((s, l) => s + l.outstandingPrincipal, 0)],
+        ["Gold Stock (g)", loans.filter((l) => l.status === "Active").reduce((s, l) => s + l.totalNetWeight, 0)],
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summary);
+      wsSummary["!cols"] = [{ wch: 22 }, { wch: 28 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+      const loansData = loans.map((l) => ({
+        "Loan No": l.loanNo,
+        "Customer": l.customerName,
+        "Mobile": l.customerMobile,
+        "Loan Date": l.loanDate?.split("T")[0] || "",
+        "Due Date": l.dueDate?.split("T")[0] || "",
+        "Net Weight (g)": l.totalNetWeight,
+        "Gross Weight (g)": l.totalGrossWeight,
+        "Avg Purity": l.averagePurity,
+        "Gold Rate (Rs/g)": l.marketRatePerGram,
+        "Valuation": l.goldValuation,
+        "LTV %": l.ltvPercent,
+        "Loan Amount": l.loanAmount,
+        "Interest %": l.interestRate,
+        "Tenure (mo)": l.tenureMonths,
+        "Monthly EMI": l.monthlyEmi,
+        "Total Payable": l.totalPayable,
+        "Total Paid": l.totalPaid,
+        "Outstanding": l.outstandingPrincipal,
+        "Status": l.status,
+        "Remarks": l.remarks || "",
+      }));
+      const wsLoans = XLSX.utils.json_to_sheet(loansData.length ? loansData : [{ "No data": "" }]);
+      wsLoans["!cols"] = Object.keys(loansData[0] || { x: 1 }).map(() => ({ wch: 16 }));
+      XLSX.utils.book_append_sheet(wb, wsLoans, "Loans");
+
+      const paymentsData = filteredPayments.map((p) => ({
+        "Receipt No": p.receiptNo,
+        "Date": p.collectedAt?.split("T")[0] || "",
+        "Loan No": p.loanNo,
+        "Customer": p.customerName,
+        "Type": p.type,
+        "Amount": p.amount,
+        "Principal": p.principalComponent,
+        "Interest": p.interestComponent,
+        "Penalty": p.penaltyComponent,
+        "Mode": p.paymentMode,
+        "Reference": p.reference || "",
+        "Notes": p.notes || "",
+        "Collected By": p.collectedBy,
+      }));
+      const wsPayments = XLSX.utils.json_to_sheet(paymentsData.length ? paymentsData : [{ "No data": "" }]);
+      wsPayments["!cols"] = Object.keys(paymentsData[0] || { x: 1 }).map(() => ({ wch: 16 }));
+      XLSX.utils.book_append_sheet(wb, wsPayments, "Payments");
+
+      const customersData = customers.map((c) => ({
+        "Code": c.customerCode,
+        "Full Name": c.fullName,
+        "Mobile": c.mobile,
+        "Alt Mobile": c.altMobile || "",
+        "Address": c.address,
+        "Aadhaar": c.aadhaarNo,
+        "PAN": c.panNo || "",
+        "KYC Status": c.kycStatus,
+        "Created": c.createdAt?.split("T")[0] || "",
+        "Notes": c.notes || "",
+      }));
+      const wsCustomers = XLSX.utils.json_to_sheet(customersData.length ? customersData : [{ "No data": "" }]);
+      wsCustomers["!cols"] = Object.keys(customersData[0] || { x: 1 }).map(() => ({ wch: 18 }));
+      XLSX.utils.book_append_sheet(wb, wsCustomers, "Customers");
+
+      const stamp = new Date().toISOString().split("T")[0];
+      XLSX.writeFile(wb, `finance_report_${stamp}.xlsx`);
+      toast.success("Excel report downloaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Excel export failed");
+    }
+  }
+
   const totalCollected = filteredPayments.reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="space-y-4 mt-4">
       <Card>
-        <CardHeader><CardTitle className="text-base">Date Filter</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Date Filter & Export</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
             <div>
               <Label className="text-xs">From</Label>
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -2006,11 +2100,22 @@ function ReportsTab({
               <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
             <div className="flex items-end">
-              <Button onClick={exportCSV} className="w-full">
+              <Button onClick={exportCSV} variant="outline" className="w-full">
                 <Download className="w-4 h-4 mr-1" /> Export CSV
               </Button>
             </div>
+            <div className="flex items-end">
+              <Button
+                onClick={exportXLSX}
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white shadow-md"
+              >
+                <FileText className="w-4 h-4 mr-1" /> Export to Excel
+              </Button>
+            </div>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Excel includes 4 sheets: Summary · Loans · Payments (date-filtered) · Customers.
+          </p>
         </CardContent>
       </Card>
 
