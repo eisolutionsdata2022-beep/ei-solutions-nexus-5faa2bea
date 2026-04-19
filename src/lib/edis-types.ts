@@ -2,7 +2,7 @@
  * E-dis (E-District / E-Governance) — clean v2 types & catalog.
  * Stored at Firestore collection: edisApplications
  */
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "./firebase";
 
 export type EdisStatus = "pending" | "approved" | "rejected" | "completed";
@@ -147,10 +147,20 @@ export class EdisUploadError extends Error {
   }
 }
 
+export type EdisUploadProgress = {
+  docName: string;
+  fileName: string;
+  bytesTransferred: number;
+  totalBytes: number;
+  percent: number; // 0-100
+  state: "running" | "paused" | "success" | "error";
+};
+
 export async function uploadEdisDocuments(opts: {
   appNo: string;
   retailerId: string;
   documents: EdisDocInput[];
+  onProgress?: (p: EdisUploadProgress) => void;
 }): Promise<EdisUploadedDoc[]> {
   const out: EdisUploadedDoc[] = [];
   for (let i = 0; i < opts.documents.length; i++) {
@@ -176,14 +186,67 @@ export async function uploadEdisDocuments(opts: {
       `${i + 1}-${sanitize(item.name, "doc")}-${sanitize(item.file.name, "file")}`,
     ].join("/");
     const storageRef = ref(storage, path);
+
+    // Emit initial 0% so the UI can show a bar immediately
+    opts.onProgress?.({
+      docName: item.name,
+      fileName: item.file.name,
+      bytesTransferred: 0,
+      totalBytes: item.file.size,
+      percent: 0,
+      state: "running",
+    });
+
     try {
-      const snap = await uploadBytes(storageRef, item.file, {
-        contentType: ct || "application/octet-stream",
-        customMetadata: { originalFileName: item.file.name },
+      const url = await new Promise<string>((resolve, reject) => {
+        const task = uploadBytesResumable(storageRef, item.file, {
+          contentType: ct || "application/octet-stream",
+          customMetadata: { originalFileName: item.file.name },
+        });
+        task.on(
+          "state_changed",
+          (snap) => {
+            const total = snap.totalBytes || item.file.size || 1;
+            const transferred = snap.bytesTransferred || 0;
+            const percent = Math.min(100, Math.round((transferred / total) * 100));
+            opts.onProgress?.({
+              docName: item.name,
+              fileName: item.file.name,
+              bytesTransferred: transferred,
+              totalBytes: total,
+              percent,
+              state: snap.state === "paused" ? "paused" : "running",
+            });
+          },
+          (err) => reject(err),
+          async () => {
+            try {
+              const downloadUrl = await getDownloadURL(task.snapshot.ref);
+              opts.onProgress?.({
+                docName: item.name,
+                fileName: item.file.name,
+                bytesTransferred: item.file.size,
+                totalBytes: item.file.size,
+                percent: 100,
+                state: "success",
+              });
+              resolve(downloadUrl);
+            } catch (e) {
+              reject(e);
+            }
+          }
+        );
       });
-      const url = await getDownloadURL(snap.ref);
       out.push({ name: item.name, url, fileName: item.file.name });
     } catch (err: any) {
+      opts.onProgress?.({
+        docName: item.name,
+        fileName: item.file.name,
+        bytesTransferred: 0,
+        totalBytes: item.file.size,
+        percent: 0,
+        state: "error",
+      });
       const code: string = err?.code || "";
       if (code === "storage/unauthorized") {
         throw new EdisUploadError("STORAGE_PERMISSION_DENIED", item.name, item.file.name,

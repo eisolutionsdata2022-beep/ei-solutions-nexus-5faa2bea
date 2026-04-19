@@ -13,6 +13,7 @@ import {
   uploadEdisDocuments,
   type EdisServiceInfo,
   type EdisApplication,
+  type EdisUploadProgress,
 } from "@/lib/edis-types";
 import {
   createEdisApplication,
@@ -25,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import {
   FileText, Sparkles, Search, ArrowRight, IndianRupee, Wallet,
   CheckCircle2, Clock, XCircle, Award, Upload, ArrowLeft, Eye, Download, ExternalLink,
@@ -256,6 +258,14 @@ function ApplicationForm({
   const [pincode, setPincode] = useState("");
   const [purpose, setPurpose] = useState("");
   const [files, setFiles] = useState<Record<string, File | null>>({});
+  const [progress, setProgress] = useState<Record<string, EdisUploadProgress>>({});
+
+  const overallProgress = () => {
+    const required = service.requiredDocuments;
+    if (required.length === 0) return 0;
+    const sum = required.reduce((acc, name) => acc + (progress[name]?.percent || 0), 0);
+    return Math.round(sum / required.length);
+  };
 
   const fee = service.fee;
   const insufficient = balance < fee;
@@ -291,6 +301,7 @@ function ApplicationForm({
     }
 
     setSubmitting(true);
+    setProgress({}); // reset progress bars at start of upload
     const appNo = generateEdisAppNo();
     let uploaded = false;
     let debited = false;
@@ -302,6 +313,7 @@ function ApplicationForm({
         documents: service.requiredDocuments
           .filter((name) => files[name])
           .map((name) => ({ name, file: files[name]! })),
+        onProgress: (p) => setProgress((prev) => ({ ...prev, [p.docName]: p })),
       });
       const timeoutPromise = new Promise<never>((_, rej) =>
         setTimeout(() => rej(new Error("UPLOAD_TIMEOUT")), 90_000)
@@ -480,22 +492,54 @@ function ApplicationForm({
             <SectionTitle title="Required Documents" />
             <p className="text-xs text-muted-foreground -mt-2">Upload all required documents below. JPG, PNG, or PDF.</p>
             <div className="space-y-3">
-              {service.requiredDocuments.map((docName) => (
-                <div key={docName} className="rounded-xl border border-border/60 p-3 bg-background/40">
-                  <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-primary" /> {docName} <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    onChange={(e) => setFiles((prev) => ({ ...prev, [docName]: e.target.files?.[0] || null }))}
-                    className="text-xs"
-                  />
-                  {files[docName] && (
-                    <p className="text-xs text-emerald-700 mt-1">✓ {files[docName]!.name}</p>
-                  )}
-                </div>
-              ))}
+              {service.requiredDocuments.map((docName) => {
+                const p = progress[docName];
+                const showBar = !!p && p.state !== "success";
+                const isError = p?.state === "error";
+                const isDone = p?.state === "success";
+                return (
+                  <div key={docName} className="rounded-xl border border-border/60 p-3 bg-background/40">
+                    <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-primary" /> {docName} <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      disabled={submitting}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setFiles((prev) => ({ ...prev, [docName]: f }));
+                        // reset progress for this doc when a new file is picked
+                        setProgress((prev) => {
+                          const next = { ...prev };
+                          delete next[docName];
+                          return next;
+                        });
+                      }}
+                      className="text-xs"
+                    />
+                    {files[docName] && !showBar && !isDone && (
+                      <p className="text-xs text-emerald-700 mt-1">✓ {files[docName]!.name}</p>
+                    )}
+                    {showBar && (
+                      <div className="mt-2 space-y-1">
+                        <Progress value={p.percent} className={isError ? "[&>div]:bg-rose-500" : ""} />
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
+                          <span className="truncate pr-2">
+                            {isError ? "Upload failed" : p.state === "paused" ? "Paused" : `Uploading ${formatBytes(p.bytesTransferred)} / ${formatBytes(p.totalBytes)}`}
+                          </span>
+                          <span className="font-semibold">{p.percent}%</span>
+                        </div>
+                      </div>
+                    )}
+                    {isDone && (
+                      <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Uploaded · {files[docName]?.name}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
@@ -510,7 +554,11 @@ function ApplicationForm({
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={() => setStep(2)} disabled={submitting}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
               <Button onClick={handleSubmit} disabled={submitting || insufficient}>
-                {submitting ? "Submitting..." : insufficient ? "Insufficient Balance" : <>Submit <IndianRupee className="w-4 h-4 ml-1" /></>}
+                {submitting
+                  ? `Uploading… ${overallProgress()}%`
+                  : insufficient
+                    ? "Insufficient Balance"
+                    : <>Submit <IndianRupee className="w-4 h-4 ml-1" /></>}
               </Button>
             </div>
           </>
@@ -518,6 +566,13 @@ function ApplicationForm({
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes < 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 function SectionTitle({ title }: { title: string }) {
