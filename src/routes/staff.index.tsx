@@ -13,5 +13,3 @@ function StaffHome() {
     </div>
   );
 }
-</content>
-</invoke>
