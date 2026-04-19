@@ -712,11 +712,13 @@ function thumbnail(palette: PosterPalette, accent: string, style: PosterStyle, l
     modern: palette.primary, trust: palette.primary, festive: "#7C2D12",
     urgent: "#B91C1C", corporate: "#0D2A5C", minimal: palette.primary,
     tricolor: "#000080", circuit: palette.primary,
+    elegantMatch: "#7C2D12", goldAuthority: "#000080", cosmicMystic: "#0F172A",
   };
   const bgColors: Record<PosterStyle, string> = {
     modern: palette.bg, trust: palette.bg, festive: "#FFF7E6",
     urgent: "#FEF2F2", corporate: "#0D2A5C", minimal: palette.bg,
     tricolor: "#FFFFFF", circuit: "#EFF6FF",
+    elegantMatch: "#FDF6EC", goldAuthority: "#FFFFFF", cosmicMystic: "#0F172A",
   };
   const bg = bgColors[style];
   const header = headerColors[style];
