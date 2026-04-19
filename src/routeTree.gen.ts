@@ -33,8 +33,6 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
-import { Route as StaffServicesRouteImport } from './routes/staff.services'
-import { Route as StaffServiceApplicationsRouteImport } from './routes/staff.service-applications'
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
@@ -42,7 +40,6 @@ import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
-import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
@@ -51,14 +48,12 @@ import { Route as RetailerTransactionsRouteImport } from './routes/retailer.tran
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
 import { Route as RetailerTrainingGuideRouteImport } from './routes/retailer.training-guide'
 import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
-import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
-import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
 import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimony'
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
@@ -83,7 +78,6 @@ import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.traini
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
-import { Route as AdminServiceApplicationsRouteImport } from './routes/admin.service-applications'
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
@@ -234,17 +228,6 @@ const TrainerTrainingsRoute = TrainerTrainingsRouteImport.update({
   path: '/trainings',
   getParentRoute: () => TrainerRoute,
 } as any)
-const StaffServicesRoute = StaffServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => StaffRoute,
-} as any)
-const StaffServiceApplicationsRoute =
-  StaffServiceApplicationsRouteImport.update({
-    id: '/service-applications',
-    path: '/service-applications',
-    getParentRoute: () => StaffRoute,
-  } as any)
 const StaffReportsRoute = StaffReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -278,11 +261,6 @@ const StaffFormsRoute = StaffFormsRouteImport.update({
 const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
   id: '/form-submissions',
   path: '/form-submissions',
-  getParentRoute: () => StaffRoute,
-} as any)
-const StaffDmtRoute = StaffDmtRouteImport.update({
-  id: '/dmt',
-  path: '/dmt',
   getParentRoute: () => StaffRoute,
 } as any)
 const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
@@ -325,11 +303,6 @@ const RetailerStaffRoute = RetailerStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => RetailerRoute,
 } as any)
-const RetailerServicesRoute = RetailerServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => RetailerRoute,
-} as any)
 const RetailerReferralsRoute = RetailerReferralsRouteImport.update({
   id: '/referrals',
   path: '/referrals',
@@ -358,11 +331,6 @@ const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
 const RetailerMyServicesRoute = RetailerMyServicesRouteImport.update({
   id: '/my-services',
   path: '/my-services',
-  getParentRoute: () => RetailerRoute,
-} as any)
-const RetailerMoneyTransferRoute = RetailerMoneyTransferRouteImport.update({
-  id: '/money-transfer',
-  path: '/money-transfer',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerMatrimonyRoute = RetailerMatrimonyRouteImport.update({
@@ -485,12 +453,6 @@ const AdminServiceButtonsRoute = AdminServiceButtonsRouteImport.update({
   path: '/service-buttons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminServiceApplicationsRoute =
-  AdminServiceApplicationsRouteImport.update({
-    id: '/service-applications',
-    path: '/service-applications',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminServiceActivationsConfigRoute =
   AdminServiceActivationsConfigRouteImport.update({
     id: '/service-activations-config',
@@ -683,7 +645,6 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -708,14 +669,12 @@ export interface FileRoutesByFullPath {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
-  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
-  '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -724,7 +683,6 @@ export interface FileRoutesByFullPath {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
-  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -732,8 +690,6 @@ export interface FileRoutesByFullPath {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
-  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -782,7 +738,6 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -807,14 +762,12 @@ export interface FileRoutesByTo {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
-  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
-  '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -823,7 +776,6 @@ export interface FileRoutesByTo {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
-  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -831,8 +783,6 @@ export interface FileRoutesByTo {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
-  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -889,7 +839,6 @@ export interface FileRoutesById {
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
-  '/admin/service-applications': typeof AdminServiceApplicationsRoute
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
@@ -914,14 +863,12 @@ export interface FileRoutesById {
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
   '/retailer/matrimony': typeof RetailerMatrimonyRoute
-  '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
-  '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
@@ -930,7 +877,6 @@ export interface FileRoutesById {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
-  '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
@@ -938,8 +884,6 @@ export interface FileRoutesById {
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
-  '/staff/service-applications': typeof StaffServiceApplicationsRoute
-  '/staff/services': typeof StaffServicesRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -997,7 +941,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1022,14 +965,12 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
-    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
-    | '/retailer/services'
     | '/retailer/staff'
     | '/retailer/training-guide'
     | '/retailer/trainings'
@@ -1038,7 +979,6 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
-    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1046,8 +986,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
-    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1096,7 +1034,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1121,14 +1058,12 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
-    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
-    | '/retailer/services'
     | '/retailer/staff'
     | '/retailer/training-guide'
     | '/retailer/trainings'
@@ -1137,7 +1072,6 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
-    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1145,8 +1079,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
-    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1202,7 +1134,6 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
-    | '/admin/service-applications'
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
@@ -1227,14 +1158,12 @@ export interface FileRouteTypes {
     | '/retailer/jobs'
     | '/retailer/kyc'
     | '/retailer/matrimony'
-    | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/recharge'
     | '/retailer/referrals'
-    | '/retailer/services'
     | '/retailer/staff'
     | '/retailer/training-guide'
     | '/retailer/trainings'
@@ -1243,7 +1172,6 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
-    | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
     | '/staff/horoscope-requests'
@@ -1251,8 +1179,6 @@ export interface FileRouteTypes {
     | '/staff/leads'
     | '/staff/performance'
     | '/staff/reports'
-    | '/staff/service-applications'
-    | '/staff/services'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1454,20 +1380,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainerTrainingsRouteImport
       parentRoute: typeof TrainerRoute
     }
-    '/staff/services': {
-      id: '/staff/services'
-      path: '/services'
-      fullPath: '/staff/services'
-      preLoaderRoute: typeof StaffServicesRouteImport
-      parentRoute: typeof StaffRoute
-    }
-    '/staff/service-applications': {
-      id: '/staff/service-applications'
-      path: '/service-applications'
-      fullPath: '/staff/service-applications'
-      preLoaderRoute: typeof StaffServiceApplicationsRouteImport
-      parentRoute: typeof StaffRoute
-    }
     '/staff/reports': {
       id: '/staff/reports'
       path: '/reports'
@@ -1515,13 +1427,6 @@ declare module '@tanstack/react-router' {
       path: '/form-submissions'
       fullPath: '/staff/form-submissions'
       preLoaderRoute: typeof StaffFormSubmissionsRouteImport
-      parentRoute: typeof StaffRoute
-    }
-    '/staff/dmt': {
-      id: '/staff/dmt'
-      path: '/dmt'
-      fullPath: '/staff/dmt'
-      preLoaderRoute: typeof StaffDmtRouteImport
       parentRoute: typeof StaffRoute
     }
     '/retailer/work-badge': {
@@ -1580,13 +1485,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerStaffRouteImport
       parentRoute: typeof RetailerRoute
     }
-    '/retailer/services': {
-      id: '/retailer/services'
-      path: '/services'
-      fullPath: '/retailer/services'
-      preLoaderRoute: typeof RetailerServicesRouteImport
-      parentRoute: typeof RetailerRoute
-    }
     '/retailer/referrals': {
       id: '/retailer/referrals'
       path: '/referrals'
@@ -1627,13 +1525,6 @@ declare module '@tanstack/react-router' {
       path: '/my-services'
       fullPath: '/retailer/my-services'
       preLoaderRoute: typeof RetailerMyServicesRouteImport
-      parentRoute: typeof RetailerRoute
-    }
-    '/retailer/money-transfer': {
-      id: '/retailer/money-transfer'
-      path: '/money-transfer'
-      fullPath: '/retailer/money-transfer'
-      preLoaderRoute: typeof RetailerMoneyTransferRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/matrimony': {
@@ -1802,13 +1693,6 @@ declare module '@tanstack/react-router' {
       path: '/service-buttons'
       fullPath: '/admin/service-buttons'
       preLoaderRoute: typeof AdminServiceButtonsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/service-applications': {
-      id: '/admin/service-applications'
-      path: '/service-applications'
-      fullPath: '/admin/service-applications'
-      preLoaderRoute: typeof AdminServiceApplicationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/service-activations-config': {
@@ -2046,7 +1930,6 @@ interface AdminRouteChildren {
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
-  AdminServiceApplicationsRoute: typeof AdminServiceApplicationsRoute
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
@@ -2090,7 +1973,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
-  AdminServiceApplicationsRoute: AdminServiceApplicationsRoute,
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
@@ -2172,14 +2054,12 @@ interface RetailerRouteChildren {
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
   RetailerMatrimonyRoute: typeof RetailerMatrimonyRoute
-  RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
-  RetailerServicesRoute: typeof RetailerServicesRoute
   RetailerStaffRoute: typeof RetailerStaffRoute
   RetailerTrainingGuideRoute: typeof RetailerTrainingGuideRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
@@ -2202,14 +2082,12 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
   RetailerMatrimonyRoute: RetailerMatrimonyRoute,
-  RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
-  RetailerServicesRoute: RetailerServicesRoute,
   RetailerStaffRoute: RetailerStaffRoute,
   RetailerTrainingGuideRoute: RetailerTrainingGuideRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
@@ -2226,7 +2104,6 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
-  StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
@@ -2234,13 +2111,10 @@ interface StaffRouteChildren {
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
-  StaffServiceApplicationsRoute: typeof StaffServiceApplicationsRoute
-  StaffServicesRoute: typeof StaffServicesRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
-  StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
@@ -2248,8 +2122,6 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffLeadsRoute: StaffLeadsRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
-  StaffServiceApplicationsRoute: StaffServiceApplicationsRoute,
-  StaffServicesRoute: StaffServicesRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
 
