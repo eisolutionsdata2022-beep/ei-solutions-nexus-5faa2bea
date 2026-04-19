@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Gavel,
   CalendarDays,
+  Award,
 } from "lucide-react";
 
 interface NavItem {
