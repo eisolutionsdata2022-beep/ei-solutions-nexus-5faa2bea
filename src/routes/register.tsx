@@ -148,6 +148,20 @@ function RegisterPage() {
                 <Label>Address</Label>
                 <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
               </div>
+              <div className="space-y-2">
+                <Label>Referral Code <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input
+                  value={form.referralCode}
+                  onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase() })}
+                  placeholder="REF-XXXXXX"
+                />
+                {form.referralCode && referrerName && (
+                  <p className="text-xs text-green-600">✓ Referred by {referrerName}</p>
+                )}
+                {form.referralCode && !referrerName && (
+                  <p className="text-xs text-destructive">Code not found</p>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Password</Label>
