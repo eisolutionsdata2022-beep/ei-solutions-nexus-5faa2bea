@@ -31,6 +31,7 @@ import { LoansTab } from "@/components/finance-portal/LoansTab";
 import { PaymentsTab } from "@/components/finance-portal/PaymentsTab";
 import { CashBookTab } from "@/components/finance-portal/CashBookTab";
 import { SettingsTab } from "@/components/finance-portal/SettingsTab";
+import { GoldRateBanner } from "@/components/finance-portal/GoldRateBanner";
 
 export const Route = createFileRoute("/finance/")({
   ssr: false,
@@ -151,12 +152,17 @@ function FinanceDashboard() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {tab === "dashboard" && (
-          <DashboardView
-            user={user}
-            stats={stats}
-            loans={loans}
-            onJump={setTab}
-          />
+          <>
+            <div className="mb-6">
+              <GoldRateBanner ownerId={ownerId} />
+            </div>
+            <DashboardView
+              user={user}
+              stats={stats}
+              loans={loans}
+              onJump={setTab}
+            />
+          </>
         )}
         {tab === "customers" && (
           <CustomersTab ownerId={ownerId} ownerEmail={ownerEmail} customers={customers} />

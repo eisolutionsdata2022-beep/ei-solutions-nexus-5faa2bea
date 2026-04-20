@@ -2,18 +2,22 @@
  * Loans tab — dark studio theme.
  * Create gold loans against a customer with multiple gold items.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Banknote, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { addLoan, getNextLoanNo } from "@/lib/finance-firebase";
+import { addLoan, getNextLoanNo, subscribeGoldRate } from "@/lib/finance-firebase";
 import type {
   FinanceCustomer,
   FinanceLoan,
   FinanceSettings,
   GoldItem,
+  GoldRateSnapshot,
   LoanStatus,
 } from "@/lib/finance-types";
-import { GOLD_PURITIES } from "@/lib/finance-types";
+import { GOLD_PURITIES, DEFAULT_RISK_WARN_AT } from "@/lib/finance-types";
+import { evaluateRisk, sumCustomerOutstanding } from "@/lib/gold-loan-risk";
+import { RiskBadge, RiskReasons } from "./RiskBadge";
+import { QuickQuoteCard } from "./QuickQuoteCard";
 import {
   totalValuation,
   eligibleLoanAmount,
@@ -53,6 +57,13 @@ interface Props {
 export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Props) {
   const [showNew, setShowNew] = useState(false);
   const [search, setSearch] = useState("");
+  const [goldRate, setGoldRate] = useState<GoldRateSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!ownerId) return;
+    const unsub = subscribeGoldRate(ownerId, setGoldRate);
+    return () => unsub();
+  }, [ownerId]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return loans;
@@ -64,6 +75,12 @@ export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Pr
 
   return (
     <div className="space-y-4">
+      <QuickQuoteCard
+        customers={customers}
+        loans={loans}
+        settings={settings}
+        goldRate={goldRate}
+      />
       <StudioSectionTitle
         eyebrow="Workspace"
         title="Gold Loans"
@@ -136,7 +153,9 @@ export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Pr
         ownerId={ownerId}
         ownerEmail={ownerEmail}
         customers={customers}
+        loans={loans}
         settings={settings}
+        goldRate={goldRate}
       />
     </div>
   );
@@ -159,24 +178,35 @@ function NewLoanModal({
   ownerId,
   ownerEmail,
   customers,
+  loans,
   settings,
+  goldRate,
 }: {
   open: boolean;
   onClose: () => void;
   ownerId: string;
   ownerEmail: string;
   customers: FinanceCustomer[];
+  loans: FinanceLoan[];
   settings: FinanceSettings | null;
+  goldRate: GoldRateSnapshot | null;
 }) {
+  const defaultRate = goldRate?.rate24k ?? settings?.defaultGoldRatePerGram ?? 6500;
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState<GoldItem[]>([newItem()]);
-  const [rate, setRate] = useState(settings?.defaultGoldRatePerGram ?? 6500);
+  const [rate, setRate] = useState(defaultRate);
   const [ltv, setLtv] = useState(settings?.defaultLtvPercent ?? 75);
   const [interestRate, setInterestRate] = useState(settings?.defaultInterestRate ?? 12);
   const [tenure, setTenure] = useState(12);
   const [loanAmount, setLoanAmount] = useState(0);
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sync rate when live snapshot updates and the user hasn't typed yet
+  useEffect(() => {
+    if (goldRate?.rate24k) setRate(goldRate.rate24k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goldRate?.rate24k]);
 
   function newItem(): GoldItem {
     return {
@@ -204,6 +234,19 @@ function NewLoanModal({
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // Risk evaluation for the live form
+  const finalAmountForRisk = loanAmount || eligible;
+  const customerOutstanding = customerId ? sumCustomerOutstanding(customerId, loans) : 0;
+  const riskEval = evaluateRisk({
+    proposedAmount: finalAmountForRisk,
+    customerOutstanding,
+    policy: {
+      singleLoanLimit: settings?.singleLoanLimit ?? 0,
+      perCustomerCap: customerId ? settings?.perCustomerCap ?? 0 : 0,
+      warnAtPercent: settings?.riskWarnAtPercent ?? DEFAULT_RISK_WARN_AT,
+    },
+  });
+
   async function save() {
     const cust = customers.find((c) => c.id === customerId);
     if (!cust) {
@@ -218,6 +261,12 @@ function NewLoanModal({
     if (finalAmount <= 0) {
       toast.error("Loan amount must be positive");
       return;
+    }
+    if (riskEval.level === "breach") {
+      const ok = window.confirm(
+        `Risk policy breach:\n\n${riskEval.reasons.join("\n")}\n\nProceed anyway?`,
+      );
+      if (!ok) return;
     }
     setSaving(true);
     try {
@@ -412,6 +461,16 @@ function NewLoanModal({
             <Mini label="Monthly EMI" value={formatINR(emi)} />
             <Mini label="Total payable" value={formatINR(total)} accent />
           </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Risk policy check
+            </p>
+            <RiskBadge evaluation={riskEval} />
+          </div>
+          <RiskReasons evaluation={riskEval} />
         </div>
 
         <StudioTextarea
