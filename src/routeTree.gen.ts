@@ -19,6 +19,7 @@ import { Route as NsdlCallbackRouteImport } from './routes/nsdl-callback'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
+import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as DistributorRouteImport } from './routes/distributor'
 import { Route as BookletRouteImport } from './routes/booklet'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -28,6 +29,7 @@ import { Route as StaffIndexRouteImport } from './routes/staff.index'
 import { Route as RetailerIndexRouteImport } from './routes/retailer.index'
 import { Route as OperatorIndexRouteImport } from './routes/operator.index'
 import { Route as MatrimonyIndexRouteImport } from './routes/matrimony.index'
+import { Route as FinanceIndexRouteImport } from './routes/finance.index'
 import { Route as DistributorIndexRouteImport } from './routes/distributor.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
@@ -69,6 +71,7 @@ import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as RetailerActivateRouteImport } from './routes/retailer.activate'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
+import { Route as FinanceLoginRouteImport } from './routes/finance.login'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
@@ -100,6 +103,7 @@ import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-setti
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
+import { Route as AdminFinanceUsersRouteImport } from './routes/admin.finance-users'
 import { Route as AdminFinanceBranchesRouteImport } from './routes/admin.finance-branches'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
@@ -162,6 +166,11 @@ const InstallRoute = InstallRouteImport.update({
   path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DistributorRoute = DistributorRouteImport.update({
   id: '/distributor',
   path: '/distributor',
@@ -206,6 +215,11 @@ const MatrimonyIndexRoute = MatrimonyIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MatrimonyRoute,
+} as any)
+const FinanceIndexRoute = FinanceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FinanceRoute,
 } as any)
 const DistributorIndexRoute = DistributorIndexRouteImport.update({
   id: '/',
@@ -412,6 +426,11 @@ const MatrimonyProfileIdRoute = MatrimonyProfileIdRouteImport.update({
   path: '/$profileId',
   getParentRoute: () => MatrimonyRoute,
 } as any)
+const FinanceLoginRoute = FinanceLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => FinanceRoute,
+} as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -569,6 +588,11 @@ const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   path: '/form-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFinanceUsersRoute = AdminFinanceUsersRouteImport.update({
+  id: '/finance-users',
+  path: '/finance-users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFinanceBranchesRoute = AdminFinanceBranchesRouteImport.update({
   id: '/finance-branches',
   path: '/finance-branches',
@@ -631,6 +655,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
+  '/finance': typeof FinanceRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -651,6 +676,7 @@ export interface FileRoutesByFullPath {
   '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
+  '/admin/finance-users': typeof AdminFinanceUsersRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -682,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -723,6 +750,7 @@ export interface FileRoutesByFullPath {
   '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
+  '/finance/': typeof FinanceIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
   '/operator/': typeof OperatorIndexRoute
   '/retailer/': typeof RetailerIndexRoute
@@ -748,6 +776,7 @@ export interface FileRoutesByTo {
   '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
+  '/admin/finance-users': typeof AdminFinanceUsersRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -779,6 +808,7 @@ export interface FileRoutesByTo {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -820,6 +850,7 @@ export interface FileRoutesByTo {
   '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin': typeof AdminIndexRoute
   '/distributor': typeof DistributorIndexRoute
+  '/finance': typeof FinanceIndexRoute
   '/matrimony': typeof MatrimonyIndexRoute
   '/operator': typeof OperatorIndexRoute
   '/retailer': typeof RetailerIndexRoute
@@ -833,6 +864,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
+  '/finance': typeof FinanceRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -853,6 +885,7 @@ export interface FileRoutesById {
   '/admin/csc-settings': typeof AdminCscSettingsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
+  '/admin/finance-users': typeof AdminFinanceUsersRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
@@ -884,6 +917,7 @@ export interface FileRoutesById {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -925,6 +959,7 @@ export interface FileRoutesById {
   '/worker/$workerId': typeof WorkerWorkerIdRoute
   '/admin/': typeof AdminIndexRoute
   '/distributor/': typeof DistributorIndexRoute
+  '/finance/': typeof FinanceIndexRoute
   '/matrimony/': typeof MatrimonyIndexRoute
   '/operator/': typeof OperatorIndexRoute
   '/retailer/': typeof RetailerIndexRoute
@@ -939,6 +974,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/booklet'
     | '/distributor'
+    | '/finance'
     | '/install'
     | '/login'
     | '/matrimony'
@@ -959,6 +995,7 @@ export interface FileRouteTypes {
     | '/admin/csc-settings'
     | '/admin/finance'
     | '/admin/finance-branches'
+    | '/admin/finance-users'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -990,6 +1027,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1031,6 +1069,7 @@ export interface FileRouteTypes {
     | '/worker/$workerId'
     | '/admin/'
     | '/distributor/'
+    | '/finance/'
     | '/matrimony/'
     | '/operator/'
     | '/retailer/'
@@ -1056,6 +1095,7 @@ export interface FileRouteTypes {
     | '/admin/csc-settings'
     | '/admin/finance'
     | '/admin/finance-branches'
+    | '/admin/finance-users'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -1087,6 +1127,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1128,6 +1169,7 @@ export interface FileRouteTypes {
     | '/worker/$workerId'
     | '/admin'
     | '/distributor'
+    | '/finance'
     | '/matrimony'
     | '/operator'
     | '/retailer'
@@ -1140,6 +1182,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/booklet'
     | '/distributor'
+    | '/finance'
     | '/install'
     | '/login'
     | '/matrimony'
@@ -1160,6 +1203,7 @@ export interface FileRouteTypes {
     | '/admin/csc-settings'
     | '/admin/finance'
     | '/admin/finance-branches'
+    | '/admin/finance-users'
     | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
@@ -1191,6 +1235,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1232,6 +1277,7 @@ export interface FileRouteTypes {
     | '/worker/$workerId'
     | '/admin/'
     | '/distributor/'
+    | '/finance/'
     | '/matrimony/'
     | '/operator/'
     | '/retailer/'
@@ -1245,6 +1291,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BookletRoute: typeof BookletRoute
   DistributorRoute: typeof DistributorRouteWithChildren
+  FinanceRoute: typeof FinanceRouteWithChildren
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
@@ -1330,6 +1377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/distributor': {
       id: '/distributor'
       path: '/distributor'
@@ -1392,6 +1446,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/matrimony/'
       preLoaderRoute: typeof MatrimonyIndexRouteImport
       parentRoute: typeof MatrimonyRoute
+    }
+    '/finance/': {
+      id: '/finance/'
+      path: '/'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof FinanceIndexRouteImport
+      parentRoute: typeof FinanceRoute
     }
     '/distributor/': {
       id: '/distributor/'
@@ -1680,6 +1741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatrimonyProfileIdRouteImport
       parentRoute: typeof MatrimonyRoute
     }
+    '/finance/login': {
+      id: '/finance/login'
+      path: '/login'
+      fullPath: '/finance/login'
+      preLoaderRoute: typeof FinanceLoginRouteImport
+      parentRoute: typeof FinanceRoute
+    }
     '/distributor/wallet': {
       id: '/distributor/wallet'
       path: '/wallet'
@@ -1897,6 +1965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFormAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/finance-users': {
+      id: '/admin/finance-users'
+      path: '/finance-users'
+      fullPath: '/admin/finance-users'
+      preLoaderRoute: typeof AdminFinanceUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/finance-branches': {
       id: '/admin/finance-branches'
       path: '/finance-branches'
@@ -1988,6 +2063,7 @@ interface AdminRouteChildren {
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFinanceBranchesRoute: typeof AdminFinanceBranchesRoute
+  AdminFinanceUsersRoute: typeof AdminFinanceUsersRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
@@ -2031,6 +2107,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCscSettingsRoute: AdminCscSettingsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFinanceBranchesRoute: AdminFinanceBranchesRoute,
+  AdminFinanceUsersRoute: AdminFinanceUsersRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
@@ -2080,6 +2157,19 @@ const DistributorRouteChildren: DistributorRouteChildren = {
 const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
   DistributorRouteChildren,
 )
+
+interface FinanceRouteChildren {
+  FinanceLoginRoute: typeof FinanceLoginRoute
+  FinanceIndexRoute: typeof FinanceIndexRoute
+}
+
+const FinanceRouteChildren: FinanceRouteChildren = {
+  FinanceLoginRoute: FinanceLoginRoute,
+  FinanceIndexRoute: FinanceIndexRoute,
+}
+
+const FinanceRouteWithChildren =
+  FinanceRoute._addFileChildren(FinanceRouteChildren)
 
 interface MatrimonyRouteChildren {
   MatrimonyProfileIdRoute: typeof MatrimonyProfileIdRoute
@@ -2231,6 +2321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   BookletRoute: BookletRoute,
   DistributorRoute: DistributorRouteWithChildren,
+  FinanceRoute: FinanceRouteWithChildren,
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
