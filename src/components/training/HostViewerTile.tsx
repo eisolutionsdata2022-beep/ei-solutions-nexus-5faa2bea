@@ -9,10 +9,12 @@ import {
   clearViewerSignaling,
   type LiveHost,
 } from "@/lib/webrtc";
+import { logSessionQualitySample } from "@/lib/session-quality-logs";
 import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle, SignalLow, SignalMedium, SignalHigh } from "lucide-react";
 
 interface Props {
   trainingId: string;
+  trainingTitle?: string;
   host: LiveHost;
   onMaximize?: () => void;
 }
