@@ -2,18 +2,22 @@
  * Loans tab — dark studio theme.
  * Create gold loans against a customer with multiple gold items.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Banknote, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { addLoan, getNextLoanNo } from "@/lib/finance-firebase";
+import { addLoan, getNextLoanNo, subscribeGoldRate } from "@/lib/finance-firebase";
 import type {
   FinanceCustomer,
   FinanceLoan,
   FinanceSettings,
   GoldItem,
+  GoldRateSnapshot,
   LoanStatus,
 } from "@/lib/finance-types";
-import { GOLD_PURITIES } from "@/lib/finance-types";
+import { GOLD_PURITIES, DEFAULT_RISK_WARN_AT } from "@/lib/finance-types";
+import { evaluateRisk, sumCustomerOutstanding } from "@/lib/gold-loan-risk";
+import { RiskBadge, RiskReasons } from "./RiskBadge";
+import { QuickQuoteCard } from "./QuickQuoteCard";
 import {
   totalValuation,
   eligibleLoanAmount,
