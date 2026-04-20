@@ -234,6 +234,19 @@ function NewLoanModal({
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // Risk evaluation for the live form
+  const finalAmountForRisk = loanAmount || eligible;
+  const customerOutstanding = customerId ? sumCustomerOutstanding(customerId, loans) : 0;
+  const riskEval = evaluateRisk({
+    proposedAmount: finalAmountForRisk,
+    customerOutstanding,
+    policy: {
+      singleLoanLimit: settings?.singleLoanLimit ?? 0,
+      perCustomerCap: customerId ? settings?.perCustomerCap ?? 0 : 0,
+      warnAtPercent: settings?.riskWarnAtPercent ?? DEFAULT_RISK_WARN_AT,
+    },
+  });
+
   async function save() {
     const cust = customers.find((c) => c.id === customerId);
     if (!cust) {
@@ -248,6 +261,12 @@ function NewLoanModal({
     if (finalAmount <= 0) {
       toast.error("Loan amount must be positive");
       return;
+    }
+    if (riskEval.level === "breach") {
+      const ok = window.confirm(
+        `Risk policy breach:\n\n${riskEval.reasons.join("\n")}\n\nProceed anyway?`,
+      );
+      if (!ok) return;
     }
     setSaving(true);
     try {
@@ -442,6 +461,16 @@ function NewLoanModal({
             <Mini label="Monthly EMI" value={formatINR(emi)} />
             <Mini label="Total payable" value={formatINR(total)} accent />
           </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Risk policy check
+            </p>
+            <RiskBadge evaluation={riskEval} />
+          </div>
+          <RiskReasons evaluation={riskEval} />
         </div>
 
         <StudioTextarea
