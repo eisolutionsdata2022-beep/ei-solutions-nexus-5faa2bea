@@ -304,6 +304,13 @@ function NewCustomerModal({
         </StudioButton>
       </div>
     </StudioModal>
+    <StudioCameraCapture
+      open={showCam}
+      onClose={() => setShowCam(false)}
+      onCapture={setPhotoData}
+      title="Capture Customer Photo"
+    />
+    </>
   );
 }
 
