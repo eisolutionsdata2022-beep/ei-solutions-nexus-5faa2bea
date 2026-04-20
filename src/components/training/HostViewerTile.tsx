@@ -133,6 +133,8 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
       /* getStats can fail mid-teardown */
     }
   }, [appUser, trainingId, trainingTitle, host.id, host.name]);
+
+  const connect = useCallback(async () => {
     if (!appUser) return;
     teardown();
     setStatus("connecting");
