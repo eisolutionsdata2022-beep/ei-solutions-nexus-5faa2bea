@@ -2,14 +2,15 @@
  * Customers tab — dark studio theme.
  * Allows creating customers with KYC fields and viewing the list.
  */
-import { useMemo, useState } from "react";
-import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera, Upload, FileText, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
   addCustomer,
   getNextCustomerCode,
   updateCustomer,
   uploadCustomerPhoto,
+  uploadCustomerDoc,
 } from "@/lib/finance-firebase";
 import { StudioCameraCapture } from "./StudioCameraCapture";
 import type { FinanceCustomer, KycStatus } from "@/lib/finance-types";
@@ -354,6 +355,36 @@ function CustomerDetailModal({
         {customer.altMobile && <Info label="Alt Mobile" value={customer.altMobile} />}
         <Info label="Address" value={customer.address || "—"} />
         {customer.notes && <Info label="Notes" value={customer.notes} />}
+
+        {/* KYC Documents */}
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            KYC Documents
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <KycDocSlot
+              label="Aadhaar Front"
+              url={customer.aadhaarFrontUrl}
+              kind="aadhaar_front"
+              customer={customer}
+              field="aadhaarFrontUrl"
+            />
+            <KycDocSlot
+              label="Aadhaar Back"
+              url={customer.aadhaarBackUrl}
+              kind="aadhaar_back"
+              customer={customer}
+              field="aadhaarBackUrl"
+            />
+            <KycDocSlot
+              label="PAN Card"
+              url={customer.panUrl}
+              kind="pan"
+              customer={customer}
+              field="panUrl"
+            />
+          </div>
+        </div>
       </div>
       {customer.kycStatus === "Pending" && (
         <div className="mt-5 flex justify-end gap-2">
@@ -366,6 +397,95 @@ function CustomerDetailModal({
         </div>
       )}
     </StudioModal>
+  );
+}
+
+function KycDocSlot({
+  label,
+  url,
+  kind,
+  customer,
+  field,
+}: {
+  label: string;
+  url?: string;
+  kind: string;
+  customer: FinanceCustomer;
+  field: "aadhaarFrontUrl" | "aadhaarBackUrl" | "panUrl";
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const isImage = url && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url);
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File must be under 5 MB");
+      return;
+    }
+    setBusy(true);
+    try {
+      const newUrl = await uploadCustomerDoc(customer.retailerId, customer.id, kind, file);
+      await updateCustomer(customer.id, { [field]: newUrl });
+      toast.success(`${label} uploaded`);
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+      <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/40">
+        {url ? (
+          isImage ? (
+            <img src={url} alt={label} className="h-full w-full object-cover" />
+          ) : (
+            <FileText className="h-6 w-6 text-slate-500" />
+          )
+        ) : (
+          <FileText className="h-6 w-6 text-slate-600" />
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={onFile}
+      />
+      <div className="mt-1.5 flex items-center justify-between gap-1">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-1 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[10px] font-semibold text-cyan-200 hover:bg-cyan-400/20 disabled:opacity-50"
+        >
+          {busy ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Upload className="h-3 w-3" />
+          )}
+          {url ? "Replace" : "Upload"}
+        </button>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 hover:text-slate-200"
+          >
+            View <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
