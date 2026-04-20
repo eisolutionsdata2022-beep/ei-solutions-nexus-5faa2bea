@@ -158,8 +158,7 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     }
     // Pre-check permission state for a clearer error
     try {
-      // @ts-expect-error - microphone is a valid PermissionName in Chromium
-      const micPerm = await navigator.permissions?.query?.({ name: "microphone" });
+      const micPerm = await navigator.permissions?.query?.({ name: "microphone" as PermissionName });
       if (micPerm?.state === "denied") {
         throw new Error("Microphone is blocked. Please allow it in browser site settings.");
       }
