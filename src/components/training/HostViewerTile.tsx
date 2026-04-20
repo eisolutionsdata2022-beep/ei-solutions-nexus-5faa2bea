@@ -39,6 +39,8 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
   const timeoutRef = useRef<number | null>(null);
   const statsIntervalRef = useRef<number | null>(null);
   const lastStatsRef = useRef<{ packetsLost: number; packetsReceived: number; ts: number } | null>(null);
+  const lastLoggedAtRef = useRef<number>(0);
+  const lastLoggedQualityRef = useRef<Quality>("unknown");
   const autoRetriedRef = useRef(false);
   const [status, setStatus] = useState<Status>("connecting");
   const [errMsg, setErrMsg] = useState<string>("");
