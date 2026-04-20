@@ -44,6 +44,9 @@ import {
   Loader2,
   X,
   RotateCcw,
+  ListChecks,
+  UploadCloud,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
