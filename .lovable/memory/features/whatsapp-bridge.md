@@ -28,8 +28,14 @@ type: feature
 ## Firestore collections
 - `whatsappSessions/default` — bridge writes status/QR; staff read-only
 - `whatsappContacts/{phone}` — chat list, `assignedTo`/`unreadCount` writable by staff
-- `whatsappMessages/{auto}` — full history, bridge-write only
+- `whatsappMessages/{auto}` — full history (incl. `mediaUrl`, `mediaMime`, `mediaPath`), bridge-write only
 - `whatsappCampaigns/{id}` + `recipients/{id}` subcollection — admin creates parent, bridge updates
+
+## Media handling
+- Inbox composer: image (`image/*`) or PDF picker, ≤12 MB, base64-encoded in browser → sent via `/send` with `mediaBase64` + `mediaMime` + optional `caption`
+- Inbound + outbound media is downloaded by bridge via `msg.downloadMedia()` and uploaded to Firebase Storage at `whatsappMedia/{phone}/{messageId}.{ext}` with a 30-day signed URL stored as `mediaUrl` on the message doc
+- Bridge env: `FIREBASE_STORAGE_BUCKET` (default `<project>.appspot.com`), `WA_MEDIA_URL_TTL_DAYS=30`
+- Storage rules: `whatsappMedia/{phone}/**` readable by staff/manager/admin only; browser write blocked (bridge-only via Admin SDK)
 
 ## Routes
 - `/admin/whatsapp` — Connection (QR, status, restart) + Inbox (all chats, assign dropdown)
