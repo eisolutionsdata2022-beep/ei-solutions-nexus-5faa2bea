@@ -177,7 +177,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
               />
             )}
             {otherHosts.map((h) => (
-              <HostViewerTile key={h.id} trainingId={trainingId} host={h} />
+              <HostViewerTile key={h.id} trainingId={trainingId} trainingTitle={trainingTitle} host={h} />
             ))}
             {!isTrainer && otherHosts.length === 0 && (
               <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center bg-black/30">

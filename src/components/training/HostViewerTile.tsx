@@ -9,10 +9,12 @@ import {
   clearViewerSignaling,
   type LiveHost,
 } from "@/lib/webrtc";
+import { logSessionQualitySample } from "@/lib/session-quality-logs";
 import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle, SignalLow, SignalMedium, SignalHigh } from "lucide-react";
 
 interface Props {
   trainingId: string;
+  trainingTitle?: string;
   host: LiveHost;
   onMaximize?: () => void;
 }
@@ -29,7 +31,7 @@ const STATS_INTERVAL_MS = 3_000;
  * - 15s connection timeout with explicit Retry button
  * - Auto-reconnect on disconnected/failed state (one attempt before showing Retry)
  */
-export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
+export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: Props) {
   const { appUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -37,6 +39,8 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
   const timeoutRef = useRef<number | null>(null);
   const statsIntervalRef = useRef<number | null>(null);
   const lastStatsRef = useRef<{ packetsLost: number; packetsReceived: number; ts: number } | null>(null);
+  const lastLoggedAtRef = useRef<number>(0);
+  const lastLoggedQualityRef = useRef<Quality>("unknown");
   const autoRetriedRef = useRef(false);
   const [status, setStatus] = useState<Status>("connecting");
   const [errMsg, setErrMsg] = useState<string>("");
@@ -100,10 +104,35 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
 
       setQuality(score);
       setQualityDetails({ rtt: Math.round(rtt), jitter: Math.round(jitter), loss: Math.round(lossPct * 10) / 10 });
+
+      // Log to Firestore: on quality change, or every 30s as a heartbeat.
+      if (appUser) {
+        const nowMs = Date.now();
+        const changed = score !== lastLoggedQualityRef.current;
+        const heartbeatDue = nowMs - lastLoggedAtRef.current >= 30_000;
+        if (changed || heartbeatDue) {
+          lastLoggedAtRef.current = nowMs;
+          lastLoggedQualityRef.current = score;
+          logSessionQualitySample({
+            trainingId,
+            trainingTitle,
+            hostId: host.id,
+            hostName: host.name,
+            viewerId: appUser.uid,
+            viewerName: appUser.name || appUser.email,
+            viewerRole: appUser.role,
+            rtt: Math.round(rtt),
+            jitter: Math.round(jitter),
+            loss: Math.round(lossPct * 10) / 10,
+            quality: score,
+            reason: changed ? "change" : "interval",
+          });
+        }
+      }
     } catch {
       /* getStats can fail mid-teardown */
     }
-  }, []);
+  }, [appUser, trainingId, trainingTitle, host.id, host.name]);
 
   const connect = useCallback(async () => {
     if (!appUser) return;

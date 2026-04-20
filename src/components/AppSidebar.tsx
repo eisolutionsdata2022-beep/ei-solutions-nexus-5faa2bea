@@ -27,6 +27,7 @@ import {
   Award,
   BookOpen,
   Gift,
+  Activity,
 } from "lucide-react";
 
 interface NavItem {
@@ -62,6 +63,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Training Earnings", to: "/admin/training-earnings", icon: BarChart3 },
     { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
     { label: "Training Reviews", to: "/admin/training-reviews", icon: MessageSquare },
+    { label: "Session Quality", to: "/admin/session-quality", icon: Activity },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
     { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
