@@ -379,12 +379,6 @@ function DashboardTab({
   ];
 
   const goToTab = (tab: string) => onNavigate(tab);
-    if (!node && el) {
-      document.querySelectorAll<HTMLElement>('[role="tab"]').forEach((t) => {
-        if ((t.getAttribute("value") || t.textContent?.trim().toLowerCase()) === tab) t.click();
-      });
-    }
-  }
 
   // Recent payments for mini activity feed
   const recentPayments = [...payments]
