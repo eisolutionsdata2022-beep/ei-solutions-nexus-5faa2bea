@@ -35,9 +35,13 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
   const { appUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
   const timeoutRef = useRef<number | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
   const statsIntervalRef = useRef<number | null>(null);
+  const connectRunRef = useRef(0);
+  const remoteTrackSeenRef = useRef(false);
   const lastStatsRef = useRef<{ packetsLost: number; packetsReceived: number; ts: number } | null>(null);
   const lastLoggedAtRef = useRef<number>(0);
   const lastLoggedQualityRef = useRef<Quality>("unknown");
@@ -55,13 +59,20 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    if (reconnectTimerRef.current) {
+      window.clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
     if (statsIntervalRef.current) {
       window.clearInterval(statsIntervalRef.current);
       statsIntervalRef.current = null;
     }
+    remoteTrackSeenRef.current = false;
     lastStatsRef.current = null;
+    remoteStreamRef.current = null;
     try { pcRef.current?.close(); } catch { /* noop */ }
     pcRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
   const pollStats = useCallback(async (pc: RTCPeerConnection) => {
@@ -136,9 +147,12 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
 
   const connect = useCallback(async () => {
     if (!appUser) return;
+    const runId = ++connectRunRef.current;
     teardown();
     setStatus("connecting");
     setErrMsg("");
+    setQuality("unknown");
+    setQualityDetails(null);
 
     try {
       // Wipe last session's offer/answer/ICE for this viewer↔host pair so the
@@ -147,49 +161,88 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
 
       const pc = createPeerConnection();
       pcRef.current = pc;
+      const remoteStream = new MediaStream();
+      remoteStreamRef.current = remoteStream;
+      if (videoRef.current) videoRef.current.srcObject = remoteStream;
       pc.addTransceiver("video", { direction: "recvonly" });
       pc.addTransceiver("audio", { direction: "recvonly" });
 
       pc.ontrack = (e) => {
-        if (videoRef.current && e.streams[0]) {
-          videoRef.current.srcObject = e.streams[0];
+        const stream = e.streams[0] ?? remoteStreamRef.current ?? remoteStream;
+        if (!stream.getTracks().some((track) => track.id === e.track.id)) {
+          stream.addTrack(e.track);
+        }
+        remoteTrackSeenRef.current = true;
+        if (videoRef.current) {
+          if (videoRef.current.srcObject !== stream) videoRef.current.srcObject = stream;
           videoRef.current.play?.().catch(() => { /* autoplay block handled by muted */ });
         }
+        setStatus("connected");
+        if (timeoutRef.current) {
+          window.clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      };
+
+      const markConnected = () => {
+        if (pcRef.current !== pc || connectRunRef.current !== runId) return;
+        if (reconnectTimerRef.current) {
+          window.clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = null;
+        }
+        if (status !== "connected") setStatus("connected");
+        if (timeoutRef.current) {
+          window.clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        if (statsIntervalRef.current) window.clearInterval(statsIntervalRef.current);
+        statsIntervalRef.current = window.setInterval(() => pollStats(pc), STATS_INTERVAL_MS);
+      };
+
+      const markFailed = (message: string) => {
+        if (pcRef.current !== pc || connectRunRef.current !== runId) return;
+        if (!autoRetriedRef.current) {
+          autoRetriedRef.current = true;
+          setAttempt((a) => a + 1);
+          reconnectTimerRef.current = window.setTimeout(() => {
+            if (connectRunRef.current === runId) void connect();
+          }, 800);
+          return;
+        }
+        setStatus("failed");
+        setErrMsg(message);
+      };
+
+      const scheduleReconnect = (message: string) => {
+        if (pcRef.current !== pc || connectRunRef.current !== runId || reconnectTimerRef.current) return;
+        reconnectTimerRef.current = window.setTimeout(() => {
+          reconnectTimerRef.current = null;
+          if (pcRef.current !== pc || connectRunRef.current !== runId) return;
+          if (pc.connectionState === "disconnected" || pc.iceConnectionState === "disconnected") {
+            markFailed(message);
+          }
+        }, 5_000);
       };
 
       pc.onconnectionstatechange = () => {
         const s = pc.connectionState;
         if (s === "connected") {
-          setStatus("connected");
-          if (timeoutRef.current) {
-            window.clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-          if (statsIntervalRef.current) window.clearInterval(statsIntervalRef.current);
-          statsIntervalRef.current = window.setInterval(() => pollStats(pc), STATS_INTERVAL_MS);
+          markConnected();
         } else if (s === "failed") {
-          // one auto-retry, then surface a Retry button
-          if (!autoRetriedRef.current) {
-            autoRetriedRef.current = true;
-            setAttempt((a) => a + 1);
-            setTimeout(() => connect(), 800);
-          } else {
-            setStatus("failed");
-            setErrMsg("Connection failed. Please retry.");
-          }
+          markFailed("Connection failed. Please retry.");
         } else if (s === "disconnected") {
-          // Brief network blip — give it 5s to recover, else auto-reconnect once
-          window.setTimeout(() => {
-            if (pcRef.current === pc && pc.connectionState === "disconnected") {
-              if (!autoRetriedRef.current) {
-                autoRetriedRef.current = true;
-                connect();
-              } else {
-                setStatus("failed");
-                setErrMsg("Connection lost.");
-              }
-            }
-          }, 5_000);
+          scheduleReconnect("Connection lost.");
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        const s = pc.iceConnectionState;
+        if (s === "connected" || s === "completed") {
+          markConnected();
+        } else if (s === "failed") {
+          markFailed("Network path to trainer failed. Please retry.");
+        } else if (s === "disconnected") {
+          scheduleReconnect("Connection lost.");
         }
       };
 
@@ -203,18 +256,21 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
       await pc.setLocalDescription(offer);
       await viewerSendOffer(trainingId, host.id, appUser.uid, offer);
 
-      // 15s timeout — if no media flowing yet, mark as timeout
       timeoutRef.current = window.setTimeout(() => {
-        if (pcRef.current === pc && pc.connectionState !== "connected") {
+        if (pcRef.current === pc && connectRunRef.current === runId && !remoteTrackSeenRef.current) {
           setStatus("timeout");
           setErrMsg("Taking too long to connect. Please retry.");
         }
       }, CONNECT_TIMEOUT_MS);
 
       const ansUnsub = viewerListenForAnswer(trainingId, host.id, appUser.uid, async (ans) => {
+        if (pcRef.current !== pc || connectRunRef.current !== runId) return;
         if (pc.signalingState === "have-local-offer") {
           try {
             await pc.setRemoteDescription(new RTCSessionDescription(ans));
+            if (pc.connectionState === "connected" || pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+              markConnected();
+            }
           } catch (err) {
             console.warn("setRemoteDescription failed", err);
           }
@@ -223,6 +279,7 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
       unsubsRef.current.push(ansUnsub);
 
       const iceUnsub = onIceCandidates(trainingId, host.id, appUser.uid, "callee", (c) => {
+        if (pcRef.current !== pc || connectRunRef.current !== runId) return;
         pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
       });
       unsubsRef.current.push(iceUnsub);
