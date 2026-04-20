@@ -134,13 +134,67 @@ function phoneToJid(phone) {
 
 async function upsertContact(jid, name) {
   const phone = jidToPhone(jid);
-  if (!phone) return;
-  await contactsCol.doc(phone).set({
+  if (!phone) return { phone: null, isNew: false };
+  const ref = contactsCol.doc(phone);
+  const snap = await ref.get();
+  const isNew = !snap.exists;
+  await ref.set({
     phone,
     jid,
-    displayName: name || phone,
+    displayName: name || snap.data()?.displayName || phone,
     lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
+  return { phone, isNew };
+}
+
+// Auto-create a CRM lead the first time a brand-new WhatsApp number messages us.
+// Idempotent: skips if a crmLeads doc already exists for this phone (or any
+// 10-digit suffix match), or if the contact was already known.
+const crmLeadsCol = fs_db.collection('crmLeads');
+async function autoCreateCrmLead({ phone, displayName, firstMessage }) {
+  try {
+    if (!phone) return;
+    const last10 = phone.slice(-10);
+    // Check existing leads — match on either the full phone or the last-10 form.
+    const [exactQ, suffixQ] = await Promise.all([
+      crmLeadsCol.where('phone', '==', phone).limit(1).get(),
+      last10 && last10 !== phone
+        ? crmLeadsCol.where('phone', '==', last10).limit(1).get()
+        : Promise.resolve({ empty: true }),
+    ]);
+    if (!exactQ.empty || !suffixQ.empty) return;
+
+    // Compute the next LD-XXXX id (best-effort, matches src/lib/crm-firebase.ts logic).
+    const allSnap = await crmLeadsCol.get();
+    const leadId = `LD-${String(allSnap.size + 1).padStart(4, '0')}`;
+    const snippet = (firstMessage || '').toString().slice(0, 200);
+    const nowIso = new Date().toISOString();
+
+    await crmLeadsCol.add({
+      leadId,
+      name: (displayName || '').trim() || `WhatsApp ${last10}`,
+      phone: last10 || phone,
+      alternatePhone: '',
+      location: '',
+      courseInterested: '',
+      leadSource: 'WhatsApp',
+      assignedStaffId: '',
+      assignedStaffName: '',
+      status: 'New',
+      followUpDate: '',
+      followUpTime: '',
+      remarks: snippet ? `First WhatsApp message: "${snippet}"` : 'Auto-created from WhatsApp inbox',
+      paymentStatus: 'Pending',
+      applicationStatus: 'Not Started',
+      documents: [],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      createdBy: 'whatsapp-bridge',
+    });
+    console.log(`[crm] auto-created lead ${leadId} from WhatsApp ${phone}`);
+  } catch (err) {
+    console.error('[crm] autoCreateCrmLead failed', err.message);
+  }
 }
 
 function extFromMime(mime) {
