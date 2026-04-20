@@ -3,7 +3,7 @@
  * Allows creating customers with KYC fields and viewing the list.
  */
 import { useMemo, useRef, useState } from "react";
-import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera, Upload, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera, Upload, FileText, Loader2, ExternalLink, Pencil, X, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
   addCustomer,
@@ -322,12 +322,68 @@ function CustomerDetailModal({
   customer: FinanceCustomer | null;
   onClose: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    fullName: "",
+    mobile: "",
+    altMobile: "",
+    address: "",
+    aadhaarNo: "",
+    panNo: "",
+    notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Reset state when customer changes / modal closes
+  useEffect(() => {
+    if (customer) {
+      setForm({
+        fullName: customer.fullName || "",
+        mobile: customer.mobile || "",
+        altMobile: customer.altMobile || "",
+        address: customer.address || "",
+        aadhaarNo: customer.aadhaarNo || "",
+        panNo: customer.panNo || "",
+        notes: customer.notes || "",
+      });
+      setEditing(false);
+    }
+  }, [customer]);
+
   if (!customer) return null;
+
   async function setKyc(status: "Verified" | "Rejected") {
     if (!customer) return;
     await updateCustomer(customer.id, { kycStatus: status });
     toast.success(`KYC ${status}`);
   }
+
+  async function saveEdits() {
+    if (!customer) return;
+    if (!form.fullName.trim() || !form.mobile.trim() || !form.aadhaarNo.trim()) {
+      toast.error("Name, mobile, and Aadhaar are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateCustomer(customer.id, {
+        fullName: form.fullName.trim(),
+        mobile: form.mobile.trim(),
+        altMobile: form.altMobile.trim() || undefined,
+        address: form.address.trim(),
+        aadhaarNo: form.aadhaarNo.trim(),
+        panNo: form.panNo.trim() || undefined,
+        notes: form.notes.trim() || undefined,
+      });
+      toast.success("Customer updated");
+      setEditing(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <StudioModal open onClose={onClose} title={customer.fullName} width="max-w-lg">
       <div className="space-y-3 text-sm">
@@ -342,19 +398,85 @@ function CustomerDetailModal({
               {customer.fullName[0]}
             </div>
           )}
-          <div>
+          <div className="flex-1">
             <p className="font-mono text-xs text-cyan-300/80">{customer.customerCode}</p>
             <p className="text-slate-300">{customer.mobile}</p>
             <StudioBadge tone={KYC_TONE[customer.kycStatus]}>
               KYC: {customer.kycStatus}
             </StudioBadge>
           </div>
+          {!editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-400/20"
+            >
+              <Pencil className="h-3 w-3" /> Edit
+            </button>
+          )}
         </div>
-        <Info label="Aadhaar" value={customer.aadhaarNo} />
-        {customer.panNo && <Info label="PAN" value={customer.panNo} />}
-        {customer.altMobile && <Info label="Alt Mobile" value={customer.altMobile} />}
-        <Info label="Address" value={customer.address || "—"} />
-        {customer.notes && <Info label="Notes" value={customer.notes} />}
+
+        {editing ? (
+          <div className="space-y-3 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.03] p-3">
+            <StudioInput
+              label="Full Name *"
+              value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <StudioInput
+                label="Mobile *"
+                value={form.mobile}
+                onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+              />
+              <StudioInput
+                label="Alt Mobile"
+                value={form.altMobile}
+                onChange={(e) => setForm({ ...form, altMobile: e.target.value })}
+              />
+            </div>
+            <StudioTextarea
+              label="Address"
+              rows={2}
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <StudioInput
+                label="Aadhaar No *"
+                value={form.aadhaarNo}
+                onChange={(e) => setForm({ ...form, aadhaarNo: e.target.value })}
+              />
+              <StudioInput
+                label="PAN No"
+                value={form.panNo}
+                onChange={(e) => setForm({ ...form, panNo: e.target.value })}
+              />
+            </div>
+            <StudioTextarea
+              label="Notes"
+              rows={2}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <StudioButton variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
+                <X className="h-4 w-4" /> Cancel
+              </StudioButton>
+              <StudioButton onClick={saveEdits} disabled={saving}>
+                <Save className="h-4 w-4" /> {saving ? "Saving…" : "Save Changes"}
+              </StudioButton>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Info label="Aadhaar" value={customer.aadhaarNo} />
+            {customer.panNo && <Info label="PAN" value={customer.panNo} />}
+            {customer.altMobile && <Info label="Alt Mobile" value={customer.altMobile} />}
+            <Info label="Address" value={customer.address || "—"} />
+            {customer.notes && <Info label="Notes" value={customer.notes} />}
+          </>
+        )}
 
         {/* KYC Documents */}
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
@@ -386,7 +508,7 @@ function CustomerDetailModal({
           </div>
         </div>
       </div>
-      {customer.kycStatus === "Pending" && (
+      {!editing && customer.kycStatus === "Pending" && (
         <div className="mt-5 flex justify-end gap-2">
           <StudioButton variant="danger" onClick={() => setKyc("Rejected")}>
             Reject KYC
