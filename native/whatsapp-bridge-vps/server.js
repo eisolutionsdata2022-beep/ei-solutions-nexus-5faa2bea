@@ -143,7 +143,43 @@ async function upsertContact(jid, name) {
   }, { merge: true });
 }
 
-async function persistMessage(msg, direction) {
+function extFromMime(mime) {
+  if (!mime) return 'bin';
+  const map = {
+    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+    'image/webp': 'webp', 'image/gif': 'gif',
+    'application/pdf': 'pdf',
+    'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a',
+    'video/mp4': 'mp4', 'video/3gpp': '3gp', 'video/quicktime': 'mov',
+  };
+  return map[mime.toLowerCase()] || (mime.split('/')[1] || 'bin').slice(0, 6);
+}
+
+async function uploadMediaToStorage({ phone, messageId, base64, mime }) {
+  if (!base64 || !mime) return { mediaUrl: null, mediaPath: null };
+  try {
+    const ext = extFromMime(mime);
+    const safeId = (messageId || `m-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).replace(/[^A-Za-z0-9._-]/g, '_');
+    const objectPath = `whatsappMedia/${phone}/${safeId}.${ext}`;
+    const file = bucket.file(objectPath);
+    const buf = Buffer.from(base64, 'base64');
+    await file.save(buf, {
+      contentType: mime,
+      resumable: false,
+      metadata: { cacheControl: 'private, max-age=2592000' },
+    });
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + MEDIA_URL_TTL_DAYS * 24 * 60 * 60 * 1000,
+    });
+    return { mediaUrl: url, mediaPath: objectPath };
+  } catch (err) {
+    console.error('[uploadMedia]', err.message);
+    return { mediaUrl: null, mediaPath: null };
+  }
+}
+
+async function persistMessage(msg, direction, opts = {}) {
   try {
     const fromJid = msg.from;
     const toJid = msg.to;
@@ -151,34 +187,58 @@ async function persistMessage(msg, direction) {
     const counterpartyPhone = jidToPhone(counterpartyJid);
     if (!counterpartyPhone) return;
 
+    const hasMedia = !!msg.hasMedia;
     let mediaUrl = null;
     let mediaMime = null;
-    // We do NOT upload media to Storage from the bridge to keep this simple.
-    // Media availability flag only:
-    const hasMedia = !!msg.hasMedia;
+    let mediaPath = null;
+    const messageId = msg.id?._serialized || msg.id?.id || null;
+
+    // For outbound, we may already know the media (we just sent it base64)
+    if (direction === 'out' && opts.mediaBase64 && opts.mediaMime) {
+      mediaMime = opts.mediaMime;
+      const up = await uploadMediaToStorage({
+        phone: counterpartyPhone, messageId, base64: opts.mediaBase64, mime: opts.mediaMime,
+      });
+      mediaUrl = up.mediaUrl; mediaPath = up.mediaPath;
+    } else if (hasMedia) {
+      try {
+        const dl = await msg.downloadMedia();
+        if (dl?.data && dl?.mimetype) {
+          mediaMime = dl.mimetype;
+          const up = await uploadMediaToStorage({
+            phone: counterpartyPhone, messageId, base64: dl.data, mime: dl.mimetype,
+          });
+          mediaUrl = up.mediaUrl; mediaPath = up.mediaPath;
+        }
+      } catch (e) {
+        console.warn('[wa] downloadMedia failed', e.message);
+      }
+    }
 
     await messagesCol.add({
-      messageId: msg.id?._serialized || msg.id?.id || null,
+      messageId,
       direction,                       // "in" | "out"
       contactPhone: counterpartyPhone, // doc-id key for chat thread
       counterpartyJid,
       fromJid,
       toJid,
       type: msg.type || 'chat',
-      body: msg.body || '',
+      body: msg.body || opts.caption || '',
       hasMedia,
       mediaMime,
       mediaUrl,
-      ack: msg.ack ?? null,            // -1=err, 0=pending, 1=server, 2=delivered, 3=read
+      mediaPath,
+      ack: msg.ack ?? null,
       timestamp: msg.timestamp ? new Date(msg.timestamp * 1000).toISOString() : new Date().toISOString(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     // Update contact summary
+    const summary = msg.body || opts.caption || (hasMedia ? '📎 Media' : '');
     await contactsCol.doc(counterpartyPhone).set({
       phone: counterpartyPhone,
       jid: counterpartyJid,
-      lastMessage: (msg.body || '').slice(0, 200),
+      lastMessage: summary.slice(0, 200),
       lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
       lastDirection: direction,
       unreadCount: direction === 'in'
