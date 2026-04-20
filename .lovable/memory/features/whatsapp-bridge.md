@@ -38,9 +38,15 @@ type: feature
 - Storage rules: `whatsappMedia/{phone}/**` readable by staff/manager/admin only; browser write blocked (bridge-only via Admin SDK)
 
 ## Routes
-- `/admin/whatsapp` — Connection (QR, status, restart) + Inbox (all chats, assign dropdown)
+- `/admin/whatsapp` — Connection (QR, status, restart) + Inbox (all chats, assign dropdown) + Templates (admin CRUD for quick replies)
 - `/staff/whatsapp` — only chats `assignedTo == currentUser.uid`
 - `/admin/crm-bulk-comm` → "WhatsApp Bulk" tab — reuses email audience resolver, dispatches to bridge
+
+## Quick-reply templates
+- `whatsappTemplates/{id}` — `{title, body, category?, createdBy, createdAt, updatedAt}` (admin write, staffish read)
+- Composer has lightning-bolt picker → popover with search + category grouping
+- `{{name}}` token replaced with active contact's `displayName` (fallback "there") via `applyTemplateTokens()`
+- Title ≤60 chars, body ≤4096 chars (WhatsApp limit)
 
 ## Inbox scope rules
 - Admin sees ALL contacts; can assign via dropdown to any admin/staff/manager

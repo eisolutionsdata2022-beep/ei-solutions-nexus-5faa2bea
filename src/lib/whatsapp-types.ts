@@ -81,3 +81,13 @@ export interface WaCampaignRecipient {
   sentAt?: any;
   failedAt?: any;
 }
+
+export interface WaTemplate {
+  id: string;
+  title: string;          // short label e.g. "Documents received"
+  body: string;           // template text, supports {{name}} token
+  category?: string;      // optional grouping e.g. "Greetings", "Follow-up"
+  createdBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}

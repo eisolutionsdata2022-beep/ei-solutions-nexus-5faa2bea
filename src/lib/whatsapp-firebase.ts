@@ -1,10 +1,10 @@
 // ─── Client-side Firestore helpers for WhatsApp inbox ─────────────────
 import {
   collection, doc, onSnapshot, orderBy, query, where, limit,
-  updateDoc, setDoc, serverTimestamp, getDocs,
+  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { WaContact, WaMessage, WaSessionDoc, WaCampaign } from "./whatsapp-types";
+import type { WaContact, WaMessage, WaSessionDoc, WaCampaign, WaTemplate } from "./whatsapp-types";
 
 // ── Session ────────────────────────────────────────────────────────────
 export function subscribeSession(cb: (s: WaSessionDoc | null) => void) {
@@ -102,4 +102,47 @@ export async function listAssignableUsers() {
     const u = d.data();
     return { id: d.id, name: u.name || u.email, role: u.role as string };
   });
+}
+
+// ── Quick-reply templates ──────────────────────────────────────────────
+export function subscribeTemplates(cb: (rows: WaTemplate[]) => void) {
+  const q = query(collection(db, "whatsappTemplates"), orderBy("title", "asc"));
+  return onSnapshot(q, (snap) => {
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as WaTemplate)));
+  });
+}
+
+export async function createTemplate(input: {
+  title: string;
+  body: string;
+  category?: string;
+  createdBy: string;
+}) {
+  await addDoc(collection(db, "whatsappTemplates"), {
+    title: input.title.trim(),
+    body: input.body.trim(),
+    category: input.category?.trim() || "",
+    createdBy: input.createdBy,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateTemplate(id: string, patch: { title: string; body: string; category?: string }) {
+  await updateDoc(doc(db, "whatsappTemplates", id), {
+    title: patch.title.trim(),
+    body: patch.body.trim(),
+    category: patch.category?.trim() || "",
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteTemplate(id: string) {
+  await deleteDoc(doc(db, "whatsappTemplates", id));
+}
+
+/** Replace {{name}} (case-insensitive, with surrounding whitespace) with a safe value. */
+export function applyTemplateTokens(body: string, ctx: { name?: string }) {
+  const safe = (ctx.name || "there").trim() || "there";
+  return body.replace(/\{\{\s*name\s*\}\}/gi, safe);
 }

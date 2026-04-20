@@ -16,6 +16,7 @@ import {
 } from "@/lib/whatsapp-firebase";
 import type { WaContact, WaMessage, WaSessionDoc } from "@/lib/whatsapp-types";
 import { sendWhatsAppMessage } from "@/lib/whatsapp-bridge.functions";
+import { QuickReplyPicker } from "./QuickReplyPicker";
 
 interface Props {
   /** "admin" sees ALL chats. "staff" sees only chats assigned to them. */
@@ -320,6 +321,11 @@ export function WhatsAppInbox({ scope }: Props) {
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
+              <QuickReplyPicker
+                contactName={activeContact.displayName || ""}
+                disabled={!ready || sending}
+                onPick={(text) => setDraft((prev) => (prev ? `${prev}\n${text}` : text))}
+              />
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
