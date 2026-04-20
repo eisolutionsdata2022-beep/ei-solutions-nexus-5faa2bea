@@ -370,8 +370,16 @@ async function startWaClient() {
 
   waClient.on('message', async (msg) => {
     if (msg.fromMe) return; // outbound echoes handled separately
-    await upsertContact(msg.from, msg._data?.notifyName);
+    const notifyName = msg._data?.notifyName || '';
+    const { phone, isNew } = await upsertContact(msg.from, notifyName);
     await persistMessage(msg, 'in');
+    if (isNew && phone) {
+      await autoCreateCrmLead({
+        phone,
+        displayName: notifyName,
+        firstMessage: msg.body || (msg.hasMedia ? '[media attachment]' : ''),
+      });
+    }
   });
 
   waClient.on('message_create', async (msg) => {
