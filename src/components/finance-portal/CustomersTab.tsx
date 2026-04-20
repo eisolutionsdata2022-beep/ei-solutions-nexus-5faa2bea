@@ -3,9 +3,15 @@
  * Allows creating customers with KYC fields and viewing the list.
  */
 import { useMemo, useState } from "react";
-import { Users, Plus, Search, Phone, ShieldCheck, Eye } from "lucide-react";
+import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera } from "lucide-react";
 import { toast } from "sonner";
-import { addCustomer, getNextCustomerCode, updateCustomer } from "@/lib/finance-firebase";
+import {
+  addCustomer,
+  getNextCustomerCode,
+  updateCustomer,
+  uploadCustomerPhoto,
+} from "@/lib/finance-firebase";
+import { StudioCameraCapture } from "./StudioCameraCapture";
 import type { FinanceCustomer, KycStatus } from "@/lib/finance-types";
 import {
   StudioCard,
@@ -147,6 +153,8 @@ function NewCustomerModal({
     panNo: "",
     notes: "",
   });
+  const [photoData, setPhotoData] = useState<string | null>(null);
+  const [showCam, setShowCam] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function reset() {
@@ -159,6 +167,7 @@ function NewCustomerModal({
       panNo: "",
       notes: "",
     });
+    setPhotoData(null);
   }
 
   async function save() {
@@ -170,7 +179,7 @@ function NewCustomerModal({
     try {
       const code = await getNextCustomerCode(ownerId);
       const now = new Date().toISOString();
-      await addCustomer({
+      const id = await addCustomer({
         retailerId: ownerId,
         branchId: null,
         customerCode: code,
@@ -186,6 +195,21 @@ function NewCustomerModal({
         updatedAt: now,
         createdBy: ownerEmail,
       });
+      // Upload photo (if captured) AFTER doc creation so we have the customer id
+      if (photoData) {
+        try {
+          const photoUrl = await uploadCustomerPhoto(ownerId, id, photoData);
+          await updateCustomer(id, { photoUrl });
+        } catch (uploadErr: any) {
+          // Don't block customer creation on a photo upload failure
+          toast.warning(
+            `Customer ${code} created, but photo upload failed: ${uploadErr?.message || "unknown error"}`,
+          );
+          reset();
+          onClose();
+          return;
+        }
+      }
       toast.success(`Customer ${code} created`);
       reset();
       onClose();
@@ -197,8 +221,38 @@ function NewCustomerModal({
   }
 
   return (
+    <>
     <StudioModal open={open} onClose={onClose} title="New Customer" width="max-w-xl">
       <div className="space-y-3">
+        {/* Photo capture row */}
+        <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          {photoData ? (
+            <img
+              src={photoData}
+              alt="Captured"
+              className="h-20 w-20 rounded-full object-cover ring-2 ring-cyan-400/40"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/15 to-violet-500/15 ring-1 ring-white/10">
+              <Camera className="h-7 w-7 text-slate-400" />
+            </div>
+          )}
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-slate-200">Customer photo</p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Optional — captured directly from your camera.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowCam(true)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-400/20"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {photoData ? "Retake" : "Capture photo"}
+            </button>
+          </div>
+        </div>
+
         <StudioInput
           label="Full Name *"
           value={form.fullName}
@@ -250,6 +304,13 @@ function NewCustomerModal({
         </StudioButton>
       </div>
     </StudioModal>
+    <StudioCameraCapture
+      open={showCam}
+      onClose={() => setShowCam(false)}
+      onCapture={setPhotoData}
+      title="Capture Customer Photo"
+    />
+    </>
   );
 }
 
