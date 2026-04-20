@@ -9,7 +9,7 @@ import {
   clearViewerSignaling,
   type LiveHost,
 } from "@/lib/webrtc";
-import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle } from "lucide-react";
+import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle, SignalLow, SignalMedium, SignalHigh } from "lucide-react";
 
 interface Props {
   trainingId: string;
@@ -18,8 +18,10 @@ interface Props {
 }
 
 type Status = "connecting" | "connected" | "failed" | "timeout";
+type Quality = "unknown" | "good" | "medium" | "poor";
 
 const CONNECT_TIMEOUT_MS = 15_000;
+const STATS_INTERVAL_MS = 3_000;
 
 /**
  * Subscribes to a single trainer host as a viewer (retailer or another trainer).
@@ -33,10 +35,14 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
   const timeoutRef = useRef<number | null>(null);
+  const statsIntervalRef = useRef<number | null>(null);
+  const lastStatsRef = useRef<{ packetsLost: number; packetsReceived: number; ts: number } | null>(null);
   const autoRetriedRef = useRef(false);
   const [status, setStatus] = useState<Status>("connecting");
   const [errMsg, setErrMsg] = useState<string>("");
   const [attempt, setAttempt] = useState(0);
+  const [quality, setQuality] = useState<Quality>("unknown");
+  const [qualityDetails, setQualityDetails] = useState<{ rtt: number; jitter: number; loss: number } | null>(null);
 
   const teardown = useCallback(() => {
     unsubsRef.current.forEach((u) => { try { u(); } catch { /* noop */ } });
@@ -45,8 +51,58 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    if (statsIntervalRef.current) {
+      window.clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
+    }
+    lastStatsRef.current = null;
     try { pcRef.current?.close(); } catch { /* noop */ }
     pcRef.current = null;
+  }, []);
+
+  const pollStats = useCallback(async (pc: RTCPeerConnection) => {
+    try {
+      const stats = await pc.getStats();
+      let inboundVideo: any = null;
+      let candidatePair: any = null;
+      stats.forEach((report) => {
+        if (report.type === "inbound-rtp" && report.kind === "video") {
+          inboundVideo = report;
+        }
+        if (report.type === "candidate-pair" && (report.nominated || report.selected) && report.state === "succeeded") {
+          candidatePair = report;
+        }
+      });
+
+      if (!inboundVideo) return;
+
+      const now = inboundVideo.timestamp || Date.now();
+      const packetsLost = inboundVideo.packetsLost || 0;
+      const packetsReceived = inboundVideo.packetsReceived || 0;
+      const jitter = (inboundVideo.jitter || 0) * 1000; // s → ms
+      const rtt = candidatePair?.currentRoundTripTime ? candidatePair.currentRoundTripTime * 1000 : 0;
+
+      // Compute loss % over the interval (delta) instead of cumulative
+      let lossPct = 0;
+      const prev = lastStatsRef.current;
+      if (prev) {
+        const dLost = packetsLost - prev.packetsLost;
+        const dRecv = packetsReceived - prev.packetsReceived;
+        const dTotal = dLost + dRecv;
+        if (dTotal > 0) lossPct = (dLost / dTotal) * 100;
+      }
+      lastStatsRef.current = { packetsLost, packetsReceived, ts: now };
+
+      // Score: good = low loss + low jitter + low rtt
+      let score: Quality = "good";
+      if (lossPct > 5 || jitter > 50 || rtt > 300) score = "poor";
+      else if (lossPct > 2 || jitter > 30 || rtt > 150) score = "medium";
+
+      setQuality(score);
+      setQualityDetails({ rtt: Math.round(rtt), jitter: Math.round(jitter), loss: Math.round(lossPct * 10) / 10 });
+    } catch {
+      /* getStats can fail mid-teardown */
+    }
   }, []);
 
   const connect = useCallback(async () => {
@@ -80,6 +136,8 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
             window.clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
           }
+          if (statsIntervalRef.current) window.clearInterval(statsIntervalRef.current);
+          statsIntervalRef.current = window.setInterval(() => pollStats(pc), STATS_INTERVAL_MS);
         } else if (s === "failed") {
           // one auto-retry, then surface a Retry button
           if (!autoRetriedRef.current) {
@@ -205,6 +263,25 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
           </span>
         </div>
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+          {status === "connected" && quality !== "unknown" && (() => {
+            const cfg = {
+              good: { Icon: SignalHigh, cls: "bg-emerald-500/80 border-emerald-300/50", label: "Good" },
+              medium: { Icon: SignalMedium, cls: "bg-amber-500/80 border-amber-300/50", label: "Fair" },
+              poor: { Icon: SignalLow, cls: "bg-red-500/80 border-red-300/50", label: "Poor" },
+            }[quality];
+            const tip = qualityDetails
+              ? `${cfg.label} · ${qualityDetails.rtt}ms RTT · ${qualityDetails.jitter}ms jitter · ${qualityDetails.loss}% loss`
+              : cfg.label;
+            return (
+              <span
+                title={tip}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-white text-[9px] font-semibold ${cfg.cls}`}
+              >
+                <cfg.Icon className="w-2.5 h-2.5" />
+                {cfg.label}
+              </span>
+            );
+          })()}
           {!host.micOn && <span className="bg-red-500/80 p-1 rounded"><MicOff className="w-2.5 h-2.5 text-white" /></span>}
           {status === "connected" && host.micOn && <span className="bg-emerald-500/80 p-1 rounded"><Mic className="w-2.5 h-2.5 text-white" /></span>}
           {onMaximize && (
