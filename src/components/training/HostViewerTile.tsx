@@ -9,7 +9,7 @@ import {
   clearViewerSignaling,
   type LiveHost,
 } from "@/lib/webrtc";
-import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle } from "lucide-react";
+import { Mic, MicOff, Sparkles, User2, Maximize2, RefreshCw, AlertCircle, Signal, SignalLow, SignalMedium, SignalHigh } from "lucide-react";
 
 interface Props {
   trainingId: string;
