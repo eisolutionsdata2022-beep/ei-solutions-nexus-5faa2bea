@@ -79,6 +79,7 @@ import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminTrainingReviewsRouteImport } from './routes/admin.training-reviews'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
+import { Route as AdminSessionQualityRouteImport } from './routes/admin.session-quality'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
 import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-buttons'
@@ -460,6 +461,11 @@ const AdminTrainingEarningsRoute = AdminTrainingEarningsRouteImport.update({
   path: '/training-earnings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSessionQualityRoute = AdminSessionQualityRouteImport.update({
+  id: '/session-quality',
+  path: '/session-quality',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -658,6 +664,7 @@ export interface FileRoutesByFullPath {
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
+  '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -753,6 +760,7 @@ export interface FileRoutesByTo {
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
+  '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -856,6 +864,7 @@ export interface FileRoutesById {
   '/admin/service-buttons': typeof AdminServiceButtonsRoute
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
+  '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -960,6 +969,7 @@ export interface FileRouteTypes {
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
+    | '/admin/session-quality'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1055,6 +1065,7 @@ export interface FileRouteTypes {
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
+    | '/admin/session-quality'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1157,6 +1168,7 @@ export interface FileRouteTypes {
     | '/admin/service-buttons'
     | '/admin/service-plans'
     | '/admin/services'
+    | '/admin/session-quality'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1726,6 +1738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTrainingEarningsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/session-quality': {
+      id: '/admin/session-quality'
+      path: '/session-quality'
+      fullPath: '/admin/session-quality'
+      preLoaderRoute: typeof AdminSessionQualityRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/services': {
       id: '/admin/services'
       path: '/services'
@@ -1969,6 +1988,7 @@ interface AdminRouteChildren {
   AdminServiceButtonsRoute: typeof AdminServiceButtonsRoute
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
+  AdminSessionQualityRoute: typeof AdminSessionQualityRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
   AdminTrainingReviewsRoute: typeof AdminTrainingReviewsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
@@ -2010,6 +2030,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServiceButtonsRoute: AdminServiceButtonsRoute,
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
+  AdminSessionQualityRoute: AdminSessionQualityRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
   AdminTrainingReviewsRoute: AdminTrainingReviewsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
