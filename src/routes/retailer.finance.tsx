@@ -703,6 +703,8 @@ function AddCustomerDialog({
   retailerId: string;
   createdBy: string;
 }) {
+  const { appUser: authUser } = useAuth();
+  const branchId = authUser?.financeBranchId ?? null;
   const [form, setForm] = useState({
     fullName: "", mobile: "", altMobile: "", address: "", aadhaarNo: "", panNo: "", notes: "",
   });
@@ -730,6 +732,7 @@ function AddCustomerDialog({
       const now = new Date().toISOString();
       const id = await addCustomer({
         retailerId,
+        branchId,
         customerCode: code,
         fullName: form.fullName.trim(),
         mobile: form.mobile.trim(),
