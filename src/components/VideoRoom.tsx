@@ -140,6 +140,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
     qa: "Q&A",
     bot: "AI Assistant",
     participants: "People",
+    approvals: "Hand-Raise Requests",
   };
 
   // grid columns based on visible tile count
@@ -171,6 +172,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
           <Stat label="Students" value={studentCount} color="text-emerald-300" />
           <Stat label="Online" value={onlineCount} color="text-blue-300" />
           <span className="text-white/50 text-xs font-mono hidden sm:inline">{formatTime(elapsed)}</span>
+          {!isTrainer && <InRoomInstallButton />}
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isTrainer ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`}>
             {isTrainer ? "Trainer" : "Student"}
           </span>
@@ -203,6 +205,23 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
               </div>
             )}
           </div>
+
+          {/* Trainer-only: approved students' back-channel streams (private) */}
+          {isTrainer && backChannels.length > 0 && (
+            <div className="bg-emerald-500/5 backdrop-blur-sm rounded-xl border border-emerald-500/20 p-2.5">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-emerald-200/80 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1.5">
+                  <Hand className="w-3 h-3" /> Approved Students Speaking
+                </p>
+                <span className="text-emerald-300 text-[10px]">{backChannels.length} live · only you see this</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {backChannels.map((bc) => (
+                  <StudentBackChannelTile key={bc.id} trainingId={trainingId} channel={bc} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Students strip */}
           {studentCount > 0 && (
