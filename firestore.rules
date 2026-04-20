@@ -287,5 +287,25 @@ service cloud.firestore {
         allow write: if false; // bridge-only
       }
     }
+
+    // Quick-reply templates — admin manages, all staff read
+    match /whatsappTemplates/{tid} {
+      allow read, list: if isStaffish();
+      allow create: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 4096;
+      allow update: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 4096;
+      allow delete: if isAdmin();
+    }
   }
 }
