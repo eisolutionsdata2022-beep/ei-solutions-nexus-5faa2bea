@@ -110,6 +110,7 @@ import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-setting
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
+import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-comm'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
@@ -625,6 +626,11 @@ const AdminCrmLeadsRoute = AdminCrmLeadsRouteImport.update({
   path: '/crm-leads',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCrmBulkCommRoute = AdminCrmBulkCommRouteImport.update({
+  id: '/crm-bulk-comm',
+  path: '/crm-bulk-comm',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   id: '/create-user',
   path: '/create-user',
@@ -682,6 +688,7 @@ export interface FileRoutesByFullPath {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -784,6 +791,7 @@ export interface FileRoutesByTo {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -895,6 +903,7 @@ export interface FileRoutesById {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -1007,6 +1016,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -1109,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -1219,6 +1230,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -2040,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCrmLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/crm-bulk-comm': {
+      id: '/admin/crm-bulk-comm'
+      path: '/crm-bulk-comm'
+      fullPath: '/admin/crm-bulk-comm'
+      preLoaderRoute: typeof AdminCrmBulkCommRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/create-user': {
       id: '/admin/create-user'
       path: '/create-user'
@@ -2097,6 +2116,7 @@ interface AdminRouteChildren {
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
+  AdminCrmBulkCommRoute: typeof AdminCrmBulkCommRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
@@ -2141,6 +2161,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
+  AdminCrmBulkCommRoute: AdminCrmBulkCommRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
