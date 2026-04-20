@@ -91,11 +91,15 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
 
     const unsubH = onHosts(trainingId, setHosts);
     const unsubP = onParticipants(trainingId, setParticipants);
+    const unsubBC = onBackChannels(trainingId, setBackChannels);
+    const unsubPerm = onPermissions(trainingId, setPermissions);
 
     return () => {
       active = false;
       unsubH();
       unsubP();
+      unsubBC();
+      unsubPerm();
       if (appUser) {
         removeParticipant(trainingId, appUser.uid).catch(() => {});
         if (isTrainer) closeRoomIfEmpty(trainingId).catch(() => {});
