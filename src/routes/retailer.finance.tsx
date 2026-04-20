@@ -1025,16 +1025,23 @@ function LoansTab({
   loans,
   settings,
   createdBy,
+  openNewLoanSignal,
 }: {
   retailerId: string;
   customers: FinanceCustomer[];
   loans: FinanceLoan[];
   settings: FinanceSettings | null;
   createdBy: string;
+  openNewLoanSignal?: number;
 }) {
   const [showNew, setShowNew] = useState(false);
   const [renewing, setRenewing] = useState<FinanceLoan | null>(null);
   const [search, setSearch] = useState("");
+
+  // Open the New Loan dialog whenever the parent bumps the signal counter
+  useEffect(() => {
+    if (openNewLoanSignal && openNewLoanSignal > 0) setShowNew(true);
+  }, [openNewLoanSignal]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return loans;
