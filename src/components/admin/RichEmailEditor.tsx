@@ -67,7 +67,7 @@ export function RichEmailEditor({ value, onChange }: Props) {
   // Sync external value (e.g., template insertion via parent)
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, { emitUpdate: false });
+      editor.commands.setContent(value, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);

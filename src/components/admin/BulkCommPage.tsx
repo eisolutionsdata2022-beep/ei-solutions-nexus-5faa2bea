@@ -27,6 +27,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendBulkEmailBatch, sendTestEmail } from "@/lib/bulk-email.functions";
+import { RichEmailEditor } from "@/components/admin/RichEmailEditor";
 import type {
   LandingEnquiry, UploadedLead, BulkEmailCampaign, AudienceFilter,
   ContactSource, UnifiedContact, BulkEmailRecipient,
@@ -525,12 +526,12 @@ function ComposeTab({ onSent, appUserUid }: { onSent: () => void; appUserUid: st
             <div><Label className="text-xs">Campaign name (internal)</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. PAN Card Promo — March" /></div>
             <div><Label className="text-xs">Subject line</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Special offer for you, {{name}}!" /></div>
             <div>
-              <Label className="text-xs flex items-center justify-between">
-                <span>Email body (HTML)</span>
+              <Label className="text-xs flex items-center justify-between mb-1">
+                <span>Email body</span>
                 <span className="text-muted-foreground">Use <code className="bg-muted px-1 rounded">{`{{name}}`}</code> for personalization</span>
               </Label>
-              <Textarea rows={14} value={body} onChange={(e) => setBody(e.target.value)} className="font-mono text-xs" />
-              <p className="text-xs text-muted-foreground mt-1">Tip: paste any HTML — &lt;img&gt;, &lt;a&gt;, &lt;table&gt;, etc. Unsubscribe footer is added automatically.</p>
+              <RichEmailEditor value={body} onChange={setBody} />
+              <p className="text-xs text-muted-foreground mt-1">Tip: use the toolbar to add images, CTA buttons & pre-built templates. Unsubscribe footer is added automatically.</p>
             </div>
           </CardContent>
         </Card>
