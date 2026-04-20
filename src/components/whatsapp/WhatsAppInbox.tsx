@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Search, User as UserIcon, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle, RefreshCw, UserCheck } from "lucide-react";
+import {
+  Send, Search, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle,
+  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
