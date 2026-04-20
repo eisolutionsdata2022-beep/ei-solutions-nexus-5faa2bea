@@ -150,10 +150,21 @@ function FinancePage() {
     };
   }, [retailerId]);
 
+  // Live clock — banking-software touch (HH:MM:SS · DD MMM YYYY)
+  // Must run before any early-return so hook order stays stable.
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   if (!appUser) return null;
 
   const activeCount = loans.filter((l) => l.status === "Active").length;
   const overdueCount = loans.filter((l) => l.status === "Active" && new Date(l.dueDate) < new Date()).length;
+
+  const clockTime = now.toLocaleTimeString("en-IN", { hour12: false });
+  const clockDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   const handleApplyLoan = () => {
     setActiveTab("loans");
@@ -180,36 +191,76 @@ function FinancePage() {
 
   return (
     <div className="container mx-auto p-4 space-y-5 max-w-7xl">
-      {/* Premium gradient header */}
-      <header className="relative overflow-hidden rounded-2xl border border-gov-blue/20 bg-gradient-to-br from-gov-blue via-gov-blue-dark to-gov-blue p-5 sm:p-6 text-white shadow-lg">
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gov-saffron/30 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-gov-green/25 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-inner">
-              <Banknote className="w-6 h-6 text-white" />
+      {/* Premium banking-software header */}
+      <header className="relative overflow-hidden rounded-2xl border border-gov-blue/30 bg-gradient-to-br from-[hsl(216_75%_18%)] via-gov-blue-dark to-gov-blue text-white shadow-[0_18px_50px_-20px_rgba(20,40,90,0.55)]">
+        {/* subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+        <div className="absolute -top-20 -right-16 w-64 h-64 rounded-full bg-gov-saffron/25 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-10 w-64 h-64 rounded-full bg-gov-green/20 blur-3xl pointer-events-none" />
+
+        <div className="relative p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-inner">
+                <Banknote className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-gov-blue-dark flex items-center justify-center" title="Secure session">
+                  <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                </span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+                    {settings?.companyName || "Bank Console"}
+                  </h1>
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/20 border border-emerald-300/40 text-[10px] font-bold uppercase tracking-wider text-emerald-100">
+                    <ShieldCheck className="w-3 h-3" /> Secured
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-white/75 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Branch: <span className="font-semibold text-white">{settings?.branchName || "Main Branch"}</span>
+                  <span className="text-white/40">·</span>
+                  Operator: <span className="font-semibold text-white truncate max-w-[140px] sm:max-w-none">{appUser.email}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Finance</h1>
-              <p className="text-xs sm:text-sm text-white/80">
-                {settings?.companyName || "Gold Loan"} · {settings?.branchName || "Main Branch"}
-              </p>
+
+            {/* Live clock + status chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="px-3 py-1.5 rounded-lg bg-black/25 border border-white/15 backdrop-blur-sm font-mono text-right">
+                <p className="text-base sm:text-lg font-bold leading-none tabular-nums tracking-wider">{clockTime}</p>
+                <p className="text-[9px] uppercase tracking-widest text-white/60 mt-1">{clockDate}</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="px-2.5 py-1 rounded-md bg-white/12 backdrop-blur-sm border border-white/20 text-[10px] flex items-center justify-between gap-2 min-w-[88px]">
+                  <span className="text-white/70 uppercase tracking-wider">Active</span>
+                  <span className="font-bold text-emerald-300 tabular-nums">{activeCount}</span>
+                </div>
+                <div className={`px-2.5 py-1 rounded-md backdrop-blur-sm border text-[10px] flex items-center justify-between gap-2 min-w-[88px] ${
+                  overdueCount > 0
+                    ? "bg-red-500/30 border-red-300/40"
+                    : "bg-white/12 border-white/20"
+                }`}>
+                  <span className="text-white/80 uppercase tracking-wider">Overdue</span>
+                  <span className={`font-bold tabular-nums ${overdueCount > 0 ? "text-red-100" : "text-white"}`}>{overdueCount}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/15 text-xs">
-              <span className="text-white/70">Active</span>{" "}
-              <span className="font-bold text-white">{activeCount}</span>
-            </div>
-            <div className={`px-3 py-1.5 rounded-lg backdrop-blur-sm border text-xs ${
-              overdueCount > 0
-                ? "bg-red-500/30 border-red-300/40 text-white"
-                : "bg-white/10 border-white/15 text-white"
-            }`}>
-              <span className="text-white/80">Overdue</span>{" "}
-              <span className="font-bold">{overdueCount}</span>
-            </div>
-          </div>
+        </div>
+
+        {/* Trust strip — tricolour bank ribbon */}
+        <div className="relative h-1.5 flex">
+          <div className="flex-1 bg-gov-saffron" />
+          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-gov-green" />
         </div>
       </header>
 
@@ -247,15 +298,15 @@ function FinancePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full overflow-x-auto justify-start flex-nowrap bg-card/60 backdrop-blur-sm border border-border shadow-sm p-1 rounded-xl">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="customers">Customers</TabsTrigger>
-          <TabsTrigger value="loans">Loans</TabsTrigger>
-          <TabsTrigger value="repay">Repayments</TabsTrigger>
-          <TabsTrigger value="closure">Closure</TabsTrigger>
-          <TabsTrigger value="cashbook">Cash Book</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="settings">
+        <TabsList className="w-full overflow-x-auto justify-start flex-nowrap bg-gradient-to-r from-card via-card/95 to-card border border-gov-blue/15 shadow-[0_4px_18px_-8px_rgba(20,40,90,0.18)] p-1 rounded-xl gap-0.5 h-auto">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Dashboard</TabsTrigger>
+          <TabsTrigger value="customers" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Customers</TabsTrigger>
+          <TabsTrigger value="loans" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Loans</TabsTrigger>
+          <TabsTrigger value="repay" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Repayments</TabsTrigger>
+          <TabsTrigger value="closure" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Closure</TabsTrigger>
+          <TabsTrigger value="cashbook" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Cash Book</TabsTrigger>
+          <TabsTrigger value="reports" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Reports</TabsTrigger>
+          <TabsTrigger value="settings" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">
             <SettingsIcon className="w-3.5 h-3.5 mr-1" /> Settings
           </TabsTrigger>
         </TabsList>
