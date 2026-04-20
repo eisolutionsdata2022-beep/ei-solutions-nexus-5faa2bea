@@ -1413,6 +1413,8 @@ function NewLoanDialog({
   settings: FinanceSettings | null;
   createdBy: string;
 }) {
+  const { appUser: authUser } = useAuth();
+  const branchId = authUser?.financeBranchId ?? null;
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState<GoldItem[]>([
     { id: crypto.randomUUID(), itemName: "", count: 1, grossWeight: 0, netWeight: 0, stoneWeight: 0, purity: 22 },
@@ -1472,6 +1474,7 @@ function NewLoanDialog({
       due.setMonth(due.getMonth() + tenureMonths);
       await addLoan({
         retailerId,
+        branchId,
         loanNo,
         customerId: customer.id,
         customerName: customer.fullName,
@@ -1702,6 +1705,8 @@ function CollectPaymentDialog({
   collectedBy: string;
   onClose: () => void;
 }) {
+  const { appUser: authUser } = useAuth();
+  const branchId = authUser?.financeBranchId ?? null;
   const [type, setType] = useState<PaymentType>("EMI");
   const [amount, setAmount] = useState(loan.monthlyEmi);
   const [mode, setMode] = useState<"Cash" | "UPI" | "Bank">("Cash");
@@ -1729,6 +1734,7 @@ function CollectPaymentDialog({
 
       const payment = {
         retailerId,
+        branchId,
         loanId: loan.id,
         loanNo: loan.loanNo,
         customerId: loan.customerId,
@@ -2011,6 +2017,8 @@ function AddCashEntryDialog({
   retailerId: string;
   enteredBy: string;
 }) {
+  const { appUser: authUser } = useAuth();
+  const branchId = authUser?.financeBranchId ?? null;
   const [type, setType] = useState<"Income" | "Expense" | "BankDeposit">("Expense");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState(0);
@@ -2024,6 +2032,7 @@ function AddCashEntryDialog({
     try {
       await addCashEntry({
         retailerId,
+        branchId,
         type,
         category: category.trim(),
         amount,
