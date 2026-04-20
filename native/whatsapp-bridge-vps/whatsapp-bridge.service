@@ -1,0 +1,18 @@
+[Unit]
+Description=EI SOLUTIONS — WhatsApp Web bridge (whatsapp-web.js + Firestore Admin)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/whatsapp-bridge
+EnvironmentFile=/opt/whatsapp-bridge/.env
+ExecStart=/usr/bin/node /opt/whatsapp-bridge/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=HOME=/root
+
+[Install]
+WantedBy=multi-user.target
