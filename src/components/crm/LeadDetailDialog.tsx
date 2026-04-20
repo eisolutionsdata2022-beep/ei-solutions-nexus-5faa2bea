@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { MessageSquare, Phone, Clock, FileText, History, Upload, Download, Eye, Trash2, File } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { updateLead, addLeadHistory, addCallLog, subscribeCallLogs, subscribeLeadHistory, uploadLeadDocument, deleteLeadDocument } from "@/lib/crm-firebase";
@@ -16,6 +17,7 @@ import {
   LEAD_STATUSES, CALL_STATUSES, PAYMENT_STATUSES, APP_PROGRESS, STATUS_COLORS, CALL_STATUS_COLORS,
   type Lead, type CallLog, type LeadHistory, type StaffMember, type LeadStatus, type CallStatus,
 } from "@/lib/crm-types";
+import { LeadDripStatus } from "./LeadDripStatus";
 
 interface Props {
   lead: Lead;
@@ -35,6 +37,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
   const [remarks, setRemarks] = useState(lead.remarks);
   const [followUpDate, setFollowUpDate] = useState(lead.followUpDate);
   const [followUpTime, setFollowUpTime] = useState(lead.followUpTime);
+  const [optOutDrip, setOptOutDrip] = useState(!!lead.optOutDrip);
   const [saving, setSaving] = useState(false);
 
   // Call log form
@@ -60,6 +63,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
     setRemarks(lead.remarks);
     setFollowUpDate(lead.followUpDate);
     setFollowUpTime(lead.followUpTime);
+    setOptOutDrip(!!lead.optOutDrip);
     setDocuments(lead.documents || []);
   }, [lead]);
 
@@ -77,6 +81,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
         status, paymentStatus, applicationStatus: appStatus,
         assignedStaffId, assignedStaffName: assignedStaff?.name || lead.assignedStaffName,
         remarks, followUpDate, followUpTime,
+        optOutDrip,
       });
 
       for (const c of changes) {
