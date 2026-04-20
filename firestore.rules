@@ -256,5 +256,36 @@ service cloud.firestore {
       allow read:  if isAuthed();
       allow write: if isAdmin();
     }
+
+    // ---------- WhatsApp bridge (admin + staff only) -----------------
+    // Session doc + contacts + messages + campaigns are written by the
+    // VPS bridge using a Firebase Admin SDK service account (bypasses
+    // these rules). Client reads are gated to staff/admin.
+    match /whatsappSessions/{doc} {
+      allow read:  if isStaffish();
+      allow write: if false;
+    }
+    match /whatsappContacts/{phone} {
+      allow read, list: if isStaffish();
+      // Staff/admin can update assignedTo / unreadCount only.
+      allow update: if isStaffish() &&
+        changedKeys().hasOnly(["assignedTo", "assignedToName", "unreadCount", "tags"]);
+      allow create, delete: if false;
+    }
+    match /whatsappMessages/{mid} {
+      allow read, list: if isStaffish();
+      allow create, update, delete: if false;
+    }
+    match /whatsappCampaigns/{cid} {
+      allow read, list: if isStaffish();
+      allow create: if isAdmin()
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if false;
+
+      match /recipients/{rid} {
+        allow read, list: if isStaffish();
+        allow write: if false; // bridge-only
+      }
+    }
   }
 }
