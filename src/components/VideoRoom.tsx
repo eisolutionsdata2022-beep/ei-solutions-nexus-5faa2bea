@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
   ensureRoom,
@@ -57,6 +57,85 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
     const i = setInterval(() => setElapsed((p) => p + 1), 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Trainer: alert (beep + browser notification + toast) on NEW pending requests
+  const seenPendingIds = useRef<Set<string>>(new Set());
+  const notifPrimedRef = useRef(false);
+  useEffect(() => {
+    if (!isTrainer) return;
+    // Ask for browser notification permission once
+    if (!notifPrimedRef.current && typeof window !== "undefined" && "Notification" in window) {
+      notifPrimedRef.current = true;
+      if (Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    }
+  }, [isTrainer]);
+
+  useEffect(() => {
+    if (!isTrainer) return;
+    const currentPending = permissions.filter((p) => p.status === "pending");
+    const currentIds = new Set(currentPending.map((p) => p.id));
+
+    // Find newly-arrived pending requests
+    const newOnes = currentPending.filter((p) => !seenPendingIds.current.has(p.id));
+
+    if (newOnes.length > 0 && seenPendingIds.current.size > 0) {
+      // (skip first snapshot to avoid alerting on initial load)
+      // Beep
+      try {
+        const Ctor = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext | undefined;
+        if (Ctor) {
+          const ctx = new Ctor();
+          const playTone = (freq: number, start: number, dur: number) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + start + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur + 0.05);
+          };
+          playTone(880, 0, 0.18);
+          playTone(1175, 0.2, 0.22);
+          setTimeout(() => ctx.close().catch(() => {}), 800);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      // Browser notification
+      try {
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
+          const first = newOnes[0];
+          const title = newOnes.length === 1 ? `✋ ${first.studentName} raised hand` : `✋ ${newOnes.length} new requests`;
+          const body = newOnes.length === 1
+            ? `Wants ${first.type === "mic" ? "Microphone" : first.type === "cam" ? "Camera" : "Screen Share"}`
+            : newOnes.map((p) => `${p.studentName} · ${p.type}`).join("\n");
+          const n = new Notification(title, { body, tag: `perm-${trainingId}`, renotify: true } as NotificationOptions);
+          n.onclick = () => { window.focus(); n.close(); };
+        }
+      } catch {
+        /* ignore */
+      }
+
+      // In-app toast
+      const first = newOnes[0];
+      toast.info(
+        newOnes.length === 1
+          ? `✋ ${first.studentName} requests ${first.type === "mic" ? "Microphone" : first.type === "cam" ? "Camera" : "Screen Share"}`
+          : `✋ ${newOnes.length} new permission requests`,
+        {
+          action: sidebarTab !== "approvals" ? { label: "View", onClick: () => setSidebarTab("approvals") } : undefined,
+        }
+      );
+    }
+
+    seenPendingIds.current = currentIds;
+  }, [permissions, isTrainer, trainingId, sidebarTab]);
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
