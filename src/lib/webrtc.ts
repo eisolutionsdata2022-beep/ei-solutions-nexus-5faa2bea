@@ -1,9 +1,28 @@
 import { collection, doc, setDoc, onSnapshot, addDoc, getDocs, deleteDoc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const ICE_SERVERS = [
+// STUN + free public TURN (Open Relay by Metered) — required for clients on
+// restrictive NAT / mobile data / corporate firewalls where pure P2P would
+// otherwise fail. UDP, TCP and TLS variants for max reachability.
+const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
 ];
 
 // NOTE: Phase 1 uses a P2P mesh — each retailer opens a peer connection to every
@@ -36,7 +55,34 @@ export interface LiveHost {
 }
 
 export function createPeerConnection(): RTCPeerConnection {
-  return new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  return new RTCPeerConnection({
+    iceServers: ICE_SERVERS,
+    iceCandidatePoolSize: 4,
+    bundlePolicy: "max-bundle",
+    rtcpMuxPolicy: "require",
+  });
+}
+
+/**
+ * Wipe stale signaling docs (offer/answer/ICE) for a viewer/host pair before
+ * starting a new connection. Without this, a refresh keeps the old "answer"
+ * doc, so the viewer's listener fires immediately with the previous session's
+ * SDP and the new offer is never answered.
+ */
+export async function clearViewerSignaling(
+  trainingId: string,
+  hostId: string,
+  viewerId: string
+): Promise<void> {
+  const tasks: Promise<unknown>[] = [
+    deleteDoc(doc(db, "rooms", trainingId, "hosts", hostId, "offers", viewerId)).catch(() => {}),
+    deleteDoc(doc(db, "rooms", trainingId, "hosts", hostId, "answers", viewerId)).catch(() => {}),
+  ];
+  for (const sub of ["callerICE", "calleeICE"] as const) {
+    const items = await getDocs(collection(db, "rooms", trainingId, "hosts", hostId, sub, viewerId, "items")).catch(() => null);
+    if (items) items.forEach((d) => tasks.push(deleteDoc(d.ref).catch(() => {})));
+  }
+  await Promise.all(tasks);
 }
 
 // ============= ROOM =============
@@ -180,7 +226,9 @@ export function hostListenForOffers(
 ): () => void {
   return onSnapshot(collection(db, "rooms", trainingId, "hosts", hostId, "offers"), (snap) => {
     snap.docChanges().forEach((change) => {
-      if (change.type === "added") {
+      // Handle both "added" (new viewer) AND "modified" (returning viewer
+      // after refresh — same viewerId doc gets overwritten with new SDP).
+      if (change.type === "added" || change.type === "modified") {
         cb(change.doc.id, change.doc.data() as RTCSessionDescriptionInit);
       }
     });
