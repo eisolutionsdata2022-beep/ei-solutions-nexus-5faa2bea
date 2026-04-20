@@ -150,17 +150,19 @@ function FinancePage() {
     };
   }, [retailerId]);
 
-  if (!appUser) return null;
-
-  const activeCount = loans.filter((l) => l.status === "Active").length;
-  const overdueCount = loans.filter((l) => l.status === "Active" && new Date(l.dueDate) < new Date()).length;
-
   // Live clock — banking-software touch (HH:MM:SS · DD MMM YYYY)
+  // Must run before any early-return so hook order stays stable.
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  if (!appUser) return null;
+
+  const activeCount = loans.filter((l) => l.status === "Active").length;
+  const overdueCount = loans.filter((l) => l.status === "Active" && new Date(l.dueDate) < new Date()).length;
+
   const clockTime = now.toLocaleTimeString("en-IN", { hour12: false });
   const clockDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
