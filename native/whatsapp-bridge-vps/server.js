@@ -172,10 +172,11 @@ async function autoCreateCrmLead({ phone, displayName, firstMessage }) {
     const leadId = `LD-${String(allSnap.size + 1).padStart(4, '0')}`;
     const snippet = (firstMessage || '').toString().slice(0, 200);
     const nowIso = new Date().toISOString();
+    const leadName = (displayName || '').trim() || `WhatsApp ${last10}`;
 
-    await crmLeadsCol.add({
+    const newLeadRef = await crmLeadsCol.add({
       leadId,
-      name: (displayName || '').trim() || `WhatsApp ${last10}`,
+      name: leadName,
       phone: last10 || phone,
       alternatePhone: '',
       location: '',
@@ -195,8 +196,151 @@ async function autoCreateCrmLead({ phone, displayName, firstMessage }) {
       createdBy: 'whatsapp-bridge',
     });
     console.log(`[crm] auto-created lead ${leadId} from WhatsApp ${phone}`);
+
+    // Auto-enroll in the default drip sequence (if enabled & source matches).
+    await enrollInDrip({ leadDocId: newLeadRef.id, phone: last10 || phone, name: leadName, leadSource: 'WhatsApp' });
   } catch (err) {
     console.error('[crm] autoCreateCrmLead failed', err.message);
+  }
+}
+
+// ─── Auto-drip helpers ─────────────────────────────────────────────────
+function applyTokens(body, ctx) {
+  const safe = ((ctx?.name || '').trim()) || 'there';
+  return String(body || '').replace(/\{\{\s*name\s*\}\}/gi, safe);
+}
+
+function computeNextSendAtIso(enrolledAtIso, step) {
+  const base = new Date(enrolledAtIso);
+  base.setUTCDate(base.getUTCDate() + (step.dayOffset || 0));
+  // hourOfDay is interpreted as IST → convert to UTC.
+  const utcHour = (step.hourOfDay ?? 10) - 5;
+  base.setUTCHours(utcHour, -30, 0, 0);
+  if (base.getTime() < Date.now()) {
+    return new Date(Date.now() + 60_000).toISOString();
+  }
+  return base.toISOString();
+}
+
+async function getDefaultSequence() {
+  const snap = await dripSeqCol.doc(DEFAULT_DRIP_ID).get();
+  return snap.exists ? snap.data() : null;
+}
+
+async function enrollInDrip({ leadDocId, phone, name, leadSource }) {
+  try {
+    const seq = await getDefaultSequence();
+    if (!seq || !seq.enabled || !Array.isArray(seq.steps) || seq.steps.length === 0) return;
+    const sources = Array.isArray(seq.leadSources) ? seq.leadSources : [];
+    if (sources.length > 0 && !sources.includes(leadSource)) return;
+
+    // Skip if already enrolled
+    const existing = await dripEnrollCol.doc(leadDocId).get();
+    if (existing.exists) return;
+
+    const enrolledAt = new Date().toISOString();
+    const nextSendAt = computeNextSendAtIso(enrolledAt, seq.steps[0]);
+    await dripEnrollCol.doc(leadDocId).set({
+      leadId: leadDocId,
+      phone: (phone || '').replace(/\D/g, '').slice(-10),
+      name: name || '',
+      sequenceId: DEFAULT_DRIP_ID,
+      currentStep: 0,
+      status: 'active',
+      nextSendAt,
+      enrolledAt,
+      lastSentAt: null,
+      lastMessageId: null,
+    });
+    console.log(`[drip] enrolled ${leadDocId} (${phone}) → first send ${nextSendAt}`);
+  } catch (err) {
+    console.error('[drip] enroll failed', err.message);
+  }
+}
+
+async function stopDripOnReply(phone) {
+  try {
+    const last10 = (phone || '').replace(/\D/g, '').slice(-10);
+    if (!last10) return;
+    const snap = await dripEnrollCol
+      .where('phone', '==', last10)
+      .where('status', '==', 'active')
+      .limit(5)
+      .get();
+    if (snap.empty) return;
+    const batch = fs_db.batch();
+    snap.forEach((d) => batch.update(d.ref, {
+      status: 'stopped_replied',
+      nextSendAt: null,
+      stoppedReason: 'Lead replied on WhatsApp',
+    }));
+    await batch.commit();
+    console.log(`[drip] stopped ${snap.size} active enrollment(s) for ${last10} (replied)`);
+  } catch (err) {
+    console.error('[drip] stopOnReply failed', err.message);
+  }
+}
+
+async function runDripTick() {
+  if (!waReady) return;
+  try {
+    const nowIso = new Date().toISOString();
+    const dueSnap = await dripEnrollCol
+      .where('status', '==', 'active')
+      .where('nextSendAt', '<=', nowIso)
+      .limit(20)
+      .get();
+    if (dueSnap.empty) return;
+
+    const seq = await getDefaultSequence();
+    if (!seq || !seq.enabled) return;
+    const steps = seq.steps || [];
+
+    for (const enrollDoc of dueSnap.docs) {
+      const e = enrollDoc.data();
+      const stepIdx = e.currentStep || 0;
+      const step = steps[stepIdx];
+      if (!step) {
+        await enrollDoc.ref.update({ status: 'completed', nextSendAt: null });
+        continue;
+      }
+      const jid = phoneToJid(e.phone);
+      if (!jid) {
+        await enrollDoc.ref.update({ status: 'failed', failedReason: 'Invalid phone', nextSendAt: null });
+        continue;
+      }
+
+      // Respect daily cap shared with /send + /bulk
+      if (dailyRemaining() <= 0) {
+        console.log('[drip] daily cap reached — pausing tick');
+        return;
+      }
+
+      try {
+        const body = applyTokens(step.body, { name: e.name });
+        const sent = await waClient.sendMessage(jid, body);
+        bumpDaily(1);
+        const nextStepIdx = stepIdx + 1;
+        const isLast = nextStepIdx >= steps.length;
+        await enrollDoc.ref.update({
+          currentStep: nextStepIdx,
+          lastSentAt: new Date().toISOString(),
+          lastMessageId: sent?.id?._serialized || null,
+          status: isLast ? 'completed' : 'active',
+          nextSendAt: isLast ? null : computeNextSendAtIso(e.enrolledAt, steps[nextStepIdx]),
+        });
+        console.log(`[drip] sent step ${stepIdx + 1}/${steps.length} → ${e.phone} (lead ${e.leadId})`);
+      } catch (err) {
+        console.error(`[drip] send failed for ${e.phone}`, err.message);
+        await enrollDoc.ref.update({
+          status: 'failed',
+          failedReason: err.message?.slice(0, 200) || 'send error',
+          nextSendAt: null,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[drip] tick error', err.message);
   }
 }
 
