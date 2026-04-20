@@ -31,7 +31,7 @@ const STATS_INTERVAL_MS = 3_000;
  * - 15s connection timeout with explicit Retry button
  * - Auto-reconnect on disconnected/failed state (one attempt before showing Retry)
  */
-export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
+export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: Props) {
   const { appUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
