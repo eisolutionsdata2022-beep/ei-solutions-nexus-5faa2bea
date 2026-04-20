@@ -3,13 +3,14 @@
  * Allows creating customers with KYC fields and viewing the list.
  */
 import { useMemo, useState } from "react";
-import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera } from "lucide-react";
+import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera, Upload, FileText, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
   addCustomer,
   getNextCustomerCode,
   updateCustomer,
   uploadCustomerPhoto,
+  uploadCustomerDoc,
 } from "@/lib/finance-firebase";
 import { StudioCameraCapture } from "./StudioCameraCapture";
 import type { FinanceCustomer, KycStatus } from "@/lib/finance-types";
