@@ -77,6 +77,16 @@ service firebase.storage {
       allow write: if isAdmin() && under10MB();
     }
 
+    // ---------- WhatsApp inbox media ---------------------------------
+    // Path: whatsappMedia/{phone}/{file}
+    // Bridge (Admin SDK) writes inbound + outbound media. Staff/admin read.
+    // Browser uploads NOT allowed — outbound media is sent base64 via /send
+    // and the bridge persists the copy server-side.
+    match /whatsappMedia/{phone}/{file=**} {
+      allow read:   if isStaffish();
+      allow write:  if false;
+    }
+
     // ---------- Default deny -----------------------------------------
     match /{allPaths=**} {
       allow read, write: if false;
