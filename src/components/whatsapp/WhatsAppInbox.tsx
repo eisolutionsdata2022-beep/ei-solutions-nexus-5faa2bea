@@ -343,6 +343,59 @@ export function WhatsAppInbox({ scope }: Props) {
   );
 }
 
+function MessageMedia({ m, isOut }: { m: WaMessage; isOut: boolean }) {
+  if (!m.hasMedia) return null;
+  const url = m.mediaUrl || null;
+  const mime = m.mediaMime || "";
+  const isImage = mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+
+  if (!url) {
+    return (
+      <div className={`flex items-center gap-2 px-2 py-2 rounded-lg ${isOut ? "bg-emerald-700/40" : "bg-muted"}`}>
+        <ImageIcon className="h-4 w-4 opacity-70" />
+        <span className="text-xs opacity-80">Media — loading…</span>
+      </div>
+    );
+  }
+
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="block">
+        <img src={url} alt="attachment" className="rounded-lg max-h-64 w-auto object-cover" loading="lazy" />
+      </a>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg ${isOut ? "bg-emerald-700/40 hover:bg-emerald-700/60" : "bg-muted hover:bg-muted/80"} transition`}
+      >
+        <FileText className="h-5 w-5 shrink-0" />
+        <span className="text-xs font-medium flex-1 truncate">PDF document</span>
+        <Download className="h-3.5 w-3.5 opacity-70" />
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg ${isOut ? "bg-emerald-700/40 hover:bg-emerald-700/60" : "bg-muted hover:bg-muted/80"} transition`}
+    >
+      <Paperclip className="h-4 w-4 shrink-0" />
+      <span className="text-xs flex-1 truncate">{mime || "Attachment"}</span>
+      <Download className="h-3.5 w-3.5 opacity-70" />
+    </a>
+  );
+}
+
 function ConnectionDot({ ready, status }: { ready: boolean; status?: string }) {
   return (
     <span className="flex items-center gap-1.5 text-[10px]">
