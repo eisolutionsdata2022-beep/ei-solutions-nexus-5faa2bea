@@ -37,6 +37,8 @@ const HEADLESS = process.env.HEADLESS !== 'false';
 const SESSION_DIR = process.env.WA_SESSION_DIR || './.wwebjs_auth';
 const CLIENT_NAME = process.env.WA_CLIENT_NAME || 'EI Solutions Portal';
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+const FIREBASE_STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+const MEDIA_URL_TTL_DAYS = Number(process.env.WA_MEDIA_URL_TTL_DAYS || 30);
 
 const RATE_PER_MIN = Number(process.env.WA_RATE_PER_MIN || 5);
 const RATE_PER_DAY = Number(process.env.WA_RATE_PER_DAY || 100);
@@ -60,9 +62,12 @@ if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
   projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
 });
 const fs_db = admin.firestore();
+const bucket = admin.storage().bucket();
 console.log('[firestore] connected to project', FIREBASE_PROJECT_ID);
+console.log('[storage] using bucket', FIREBASE_STORAGE_BUCKET);
 
 // Convenience refs
 const sessionRef = fs_db.collection('whatsappSessions').doc('default');
