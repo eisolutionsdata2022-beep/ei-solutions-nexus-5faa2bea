@@ -74,50 +74,55 @@ export function evaluateRisk(params: {
 }): RiskEvaluation {
   const warnAt = Math.max(50, Math.min(100, params.policy.warnAtPercent ?? 80));
   const reasons: string[] = [];
-  let driver: RiskEvaluation["driver"] = "none";
-  let level: RiskLevel = "ok";
-  let utilisation = 0;
 
-  // Single-loan check
+  // Compute utilisation for both caps independently
+  const singleU =
+    params.policy.singleLoanLimit > 0
+      ? (params.proposedAmount / params.policy.singleLoanLimit) * 100
+      : 0;
+  const projectedCustomer = params.customerOutstanding + params.proposedAmount;
+  const customerU =
+    params.policy.perCustomerCap > 0
+      ? (projectedCustomer / params.policy.perCustomerCap) * 100
+      : 0;
+
+  // Choose the higher-utilisation driver
+  const driver: RiskEvaluation["driver"] =
+    singleU === 0 && customerU === 0
+      ? "none"
+      : singleU >= customerU
+      ? "single"
+      : "customer";
+  const utilisation = Math.max(singleU, customerU);
+
+  let level: RiskLevel;
+  if (utilisation >= 100) level = "breach";
+  else if (utilisation >= warnAt) level = "approaching";
+  else level = "ok";
+
   if (params.policy.singleLoanLimit > 0) {
-    const u = (params.proposedAmount / params.policy.singleLoanLimit) * 100;
-    if (u >= 100) {
-      level = "breach";
-      driver = "single";
+    if (singleU >= 100) {
       reasons.push(
         `Single-loan limit ₹${params.policy.singleLoanLimit.toLocaleString("en-IN")} would be exceeded.`,
       );
-    } else if (u >= warnAt && level !== "breach") {
-      level = "approaching";
-      driver = "single";
+    } else if (singleU >= warnAt) {
       reasons.push(
-        `Approaching single-loan limit (${u.toFixed(0)}% of ₹${params.policy.singleLoanLimit.toLocaleString("en-IN")}).`,
+        `Approaching single-loan limit (${singleU.toFixed(0)}% of ₹${params.policy.singleLoanLimit.toLocaleString("en-IN")}).`,
       );
     }
-    utilisation = Math.max(utilisation, u);
   }
-
-  // Per-customer cap check
   if (params.policy.perCustomerCap > 0) {
-    const projected = params.customerOutstanding + params.proposedAmount;
-    const u = (projected / params.policy.perCustomerCap) * 100;
-    if (u >= 100) {
-      level = "breach";
-      driver = "customer";
+    if (customerU >= 100) {
       reasons.push(
-        `Customer total outstanding would reach ₹${projected.toLocaleString("en-IN")} ` +
+        `Customer total outstanding would reach ₹${projectedCustomer.toLocaleString("en-IN")} ` +
           `(cap ₹${params.policy.perCustomerCap.toLocaleString("en-IN")}).`,
       );
-    } else if (u >= warnAt && level !== "breach") {
-      // Only override driver if customer utilisation is higher
-      if (u > utilisation) driver = "customer";
-      if (level !== "breach") level = "approaching";
+    } else if (customerU >= warnAt) {
       reasons.push(
-        `Customer total outstanding ₹${projected.toLocaleString("en-IN")} ` +
-          `is ${u.toFixed(0)}% of cap.`,
+        `Customer total outstanding ₹${projectedCustomer.toLocaleString("en-IN")} ` +
+          `is ${customerU.toFixed(0)}% of cap.`,
       );
     }
-    utilisation = Math.max(utilisation, u);
   }
 
   return { level, reasons, driver, utilisationPercent: Math.round(utilisation) };
