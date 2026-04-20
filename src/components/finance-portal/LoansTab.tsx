@@ -57,6 +57,13 @@ interface Props {
 export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Props) {
   const [showNew, setShowNew] = useState(false);
   const [search, setSearch] = useState("");
+  const [goldRate, setGoldRate] = useState<GoldRateSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!ownerId) return;
+    const unsub = subscribeGoldRate(ownerId, setGoldRate);
+    return () => unsub();
+  }, [ownerId]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return loans;
@@ -68,6 +75,12 @@ export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Pr
 
   return (
     <div className="space-y-4">
+      <QuickQuoteCard
+        customers={customers}
+        loans={loans}
+        settings={settings}
+        goldRate={goldRate}
+      />
       <StudioSectionTitle
         eyebrow="Workspace"
         title="Gold Loans"
@@ -140,7 +153,9 @@ export function LoansTab({ ownerId, ownerEmail, customers, loans, settings }: Pr
         ownerId={ownerId}
         ownerEmail={ownerEmail}
         customers={customers}
+        loans={loans}
         settings={settings}
+        goldRate={goldRate}
       />
     </div>
   );
