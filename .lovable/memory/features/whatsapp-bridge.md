@@ -53,6 +53,11 @@ type: feature
 - Staff/manager sees ONLY contacts where `assignedTo == their uid`
 - Operator role: no WhatsApp access
 
+## Auto-CRM-lead from new chats
+- Bridge detects first inbound from a brand-new contact (`whatsappContacts/{phone}` did not exist) and inserts into `crmLeads` with: `leadId=LD-XXXX`, `name=notifyName||"WhatsApp <last10>"`, `phone=last10`, `leadSource="WhatsApp"`, `status="New"`, remarks = first message snippet (≤200 chars), `createdBy="whatsapp-bridge"`
+- Idempotent: skips if any existing lead matches the phone (full or last-10)
+- Logic lives in `autoCreateCrmLead()` in `native/whatsapp-bridge-vps/server.js`
+
 ## Personalization
 - Bulk supports `{{name}}` token, replaced server-side per recipient
 - Test send prepends "🧪 [TEST]" prefix
