@@ -110,11 +110,14 @@ import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-setting
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
+import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-comm'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
+import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
+import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -623,6 +626,11 @@ const AdminCrmLeadsRoute = AdminCrmLeadsRouteImport.update({
   path: '/crm-leads',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCrmBulkCommRoute = AdminCrmBulkCommRouteImport.update({
+  id: '/crm-bulk-comm',
+  path: '/crm-bulk-comm',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   id: '/create-user',
   path: '/create-user',
@@ -649,6 +657,16 @@ const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => RetailerJobsRoute,
 } as any)
+const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
+  id: '/api/email/unsubscribe',
+  path: '/api/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailOpenRoute = ApiEmailOpenRouteImport.update({
+  id: '/api/email/open',
+  path: '/api/email/open',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -670,6 +688,7 @@ export interface FileRoutesByFullPath {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -756,6 +775,8 @@ export interface FileRoutesByFullPath {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesByTo {
@@ -770,6 +791,7 @@ export interface FileRoutesByTo {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -856,6 +878,8 @@ export interface FileRoutesByTo {
   '/retailer': typeof RetailerIndexRoute
   '/staff': typeof StaffIndexRoute
   '/trainer': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesById {
@@ -879,6 +903,7 @@ export interface FileRoutesById {
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
@@ -965,6 +990,8 @@ export interface FileRoutesById {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRouteTypes {
@@ -989,6 +1016,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -1075,6 +1103,8 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1089,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -1175,6 +1206,8 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   id:
     | '__root__'
@@ -1197,6 +1230,7 @@ export interface FileRouteTypes {
     | '/admin/chat-inbox'
     | '/admin/commissions'
     | '/admin/create-user'
+    | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
@@ -1283,6 +1317,8 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   fileRoutesById: FileRoutesById
 }
@@ -1303,6 +1339,8 @@ export interface RootRouteChildren {
   TrainerRoute: typeof TrainerRouteWithChildren
   WelcomeRoute: typeof WelcomeRoute
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
+  ApiEmailOpenRoute: typeof ApiEmailOpenRoute
+  ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2014,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCrmLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/crm-bulk-comm': {
+      id: '/admin/crm-bulk-comm'
+      path: '/crm-bulk-comm'
+      fullPath: '/admin/crm-bulk-comm'
+      preLoaderRoute: typeof AdminCrmBulkCommRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/create-user': {
       id: '/admin/create-user'
       path: '/create-user'
@@ -2049,6 +2094,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerJobsJobIdRouteImport
       parentRoute: typeof RetailerJobsRoute
     }
+    '/api/email/unsubscribe': {
+      id: '/api/email/unsubscribe'
+      path: '/api/email/unsubscribe'
+      fullPath: '/api/email/unsubscribe'
+      preLoaderRoute: typeof ApiEmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/open': {
+      id: '/api/email/open'
+      path: '/api/email/open'
+      fullPath: '/api/email/open'
+      preLoaderRoute: typeof ApiEmailOpenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2057,6 +2116,7 @@ interface AdminRouteChildren {
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
+  AdminCrmBulkCommRoute: typeof AdminCrmBulkCommRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
@@ -2101,6 +2161,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
+  AdminCrmBulkCommRoute: AdminCrmBulkCommRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
@@ -2333,6 +2394,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrainerRoute: TrainerRouteWithChildren,
   WelcomeRoute: WelcomeRoute,
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
+  ApiEmailOpenRoute: ApiEmailOpenRoute,
+  ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
