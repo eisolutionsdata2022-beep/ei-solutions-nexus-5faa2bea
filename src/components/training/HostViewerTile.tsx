@@ -91,6 +91,8 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
             window.clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
           }
+          if (statsIntervalRef.current) window.clearInterval(statsIntervalRef.current);
+          statsIntervalRef.current = window.setInterval(() => pollStats(pc), STATS_INTERVAL_MS);
         } else if (s === "failed") {
           // one auto-retry, then surface a Retry button
           if (!autoRetriedRef.current) {
