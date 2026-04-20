@@ -153,9 +153,22 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   // start camera (gets audio + video). Audio reused across modes.
   const startCamera = async () => {
     if (cameraStreamRef.current) return cameraStreamRef.current;
+    if (!window.isSecureContext) {
+      throw new Error("Camera/mic require HTTPS. Open the site over https:// to go live.");
+    }
+    // Pre-check permission state for a clearer error
+    try {
+      // @ts-expect-error - microphone is a valid PermissionName in Chromium
+      const micPerm = await navigator.permissions?.query?.({ name: "microphone" });
+      if (micPerm?.state === "denied") {
+        throw new Error("Microphone is blocked. Please allow it in browser site settings.");
+      }
+    } catch (e: any) {
+      if (e?.message?.includes("blocked")) throw e;
+      // Safari / older browsers skip pre-check
+    }
     const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     cameraStreamRef.current = s;
-    // route mic through the mix graph so we can later add system audio
     connectMicToMix();
     return s;
   };
@@ -174,16 +187,23 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
 
       // listen for incoming viewer offers under this host
       const unsub = hostListenForOffers(trainingId, appUser.uid, async (viewerId, offer) => {
-        if (peersRef.current.has(viewerId)) return;
+        // Returning viewer (refresh / retry) — close stale peer first so a
+        // fresh setRemoteDescription/createAnswer cycle succeeds.
+        const existing = peersRef.current.get(viewerId);
+        if (existing) {
+          try { existing.close(); } catch { /* noop */ }
+          peersRef.current.delete(viewerId);
+        }
         const pc = createPeerConnection();
         peersRef.current.set(viewerId, pc);
         setViewerCount(peersRef.current.size);
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
         pc.onicecandidate = (e) => {
-          if (e.candidate) addIceCandidate(trainingId, appUser.uid, viewerId, "callee", e.candidate.toJSON());
+          if (e.candidate) addIceCandidate(trainingId, appUser.uid, viewerId, "callee", e.candidate.toJSON()).catch(() => {});
         };
         pc.onconnectionstatechange = () => {
-          if (pc.connectionState === "failed" || pc.connectionState === "closed" || pc.connectionState === "disconnected") {
+          if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+            try { pc.close(); } catch { /* noop */ }
             peersRef.current.delete(viewerId);
             setViewerCount(peersRef.current.size);
           }
@@ -207,7 +227,12 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
       toast.success("You are live! 🔴");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || "Failed to go live (check camera permission)");
+      const name = err?.name;
+      let msg = err?.message || "Failed to go live";
+      if (name === "NotAllowedError") msg = "Camera/microphone permission denied. Allow access and retry.";
+      else if (name === "NotFoundError") msg = "No camera or microphone found on this device.";
+      else if (name === "NotReadableError") msg = "Camera/mic in use by another app. Close it and retry.";
+      toast.error(msg);
     }
   };
 
