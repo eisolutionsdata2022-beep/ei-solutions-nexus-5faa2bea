@@ -11,6 +11,8 @@ import {
   type RoomParticipant,
   type LiveHost,
 } from "@/lib/webrtc";
+import { onBackChannels, type BackChannel } from "@/lib/student-backchannel";
+import { onPermissions, type PermissionRequest } from "@/lib/training-permissions";
 import { Button } from "@/components/ui/button";
 import { TrainingChat } from "@/components/training/TrainingChat";
 import { TrainingQA } from "@/components/training/TrainingQA";
@@ -18,8 +20,12 @@ import { TrainingAIBot } from "@/components/training/TrainingAIBot";
 import { TrainerHostTile } from "@/components/training/TrainerHostTile";
 import { HostViewerTile } from "@/components/training/HostViewerTile";
 import { ReviewSubmitDialog } from "@/components/training/ReviewSubmitDialog";
+import { StudentControls } from "@/components/training/StudentControls";
+import { TrainerApprovalPanel } from "@/components/training/TrainerApprovalPanel";
+import { StudentBackChannelTile } from "@/components/training/StudentBackChannelTile";
+import { InRoomInstallButton } from "@/components/training/InRoomInstallButton";
 import {
-  PhoneOff, MessageCircle, HelpCircle, Bot, Users, X, Star,
+  PhoneOff, MessageCircle, HelpCircle, Bot, Users, X, Star, Hand,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,7 +36,7 @@ interface VideoRoomProps {
   onLeave: () => void;
 }
 
-type SidebarTab = "chat" | "qa" | "bot" | "participants" | null;
+type SidebarTab = "chat" | "qa" | "bot" | "participants" | "approvals" | null;
 
 export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoomProps) {
   const { appUser } = useAuth();
