@@ -49,6 +49,7 @@ export interface WaMessage {
   hasMedia: boolean;
   mediaUrl?: string | null;
   mediaMime?: string | null;
+  mediaPath?: string | null;     // GCS object path (whatsappMedia/{phone}/{id}.{ext})
   ack: number | null;        // -1 err, 0 pending, 1 server, 2 delivered, 3 read
   timestamp: string;
   createdAt?: any;
