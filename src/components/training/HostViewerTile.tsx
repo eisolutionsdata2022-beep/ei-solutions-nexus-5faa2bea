@@ -104,6 +104,31 @@ export function HostViewerTile({ trainingId, trainingTitle, host, onMaximize }: 
 
       setQuality(score);
       setQualityDetails({ rtt: Math.round(rtt), jitter: Math.round(jitter), loss: Math.round(lossPct * 10) / 10 });
+
+      // Log to Firestore: on quality change, or every 30s as a heartbeat.
+      if (appUser) {
+        const nowMs = Date.now();
+        const changed = score !== lastLoggedQualityRef.current;
+        const heartbeatDue = nowMs - lastLoggedAtRef.current >= 30_000;
+        if (changed || heartbeatDue) {
+          lastLoggedAtRef.current = nowMs;
+          lastLoggedQualityRef.current = score;
+          logSessionQualitySample({
+            trainingId,
+            trainingTitle,
+            hostId: host.id,
+            hostName: host.name,
+            viewerId: appUser.uid,
+            viewerName: appUser.name || appUser.email,
+            viewerRole: appUser.role,
+            rtt: Math.round(rtt),
+            jitter: Math.round(jitter),
+            loss: Math.round(lossPct * 10) / 10,
+            quality: score,
+            reason: changed ? "change" : "interval",
+          });
+        }
+      }
     } catch {
       /* getStats can fail mid-teardown */
     }
