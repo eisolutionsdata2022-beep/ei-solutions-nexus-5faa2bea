@@ -44,6 +44,9 @@ import {
   Loader2,
   X,
   RotateCcw,
+  ListChecks,
+  UploadCloud,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -112,6 +115,24 @@ function FinancePage() {
   const [payments, setPayments] = useState<LoanPayment[]>([]);
   const [cashBook, setCashBook] = useState<CashEntry[]>([]);
   const [settings, setSettings] = useState<FinanceSettings | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  // Cross-tab signal: when the Quick Action Bar wants to "Apply Loan",
+  // we switch to the loans tab AND ask it to open its New Loan dialog.
+  const [openNewLoanSignal, setOpenNewLoanSignal] = useState(0);
+
+  // Sync tab from URL hash (e.g. #loans, #repay) so deep-links work
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = () => {
+      const h = window.location.hash.replace(/^#/, "");
+      if (h && ["dashboard","customers","loans","repay","closure","cashbook","reports","settings"].includes(h)) {
+        setActiveTab(h);
+      }
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
 
   useEffect(() => {
     if (!retailerId) return;
@@ -133,6 +154,29 @@ function FinancePage() {
 
   const activeCount = loans.filter((l) => l.status === "Active").length;
   const overdueCount = loans.filter((l) => l.status === "Active" && new Date(l.dueDate) < new Date()).length;
+
+  const handleApplyLoan = () => {
+    setActiveTab("loans");
+    // Trigger New Loan dialog inside LoansTab
+    setTimeout(() => setOpenNewLoanSignal((n) => n + 1), 0);
+  };
+  const handleCheckStatus = () => setActiveTab("loans");
+  const handleUploadDocs = () => setActiveTab("customers");
+  const handleDownloadApproval = () => {
+    // Try to download the most recent active loan's pledge receipt
+    const latest = [...loans].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))[0];
+    if (!latest || !settings) {
+      toast.info("No loan available yet — apply for one first.");
+      setActiveTab("loans");
+      return;
+    }
+    const cust = customers.find((c) => c.id === latest.customerId);
+    if (!cust) {
+      toast.error("Customer record missing for the latest loan.");
+      return;
+    }
+    downloadPledgeReceipt(latest, cust, settings);
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-5 max-w-7xl">
@@ -169,7 +213,40 @@ function FinancePage() {
         </div>
       </header>
 
-      <Tabs defaultValue="dashboard" className="w-full">
+      {/* Sticky Quick Action Bar — visible on every tab so users always have one-tap access */}
+      <div className="sticky top-2 z-30 -mx-1">
+        <div className="rounded-2xl border border-gov-blue/15 bg-card/85 backdrop-blur-md shadow-md p-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Button
+            onClick={handleApplyLoan}
+            className="h-12 bg-gradient-to-br from-gov-blue to-gov-blue-dark hover:opacity-95 text-white font-bold shadow-md"
+          >
+            <Plus className="w-4 h-4 mr-1.5" /> Apply Loan
+          </Button>
+          <Button
+            onClick={handleCheckStatus}
+            variant="outline"
+            className="h-12 font-semibold border-gov-blue/40 text-gov-blue hover:bg-gov-blue/10"
+          >
+            <ListChecks className="w-4 h-4 mr-1.5" /> Check Status
+          </Button>
+          <Button
+            onClick={handleUploadDocs}
+            variant="outline"
+            className="h-12 font-semibold border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+          >
+            <UploadCloud className="w-4 h-4 mr-1.5" /> Upload Docs
+          </Button>
+          <Button
+            onClick={handleDownloadApproval}
+            variant="outline"
+            className="h-12 font-semibold border-amber-500/40 text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/30"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Download Approval
+          </Button>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full overflow-x-auto justify-start flex-nowrap bg-card/60 backdrop-blur-sm border border-border shadow-sm p-1 rounded-xl">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
@@ -184,7 +261,12 @@ function FinancePage() {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <DashboardTab loans={loans} payments={payments} customers={customers} />
+          <DashboardTab
+            loans={loans}
+            payments={payments}
+            customers={customers}
+            onNavigate={setActiveTab}
+          />
         </TabsContent>
         <TabsContent value="customers">
           <CustomersTab
@@ -202,6 +284,7 @@ function FinancePage() {
             loans={loans}
             settings={settings}
             createdBy={appUser.email}
+            openNewLoanSignal={openNewLoanSignal}
           />
         </TabsContent>
         <TabsContent value="repay">
@@ -250,10 +333,12 @@ function DashboardTab({
   loans,
   payments,
   customers,
+  onNavigate,
 }: {
   loans: FinanceLoan[];
   payments: LoanPayment[];
   customers: FinanceCustomer[];
+  onNavigate: (tab: string) => void;
 }) {
   const today = new Date().toISOString().split("T")[0];
   const todayCollection = payments
@@ -293,19 +378,7 @@ function DashboardTab({
     { label: "Closure", desc: "Release gold", icon: CheckCircle2, tab: "closure", accent: "from-teal-500/15 to-emerald-500/10 border-teal-500/30 text-teal-700 dark:text-teal-300" },
   ];
 
-  function goToTab(tab: string) {
-    const trigger = document.querySelector<HTMLElement>(`[role="tab"][value="${tab}"], button[data-state][value="${tab}"]`);
-    // Fallback: find by text — Radix Tabs uses data-value
-    const node = trigger || document.querySelector<HTMLElement>(`button[role="tab"][data-radix-collection-item][value="${tab}"]`);
-    node?.click();
-    // Most reliable — query by data-value attribute that Radix sets
-    const el = document.querySelector<HTMLElement>(`[role="tab"][data-state]`);
-    if (!node && el) {
-      document.querySelectorAll<HTMLElement>('[role="tab"]').forEach((t) => {
-        if ((t.getAttribute("value") || t.textContent?.trim().toLowerCase()) === tab) t.click();
-      });
-    }
-  }
+  const goToTab = (tab: string) => onNavigate(tab);
 
   // Recent payments for mini activity feed
   const recentPayments = [...payments]
@@ -952,16 +1025,23 @@ function LoansTab({
   loans,
   settings,
   createdBy,
+  openNewLoanSignal,
 }: {
   retailerId: string;
   customers: FinanceCustomer[];
   loans: FinanceLoan[];
   settings: FinanceSettings | null;
   createdBy: string;
+  openNewLoanSignal?: number;
 }) {
   const [showNew, setShowNew] = useState(false);
   const [renewing, setRenewing] = useState<FinanceLoan | null>(null);
   const [search, setSearch] = useState("");
+
+  // Open the New Loan dialog whenever the parent bumps the signal counter
+  useEffect(() => {
+    if (openNewLoanSignal && openNewLoanSignal > 0) setShowNew(true);
+  }, [openNewLoanSignal]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return loans;

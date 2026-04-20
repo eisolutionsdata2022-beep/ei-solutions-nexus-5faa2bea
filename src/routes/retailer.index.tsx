@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Wallet, Search, Clock, CheckCircle, XCircle, AlertCircle,
   ArrowDownLeft, ArrowUpRight, FileText, ExternalLink, BarChart3, HelpCircle,
-  IdCard, Copy, Sparkles,
+  IdCard, Copy, Sparkles, Banknote, ShieldCheck, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateVleId } from "@/lib/pan-vle-id";
@@ -215,6 +215,59 @@ function RetailerDashboard() {
           </div>
         </div>
       )}
+
+      {/* QUICK LOAN APPLY + KYC — premium one-tap CTAs (always visible) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link to="/retailer/finance" className="group block">
+          <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white shadow-premium transition-all hover:-translate-y-0.5 hover:shadow-2xl">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/15 blur-3xl" aria-hidden />
+            <div className="pointer-events-none absolute -bottom-14 -left-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" aria-hidden />
+            <div className="relative flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-inner">
+                <Banknote className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-white/85 font-semibold">Gold Loan</p>
+                <p className="text-xl sm:text-2xl font-extrabold leading-tight">Quick Loan Apply</p>
+                <p className="text-xs text-white/85 mt-0.5">Pledge gold · instant disbursal · paperless KYC</p>
+              </div>
+              <div className="hidden sm:flex w-10 h-10 rounded-full bg-white/20 group-hover:bg-white/30 items-center justify-center shrink-0 transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="relative mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">⚡ 5-min approval</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">💰 Up to 75% LTV</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">🔒 Secure vault</span>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/retailer/kyc" className="group block">
+          <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 text-white shadow-premium transition-all hover:-translate-y-0.5 hover:shadow-2xl">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/15 blur-3xl" aria-hidden />
+            <div className="pointer-events-none absolute -bottom-14 -left-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" aria-hidden />
+            <div className="relative flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-inner">
+                <ShieldCheck className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-white/85 font-semibold">Identity</p>
+                <p className="text-xl sm:text-2xl font-extrabold leading-tight">KYC Update / Submit</p>
+                <p className="text-xs text-white/85 mt-0.5">Aadhaar · PAN · selfie · franchise certificate</p>
+              </div>
+              <div className="hidden sm:flex w-10 h-10 rounded-full bg-white/20 group-hover:bg-white/30 items-center justify-center shrink-0 transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="relative mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">✓ Single click</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">📄 Upload docs</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur text-[11px] font-semibold">🔐 Bank-grade</span>
+            </div>
+          </div>
+        </Link>
+      </div>
 
       {/* Wallet + VLE ID — premium glass cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
