@@ -333,10 +333,12 @@ function DashboardTab({
   loans,
   payments,
   customers,
+  onNavigate,
 }: {
   loans: FinanceLoan[];
   payments: LoanPayment[];
   customers: FinanceCustomer[];
+  onNavigate: (tab: string) => void;
 }) {
   const today = new Date().toISOString().split("T")[0];
   const todayCollection = payments
@@ -376,13 +378,7 @@ function DashboardTab({
     { label: "Closure", desc: "Release gold", icon: CheckCircle2, tab: "closure", accent: "from-teal-500/15 to-emerald-500/10 border-teal-500/30 text-teal-700 dark:text-teal-300" },
   ];
 
-  function goToTab(tab: string) {
-    const trigger = document.querySelector<HTMLElement>(`[role="tab"][value="${tab}"], button[data-state][value="${tab}"]`);
-    // Fallback: find by text — Radix Tabs uses data-value
-    const node = trigger || document.querySelector<HTMLElement>(`button[role="tab"][data-radix-collection-item][value="${tab}"]`);
-    node?.click();
-    // Most reliable — query by data-value attribute that Radix sets
-    const el = document.querySelector<HTMLElement>(`[role="tab"][data-state]`);
+  const goToTab = (tab: string) => onNavigate(tab);
     if (!node && el) {
       document.querySelectorAll<HTMLElement>('[role="tab"]').forEach((t) => {
         if ((t.getAttribute("value") || t.textContent?.trim().toLowerCase()) === tab) t.click();
