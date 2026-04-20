@@ -131,7 +131,22 @@ export interface FinanceSettings {
   defaultLtvPercent: number;       // 75
   defaultGoldRatePerGram: number;  // ₹ — admin/staff updates daily
   penaltyRatePerDay: number;       // % per day after due
+  // Risk policy (dual-cap)
+  singleLoanLimit?: number;        // ₹ — 0/undefined disables
+  perCustomerCap?: number;         // ₹ — 0/undefined disables
+  riskWarnAtPercent?: number;      // 80 by default
   updatedAt: string;
+}
+
+/** Daily-cached gold rate snapshot (one doc per retailer at financeGoldRate/{retailerId}). */
+export interface GoldRateSnapshot {
+  retailerId: string;
+  rate24k: number;                 // ₹/g
+  rate22k: number;                 // ₹/g
+  source: "live" | "cache" | "fallback" | "manual";
+  fetchedAt: string;               // ISO
+  upstream?: string;
+  error?: string | null;
 }
 
 export const PAYMENT_MODES = ["Cash", "UPI", "Bank"] as const;
@@ -140,6 +155,9 @@ export const DEFAULT_LTV = 75;
 export const DEFAULT_INTEREST_RATE = 12;
 export const DEFAULT_GOLD_RATE = 6500; // ₹/g — 22k indicative
 export const DEFAULT_PENALTY_RATE = 0.05; // % per day
+export const DEFAULT_SINGLE_LOAN_LIMIT = 100000;     // ₹1L
+export const DEFAULT_PER_CUSTOMER_CAP = 300000;      // ₹3L
+export const DEFAULT_RISK_WARN_AT = 80;              // %
 
 export const LOAN_STATUS_COLORS: Record<LoanStatus, string> = {
   Active: "bg-blue-100 text-blue-800 border-blue-200",

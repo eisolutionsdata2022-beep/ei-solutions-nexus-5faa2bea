@@ -28,6 +28,7 @@ import type {
   LoanPayment,
   CashEntry,
   FinanceSettings,
+  GoldRateSnapshot,
 } from "./finance-types";
 import {
   DEFAULT_INTEREST_RATE,
@@ -35,6 +36,36 @@ import {
   DEFAULT_GOLD_RATE,
   DEFAULT_PENALTY_RATE,
 } from "./finance-types";
+
+// ─── Gold rate (daily cache) ────────────────────────────────────────────────
+/**
+ * Reads today's cached gold rate snapshot for a retailer. Returns null if no
+ * snapshot exists or it's stale (different ISO date than today).
+ */
+export async function getCachedGoldRate(
+  retailerId: string,
+): Promise<GoldRateSnapshot | null> {
+  const snap = await getDoc(doc(db, "financeGoldRate", retailerId));
+  if (!snap.exists()) return null;
+  const data = snap.data() as GoldRateSnapshot;
+  const today = new Date().toISOString().slice(0, 10);
+  const fetchedDay = (data.fetchedAt || "").slice(0, 10);
+  if (fetchedDay !== today) return null;
+  return data;
+}
+
+export async function saveGoldRate(snapshot: GoldRateSnapshot): Promise<void> {
+  await setDoc(doc(db, "financeGoldRate", snapshot.retailerId), snapshot);
+}
+
+export function subscribeGoldRate(
+  retailerId: string,
+  cb: (snap: GoldRateSnapshot | null) => void,
+) {
+  return onSnapshot(doc(db, "financeGoldRate", retailerId), (s) => {
+    cb(s.exists() ? (s.data() as GoldRateSnapshot) : null);
+  });
+}
 
 // ─── Settings ───────────────────────────────────────────────────────────────
 export async function getFinanceSettings(retailerId: string): Promise<FinanceSettings> {
