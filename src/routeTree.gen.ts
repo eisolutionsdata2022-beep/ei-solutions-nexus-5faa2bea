@@ -115,6 +115,8 @@ import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
+import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
+import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -649,6 +651,16 @@ const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => RetailerJobsRoute,
 } as any)
+const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
+  id: '/api/email/unsubscribe',
+  path: '/api/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailOpenRoute = ApiEmailOpenRouteImport.update({
+  id: '/api/email/open',
+  path: '/api/email/open',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -756,6 +768,8 @@ export interface FileRoutesByFullPath {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesByTo {
@@ -856,6 +870,8 @@ export interface FileRoutesByTo {
   '/retailer': typeof RetailerIndexRoute
   '/staff': typeof StaffIndexRoute
   '/trainer': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRoutesById {
@@ -965,6 +981,8 @@ export interface FileRoutesById {
   '/retailer/': typeof RetailerIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/trainer/': typeof TrainerIndexRoute
+  '/api/email/open': typeof ApiEmailOpenRoute
+  '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
 }
 export interface FileRouteTypes {
@@ -1075,6 +1093,8 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1175,6 +1195,8 @@ export interface FileRouteTypes {
     | '/retailer'
     | '/staff'
     | '/trainer'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   id:
     | '__root__'
@@ -1283,6 +1305,8 @@ export interface FileRouteTypes {
     | '/retailer/'
     | '/staff/'
     | '/trainer/'
+    | '/api/email/open'
+    | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
   fileRoutesById: FileRoutesById
 }
@@ -1303,6 +1327,8 @@ export interface RootRouteChildren {
   TrainerRoute: typeof TrainerRouteWithChildren
   WelcomeRoute: typeof WelcomeRoute
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
+  ApiEmailOpenRoute: typeof ApiEmailOpenRoute
+  ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2049,6 +2075,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerJobsJobIdRouteImport
       parentRoute: typeof RetailerJobsRoute
     }
+    '/api/email/unsubscribe': {
+      id: '/api/email/unsubscribe'
+      path: '/api/email/unsubscribe'
+      fullPath: '/api/email/unsubscribe'
+      preLoaderRoute: typeof ApiEmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/open': {
+      id: '/api/email/open'
+      path: '/api/email/open'
+      fullPath: '/api/email/open'
+      preLoaderRoute: typeof ApiEmailOpenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2333,6 +2373,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrainerRoute: TrainerRouteWithChildren,
   WelcomeRoute: WelcomeRoute,
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
+  ApiEmailOpenRoute: ApiEmailOpenRoute,
+  ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
