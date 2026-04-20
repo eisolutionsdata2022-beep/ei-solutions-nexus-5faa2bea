@@ -101,6 +101,8 @@ import {
 } from "@/lib/finance-receipt-pdf";
 import { CameraCaptureDialog } from "@/components/finance/CameraCaptureDialog";
 import { SignaturePadDialog } from "@/components/finance/SignaturePadDialog";
+import { DepositsTab } from "@/components/finance/DepositsTab";
+import { PiggyBank } from "lucide-react";
 
 export const Route = createFileRoute("/retailer/finance")({
   component: FinancePage,
@@ -125,7 +127,7 @@ function FinancePage() {
     if (typeof window === "undefined") return;
     const apply = () => {
       const h = window.location.hash.replace(/^#/, "");
-      if (h && ["dashboard","customers","loans","repay","closure","cashbook","reports","settings"].includes(h)) {
+      if (h && ["dashboard","customers","loans","repay","closure","deposits","cashbook","reports","settings"].includes(h)) {
         setActiveTab(h);
       }
     };
@@ -304,6 +306,9 @@ function FinancePage() {
           <TabsTrigger value="loans" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Loans</TabsTrigger>
           <TabsTrigger value="repay" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Repayments</TabsTrigger>
           <TabsTrigger value="closure" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Closure</TabsTrigger>
+          <TabsTrigger value="deposits" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">
+            <PiggyBank className="w-3.5 h-3.5 mr-1" /> Deposits
+          </TabsTrigger>
           <TabsTrigger value="cashbook" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Cash Book</TabsTrigger>
           <TabsTrigger value="reports" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">Reports</TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-gov-blue data-[state=active]:text-white data-[state=active]:shadow-md font-medium">
@@ -353,6 +358,14 @@ function FinancePage() {
             loans={loans}
             customers={customers}
             settings={settings}
+          />
+        </TabsContent>
+        <TabsContent value="deposits">
+          <DepositsTab
+            retailerId={retailerId}
+            branchId={appUser.financeBranchId ?? null}
+            customers={customers}
+            createdBy={appUser.email}
           />
         </TabsContent>
         <TabsContent value="cashbook">
