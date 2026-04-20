@@ -35,10 +35,14 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
   const timeoutRef = useRef<number | null>(null);
+  const statsIntervalRef = useRef<number | null>(null);
+  const lastStatsRef = useRef<{ packetsLost: number; packetsReceived: number; ts: number } | null>(null);
   const autoRetriedRef = useRef(false);
   const [status, setStatus] = useState<Status>("connecting");
   const [errMsg, setErrMsg] = useState<string>("");
   const [attempt, setAttempt] = useState(0);
+  const [quality, setQuality] = useState<Quality>("unknown");
+  const [qualityDetails, setQualityDetails] = useState<{ rtt: number; jitter: number; loss: number } | null>(null);
 
   const teardown = useCallback(() => {
     unsubsRef.current.forEach((u) => { try { u(); } catch { /* noop */ } });
@@ -47,6 +51,11 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    if (statsIntervalRef.current) {
+      window.clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
+    }
+    lastStatsRef.current = null;
     try { pcRef.current?.close(); } catch { /* noop */ }
     pcRef.current = null;
   }, []);
