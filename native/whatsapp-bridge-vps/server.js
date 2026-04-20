@@ -709,4 +709,11 @@ app.listen(PORT, () => {
     console.error('[wa] startup error', e);
     process.exit(1);
   });
+
+  // Auto-drip scheduler: tick every 60 s, sends due messages.
+  const DRIP_TICK_MS = Number(process.env.WA_DRIP_TICK_MS || 60_000);
+  setInterval(() => {
+    runDripTick().catch((e) => console.error('[drip] tick crash', e.message));
+  }, DRIP_TICK_MS);
+  console.log(`[drip] scheduler armed — tick every ${DRIP_TICK_MS}ms`);
 });
