@@ -78,6 +78,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "PSA ID Monitor", to: "/admin/psa-ids", icon: Award },
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
     { label: "Finance Branches", to: "/admin/finance-branches", icon: ShieldCheck },
+    { label: "Finance Users", to: "/admin/finance-users", icon: ShieldCheck },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
@@ -113,7 +114,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
     { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
     { label: "IPPB Account", to: "/retailer/ippb", icon: Banknote },
-    { label: "Finance", to: "/retailer/finance", icon: Banknote },
+    // Finance moved to standalone /finance subsite — admin-managed accounts only.
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
