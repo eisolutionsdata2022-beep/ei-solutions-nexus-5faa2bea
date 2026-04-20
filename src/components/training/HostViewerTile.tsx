@@ -263,6 +263,25 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
           </span>
         </div>
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+          {status === "connected" && quality !== "unknown" && (() => {
+            const cfg = {
+              good: { Icon: SignalHigh, cls: "bg-emerald-500/80 border-emerald-300/50", label: "Good" },
+              medium: { Icon: SignalMedium, cls: "bg-amber-500/80 border-amber-300/50", label: "Fair" },
+              poor: { Icon: SignalLow, cls: "bg-red-500/80 border-red-300/50", label: "Poor" },
+            }[quality];
+            const tip = qualityDetails
+              ? `${cfg.label} · ${qualityDetails.rtt}ms RTT · ${qualityDetails.jitter}ms jitter · ${qualityDetails.loss}% loss`
+              : cfg.label;
+            return (
+              <span
+                title={tip}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-white text-[9px] font-semibold ${cfg.cls}`}
+              >
+                <cfg.Icon className="w-2.5 h-2.5" />
+                {cfg.label}
+              </span>
+            );
+          })()}
           {!host.micOn && <span className="bg-red-500/80 p-1 rounded"><MicOff className="w-2.5 h-2.5 text-white" /></span>}
           {status === "connected" && host.micOn && <span className="bg-emerald-500/80 p-1 rounded"><Mic className="w-2.5 h-2.5 text-white" /></span>}
           {onMaximize && (
