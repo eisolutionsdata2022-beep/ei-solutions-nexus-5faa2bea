@@ -2,7 +2,7 @@
  * Customers tab — dark studio theme.
  * Allows creating customers with KYC fields and viewing the list.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Users, Plus, Search, Phone, ShieldCheck, Eye, Camera, Upload, FileText, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
