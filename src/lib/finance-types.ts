@@ -11,6 +11,7 @@ export type CashEntryType = "Income" | "Expense" | "BankDeposit";
 export interface FinanceCustomer {
   id: string;
   retailerId: string;
+  branchId?: string | null;        // multi-branch tag (forward-only)
   customerCode: string;            // CUST-0001
   fullName: string;
   mobile: string;
@@ -43,6 +44,7 @@ export interface GoldItem {
 export interface FinanceLoan {
   id: string;
   retailerId: string;
+  branchId?: string | null;        // multi-branch tag (forward-only)
   loanNo: string;                  // LN-0001
   customerId: string;
   customerName: string;
@@ -81,6 +83,7 @@ export interface FinanceLoan {
 export interface LoanPayment {
   id: string;
   retailerId: string;
+  branchId?: string | null;        // multi-branch tag (forward-only)
   loanId: string;
   loanNo: string;
   customerId: string;
@@ -101,6 +104,7 @@ export interface LoanPayment {
 export interface CashEntry {
   id: string;
   retailerId: string;
+  branchId?: string | null;        // multi-branch tag (forward-only)
   type: CashEntryType;
   category: string;                // Salary, Rent, Office, etc.
   amount: number;
