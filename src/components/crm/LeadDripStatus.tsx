@@ -32,9 +32,9 @@ export function LeadDripStatus({ leadId }: Props) {
   const isActive = enr.status === "active";
 
   return (
-    <div className="rounded-lg border p-3 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+    <div className="rounded-lg border p-3 bg-muted/30 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <Zap className="h-4 w-4 text-amber-500" />
+        <Zap className="h-4 w-4 text-primary" />
         <span className="font-medium text-sm">WhatsApp Auto-Drip</span>
         <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
           {enr.status.replace("stopped_", "stopped: ")}

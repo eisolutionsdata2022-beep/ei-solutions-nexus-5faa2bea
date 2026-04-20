@@ -104,7 +104,7 @@ export function DripSequenceManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-500" /> Default Drip Sequence
+            <Zap className="h-5 w-5 text-primary" /> Default Drip Sequence
             <Badge variant={enabled ? "default" : "secondary"} className="ml-2">
               {enabled ? "Enabled" : "Disabled"}
             </Badge>
