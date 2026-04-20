@@ -2,7 +2,7 @@
  * Settings tab — branch/company info + default loan parameters.
  */
 import { useEffect, useState } from "react";
-import { Settings as SettingsIcon, Save } from "lucide-react";
+import { Settings as SettingsIcon, Save, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { saveFinanceSettings } from "@/lib/finance-firebase";
 import type { FinanceSettings } from "@/lib/finance-types";
@@ -11,6 +11,9 @@ import {
   DEFAULT_INTEREST_RATE,
   DEFAULT_LTV,
   DEFAULT_PENALTY_RATE,
+  DEFAULT_PER_CUSTOMER_CAP,
+  DEFAULT_RISK_WARN_AT,
+  DEFAULT_SINGLE_LOAN_LIMIT,
 } from "@/lib/finance-types";
 import {
   StudioCard,
@@ -148,6 +151,38 @@ export function SettingsTab({ ownerId, settings }: Props) {
           />
         </div>
       </StudioCard>
+
+      <StudioCard>
+        <div className="mb-1 flex items-center gap-2 text-slate-300">
+          <ShieldAlert className="h-4 w-4 text-rose-300" />
+          <p className="text-sm font-semibold">Risk policy</p>
+        </div>
+        <p className="mb-4 text-xs text-slate-400">
+          Alerts trigger inside the Quick Quote and the New Loan modal whenever a computed
+          disbursal would breach (or come close to) either ceiling. Set a value to
+          <span className="text-slate-200"> 0 </span> to disable that cap.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StudioInput
+            label="Single-loan limit (₹)"
+            type="number"
+            value={form.singleLoanLimit ?? 0}
+            onChange={(e) => setForm({ ...form, singleLoanLimit: Number(e.target.value) })}
+          />
+          <StudioInput
+            label="Per-customer cap (₹)"
+            type="number"
+            value={form.perCustomerCap ?? 0}
+            onChange={(e) => setForm({ ...form, perCustomerCap: Number(e.target.value) })}
+          />
+          <StudioInput
+            label="Warn at % of cap"
+            type="number"
+            value={form.riskWarnAtPercent ?? DEFAULT_RISK_WARN_AT}
+            onChange={(e) => setForm({ ...form, riskWarnAtPercent: Number(e.target.value) })}
+          />
+        </div>
+      </StudioCard>
     </div>
   );
 }
@@ -168,6 +203,9 @@ function buildInitial(ownerId: string, settings: FinanceSettings | null): Financ
       defaultLtvPercent: DEFAULT_LTV,
       defaultGoldRatePerGram: DEFAULT_GOLD_RATE,
       penaltyRatePerDay: DEFAULT_PENALTY_RATE,
+      singleLoanLimit: DEFAULT_SINGLE_LOAN_LIMIT,
+      perCustomerCap: DEFAULT_PER_CUSTOMER_CAP,
+      riskWarnAtPercent: DEFAULT_RISK_WARN_AT,
       updatedAt: new Date().toISOString(),
     }
   );
