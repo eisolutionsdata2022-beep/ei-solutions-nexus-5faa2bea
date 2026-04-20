@@ -77,22 +77,64 @@ export function WhatsAppInbox({ scope }: Props) {
   const activeContact = contacts.find((c) => c.phone === activePhone) || null;
 
   const send = async () => {
-    if (!draft.trim() || !activePhone || sending) return;
+    if ((!draft.trim() && !attachment) || !activePhone || sending) return;
     setSending(true);
     const text = draft.trim();
+    const att = attachment;
     setDraft("");
+    setAttachment(null);
     try {
-      const res = await sendWhatsAppMessage({ data: { phone: activePhone, body: text } });
+      const res = await sendWhatsAppMessage({
+        data: {
+          phone: activePhone,
+          body: att ? undefined : text,
+          mediaBase64: att?.base64,
+          mediaMime: att?.mime,
+          caption: att && text ? text : undefined,
+        },
+      });
       if (!res.ok) {
         toast.error(res.error || "Send failed");
         setDraft(text);
+        setAttachment(att);
       }
     } catch (e: any) {
       toast.error(e?.message || "Send failed");
       setDraft(text);
+      setAttachment(att);
     } finally {
       setSending(false);
     }
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-pick same file
+    if (!file) return;
+    const allowed = file.type.startsWith("image/") || file.type === "application/pdf";
+    if (!allowed) {
+      toast.error("Only images and PDF files are supported");
+      return;
+    }
+    const MAX_MB = 12;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      toast.error(`File too large — max ${MAX_MB} MB`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+      setAttachment({
+        name: file.name,
+        mime: file.type,
+        base64,
+        sizeKB: Math.round(file.size / 1024),
+        previewUrl: file.type.startsWith("image/") ? dataUrl : undefined,
+      });
+    };
+    reader.onerror = () => toast.error("Failed to read file");
+    reader.readAsDataURL(file);
   };
 
   const handleAssign = async (staffId: string) => {
