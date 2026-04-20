@@ -33,6 +33,8 @@ export function WhatsAppInbox({ scope }: Props) {
   const [sending, setSending] = useState(false);
   const [staffList, setStaffList] = useState<Array<{ id: string; name: string; role: string }>>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ name: string; mime: string; base64: string; sizeKB: number; previewUrl?: string } | null>(null);
 
   // Session
   useEffect(() => subscribeSession(setSession), []);
