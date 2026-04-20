@@ -211,6 +211,16 @@ export function LeadDetailDialog({ lead, open, onOpenChange, staff }: Props) {
                 <Label>Remarks</Label>
                 <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} />
               </div>
+              <div className="sm:col-span-2 flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <Label htmlFor="optOutDrip" className="cursor-pointer">Opt out of WhatsApp auto-drip</Label>
+                  <p className="text-xs text-muted-foreground">Excludes this lead from any automated WA follow-up sequence.</p>
+                </div>
+                <Switch id="optOutDrip" checked={optOutDrip} onCheckedChange={setOptOutDrip} />
+              </div>
+              <div className="sm:col-span-2">
+                <LeadDripStatus leadId={lead.id} />
+              </div>
             </div>
             <Button onClick={handleUpdate} disabled={saving} className="w-full">
               {saving ? "Saving..." : "Update Lead"}
