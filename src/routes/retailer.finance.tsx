@@ -360,7 +360,14 @@ function FinancePage() {
             settings={settings}
           />
         </TabsContent>
-        <TabsContent value="cashbook">
+        <TabsContent value="deposits">
+          <DepositsTab
+            retailerId={retailerId}
+            branchId={appUser.financeBranchId ?? null}
+            customers={customers}
+            createdBy={appUser.email}
+          />
+        </TabsContent>
           <CashBookTab
             retailerId={retailerId}
             cashBook={cashBook}
