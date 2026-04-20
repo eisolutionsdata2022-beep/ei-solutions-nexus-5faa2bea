@@ -1,6 +1,6 @@
 ---
 name: whatsapp-bridge
-description: WhatsApp Web bridge — VPS-hosted whatsapp-web.js service + portal Inbox at /admin/whatsapp + /staff/whatsapp + Bulk tab in /admin/crm-bulk-comm
+description: WhatsApp Web bridge — VPS-hosted whatsapp-web.js service + portal Inbox at /admin/whatsapp + /staff/whatsapp + Bulk tab in /admin/crm-bulk-comm + auto-drip
 type: feature
 ---
 # WhatsApp Bridge System
@@ -24,12 +24,16 @@ type: feature
 - `WA_RATE_PER_MIN=5`, `WA_RATE_PER_DAY=100`
 - `WA_SEND_DELAY_MIN_MS=8000`, `WA_SEND_DELAY_MAX_MS=18000` (jittered human delay)
 - Portal also enforces `HARD_CAP_PER_DISPATCH=100` client-side
+- Drip sends share the SAME daily counter (drip pauses tick when daily cap hit)
 
 ## Firestore collections
 - `whatsappSessions/default` — bridge writes status/QR; staff read-only
 - `whatsappContacts/{phone}` — chat list, `assignedTo`/`unreadCount` writable by staff
 - `whatsappMessages/{auto}` — full history (incl. `mediaUrl`, `mediaMime`, `mediaPath`), bridge-write only
 - `whatsappCampaigns/{id}` + `recipients/{id}` subcollection — admin creates parent, bridge updates
+- `whatsappTemplates/{id}` — admin-managed quick replies
+- `whatsappDripSequences/default` — single admin-managed sequence (steps[], leadSources[], enabled)
+- `whatsappDripEnrollments/{leadId}` — one per lead, status: active/stopped_replied/stopped_status/stopped_manual/completed/failed
 
 ## Media handling
 - Inbox composer: image (`image/*`) or PDF picker, ≤12 MB, base64-encoded in browser → sent via `/send` with `mediaBase64` + `mediaMime` + optional `caption`
@@ -38,7 +42,7 @@ type: feature
 - Storage rules: `whatsappMedia/{phone}/**` readable by staff/manager/admin only; browser write blocked (bridge-only via Admin SDK)
 
 ## Routes
-- `/admin/whatsapp` — Connection (QR, status, restart) + Inbox (all chats, assign dropdown) + Templates (admin CRUD for quick replies)
+- `/admin/whatsapp` — Connection (QR, status, restart) + Inbox (all chats, assign dropdown) + Templates (admin CRUD for quick replies) + Drip (sequence editor, stats, recent enrollments)
 - `/staff/whatsapp` — only chats `assignedTo == currentUser.uid`
 - `/admin/crm-bulk-comm` → "WhatsApp Bulk" tab — reuses email audience resolver, dispatches to bridge
 
@@ -57,10 +61,28 @@ type: feature
 - Bridge detects first inbound from a brand-new contact (`whatsappContacts/{phone}` did not exist) and inserts into `crmLeads` with: `leadId=LD-XXXX`, `name=notifyName||"WhatsApp <last10>"`, `phone=last10`, `leadSource="WhatsApp"`, `status="New"`, remarks = first message snippet (≤200 chars), `createdBy="whatsapp-bridge"`
 - Idempotent: skips if any existing lead matches the phone (full or last-10)
 - Logic lives in `autoCreateCrmLead()` in `native/whatsapp-bridge-vps/server.js`
+- Auto-created leads are immediately enrolled in the default drip if enabled
+
+## Auto-drip sequences
+- Single admin-managed sequence (`whatsappDripSequences/default`) with N steps `{dayOffset, hourOfDay (IST), body}`
+- `enabled` toggle (off by default — admin must turn on after editing); `leadSources` filter (empty = all sources)
+- **Triggers enrollment**:
+  - Bridge `autoCreateCrmLead()` → `enrollInDrip()` for new WhatsApp leads
+  - Portal `addLead()` (in `crm-firebase.ts`) → lazy-imports `enrollLead()` for manual + bulk + landing leads
+- **Stops enrollment**:
+  - Inbound WhatsApp message → `stopDripOnReply(phone)` flips active enrollments to `stopped_replied`
+  - Lead status moves away from "New" → `stopEnrollmentForStatusChange()` flips to `stopped_status`
+  - `optOutDrip:true` flag set on lead → `stopEnrollmentManual()` flips to `stopped_manual`
+  - "Stop drip" button in lead detail dialog (LeadDripStatus component)
+- **Scheduler**: `setInterval` in bridge ticks every 60s (`WA_DRIP_TICK_MS`), queries `where status=active and nextSendAt<=now limit 20`, sends via `waClient.sendMessage`, advances `currentStep`, recomputes `nextSendAt = enrolledAt + steps[next].dayOffset days @ hourOfDay IST`
+- Shares the same daily rate counter as `/send` + `/bulk` (drip pauses tick when daily cap hit)
+- Default seed: 3 steps in Malayalam+English (Day 0/2/5)
+- Token: `{{name}}` replaced per-lead
 
 ## Personalization
 - Bulk supports `{{name}}` token, replaced server-side per recipient
 - Test send prepends "🧪 [TEST]" prefix
+- Drip steps support `{{name}}` token
 
 ## Security
 - Bridge HMAC: `HMAC-SHA256(secret, "${ts}.${rawBody}")` → `X-Signature` header, `X-Timestamp` ±300s

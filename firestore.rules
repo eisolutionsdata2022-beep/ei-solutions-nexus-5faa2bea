@@ -307,5 +307,22 @@ service cloud.firestore {
         && request.resource.data.body.size() <= 4096;
       allow delete: if isAdmin();
     }
+
+    // Auto-drip sequences — admin manages, staff read for visibility
+    match /whatsappDripSequences/{sid} {
+      allow read, list: if isStaffish();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Drip enrollments — staffish create/read/update (one per lead).
+    // The bridge (Admin SDK) is the primary writer, but the portal also
+    // creates enrollments on lead creation and stops them on status change
+    // / opt-out. No deletes from clients.
+    match /whatsappDripEnrollments/{leadId} {
+      allow read, list: if isStaffish();
+      allow create, update: if isStaffish();
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -39,11 +39,44 @@ export async function getNextLeadId(): Promise<string> {
 }
 
 export async function addLead(lead: Omit<Lead, "id">) {
-  return addDoc(collection(db, "crmLeads"), lead);
+  const ref = await addDoc(collection(db, "crmLeads"), lead);
+  // Best-effort: enroll in default drip if enabled & source matches.
+  // Imported lazily to avoid circular dep.
+  try {
+    const { getDefaultSequence, enrollLead } = await import("./drip-firebase");
+    const seq = await getDefaultSequence();
+    if (seq && seq.enabled && !(lead as any).optOutDrip) {
+      const sourceOk = !seq.leadSources?.length || seq.leadSources.includes(lead.leadSource);
+      if (sourceOk && lead.phone) {
+        await enrollLead({ leadId: ref.id, phone: lead.phone, name: lead.name, sequence: seq });
+      }
+    }
+  } catch (err) {
+    console.warn("[drip] enroll on addLead failed", err);
+  }
+  return ref;
 }
 
 export async function updateLead(id: string, data: Partial<Lead>) {
-  return updateDoc(doc(db, "crmLeads", id), { ...data, updatedAt: new Date().toISOString() });
+  await updateDoc(doc(db, "crmLeads", id), { ...data, updatedAt: new Date().toISOString() });
+  // If status moved away from "New", stop any active drip.
+  if (data.status && data.status !== "New") {
+    try {
+      const { stopEnrollmentForStatusChange } = await import("./drip-firebase");
+      await stopEnrollmentForStatusChange(id, data.status);
+    } catch (err) {
+      console.warn("[drip] stop on status change failed", err);
+    }
+  }
+  // Manual opt-out flips to true → stop drip.
+  if (data.optOutDrip === true) {
+    try {
+      const { stopEnrollmentManual } = await import("./drip-firebase");
+      await stopEnrollmentManual(id, "Lead opted out of drip");
+    } catch (err) {
+      console.warn("[drip] opt-out stop failed", err);
+    }
+  }
 }
 
 export async function deleteLead(id: string) {
