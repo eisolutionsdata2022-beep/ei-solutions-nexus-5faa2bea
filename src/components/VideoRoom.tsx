@@ -282,30 +282,44 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
                   ))}
                 </div>
               )}
+              {sidebarTab === "approvals" && isTrainer && (
+                <TrainerApprovalPanel trainingId={trainingId} />
+              )}
             </div>
           </div>
         )}
       </div>
 
       {/* Bottom controls */}
-      <div className="relative z-10 flex items-center justify-between px-4 py-3 bg-[#0a0f1f]/90 backdrop-blur-xl border-t border-blue-500/10">
-        <div className="text-white/40 text-[10px] hidden md:block">
-          {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleLeave}
-            className="bg-red-600 hover:bg-red-700 text-white px-5 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
-          >
-            <PhoneOff className="w-4 h-4 mr-2" />
-            {isTrainer ? "Exit Room" : "Leave"}
-          </Button>
-        </div>
-        <div className="flex items-center gap-1">
-          <SidebarBtn icon={Users} label="People" active={sidebarTab === "participants"} count={onlineCount} onClick={() => setSidebarTab(sidebarTab === "participants" ? null : "participants")} />
-          <SidebarBtn icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => setSidebarTab(sidebarTab === "chat" ? null : "chat")} />
-          <SidebarBtn icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => setSidebarTab(sidebarTab === "qa" ? null : "qa")} />
-          <SidebarBtn icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => setSidebarTab(sidebarTab === "bot" ? null : "bot")} />
+      <div className="relative z-10 flex flex-col gap-2 px-3 sm:px-4 py-2.5 bg-[#0a0f1f]/90 backdrop-blur-xl border-t border-blue-500/10">
+        {/* Student permission controls (mobile-friendly, always visible to retailers) */}
+        {!isTrainer && (
+          <div className="flex items-center justify-center">
+            <StudentControls trainingId={trainingId} />
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-white/40 text-[10px] hidden md:block">
+            {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleLeave}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-5 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
+            >
+              <PhoneOff className="w-4 h-4 mr-1.5" />
+              {isTrainer ? "Exit" : "Leave"}
+            </Button>
+          </div>
+          <div className="flex items-center gap-1 flex-wrap justify-end">
+            {isTrainer && (
+              <SidebarBtn icon={Hand} label="Hands" active={sidebarTab === "approvals"} count={pendingCount} onClick={() => setSidebarTab(sidebarTab === "approvals" ? null : "approvals")} />
+            )}
+            <SidebarBtn icon={Users} label="People" active={sidebarTab === "participants"} count={onlineCount} onClick={() => setSidebarTab(sidebarTab === "participants" ? null : "participants")} />
+            <SidebarBtn icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => setSidebarTab(sidebarTab === "chat" ? null : "chat")} />
+            <SidebarBtn icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => setSidebarTab(sidebarTab === "qa" ? null : "qa")} />
+            <SidebarBtn icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => setSidebarTab(sidebarTab === "bot" ? null : "bot")} />
+          </div>
         </div>
       </div>
 
