@@ -30,6 +30,8 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  /** When true, lead is excluded from auto-drip enrollment + any active drip is stopped. */
+  optOutDrip?: boolean;
 }
 
 export interface LeadDocument {
