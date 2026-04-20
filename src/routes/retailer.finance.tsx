@@ -101,6 +101,8 @@ import {
 } from "@/lib/finance-receipt-pdf";
 import { CameraCaptureDialog } from "@/components/finance/CameraCaptureDialog";
 import { SignaturePadDialog } from "@/components/finance/SignaturePadDialog";
+import { DepositsTab } from "@/components/finance/DepositsTab";
+import { PiggyBank } from "lucide-react";
 
 export const Route = createFileRoute("/retailer/finance")({
   component: FinancePage,
