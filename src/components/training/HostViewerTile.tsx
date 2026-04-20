@@ -18,8 +18,10 @@ interface Props {
 }
 
 type Status = "connecting" | "connected" | "failed" | "timeout";
+type Quality = "unknown" | "good" | "medium" | "poor";
 
 const CONNECT_TIMEOUT_MS = 15_000;
+const STATS_INTERVAL_MS = 3_000;
 
 /**
  * Subscribes to a single trainer host as a viewer (retailer or another trainer).
