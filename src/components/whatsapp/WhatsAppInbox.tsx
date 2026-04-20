@@ -260,11 +260,17 @@ export function WhatsAppInbox({ scope }: Props) {
                 const isOut = m.direction === "out";
                 return (
                   <div key={m.id} className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words shadow-sm ${
+                    <div className={`max-w-[78%] rounded-2xl px-1.5 py-1.5 text-sm shadow-sm ${
                       isOut ? "bg-emerald-600 text-white" : "bg-card border border-border text-foreground"
                     }`}>
-                      {m.body || (m.hasMedia ? "📎 Media message" : "(empty)")}
-                      <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOut ? "text-emerald-50/80" : "text-muted-foreground"}`}>
+                      <MessageMedia m={m} isOut={isOut} />
+                      {m.body && (
+                        <p className="px-1.5 pt-1 whitespace-pre-wrap break-words">{m.body}</p>
+                      )}
+                      {!m.body && !m.hasMedia && (
+                        <p className="px-1.5 pt-1 italic opacity-70">(empty)</p>
+                      )}
+                      <div className={`flex items-center justify-end gap-1 mt-1 px-1.5 pb-0.5 text-[10px] ${isOut ? "text-emerald-50/80" : "text-muted-foreground"}`}>
                         <span>{new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                         {isOut && <AckIcon ack={m.ack} />}
                       </div>
@@ -274,16 +280,59 @@ export function WhatsAppInbox({ scope }: Props) {
               })}
             </div>
 
+            {/* Attachment preview strip */}
+            {attachment && (
+              <div className="px-3 pt-2 -mb-1">
+                <div className="flex items-center gap-2 p-2 rounded-md border border-border bg-muted/40">
+                  {attachment.previewUrl ? (
+                    <img src={attachment.previewUrl} alt={attachment.name} className="w-12 h-12 object-cover rounded" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-rose-600" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{attachment.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{attachment.mime} · {attachment.sizeKB} KB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAttachment(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="p-3 border-t flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={onPickFile}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!ready || sending}
+                title="Attach image or PDF"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder={ready ? "Type a message…" : "WhatsApp not connected — cannot send"}
+                placeholder={ready ? (attachment ? "Add a caption (optional)…" : "Type a message…") : "WhatsApp not connected — cannot send"}
                 disabled={!ready || sending}
                 className="flex-1"
               />
-              <Button onClick={send} disabled={!ready || sending || !draft.trim()} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button
+                onClick={send}
+                disabled={!ready || sending || (!draft.trim() && !attachment)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
