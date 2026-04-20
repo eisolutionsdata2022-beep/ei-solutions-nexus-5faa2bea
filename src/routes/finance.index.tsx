@@ -66,10 +66,10 @@ function FinanceDashboard() {
         .reduce((s, p) => s + (p.amount || 0), 0);
     })();
     const cashIn = cash
-      .filter((c) => c.type === "In")
+      .filter((c) => c.type === "Income")
       .reduce((s, c) => s + (c.amount || 0), 0);
     const cashOut = cash
-      .filter((c) => c.type === "Out")
+      .filter((c) => c.type === "Expense" || c.type === "BankDeposit")
       .reduce((s, c) => s + (c.amount || 0), 0);
     return {
       customers: customers.length,
