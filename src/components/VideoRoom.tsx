@@ -42,12 +42,15 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
   const { appUser } = useAuth();
   const [hosts, setHosts] = useState<LiveHost[]>([]);
   const [participants, setParticipants] = useState<RoomParticipant[]>([]);
+  const [backChannels, setBackChannels] = useState<BackChannel[]>([]);
+  const [permissions, setPermissions] = useState<PermissionRequest[]>([]);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>(null);
   const [elapsed, setElapsed] = useState(0);
   const [iAmLive, setIAmLive] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
   const isTrainer = role === "trainer";
+  const pendingCount = useMemo(() => permissions.filter((p) => p.status === "pending").length, [permissions]);
 
   // session timer
   useEffect(() => {
