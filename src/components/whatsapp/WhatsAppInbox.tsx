@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Search, User as UserIcon, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle, RefreshCw, UserCheck } from "lucide-react";
+import {
+  Send, Search, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle,
+  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,8 @@ export function WhatsAppInbox({ scope }: Props) {
   const [sending, setSending] = useState(false);
   const [staffList, setStaffList] = useState<Array<{ id: string; name: string; role: string }>>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ name: string; mime: string; base64: string; sizeKB: number; previewUrl?: string } | null>(null);
 
   // Session
   useEffect(() => subscribeSession(setSession), []);
@@ -72,22 +77,64 @@ export function WhatsAppInbox({ scope }: Props) {
   const activeContact = contacts.find((c) => c.phone === activePhone) || null;
 
   const send = async () => {
-    if (!draft.trim() || !activePhone || sending) return;
+    if ((!draft.trim() && !attachment) || !activePhone || sending) return;
     setSending(true);
     const text = draft.trim();
+    const att = attachment;
     setDraft("");
+    setAttachment(null);
     try {
-      const res = await sendWhatsAppMessage({ data: { phone: activePhone, body: text } });
+      const res = await sendWhatsAppMessage({
+        data: {
+          phone: activePhone,
+          body: att ? undefined : text,
+          mediaBase64: att?.base64,
+          mediaMime: att?.mime,
+          caption: att && text ? text : undefined,
+        },
+      });
       if (!res.ok) {
         toast.error(res.error || "Send failed");
         setDraft(text);
+        setAttachment(att);
       }
     } catch (e: any) {
       toast.error(e?.message || "Send failed");
       setDraft(text);
+      setAttachment(att);
     } finally {
       setSending(false);
     }
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-pick same file
+    if (!file) return;
+    const allowed = file.type.startsWith("image/") || file.type === "application/pdf";
+    if (!allowed) {
+      toast.error("Only images and PDF files are supported");
+      return;
+    }
+    const MAX_MB = 12;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      toast.error(`File too large — max ${MAX_MB} MB`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+      setAttachment({
+        name: file.name,
+        mime: file.type,
+        base64,
+        sizeKB: Math.round(file.size / 1024),
+        previewUrl: file.type.startsWith("image/") ? dataUrl : undefined,
+      });
+    };
+    reader.onerror = () => toast.error("Failed to read file");
+    reader.readAsDataURL(file);
   };
 
   const handleAssign = async (staffId: string) => {
@@ -213,11 +260,17 @@ export function WhatsAppInbox({ scope }: Props) {
                 const isOut = m.direction === "out";
                 return (
                   <div key={m.id} className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words shadow-sm ${
+                    <div className={`max-w-[78%] rounded-2xl px-1.5 py-1.5 text-sm shadow-sm ${
                       isOut ? "bg-emerald-600 text-white" : "bg-card border border-border text-foreground"
                     }`}>
-                      {m.body || (m.hasMedia ? "📎 Media message" : "(empty)")}
-                      <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOut ? "text-emerald-50/80" : "text-muted-foreground"}`}>
+                      <MessageMedia m={m} isOut={isOut} />
+                      {m.body && (
+                        <p className="px-1.5 pt-1 whitespace-pre-wrap break-words">{m.body}</p>
+                      )}
+                      {!m.body && !m.hasMedia && (
+                        <p className="px-1.5 pt-1 italic opacity-70">(empty)</p>
+                      )}
+                      <div className={`flex items-center justify-end gap-1 mt-1 px-1.5 pb-0.5 text-[10px] ${isOut ? "text-emerald-50/80" : "text-muted-foreground"}`}>
                         <span>{new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                         {isOut && <AckIcon ack={m.ack} />}
                       </div>
@@ -227,16 +280,59 @@ export function WhatsAppInbox({ scope }: Props) {
               })}
             </div>
 
+            {/* Attachment preview strip */}
+            {attachment && (
+              <div className="px-3 pt-2 -mb-1">
+                <div className="flex items-center gap-2 p-2 rounded-md border border-border bg-muted/40">
+                  {attachment.previewUrl ? (
+                    <img src={attachment.previewUrl} alt={attachment.name} className="w-12 h-12 object-cover rounded" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-rose-600" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{attachment.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{attachment.mime} · {attachment.sizeKB} KB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAttachment(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="p-3 border-t flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={onPickFile}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!ready || sending}
+                title="Attach image or PDF"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder={ready ? "Type a message…" : "WhatsApp not connected — cannot send"}
+                placeholder={ready ? (attachment ? "Add a caption (optional)…" : "Type a message…") : "WhatsApp not connected — cannot send"}
                 disabled={!ready || sending}
                 className="flex-1"
               />
-              <Button onClick={send} disabled={!ready || sending || !draft.trim()} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button
+                onClick={send}
+                disabled={!ready || sending || (!draft.trim() && !attachment)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
@@ -244,6 +340,59 @@ export function WhatsAppInbox({ scope }: Props) {
         )}
       </Card>
     </div>
+  );
+}
+
+function MessageMedia({ m, isOut }: { m: WaMessage; isOut: boolean }) {
+  if (!m.hasMedia) return null;
+  const url = m.mediaUrl || null;
+  const mime = m.mediaMime || "";
+  const isImage = mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+
+  if (!url) {
+    return (
+      <div className={`flex items-center gap-2 px-2 py-2 rounded-lg ${isOut ? "bg-emerald-700/40" : "bg-muted"}`}>
+        <ImageIcon className="h-4 w-4 opacity-70" />
+        <span className="text-xs opacity-80">Media — loading…</span>
+      </div>
+    );
+  }
+
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="block">
+        <img src={url} alt="attachment" className="rounded-lg max-h-64 w-auto object-cover" loading="lazy" />
+      </a>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg ${isOut ? "bg-emerald-700/40 hover:bg-emerald-700/60" : "bg-muted hover:bg-muted/80"} transition`}
+      >
+        <FileText className="h-5 w-5 shrink-0" />
+        <span className="text-xs font-medium flex-1 truncate">PDF document</span>
+        <Download className="h-3.5 w-3.5 opacity-70" />
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg ${isOut ? "bg-emerald-700/40 hover:bg-emerald-700/60" : "bg-muted hover:bg-muted/80"} transition`}
+    >
+      <Paperclip className="h-4 w-4 shrink-0" />
+      <span className="text-xs flex-1 truncate">{mime || "Attachment"}</span>
+      <Download className="h-3.5 w-3.5 opacity-70" />
+    </a>
   );
 }
 
