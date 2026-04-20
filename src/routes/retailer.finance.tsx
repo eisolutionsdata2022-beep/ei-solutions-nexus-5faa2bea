@@ -368,6 +368,7 @@ function FinancePage() {
             createdBy={appUser.email}
           />
         </TabsContent>
+        <TabsContent value="cashbook">
           <CashBookTab
             retailerId={retailerId}
             cashBook={cashBook}
