@@ -35,6 +35,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkerWorkerIdRouteImport } from './routes/worker.$workerId'
 import { Route as TrainerWalletRouteImport } from './routes/trainer.wallet'
 import { Route as TrainerTrainingsRouteImport } from './routes/trainer.trainings'
+import { Route as StaffWhatsappRouteImport } from './routes/staff.whatsapp'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
@@ -75,6 +76,7 @@ import { Route as FinanceLoginRouteImport } from './routes/finance.login'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
+import { Route as AdminWhatsappRouteImport } from './routes/admin.whatsapp'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -248,6 +250,11 @@ const TrainerTrainingsRoute = TrainerTrainingsRouteImport.update({
   id: '/trainings',
   path: '/trainings',
   getParentRoute: () => TrainerRoute,
+} as any)
+const StaffWhatsappRoute = StaffWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => StaffRoute,
 } as any)
 const StaffServicesRoute = StaffServicesRouteImport.update({
   id: '/services',
@@ -447,6 +454,11 @@ const DistributorEarningsRoute = DistributorEarningsRouteImport.update({
 const AdminWorkBadgesRoute = AdminWorkBadgesRouteImport.update({
   id: '/work-badges',
   path: '/work-badges',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminWalletsRoute = AdminWalletsRouteImport.update({
@@ -724,6 +736,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
@@ -764,6 +777,7 @@ export interface FileRoutesByFullPath {
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
+  '/staff/whatsapp': typeof StaffWhatsappRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -827,6 +841,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
@@ -867,6 +882,7 @@ export interface FileRoutesByTo {
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
+  '/staff/whatsapp': typeof StaffWhatsappRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -939,6 +955,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
@@ -979,6 +996,7 @@ export interface FileRoutesById {
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
+  '/staff/whatsapp': typeof StaffWhatsappRoute
   '/trainer/trainings': typeof TrainerTrainingsRoute
   '/trainer/wallet': typeof TrainerWalletRoute
   '/worker/$workerId': typeof WorkerWorkerIdRoute
@@ -1052,6 +1070,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/whatsapp'
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
@@ -1092,6 +1111,7 @@ export interface FileRouteTypes {
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
+    | '/staff/whatsapp'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1155,6 +1175,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/whatsapp'
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
@@ -1195,6 +1216,7 @@ export interface FileRouteTypes {
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
+    | '/staff/whatsapp'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1266,6 +1288,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallet-requests'
     | '/admin/wallets'
+    | '/admin/whatsapp'
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
@@ -1306,6 +1329,7 @@ export interface FileRouteTypes {
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
+    | '/staff/whatsapp'
     | '/trainer/trainings'
     | '/trainer/wallet'
     | '/worker/$workerId'
@@ -1526,6 +1550,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trainer/trainings'
       preLoaderRoute: typeof TrainerTrainingsRouteImport
       parentRoute: typeof TrainerRoute
+    }
+    '/staff/whatsapp': {
+      id: '/staff/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/staff/whatsapp'
+      preLoaderRoute: typeof StaffWhatsappRouteImport
+      parentRoute: typeof StaffRoute
     }
     '/staff/services': {
       id: '/staff/services'
@@ -1805,6 +1836,13 @@ declare module '@tanstack/react-router' {
       path: '/work-badges'
       fullPath: '/admin/work-badges'
       preLoaderRoute: typeof AdminWorkBadgesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/whatsapp': {
+      id: '/admin/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/admin/whatsapp'
+      preLoaderRoute: typeof AdminWhatsappRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/wallets': {
@@ -2152,6 +2190,7 @@ interface AdminRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletRequestsRoute: typeof AdminWalletRequestsRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
+  AdminWhatsappRoute: typeof AdminWhatsappRoute
   AdminWorkBadgesRoute: typeof AdminWorkBadgesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -2197,6 +2236,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletRequestsRoute: AdminWalletRequestsRoute,
   AdminWalletsRoute: AdminWalletsRoute,
+  AdminWhatsappRoute: AdminWhatsappRoute,
   AdminWorkBadgesRoute: AdminWorkBadgesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -2344,6 +2384,7 @@ interface StaffRouteChildren {
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
   StaffServicesRoute: typeof StaffServicesRoute
+  StaffWhatsappRoute: typeof StaffWhatsappRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
@@ -2357,6 +2398,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
   StaffServicesRoute: StaffServicesRoute,
+  StaffWhatsappRoute: StaffWhatsappRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
 
