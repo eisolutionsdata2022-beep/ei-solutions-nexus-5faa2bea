@@ -255,6 +255,26 @@ export function subscribePayments(
   });
 }
 
+/** Cross-retailer subscription for admin branch reporting. */
+export function subscribePaymentsAll(cb: (list: LoanPayment[]) => void) {
+  const q = query(collection(db, "financePayments"));
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as LoanPayment));
+    list.sort((a, b) => (b.collectedAt || "").localeCompare(a.collectedAt || ""));
+    cb(list);
+  });
+}
+
+/** Cross-retailer cash book subscription for admin branch reporting. */
+export function subscribeCashBookAll(cb: (list: CashEntry[]) => void) {
+  const q = query(collection(db, "financeCashBook"));
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CashEntry));
+    list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    cb(list);
+  });
+}
+
 export function subscribePaymentsByLoan(
   loanId: string,
   cb: (list: LoanPayment[]) => void,
