@@ -19,6 +19,7 @@ import { Route as NsdlCallbackRouteImport } from './routes/nsdl-callback'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
+import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as DistributorRouteImport } from './routes/distributor'
 import { Route as BookletRouteImport } from './routes/booklet'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -69,6 +70,7 @@ import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
 import { Route as RetailerActivateRouteImport } from './routes/retailer.activate'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
+import { Route as FinanceLoginRouteImport } from './routes/finance.login'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
 import { Route as DistributorEarningsRouteImport } from './routes/distributor.earnings'
 import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
@@ -160,6 +162,11 @@ const LoginRoute = LoginRouteImport.update({
 const InstallRoute = InstallRouteImport.update({
   id: '/install',
   path: '/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DistributorRoute = DistributorRouteImport.update({
@@ -412,6 +419,11 @@ const MatrimonyProfileIdRoute = MatrimonyProfileIdRouteImport.update({
   path: '/$profileId',
   getParentRoute: () => MatrimonyRoute,
 } as any)
+const FinanceLoginRoute = FinanceLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => FinanceRoute,
+} as any)
 const DistributorWalletRoute = DistributorWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -631,6 +643,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
+  '/finance': typeof FinanceRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -682,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -733,6 +747,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/booklet': typeof BookletRoute
+  '/finance': typeof FinanceRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/nsdl-callback': typeof NsdlCallbackRoute
@@ -779,6 +794,7 @@ export interface FileRoutesByTo {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -833,6 +849,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
   '/distributor': typeof DistributorRouteWithChildren
+  '/finance': typeof FinanceRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
@@ -884,6 +901,7 @@ export interface FileRoutesById {
   '/admin/work-badges': typeof AdminWorkBadgesRoute
   '/distributor/earnings': typeof DistributorEarningsRoute
   '/distributor/wallet': typeof DistributorWalletRoute
+  '/finance/login': typeof FinanceLoginRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
@@ -939,6 +957,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/booklet'
     | '/distributor'
+    | '/finance'
     | '/install'
     | '/login'
     | '/matrimony'
@@ -990,6 +1009,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1041,6 +1061,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/booklet'
+    | '/finance'
     | '/install'
     | '/login'
     | '/nsdl-callback'
@@ -1087,6 +1108,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1140,6 +1162,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/booklet'
     | '/distributor'
+    | '/finance'
     | '/install'
     | '/login'
     | '/matrimony'
@@ -1191,6 +1214,7 @@ export interface FileRouteTypes {
     | '/admin/work-badges'
     | '/distributor/earnings'
     | '/distributor/wallet'
+    | '/finance/login'
     | '/matrimony/$profileId'
     | '/retailer/activate'
     | '/retailer/cv-builder'
@@ -1245,6 +1269,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BookletRoute: typeof BookletRoute
   DistributorRoute: typeof DistributorRouteWithChildren
+  FinanceRoute: typeof FinanceRouteWithChildren
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
@@ -1328,6 +1353,13 @@ declare module '@tanstack/react-router' {
       path: '/install'
       fullPath: '/install'
       preLoaderRoute: typeof InstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/distributor': {
@@ -1679,6 +1711,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/matrimony/$profileId'
       preLoaderRoute: typeof MatrimonyProfileIdRouteImport
       parentRoute: typeof MatrimonyRoute
+    }
+    '/finance/login': {
+      id: '/finance/login'
+      path: '/login'
+      fullPath: '/finance/login'
+      preLoaderRoute: typeof FinanceLoginRouteImport
+      parentRoute: typeof FinanceRoute
     }
     '/distributor/wallet': {
       id: '/distributor/wallet'
@@ -2081,6 +2120,17 @@ const DistributorRouteWithChildren = DistributorRoute._addFileChildren(
   DistributorRouteChildren,
 )
 
+interface FinanceRouteChildren {
+  FinanceLoginRoute: typeof FinanceLoginRoute
+}
+
+const FinanceRouteChildren: FinanceRouteChildren = {
+  FinanceLoginRoute: FinanceLoginRoute,
+}
+
+const FinanceRouteWithChildren =
+  FinanceRoute._addFileChildren(FinanceRouteChildren)
+
 interface MatrimonyRouteChildren {
   MatrimonyProfileIdRoute: typeof MatrimonyProfileIdRoute
   MatrimonyIndexRoute: typeof MatrimonyIndexRoute
@@ -2231,6 +2281,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   BookletRoute: BookletRoute,
   DistributorRoute: DistributorRouteWithChildren,
+  FinanceRoute: FinanceRouteWithChildren,
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
