@@ -520,6 +520,8 @@ async function startWaClient() {
     const notifyName = msg._data?.notifyName || '';
     const { phone, isNew } = await upsertContact(msg.from, notifyName);
     await persistMessage(msg, 'in');
+    // Any inbound from a known lead → stop active drip (they replied)
+    if (phone) await stopDripOnReply(phone);
     if (isNew && phone) {
       await autoCreateCrmLead({
         phone,
