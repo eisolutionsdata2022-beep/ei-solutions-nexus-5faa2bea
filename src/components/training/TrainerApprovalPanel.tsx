@@ -13,7 +13,8 @@ import {
   type PermissionType,
 } from "@/lib/training-permissions";
 import { Button } from "@/components/ui/button";
-import { Mic, Video, MonitorUp, Check, X, Ban, Hand } from "lucide-react";
+import { Mic, Video, MonitorUp, Check, X, Ban, Hand, MicOff, VideoOff, StopCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   trainingId: string;
@@ -51,6 +52,27 @@ export function TrainerApprovalPanel({ trainingId }: Props) {
     await withdrawPermission(trainingId, p.studentId, p.type);
   };
 
+  const bulkRevoke = async (type: PermissionType | "all") => {
+    if (!appUser) return;
+    const targets = active.filter((p) => type === "all" || p.type === type);
+    if (targets.length === 0) {
+      toast.info(`No active ${type === "all" ? "permissions" : LABEL[type as PermissionType].toLowerCase()} to revoke.`);
+      return;
+    }
+    await Promise.all(
+      targets.map((p) => decidePermission(trainingId, p.studentId, p.type, "revoked", appUser.uid))
+    );
+    toast.success(`Revoked ${targets.length} ${type === "all" ? "permission(s)" : LABEL[type as PermissionType].toLowerCase()}.`);
+  };
+
+  const rejectAllPending = async () => {
+    if (!appUser || pending.length === 0) return;
+    await Promise.all(
+      pending.map((p) => decidePermission(trainingId, p.studentId, p.type, "rejected", appUser.uid))
+    );
+    toast.success(`Rejected ${pending.length} pending request(s).`);
+  };
+
   // Group active by student
   const byStudent = useMemo(() => {
     const m = new Map<string, { name: string; perms: PermissionRequest[] }>();
@@ -61,8 +83,58 @@ export function TrainerApprovalPanel({ trainingId }: Props) {
     return Array.from(m.entries()).map(([id, v]) => ({ id, ...v }));
   }, [active]);
 
+  const hasActive = active.length > 0;
+  const hasPending = pending.length > 0;
+
   return (
     <div className="flex flex-col h-full overflow-y-auto p-3 gap-4">
+      {/* Bulk actions */}
+      {(hasActive || hasPending) && (
+        <section className="bg-white/5 border border-white/10 rounded-lg p-2.5">
+          <h4 className="text-white/80 text-[10px] font-bold uppercase tracking-wider mb-2">
+            Quick Classroom Controls
+          </h4>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => bulkRevoke("mic")}
+              disabled={!active.some((p) => p.type === "mic")}
+              className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-red-500/15 hover:bg-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-red-200 border border-red-400/30 text-[11px] font-semibold transition-colors"
+            >
+              <MicOff className="w-3.5 h-3.5" /> Mute All
+            </button>
+            <button
+              onClick={() => bulkRevoke("cam")}
+              disabled={!active.some((p) => p.type === "cam")}
+              className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-red-500/15 hover:bg-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-red-200 border border-red-400/30 text-[11px] font-semibold transition-colors"
+            >
+              <VideoOff className="w-3.5 h-3.5" /> Cameras Off
+            </button>
+            <button
+              onClick={() => bulkRevoke("screen")}
+              disabled={!active.some((p) => p.type === "screen")}
+              className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-red-500/15 hover:bg-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-red-200 border border-red-400/30 text-[11px] font-semibold transition-colors"
+            >
+              <StopCircle className="w-3.5 h-3.5" /> Stop Screens
+            </button>
+            <button
+              onClick={() => bulkRevoke("all")}
+              disabled={!hasActive}
+              className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-red-600/30 hover:bg-red-600/50 disabled:opacity-40 disabled:cursor-not-allowed text-white border border-red-400/50 text-[11px] font-bold transition-colors"
+            >
+              <Ban className="w-3.5 h-3.5" /> Revoke All
+            </button>
+          </div>
+          {hasPending && (
+            <button
+              onClick={rejectAllPending}
+              className="w-full mt-1.5 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-amber-500/15 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 text-[11px] font-semibold transition-colors"
+            >
+              <X className="w-3.5 h-3.5" /> Reject All Pending ({pending.length})
+            </button>
+          )}
+        </section>
+      )}
+
       {/* Pending */}
       <section>
         <h4 className="text-white/80 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
