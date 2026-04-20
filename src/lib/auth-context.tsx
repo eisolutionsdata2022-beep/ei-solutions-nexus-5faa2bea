@@ -40,6 +40,9 @@ export interface AppUser {
   ippbBadge?: boolean;
   /** For staffSub / operator — the retailer they belong to. */
   parentRetailerId?: string;
+  /** Finance Multi-Branch: admin-assigned branch this retailer belongs to. */
+  financeBranchId?: string | null;
+  financeBranchAssignedAt?: string;
   createdAt?: string;
   lastLoginAt?: string;
 }
