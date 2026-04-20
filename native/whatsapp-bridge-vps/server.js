@@ -74,6 +74,9 @@ const sessionRef = fs_db.collection('whatsappSessions').doc('default');
 const contactsCol = fs_db.collection('whatsappContacts');
 const messagesCol = fs_db.collection('whatsappMessages');
 const campaignsCol = fs_db.collection('whatsappCampaigns');
+const dripSeqCol = fs_db.collection('whatsappDripSequences');
+const dripEnrollCol = fs_db.collection('whatsappDripEnrollments');
+const DEFAULT_DRIP_ID = 'default';
 
 // ─── HMAC verification ────────────────────────────────────────────────
 function verifyHmac(req, res, next) {
