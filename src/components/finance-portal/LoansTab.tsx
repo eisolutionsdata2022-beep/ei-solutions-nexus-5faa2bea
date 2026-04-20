@@ -178,24 +178,35 @@ function NewLoanModal({
   ownerId,
   ownerEmail,
   customers,
+  loans,
   settings,
+  goldRate,
 }: {
   open: boolean;
   onClose: () => void;
   ownerId: string;
   ownerEmail: string;
   customers: FinanceCustomer[];
+  loans: FinanceLoan[];
   settings: FinanceSettings | null;
+  goldRate: GoldRateSnapshot | null;
 }) {
+  const defaultRate = goldRate?.rate24k ?? settings?.defaultGoldRatePerGram ?? 6500;
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState<GoldItem[]>([newItem()]);
-  const [rate, setRate] = useState(settings?.defaultGoldRatePerGram ?? 6500);
+  const [rate, setRate] = useState(defaultRate);
   const [ltv, setLtv] = useState(settings?.defaultLtvPercent ?? 75);
   const [interestRate, setInterestRate] = useState(settings?.defaultInterestRate ?? 12);
   const [tenure, setTenure] = useState(12);
   const [loanAmount, setLoanAmount] = useState(0);
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sync rate when live snapshot updates and the user hasn't typed yet
+  useEffect(() => {
+    if (goldRate?.rate24k) setRate(goldRate.rate24k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goldRate?.rate24k]);
 
   function newItem(): GoldItem {
     return {
