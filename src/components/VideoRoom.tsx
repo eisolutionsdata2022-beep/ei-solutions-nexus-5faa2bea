@@ -11,6 +11,8 @@ import {
   type RoomParticipant,
   type LiveHost,
 } from "@/lib/webrtc";
+import { onBackChannels, type BackChannel } from "@/lib/student-backchannel";
+import { onPermissions, type PermissionRequest } from "@/lib/training-permissions";
 import { Button } from "@/components/ui/button";
 import { TrainingChat } from "@/components/training/TrainingChat";
 import { TrainingQA } from "@/components/training/TrainingQA";
@@ -18,8 +20,12 @@ import { TrainingAIBot } from "@/components/training/TrainingAIBot";
 import { TrainerHostTile } from "@/components/training/TrainerHostTile";
 import { HostViewerTile } from "@/components/training/HostViewerTile";
 import { ReviewSubmitDialog } from "@/components/training/ReviewSubmitDialog";
+import { StudentControls } from "@/components/training/StudentControls";
+import { TrainerApprovalPanel } from "@/components/training/TrainerApprovalPanel";
+import { StudentBackChannelTile } from "@/components/training/StudentBackChannelTile";
+import { InRoomInstallButton } from "@/components/training/InRoomInstallButton";
 import {
-  PhoneOff, MessageCircle, HelpCircle, Bot, Users, X, Star,
+  PhoneOff, MessageCircle, HelpCircle, Bot, Users, X, Star, Hand,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,18 +36,21 @@ interface VideoRoomProps {
   onLeave: () => void;
 }
 
-type SidebarTab = "chat" | "qa" | "bot" | "participants" | null;
+type SidebarTab = "chat" | "qa" | "bot" | "participants" | "approvals" | null;
 
 export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoomProps) {
   const { appUser } = useAuth();
   const [hosts, setHosts] = useState<LiveHost[]>([]);
   const [participants, setParticipants] = useState<RoomParticipant[]>([]);
+  const [backChannels, setBackChannels] = useState<BackChannel[]>([]);
+  const [permissions, setPermissions] = useState<PermissionRequest[]>([]);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>(null);
   const [elapsed, setElapsed] = useState(0);
   const [iAmLive, setIAmLive] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
   const isTrainer = role === "trainer";
+  const pendingCount = useMemo(() => permissions.filter((p) => p.status === "pending").length, [permissions]);
 
   // session timer
   useEffect(() => {
@@ -82,11 +91,15 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
 
     const unsubH = onHosts(trainingId, setHosts);
     const unsubP = onParticipants(trainingId, setParticipants);
+    const unsubBC = onBackChannels(trainingId, setBackChannels);
+    const unsubPerm = onPermissions(trainingId, setPermissions);
 
     return () => {
       active = false;
       unsubH();
       unsubP();
+      unsubBC();
+      unsubPerm();
       if (appUser) {
         removeParticipant(trainingId, appUser.uid).catch(() => {});
         if (isTrainer) closeRoomIfEmpty(trainingId).catch(() => {});
@@ -127,6 +140,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
     qa: "Q&A",
     bot: "AI Assistant",
     participants: "People",
+    approvals: "Hand-Raise Requests",
   };
 
   // grid columns based on visible tile count
@@ -158,6 +172,7 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
           <Stat label="Students" value={studentCount} color="text-emerald-300" />
           <Stat label="Online" value={onlineCount} color="text-blue-300" />
           <span className="text-white/50 text-xs font-mono hidden sm:inline">{formatTime(elapsed)}</span>
+          {!isTrainer && <InRoomInstallButton />}
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isTrainer ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`}>
             {isTrainer ? "Trainer" : "Student"}
           </span>
@@ -190,6 +205,23 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
               </div>
             )}
           </div>
+
+          {/* Trainer-only: approved students' back-channel streams (private) */}
+          {isTrainer && backChannels.length > 0 && (
+            <div className="bg-emerald-500/5 backdrop-blur-sm rounded-xl border border-emerald-500/20 p-2.5">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-emerald-200/80 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1.5">
+                  <Hand className="w-3 h-3" /> Approved Students Speaking
+                </p>
+                <span className="text-emerald-300 text-[10px]">{backChannels.length} live · only you see this</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {backChannels.map((bc) => (
+                  <StudentBackChannelTile key={bc.id} trainingId={trainingId} channel={bc} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Students strip */}
           {studentCount > 0 && (
@@ -250,30 +282,44 @@ export function VideoRoom({ trainingId, trainingTitle, role, onLeave }: VideoRoo
                   ))}
                 </div>
               )}
+              {sidebarTab === "approvals" && isTrainer && (
+                <TrainerApprovalPanel trainingId={trainingId} />
+              )}
             </div>
           </div>
         )}
       </div>
 
       {/* Bottom controls */}
-      <div className="relative z-10 flex items-center justify-between px-4 py-3 bg-[#0a0f1f]/90 backdrop-blur-xl border-t border-blue-500/10">
-        <div className="text-white/40 text-[10px] hidden md:block">
-          {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleLeave}
-            className="bg-red-600 hover:bg-red-700 text-white px-5 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
-          >
-            <PhoneOff className="w-4 h-4 mr-2" />
-            {isTrainer ? "Exit Room" : "Leave"}
-          </Button>
-        </div>
-        <div className="flex items-center gap-1">
-          <SidebarBtn icon={Users} label="People" active={sidebarTab === "participants"} count={onlineCount} onClick={() => setSidebarTab(sidebarTab === "participants" ? null : "participants")} />
-          <SidebarBtn icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => setSidebarTab(sidebarTab === "chat" ? null : "chat")} />
-          <SidebarBtn icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => setSidebarTab(sidebarTab === "qa" ? null : "qa")} />
-          <SidebarBtn icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => setSidebarTab(sidebarTab === "bot" ? null : "bot")} />
+      <div className="relative z-10 flex flex-col gap-2 px-3 sm:px-4 py-2.5 bg-[#0a0f1f]/90 backdrop-blur-xl border-t border-blue-500/10">
+        {/* Student permission controls (mobile-friendly, always visible to retailers) */}
+        {!isTrainer && (
+          <div className="flex items-center justify-center">
+            <StudentControls trainingId={trainingId} />
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-white/40 text-[10px] hidden md:block">
+            {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleLeave}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-5 h-10 rounded-xl font-medium text-sm shadow-lg shadow-red-600/20"
+            >
+              <PhoneOff className="w-4 h-4 mr-1.5" />
+              {isTrainer ? "Exit" : "Leave"}
+            </Button>
+          </div>
+          <div className="flex items-center gap-1 flex-wrap justify-end">
+            {isTrainer && (
+              <SidebarBtn icon={Hand} label="Hands" active={sidebarTab === "approvals"} count={pendingCount} onClick={() => setSidebarTab(sidebarTab === "approvals" ? null : "approvals")} />
+            )}
+            <SidebarBtn icon={Users} label="People" active={sidebarTab === "participants"} count={onlineCount} onClick={() => setSidebarTab(sidebarTab === "participants" ? null : "participants")} />
+            <SidebarBtn icon={MessageCircle} label="Chat" active={sidebarTab === "chat"} onClick={() => setSidebarTab(sidebarTab === "chat" ? null : "chat")} />
+            <SidebarBtn icon={HelpCircle} label="Q&A" active={sidebarTab === "qa"} onClick={() => setSidebarTab(sidebarTab === "qa" ? null : "qa")} />
+            <SidebarBtn icon={Bot} label="AI" active={sidebarTab === "bot"} onClick={() => setSidebarTab(sidebarTab === "bot" ? null : "bot")} />
+          </div>
         </div>
       </div>
 

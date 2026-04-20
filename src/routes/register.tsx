@@ -12,9 +12,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/register")({
   ssr: false,
   component: RegisterPage,
-  validateSearch: (s: Record<string, unknown>) => ({
-    ref: typeof s.ref === "string" ? s.ref : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { ref?: string } =>
+    typeof s.ref === "string" ? { ref: s.ref } : {},
   head: () => ({
     meta: [
       { title: "Register — EI Solutions CSC Platform" },
