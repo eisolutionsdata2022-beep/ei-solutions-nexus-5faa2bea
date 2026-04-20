@@ -1,10 +1,10 @@
 // ─── Client-side Firestore helpers for WhatsApp inbox ─────────────────
 import {
   collection, doc, onSnapshot, orderBy, query, where, limit,
-  updateDoc, setDoc, serverTimestamp, getDocs,
+  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { WaContact, WaMessage, WaSessionDoc, WaCampaign } from "./whatsapp-types";
+import type { WaContact, WaMessage, WaSessionDoc, WaCampaign, WaTemplate } from "./whatsapp-types";
 
 // ── Session ────────────────────────────────────────────────────────────
 export function subscribeSession(cb: (s: WaSessionDoc | null) => void) {
