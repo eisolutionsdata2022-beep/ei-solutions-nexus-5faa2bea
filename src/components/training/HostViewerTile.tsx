@@ -60,6 +60,51 @@ export function HostViewerTile({ trainingId, host, onMaximize }: Props) {
     pcRef.current = null;
   }, []);
 
+  const pollStats = useCallback(async (pc: RTCPeerConnection) => {
+    try {
+      const stats = await pc.getStats();
+      let inboundVideo: any = null;
+      let candidatePair: any = null;
+      stats.forEach((report) => {
+        if (report.type === "inbound-rtp" && report.kind === "video") {
+          inboundVideo = report;
+        }
+        if (report.type === "candidate-pair" && (report.nominated || report.selected) && report.state === "succeeded") {
+          candidatePair = report;
+        }
+      });
+
+      if (!inboundVideo) return;
+
+      const now = inboundVideo.timestamp || Date.now();
+      const packetsLost = inboundVideo.packetsLost || 0;
+      const packetsReceived = inboundVideo.packetsReceived || 0;
+      const jitter = (inboundVideo.jitter || 0) * 1000; // s → ms
+      const rtt = candidatePair?.currentRoundTripTime ? candidatePair.currentRoundTripTime * 1000 : 0;
+
+      // Compute loss % over the interval (delta) instead of cumulative
+      let lossPct = 0;
+      const prev = lastStatsRef.current;
+      if (prev) {
+        const dLost = packetsLost - prev.packetsLost;
+        const dRecv = packetsReceived - prev.packetsReceived;
+        const dTotal = dLost + dRecv;
+        if (dTotal > 0) lossPct = (dLost / dTotal) * 100;
+      }
+      lastStatsRef.current = { packetsLost, packetsReceived, ts: now };
+
+      // Score: good = low loss + low jitter + low rtt
+      let score: Quality = "good";
+      if (lossPct > 5 || jitter > 50 || rtt > 300) score = "poor";
+      else if (lossPct > 2 || jitter > 30 || rtt > 150) score = "medium";
+
+      setQuality(score);
+      setQualityDetails({ rtt: Math.round(rtt), jitter: Math.round(jitter), loss: Math.round(lossPct * 10) / 10 });
+    } catch {
+      /* getStats can fail mid-teardown */
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     if (!appUser) return;
     teardown();
