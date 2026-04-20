@@ -28,6 +28,7 @@ import {
 import { db } from "@/lib/firebase";
 import { sendBulkEmailBatch, sendTestEmail } from "@/lib/bulk-email.functions";
 import { RichEmailEditor } from "@/components/admin/RichEmailEditor";
+import { BulkWhatsAppTab } from "@/components/admin/BulkWhatsAppTab";
 import type {
   LandingEnquiry, UploadedLead, BulkEmailCampaign, AudienceFilter,
   ContactSource, UnifiedContact, BulkEmailRecipient,
@@ -82,6 +83,7 @@ export function BulkCommPage() {
           <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-1.5" />Upload Leads</TabsTrigger>
           <TabsTrigger value="enquiries"><Mail className="h-4 w-4 mr-1.5" />Enquiries</TabsTrigger>
           <TabsTrigger value="compose"><Send className="h-4 w-4 mr-1.5" />Compose Email</TabsTrigger>
+          <TabsTrigger value="whatsapp"><Send className="h-4 w-4 mr-1.5" />WhatsApp Bulk</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="h-4 w-4 mr-1.5" />Campaign Reports</TabsTrigger>
         </TabsList>
 
@@ -89,6 +91,7 @@ export function BulkCommPage() {
         <TabsContent value="upload"><UploadTab uploaded={uploaded} appUserUid={appUser?.uid || ""} /></TabsContent>
         <TabsContent value="enquiries"><EnquiriesTab rows={enquiries} /></TabsContent>
         <TabsContent value="compose"><ComposeTab onSent={() => setTab("reports")} appUserUid={appUser?.uid || ""} /></TabsContent>
+        <TabsContent value="whatsapp"><BulkWhatsAppTab appUserUid={appUser?.uid || ""} /></TabsContent>
         <TabsContent value="reports"><ReportsTab campaigns={campaigns} /></TabsContent>
       </Tabs>
     </div>

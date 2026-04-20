@@ -44,6 +44,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "CRM Leads", to: "/admin/crm-leads", icon: Users },
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
     { label: "Bulk Comm", to: "/admin/crm-bulk-comm", icon: MessageSquare },
+    { label: "WhatsApp", to: "/admin/whatsapp", icon: MessageSquare },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
@@ -133,6 +134,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Form Submissions", to: "/staff/form-submissions", icon: FileText },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
+    { label: "WhatsApp", to: "/staff/whatsapp", icon: MessageSquare },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
@@ -143,6 +145,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
+    { label: "WhatsApp", to: "/staff/whatsapp", icon: MessageSquare },
   ],
   operator: [
     { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
