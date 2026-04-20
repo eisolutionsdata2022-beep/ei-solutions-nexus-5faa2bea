@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Wallet, Search, Clock, CheckCircle, XCircle, AlertCircle,
   ArrowDownLeft, ArrowUpRight, FileText, ExternalLink, BarChart3, HelpCircle,
-  IdCard, Copy, Sparkles,
+  IdCard, Copy, Sparkles, Banknote, ShieldCheck, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateVleId } from "@/lib/pan-vle-id";
