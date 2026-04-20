@@ -37,6 +37,7 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
   const screenStreamRef = useRef<MediaStream | null>(null);
   const broadcastStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const disconnectTimersRef = useRef<Map<string, number>>(new Map());
   const unsubsRef = useRef<Array<() => void>>([]);
 
   // audio mixing (mic + system audio when screen-sharing)
@@ -186,6 +187,22 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
 
       // listen for incoming viewer offers under this host
       const unsub = hostListenForOffers(trainingId, appUser.uid, async (viewerId, offer) => {
+        const clearDisconnectTimer = () => {
+          const timer = disconnectTimersRef.current.get(viewerId);
+          if (timer) {
+            window.clearTimeout(timer);
+            disconnectTimersRef.current.delete(viewerId);
+          }
+        };
+        const dropPeer = () => {
+          clearDisconnectTimer();
+          const current = peersRef.current.get(viewerId);
+          if (current) {
+            try { current.close(); } catch { /* noop */ }
+          }
+          peersRef.current.delete(viewerId);
+          setViewerCount(peersRef.current.size);
+        };
         // Returning viewer (refresh / retry) — close stale peer first so a
         // fresh setRemoteDescription/createAnswer cycle succeeds.
         const existing = peersRef.current.get(viewerId);
@@ -193,6 +210,7 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
           try { existing.close(); } catch { /* noop */ }
           peersRef.current.delete(viewerId);
         }
+        clearDisconnectTimer();
         const pc = createPeerConnection();
         peersRef.current.set(viewerId, pc);
         setViewerCount(peersRef.current.size);
@@ -201,10 +219,25 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
           if (e.candidate) addIceCandidate(trainingId, appUser.uid, viewerId, "callee", e.candidate.toJSON()).catch(() => {});
         };
         pc.onconnectionstatechange = () => {
-          if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
-            try { pc.close(); } catch { /* noop */ }
-            peersRef.current.delete(viewerId);
-            setViewerCount(peersRef.current.size);
+          if (pc.connectionState === "connected") {
+            clearDisconnectTimer();
+          } else if (pc.connectionState === "disconnected") {
+            clearDisconnectTimer();
+            const timer = window.setTimeout(() => {
+              if (peersRef.current.get(viewerId) === pc && pc.connectionState === "disconnected") {
+                dropPeer();
+              }
+            }, 8_000);
+            disconnectTimersRef.current.set(viewerId, timer);
+          } else if (["failed", "closed"].includes(pc.connectionState)) {
+            dropPeer();
+          }
+        };
+        pc.oniceconnectionstatechange = () => {
+          if (["connected", "completed"].includes(pc.iceConnectionState)) {
+            clearDisconnectTimer();
+          } else if (pc.iceConnectionState === "failed") {
+            dropPeer();
           }
         };
         try {
@@ -242,6 +275,8 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
     unsubsRef.current = [];
     peersRef.current.forEach((pc) => pc.close());
     peersRef.current.clear();
+    disconnectTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    disconnectTimersRef.current.clear();
     setViewerCount(0);
     cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     cameraStreamRef.current = null;
@@ -277,6 +312,8 @@ export function TrainerHostTile({ trainingId, isLive, onLiveChange, onMaximize }
       if (isLive && appUser) {
         peersRef.current.forEach((pc) => pc.close());
         peersRef.current.clear();
+        disconnectTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+        disconnectTimersRef.current.clear();
         unsubsRef.current.forEach((u) => u());
         cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
         broadcastStreamRef.current?.getTracks().forEach((t) => t.stop());
