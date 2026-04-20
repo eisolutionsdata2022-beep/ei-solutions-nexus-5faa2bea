@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MessageCircle, QrCode, Inbox } from "lucide-react";
+import { MessageCircle, QrCode, Inbox, MessageSquareQuote } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppConnectionPanel } from "@/components/whatsapp/WhatsAppConnectionPanel";
 import { WhatsAppInbox } from "@/components/whatsapp/WhatsAppInbox";
+import { WhatsAppTemplatesManager } from "@/components/whatsapp/WhatsAppTemplatesManager";
 
 export const Route = createFileRoute("/admin/whatsapp")({
   ssr: false,
@@ -21,7 +22,7 @@ function AdminWhatsAppPage() {
           WhatsApp
         </h1>
         <p className="text-sm text-muted-foreground">
-          Connect your WhatsApp Business number, manage the unified inbox, and assign chats to staff.
+          Connect your WhatsApp Business number, manage the unified inbox, assign chats to staff, and curate quick-reply templates.
         </p>
       </div>
 
@@ -29,10 +30,12 @@ function AdminWhatsAppPage() {
         <TabsList>
           <TabsTrigger value="connection"><QrCode className="h-4 w-4 mr-1.5" />Connection</TabsTrigger>
           <TabsTrigger value="inbox"><Inbox className="h-4 w-4 mr-1.5" />Inbox</TabsTrigger>
+          <TabsTrigger value="templates"><MessageSquareQuote className="h-4 w-4 mr-1.5" />Templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="connection"><WhatsAppConnectionPanel /></TabsContent>
         <TabsContent value="inbox"><WhatsAppInbox scope="admin" /></TabsContent>
+        <TabsContent value="templates"><WhatsAppTemplatesManager /></TabsContent>
       </Tabs>
     </div>
   );
