@@ -304,6 +304,7 @@ function PanPortalPage() {
         retailerName={appUser?.name ?? null}
         retailerPhone={appUser?.phone ?? null}
         vleId={vleId}
+        vleIdSource={vleIdSource}
         ready={ready}
       />
     </div>
@@ -337,6 +338,7 @@ function PanExecutionDialog({
   retailerName,
   retailerPhone,
   vleId,
+  vleIdSource,
   ready,
 }: {
   service: (PanService & { fee: number }) | null;
@@ -348,6 +350,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
+  vleIdSource: "legacy" | "auto" | "generated";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
