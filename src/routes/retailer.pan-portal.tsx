@@ -727,15 +727,11 @@ function PanExecutionDialog({
           toast.success(`${service.name} successful · ${result.message}`);
         }
 
-        // After a successful PSA ID Create, the provider returns the real
-        // VLE ID. Persist it so future Coupon Buy / NSDL calls send the
-        // correct, recognised account.
+        // After a successful "PSA ID Create" call from the manual service
+        // dialog, store the provider-issued ID in `providerPsaId` (separate
+        // from internal `psaId`). Internal ID is NEVER overwritten.
         if (service.key === "psa-create") {
           try {
-            // The provider returns the issued VLE ID either directly in the
-            // payload or echoes back the one we sent (which the user typed).
-            // Prefer providerRef (parsed by server fn from json.vle_id) but
-            // fall back to the form value.
             const issuedId = (result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef))
               ? result.providerRef
               : (values.vle_id || "");
@@ -749,7 +745,7 @@ function PanExecutionDialog({
                 phone: retailerPhone,
               });
               toast.success(
-                `🎉 Your PSA ID ${saved.psaId} is now active. You can buy coupons and process PAN cards.`,
+                `🎉 Your official PSA ID ${saved.providerPsaId} is now stored. Use it to log into the UTI PSA portal.`,
                 { duration: 8000 },
               );
             }
