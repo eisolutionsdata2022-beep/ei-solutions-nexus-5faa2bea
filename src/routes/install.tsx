@@ -17,6 +17,10 @@ import {
   Terminal,
   Loader2,
   ExternalLink,
+  XCircle,
+  RefreshCw,
+  Activity,
+  HelpCircle,
 } from "lucide-react";
 
 // GitHub repo that hosts the PC Agent releases (built by .github/workflows/pc-agent-build.yml)
@@ -111,6 +115,332 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
         {n}
       </div>
       <div className="flex-1 text-sm pt-0.5">{children}</div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// PC-Agent preflight check — verifies the retailer's PC has all the prerequisites
+// before they bother downloading + installing the .exe. Each check is independent;
+// failures show friendly Malayalam-flavoured troubleshooting steps inline.
+// ----------------------------------------------------------------------------
+
+type CheckStatus = "pending" | "pass" | "warn" | "fail" | "skip";
+
+interface PreflightCheck {
+  id: string;
+  label: string;
+  status: CheckStatus;
+  detail: string;
+  fixSteps?: React.ReactNode;
+}
+
+// Probes a localhost port without triggering CORS errors in console. We don't
+// need a real response — just whether *something* is listening. `no-cors` mode
+// returns an opaque response on success and rejects on connection refused.
+async function probeLocalhost(url: string, timeoutMs = 1500): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function detectOS(): "windows" | "mac" | "linux" | "android" | "ios" | "other" {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent.toLowerCase();
+  const platform = (navigator.platform || "").toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return "ios";
+  if (/android/.test(ua)) return "android";
+  if (/win/.test(platform) || /windows/.test(ua)) return "windows";
+  if (/mac/.test(platform)) return "mac";
+  if (/linux/.test(platform)) return "linux";
+  return "other";
+}
+
+function detectBrowser(): { name: string; ok: boolean } {
+  if (typeof navigator === "undefined") return { name: "Unknown", ok: false };
+  const ua = navigator.userAgent;
+  if (/Edg\//.test(ua)) return { name: "Microsoft Edge", ok: true };
+  if (/Chrome\//.test(ua) && !/OPR\//.test(ua)) return { name: "Google Chrome", ok: true };
+  if (/Firefox\//.test(ua)) return { name: "Firefox", ok: true };
+  if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return { name: "Safari", ok: false };
+  return { name: "Other browser", ok: false };
+}
+
+function StatusIcon({ status }: { status: CheckStatus }) {
+  if (status === "pending")
+    return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />;
+  if (status === "pass")
+    return <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />;
+  if (status === "warn")
+    return <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />;
+  if (status === "skip")
+    return <HelpCircle className="w-4 h-4 text-muted-foreground shrink-0" />;
+  return <XCircle className="w-4 h-4 text-red-600 shrink-0" />;
+}
+
+function PreflightCheckCard() {
+  const [checks, setChecks] = useState<PreflightCheck[]>([]);
+  const [running, setRunning] = useState(false);
+  const [ranOnce, setRanOnce] = useState(false);
+
+  const runChecks = async () => {
+    setRunning(true);
+    const results: PreflightCheck[] = [];
+
+    // 1. Operating system
+    const os = detectOS();
+    if (os === "windows") {
+      results.push({
+        id: "os",
+        label: "Operating System",
+        status: "pass",
+        detail: "Windows detected — PC Agent .exe ഇവിടെ run ചെയ്യാം ✅",
+      });
+    } else if (os === "mac" || os === "linux") {
+      results.push({
+        id: "os",
+        label: "Operating System",
+        status: "fail",
+        detail: `${os === "mac" ? "macOS" : "Linux"} detected — PC Agent Windows-only ആണ്.`,
+        fixSteps: (
+          <>
+            ഈ .exe Windows 10/11 PC-യിൽ മാത്രമേ work ചെയ്യുകയുള്ളൂ. Mantra/Morpho RD Service-ഉം
+            Windows-only ആണ്. Real biometric capture-ന് Windows machine ഉപയോഗിക്കുക, അല്ലെങ്കിൽ
+            tablet APK route follow ചെയ്യുക.
+          </>
+        ),
+      });
+    } else if (os === "android" || os === "ios") {
+      results.push({
+        id: "os",
+        label: "Operating System",
+        status: "skip",
+        detail: `${os === "ios" ? "iOS" : "Android"} device — PC Agent ഇതിന് ആവശ്യമില്ല.`,
+        fixSteps: (
+          <>
+            Mobile/tablet-ൽ നിന്ന് install ചെയ്യുകയല്ല ചെയ്യേണ്ടത് — retailer-ന്റെ <strong>Windows
+            PC</strong>-യിൽ browser open ചെയ്ത് ഈ page വീണ്ടും visit ചെയ്യുക.
+          </>
+        ),
+      });
+    } else {
+      results.push({
+        id: "os",
+        label: "Operating System",
+        status: "warn",
+        detail: "OS detect ചെയ്യാൻ കഴിഞ്ഞില്ല — proceed with caution.",
+      });
+    }
+
+    // 2. Browser
+    const browser = detectBrowser();
+    results.push({
+      id: "browser",
+      label: "Browser",
+      status: browser.ok ? "pass" : "warn",
+      detail: browser.ok
+        ? `${browser.name} — perfect, .exe download smoothly നടക്കും.`
+        : `${browser.name} detected — Chrome/Edge recommend ചെയ്യുന്നു.`,
+      fixSteps: browser.ok ? undefined : (
+        <>
+          SmartScreen prompts smoothly handle ചെയ്യാൻ <strong>Google Chrome</strong> അല്ലെങ്കിൽ{" "}
+          <strong>Microsoft Edge</strong> ഉപയോഗിക്കുക. Safari/Firefox-ൽ download block ആകാൻ
+          chance ഉണ്ട്.
+        </>
+      ),
+    });
+
+    // 3. Secure context (HTTPS) — required for the in-browser portal to talk to the agent
+    const secure = typeof window !== "undefined" && window.isSecureContext;
+    results.push({
+      id: "https",
+      label: "Secure Context (HTTPS)",
+      status: secure ? "pass" : "warn",
+      detail: secure
+        ? "Page HTTPS-ൽ load ആയി — mixed-content issues ഇല്ല ✅"
+        : "Page HTTP-ൽ ആണ് — agent-മായി communicate ചെയ്യാൻ പറ്റിയില്ലെന്ന് വരാം.",
+      fixSteps: secure ? undefined : (
+        <>
+          Always <code className="bg-muted px-1 rounded">https://eisoluions.xyz/install</code> വഴി
+          access ചെയ്യുക. HTTP version localhost agent-മായി talk ചെയ്യാൻ browser block ചെയ്യും.
+        </>
+      ),
+    });
+
+    setChecks([...results]);
+
+    // 4. PC Agent reachable — installed agent listens on 127.0.0.1:11100
+    const agentPing = await probeLocalhost("http://127.0.0.1:11100/health");
+    results.push({
+      id: "agent",
+      label: "EI IPPB PC Agent (127.0.0.1:11100)",
+      status: agentPing ? "pass" : "fail",
+      detail: agentPing
+        ? "Agent listening — biometric capture ready ✅"
+        : "Agent reach ചെയ്യാൻ കഴിഞ്ഞില്ല — install ചെയ്തിട്ടില്ലെങ്കിൽ താഴെ download ചെയ്യുക.",
+      fixSteps: agentPing ? undefined : (
+        <>
+          <ol className="list-decimal pl-4 space-y-1">
+            <li>താഴെയുള്ള <strong>"PC Agent Download (.exe)"</strong> button click ചെയ്ത് install ചെയ്യുക.</li>
+            <li>Install പൂർത്തിയായ ശേഷം desktop-ലെ <strong>EI IPPB Agent</strong> icon double-click ചെയ്യുക.</li>
+            <li>System tray-ൽ green icon വന്നിട്ടുണ്ടെന്നും agent window-ൽ "Listening…" കാണുന്നുണ്ടെന്നും confirm ചെയ്യുക.</li>
+            <li>ഈ <strong>"Run checks again"</strong> button വീണ്ടും click ചെയ്യുക.</li>
+            <li>ഇപ്പോഴും fail ആകുന്നുണ്ടെങ്കിൽ <strong>Windows Firewall</strong>-ൽ EI IPPB Agent allow ചെയ്യുക.</li>
+          </ol>
+        </>
+      ),
+    });
+    setChecks([...results]);
+
+    // 5. Mantra RD Service — listens on 127.0.0.1:11100-11102 typically; we treat
+    // 11100 hit above as ambiguous (could be either), so probe a separate well-known
+    // RD Service status endpoint hint at 127.0.0.1:11101.
+    const rdPing =
+      (await probeLocalhost("http://127.0.0.1:11101")) ||
+      (await probeLocalhost("http://127.0.0.1:11102"));
+    results.push({
+      id: "rd",
+      label: "Mantra / Morpho RD Service",
+      status: rdPing ? "pass" : "warn",
+      detail: rdPing
+        ? "RD Service detected — real fingerprint capture ready ✅"
+        : "RD Service കണ്ടെത്തിയില്ല — driver install ആവശ്യമായേക്കാം.",
+      fixSteps: rdPing ? undefined : (
+        <>
+          <ol className="list-decimal pl-4 space-y-1">
+            <li>
+              <a
+                href="https://download.mantratecmis.com/Downloads/RDService/MFS110/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gov-blue underline"
+              >
+                Mantra RD Service
+              </a>{" "}
+              download ചെയ്ത് install ചെയ്യുക (MFS110 device-ന് ഇതാണ്).
+            </li>
+            <li>Morpho/Startek device ഉണ്ടെങ്കിൽ corresponding RD Service install ചെയ്യുക.</li>
+            <li>PC restart ചെയ്യുക → fingerprint device USB-ൽ connect ചെയ്യുക.</li>
+            <li>
+              <strong>Services.msc</strong> open ചെയ്ത് <em>"Mantra RD Service"</em> "Running"
+              status ആണെന്ന് verify ചെയ്യുക.
+            </li>
+            <li>"Run checks again" click ചെയ്യുക.</li>
+          </ol>
+        </>
+      ),
+    });
+    setChecks([...results]);
+
+    setRunning(false);
+    setRanOnce(true);
+  };
+
+  // Auto-run once on mount
+  useEffect(() => {
+    void runChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const failCount = checks.filter((c) => c.status === "fail").length;
+  const warnCount = checks.filter((c) => c.status === "warn").length;
+  const passCount = checks.filter((c) => c.status === "pass").length;
+
+  return (
+    <div className="rounded-lg border-2 border-gov-blue/30 bg-white p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-base font-bold text-gov-blue flex items-center gap-2">
+          <Activity className="w-5 h-5" />
+          Preflight Check — PC ready ആണോ?
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={runChecks}
+          disabled={running}
+          className="text-xs"
+        >
+          {running ? (
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+          ) : (
+            <RefreshCw className="w-3 h-3 mr-1" />
+          )}
+          Run checks again
+        </Button>
+      </div>
+
+      {ranOnce && !running && (
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+            {passCount} passed
+          </span>
+          {warnCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+              {warnCount} warning{warnCount > 1 ? "s" : ""}
+            </span>
+          )}
+          {failCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">
+              {failCount} failed
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {checks.length === 0 && running && (
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <Loader2 className="w-3 h-3 animate-spin" /> Checks run ചെയ്യുന്നു…
+          </div>
+        )}
+        {checks.map((c) => (
+          <div
+            key={c.id}
+            className={`rounded-md border p-2.5 text-xs ${
+              c.status === "fail"
+                ? "border-red-200 bg-red-50"
+                : c.status === "warn"
+                ? "border-amber-200 bg-amber-50"
+                : c.status === "pass"
+                ? "border-green-200 bg-green-50"
+                : "border-muted bg-muted/30"
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              <StatusIcon status={c.status} />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold">{c.label}</div>
+                <div className="opacity-90 mt-0.5">{c.detail}</div>
+                {c.fixSteps && (c.status === "fail" || c.status === "warn") && (
+                  <div className="mt-2 pt-2 border-t border-current/10 leading-relaxed">
+                    <div className="font-semibold mb-1 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      ഇത് ശരിയാക്കാൻ:
+                    </div>
+                    {c.fixSteps}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {ranOnce && failCount === 0 && warnCount === 0 && passCount > 0 && (
+        <div className="rounded-md bg-green-100 border border-green-300 p-2.5 text-xs text-green-900 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>
+            <strong>എല്ലാം ready!</strong> PC Agent install ചെയ്യാൻ താഴെയുള്ള guide follow ചെയ്യുക.
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -366,6 +696,9 @@ function InstallPage() {
                 return ചെയ്യും (testing-ന് മതി, real IPPB submit-ന് പോര).
               </p>
             </div>
+
+            {/* Preflight check — verifies OS, browser, agent, RD service before download */}
+            <PreflightCheckCard />
 
             {/* Live release detector — replaces hardcoded 404 link */}
             <ReleaseDownloadCard />
