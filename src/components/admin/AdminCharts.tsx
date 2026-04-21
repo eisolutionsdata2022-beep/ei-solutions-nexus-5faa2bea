@@ -102,7 +102,7 @@ export function RevenueChart({ transactions }: { transactions: Txn[] }) {
           <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
           <Tooltip
             contentStyle={tooltipStyle}
-            formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Revenue"]}
+            formatter={(v) => [`₹${Number(v ?? 0).toLocaleString("en-IN")}`, "Revenue"]}
           />
           <Area
             type="monotone"
