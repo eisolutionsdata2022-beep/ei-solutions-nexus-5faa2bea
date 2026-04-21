@@ -154,26 +154,23 @@ export async function savePsaIdFromProvider(opts: {
 
   return runTransaction(db, async (tx) => {
     const existing = await tx.get(psaRef);
-    const record: PsaIdRecord = {
-      uid: opts.uid,
-      psaId: cleaned,
+    if (!existing.exists()) {
+      throw new Error("No PSA record yet — open the PAN Portal first.");
+    }
+    const prev = existing.data() as PsaIdRecord;
+    // CRITICAL: Do NOT overwrite the internal `psaId` (RMPMCST-<mobile>).
+    // The provider-issued ID is stored separately in `providerPsaId` and is
+    // only used for the user to log into the official UTI PSA portal.
+    const updated: PsaIdRecord = {
+      ...prev,
+      providerPsaId: cleaned,
       status: "provider_active",
-      generatedAt: existing.exists()
-        ? (existing.data() as PsaIdRecord).generatedAt
-        : new Date().toISOString(),
       successfulCouponCount: successCount,
-      source: "provider",
-      email: opts.email ?? null,
-      name: opts.name ?? null,
-      phone: opts.phone ?? null,
-      providerRef: opts.providerRef ?? null,
-      requestedAt: existing.exists()
-        ? (existing.data() as PsaIdRecord).requestedAt ?? null
-        : null,
+      providerRef: opts.providerRef ?? prev.providerRef ?? null,
       providerIssuedAt: new Date().toISOString(),
     };
-    tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
-    return record;
+    tx.set(psaRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+    return updated;
   });
 }
 
