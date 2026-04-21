@@ -53,7 +53,7 @@ import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
 import { generateVleId, PSA_PENDING_PLACEHOLDER } from "@/lib/pan-vle-id";
-import { getPsaIdRecord, savePsaIdFromProvider, type PsaIdRecord } from "@/lib/psa-auto-id";
+import { getPsaIdRecord, savePsaIdFromProvider, ensurePsaIdRecord, PSA_ONBOARDED_THRESHOLD, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
