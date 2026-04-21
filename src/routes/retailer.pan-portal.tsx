@@ -45,6 +45,10 @@ import {
   IdCard,
   Download,
   Copy,
+  BadgeCheck,
+  Send,
+  RefreshCw,
+  Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
