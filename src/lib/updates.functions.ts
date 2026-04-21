@@ -189,6 +189,58 @@ export const fetchPSCNotifications = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// ──────────────── Parivahan (Ministry of Road Transport) ────────────────
+export const fetchParivahanNotifications = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ items: FeedItem[]; error: string | null }> => {
+    const items: FeedItem[] = [];
+    let lastErr: string | null = null;
+
+    // Primary: Firecrawl search
+    const fcItems = await firecrawlSearchItems(
+      "Parivahan Sewa Ministry Road Transport notification driving licence vehicle registration India",
+      "Parivahan / MoRTH",
+      20,
+    );
+    items.push(...fcItems);
+
+    // Fallback: Google News RSS
+    if (items.length < 5) {
+      const queries = [
+        "Parivahan Sewa notification India",
+        "Ministry of Road Transport Highways announcement",
+        "RTO driving licence vehicle registration India update",
+      ];
+      for (const q of queries) {
+        try {
+          const xml = await fetchText(googleNewsRss(q));
+          items.push(...parseRssItems(xml, "Parivahan / MoRTH", 15));
+        } catch (e: any) {
+          lastErr = e?.message || "Fetch failed";
+        }
+      }
+    }
+
+    const seen = new Set<string>();
+    const dedup = items.filter((i) => {
+      const k = i.link || i.title;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    dedup.sort((a, b) => {
+      const ta = Date.parse(a.pubDate) || 0;
+      const tb = Date.parse(b.pubDate) || 0;
+      return tb - ta;
+    });
+
+    return {
+      items: dedup.slice(0, 30),
+      error: dedup.length === 0 ? lastErr || "No Parivahan notifications found" : null,
+    };
+  },
+);
+
 // ──────────────── Government Notifications ────────────────
 export const fetchGovtNotifications = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ items: FeedItem[]; error: string | null }> => {
