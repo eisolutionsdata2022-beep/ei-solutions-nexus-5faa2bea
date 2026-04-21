@@ -328,7 +328,7 @@ function UpdatesPage() {
 }
 
 function FeedList({
-  loading, items, error, emptyMsg, fallbackHref, fallbackLabel,
+  loading, items, error, emptyMsg, fallbackHref, fallbackLabel, onOpen,
 }: {
   loading: boolean;
   items: FeedItem[];
@@ -336,6 +336,7 @@ function FeedList({
   emptyMsg: string;
   fallbackHref: string;
   fallbackLabel: string;
+  onOpen: (item: FeedItem) => void;
 }) {
   if (loading) {
     return (
@@ -360,11 +361,10 @@ function FeedList({
     <ul className="space-y-2">
       {items.map((item, i) => (
         <li key={i}>
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-lg border bg-card p-3 hover:bg-accent transition-colors"
+          <button
+            type="button"
+            onClick={() => onOpen(item)}
+            className="w-full text-left block rounded-lg border bg-card p-3 hover:bg-accent hover:border-rose-300 transition-colors group"
           >
             <div className="flex items-start gap-3">
               <Badge variant="outline" className="text-[10px] shrink-0 mt-0.5">
@@ -383,9 +383,11 @@ function FeedList({
                   </div>
                 )}
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="inline-flex items-center gap-1 text-xs text-rose-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Eye className="w-3.5 h-3.5" /> View
+              </span>
             </div>
-          </a>
+          </button>
         </li>
       ))}
     </ul>
