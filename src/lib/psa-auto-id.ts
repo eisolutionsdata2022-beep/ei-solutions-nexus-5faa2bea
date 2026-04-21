@@ -123,8 +123,8 @@ export async function claimLegacyPsaId(opts: {
   phone?: string | null;
 }): Promise<PsaIdRecord> {
   const cleaned = opts.legacyPsaId.trim().toUpperCase();
-  if (!/^PSA[\dA-Z\-]{4,}$/i.test(cleaned)) {
-    throw new Error("Invalid PSA ID format. Expected something like PSA123456 or PSA123456-9876543210.");
+  if (!/^(PSA|RMPMCST)[\dA-Z\-]{4,}$/i.test(cleaned)) {
+    throw new Error("Invalid VLE ID format. Expected something like RMPMCST-9876543210 or PSA123456.");
   }
 
   const psaRef = doc(db, "psa_ids", opts.uid);
