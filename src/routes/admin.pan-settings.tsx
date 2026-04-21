@@ -295,6 +295,113 @@ function AdminPanSettings() {
         </CardContent>
       </Card>
 
+      {/* API Secret */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Lock className="h-5 w-5" /> Master PAN API Secret
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.apiSecretCipher && (
+            <div className="mb-4 rounded-lg border bg-success/5 p-3 text-sm">
+              <div className="flex items-center gap-2 text-success">
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Encrypted API secret on file</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Stored secret: <code className="font-mono">{config.apiSecretHint}</code>
+              </p>
+            </div>
+          )}
+          <form onSubmit={saveApiSecret} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>PAN API Secret (paired with API key)</Label>
+              <Input
+                type="password"
+                value={apiSecret}
+                onChange={(e) => setApiSecret(e.target.value)}
+                placeholder="wS4othL5rDlYmOMHJk7L"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={savingSecret}>
+              {savingSecret ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Encrypting…</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> Encrypt & Save</>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Sent as the <code className="font-mono">secret</code> field on every PAN
+              request. Mallikacyberzone endpoints require both
+              <code className="font-mono"> api_key</code> + <code className="font-mono">secret</code>.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* VPS Bridge */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Server className="h-5 w-5" /> Static-IP VPS Bridge
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.vpsBridgeUrl && (
+            <div className="mb-4 rounded-lg border bg-success/5 p-3 text-sm">
+              <div className="flex items-center gap-2 text-success">
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Bridge configured · routing through VPS</span>
+              </div>
+              <p className="mt-1 break-all text-xs text-muted-foreground">
+                {config.vpsBridgeUrl}
+                {config.vpsBridgeSecretHint && (
+                  <>
+                    {" · HMAC: "}
+                    <code className="font-mono">{config.vpsBridgeSecretHint}</code>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+          <form onSubmit={saveBridge} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>VPS Bridge URL (leave blank for direct call)</Label>
+              <Input
+                type="url"
+                value={bridgeUrl}
+                onChange={(e) => setBridgeUrl(e.target.value)}
+                placeholder="https://pan-bridge.eisoluions.xyz/proxy/pan"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>VPS Bridge HMAC Secret (paste once to update)</Label>
+              <Input
+                type="password"
+                value={bridgeSecret}
+                onChange={(e) => setBridgeSecret(e.target.value)}
+                placeholder="64-char random hex from the VPS .env"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={savingBridge}>
+              {savingBridge ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> Save Bridge Config</>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              When set, every PAN call is HMAC-signed and forwarded through this
+              bridge so it leaves from the VPS's whitelisted IP. Setup guide:
+              <code className="font-mono"> native/pan-bridge-vps/README.md</code>.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+
       {/* Endpoint URLs */}
       <Card>
         <CardHeader>
