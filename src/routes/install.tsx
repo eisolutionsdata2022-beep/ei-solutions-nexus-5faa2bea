@@ -17,6 +17,10 @@ import {
   Terminal,
   Loader2,
   ExternalLink,
+  XCircle,
+  RefreshCw,
+  Activity,
+  HelpCircle,
 } from "lucide-react";
 
 // GitHub repo that hosts the PC Agent releases (built by .github/workflows/pc-agent-build.yml)
