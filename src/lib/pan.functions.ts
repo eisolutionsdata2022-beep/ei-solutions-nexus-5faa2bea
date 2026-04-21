@@ -151,6 +151,8 @@ const executeInput = z.object({
   url: z.string().url().max(500),
   /** Encrypted API key blob from Firestore. */
   apiKeyCipher: z.string().min(10).max(2000),
+  /** Encrypted API secret blob from Firestore (mallikacyberzone secret). */
+  apiSecretCipher: z.string().min(10).max(2000).optional(),
   /** User-entered fields. */
   fields: z.record(z.string().min(1).max(60), z.union([z.string().max(500), z.number()])),
   /** Hard-coded extras (application_type=49A, etc.). */
@@ -161,6 +163,10 @@ const executeInput = z.object({
   pOrderId: z.string().max(80).optional(),
   /** For NSDL POST calls: the redirect URL the user returns to after eKYC. */
   redirectUrl: z.string().url().max(500).optional(),
+  /** Optional VPS proxy bridge URL (for static IP whitelisting). */
+  vpsBridgeUrl: z.string().url().max(500).optional(),
+  /** Encrypted HMAC secret for the VPS bridge. */
+  vpsBridgeSecretCipher: z.string().min(10).max(2000).optional(),
 });
 
 export type PanExecuteResult =
