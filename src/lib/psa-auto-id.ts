@@ -28,10 +28,18 @@ export const PSA_ONBOARDED_THRESHOLD = 2;
 
 export type PsaIdSource = "auto" | "provider" | "legacy";
 
+/**
+ * PSA workflow status:
+ *  - `active`         → temporary auto-generated `RMPMCST-<mobile>` ID, can buy coupons
+ *  - `provider_pending` → user has requested a real PSA ID, waiting up to 24h for provider
+ *  - `provider_active`  → provider has issued the real PSA ID, fully onboarded
+ */
+export type PsaIdStatus = "active" | "provider_pending" | "provider_active";
+
 export interface PsaIdRecord {
   uid: string;
   psaId: string;
-  status: "active";
+  status: PsaIdStatus;
   generatedAt: string;
   successfulCouponCount: number;
   source: PsaIdSource;
@@ -40,7 +48,14 @@ export interface PsaIdRecord {
   phone?: string | null;
   /** Optional reference to the upstream PSA-create transaction. */
   providerRef?: string | null;
+  /** When the user clicked "Request PSA ID" (ISO). Used for 24h ETA display. */
+  requestedAt?: string | null;
+  /** When the provider issued the real ID (ISO). */
+  providerIssuedAt?: string | null;
 }
+
+/** Hours after request when provider is expected to issue the real PSA ID. */
+export const PSA_PROVIDER_ETA_HOURS = 24;
 
 /** Count successful coupon-buy transactions (refunded / failed are ignored). */
 export async function countSuccessfulCouponPurchases(uid: string): Promise<number> {
@@ -130,7 +145,7 @@ export async function savePsaIdFromProvider(opts: {
     const record: PsaIdRecord = {
       uid: opts.uid,
       psaId: cleaned,
-      status: "active",
+      status: "provider_active",
       generatedAt: existing.exists()
         ? (existing.data() as PsaIdRecord).generatedAt
         : new Date().toISOString(),
@@ -140,9 +155,40 @@ export async function savePsaIdFromProvider(opts: {
       name: opts.name ?? null,
       phone: opts.phone ?? null,
       providerRef: opts.providerRef ?? null,
+      requestedAt: existing.exists()
+        ? (existing.data() as PsaIdRecord).requestedAt ?? null
+        : null,
+      providerIssuedAt: new Date().toISOString(),
     };
     tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
     return record;
+  });
+}
+
+/**
+ * MARK the PSA record as `provider_pending` after the user clicks
+ * "Request PSA ID". Stores `requestedAt` so the UI can show a 24h ETA.
+ */
+export async function markPsaIdRequested(opts: {
+  uid: string;
+  providerRef?: string | null;
+}): Promise<PsaIdRecord> {
+  const psaRef = doc(db, "psa_ids", opts.uid);
+  return runTransaction(db, async (tx) => {
+    const existing = await tx.get(psaRef);
+    if (!existing.exists()) {
+      throw new Error("No PSA record yet — open the PAN Portal first.");
+    }
+    const prev = existing.data() as PsaIdRecord;
+    if (prev.status === "provider_active") return prev;
+    const updated: PsaIdRecord = {
+      ...prev,
+      status: "provider_pending",
+      requestedAt: new Date().toISOString(),
+      providerRef: opts.providerRef ?? prev.providerRef ?? null,
+    };
+    tx.set(psaRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+    return updated;
   });
 }
 
