@@ -171,6 +171,22 @@ function RetailerIPPBPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="gap-2 border-gov-blue/40 text-gov-blue hover:bg-gov-blue/10"
+          >
+            <a
+              href="/ippb-training-malayalam.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+            >
+              <Download className="w-4 h-4" />
+              ട്രെയിനിങ് PDF (മലയാളം)
+            </a>
+          </Button>
           {(() => {
             const terminal = ["success", "failed", "cancelled"];
             const active = rows
