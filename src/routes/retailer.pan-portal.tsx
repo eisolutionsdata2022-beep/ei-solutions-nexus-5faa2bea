@@ -278,67 +278,36 @@ function PanPortalPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
-              EI SOLUTIONS
-            </p>
-            <h1 className="flex items-center gap-2 text-3xl font-bold">
-              <IdCard className="h-7 w-7" /> PAN PORTAL
-            </h1>
-            <p className="mt-1 text-sm text-white/80">
-              EI SOLUTIONS PAN Services — NSDL · UTI · PSA · Coupons in one dashboard.
-            </p>
+    <ServicePageShell
+      icon={IdCard}
+      title="PAN Portal"
+      subtitle="EI SOLUTIONS PAN Services — NSDL · UTI · PSA · Coupons in one dashboard."
+      eyebrow="PAN Services"
+      gradient="from-rose-600 via-pink-600 to-fuchsia-600"
+      headerAction={
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(vleId).then(
+              () => toast.success(`VLE ID copied: ${vleId}`),
+              () => toast.error("Could not copy VLE ID"),
+            );
+          }}
+          className="group rounded-xl bg-white/15 px-3.5 py-2.5 text-left backdrop-blur-xl border border-white/25 transition hover:bg-white/25 active:scale-[0.98]"
+          title="Click to copy your VLE ID"
+        >
+          <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-white/70">
+            <IdCard className="h-3 w-3" /> VLE ID
+            <Copy className="h-2.5 w-2.5 opacity-60 group-hover:opacity-100" />
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(vleId).then(
-                  () => toast.success(`VLE ID copied: ${vleId}`),
-                  () => toast.error("Could not copy VLE ID"),
-                );
-              }}
-              className="group rounded-xl bg-white/15 px-5 py-3 text-left backdrop-blur transition hover:bg-white/25 active:scale-[0.98]"
-              title="Click to copy your VLE ID"
-            >
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
-                <IdCard className="h-4 w-4" /> Your VLE ID
-                <Copy className="h-3 w-3 opacity-60 transition group-hover:opacity-100" />
-                {vleIdSource === "legacy" && (
-                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
-                    Legacy linked
-                  </span>
-                )}
-                {vleIdSource === "auto" && (
-                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                    fullyOnboarded
-                      ? "bg-emerald-400/30 text-emerald-50"
-                      : providerPending
-                      ? "bg-sky-400/30 text-sky-50"
-                      : "bg-amber-400/30 text-amber-50"
-                  }`}>
-                    {fullyOnboarded
-                      ? "PSA Active"
-                      : providerPending
-                      ? "PSA Requested"
-                      : `${couponCount}/${PSA_ONBOARDED_THRESHOLD} coupons`}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 font-mono text-2xl font-bold tracking-wider">{vleId}</p>
-            </button>
-            <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
-                <Wallet className="h-4 w-4" /> Wallet
-              </div>
-              <p className="mt-1 text-2xl font-bold">₹{balance.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+          <p className="mt-0.5 font-mono text-sm font-bold tracking-wider text-white">{vleId}</p>
+        </button>
+      }
+      stats={[
+        { icon: BadgeCheck, label: "PSA Status", value: fullyOnboarded ? "Active" : providerPending ? "Requested" : `${couponCount}/${PSA_ONBOARDED_THRESHOLD}`, accent: "from-emerald-400 to-teal-400" },
+        { icon: Receipt, label: "Services", value: services.length, accent: "from-rose-400 to-pink-400" },
+      ]}
+    >
 
       {configLoaded && !ready && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
