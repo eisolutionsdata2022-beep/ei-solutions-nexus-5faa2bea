@@ -159,10 +159,11 @@ function UpdatesPage() {
         { icon: Trophy, label: "Lottery", value: lottery?.number || "—", accent: "from-amber-400 to-yellow-500" },
         { icon: Building2, label: "PSC Items", value: psc.length, accent: "from-blue-400 to-indigo-500" },
         { icon: Globe2, label: "Govt Press", value: govt.length, accent: "from-emerald-400 to-teal-500" },
+        { icon: Car, label: "Parivahan", value: pari.length, accent: "from-sky-400 to-cyan-500" },
       ]}
     >
       <Tabs defaultValue="lottery" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-4">
+        <TabsList className="grid grid-cols-4 w-full max-w-3xl mb-4">
           <TabsTrigger value="lottery">
             <Trophy className="w-4 h-4 mr-1.5" /> Lottery
           </TabsTrigger>
@@ -171,6 +172,9 @@ function UpdatesPage() {
           </TabsTrigger>
           <TabsTrigger value="govt">
             <Globe2 className="w-4 h-4 mr-1.5" /> Govt Press
+          </TabsTrigger>
+          <TabsTrigger value="parivahan">
+            <Car className="w-4 h-4 mr-1.5" /> Parivahan
           </TabsTrigger>
         </TabsList>
 
