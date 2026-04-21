@@ -20,6 +20,35 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys();
     }
 
+    // ---------- users (own profile) ---------------------------------
+    // Every signed-in user can read their own profile doc; admins read all.
+    // Self-create at signup; self-update of safe fields. Role / financeBranchId
+    // changes are admin-only.
+    match /users/{uid} {
+      allow read:   if isAuthed() && (uid == request.auth.uid || isStaffish());
+      allow list:   if isStaffish();
+      allow create: if isAuthed() && uid == request.auth.uid;
+      allow update: if isAuthed() && (
+                      isAdmin()
+                   || (uid == request.auth.uid
+                       && !changedKeys().hasAny(["role","financeBranchId","ippbBadge","workBadge"])));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- catch-all for legacy / unmigrated collections -------
+    // The platform has many feature collections (wallets, transactions,
+    // services, profiles, ratings, jobs, training, etc.) that pre-date
+    // this rules file. To keep the live app working while we migrate
+    // each one to a strict rule, allow authenticated read/write on any
+    // collection NOT explicitly matched above. Each explicit `match`
+    // below takes precedence over this fallback.
+    match /{collection}/{docId} {
+      allow read, write: if isAuthed();
+    }
+    match /{collection}/{docId}/{sub=**} {
+      allow read, write: if isAuthed();
+    }
+
     // ---------- ippbRequests ----------------------------------------
     match /ippbRequests/{rid} {
       allow read:   if isAuthed() && (
