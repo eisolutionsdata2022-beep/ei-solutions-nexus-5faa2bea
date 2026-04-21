@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,79 @@ import {
   AlertTriangle,
   ShieldCheck,
   Terminal,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
+
+// GitHub repo that hosts the PC Agent releases (built by .github/workflows/pc-agent-build.yml)
+const GH_OWNER = "eisolutionsdata2022-beep";
+const GH_REPO = "ei-solutions-nexus-49a3c1e4";
+const GH_API_LATEST = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/releases/latest`;
+const GH_RELEASES_PAGE = `https://github.com/${GH_OWNER}/${GH_REPO}/releases`;
+const GH_ACTIONS_PAGE = `https://github.com/${GH_OWNER}/${GH_REPO}/actions/workflows/pc-agent-build.yml`;
+const ASSET_NAME = "EISolutions.IppbAgent.Setup.exe";
+
+interface ReleaseInfo {
+  status: "loading" | "ready" | "missing" | "error";
+  version?: string;
+  downloadUrl?: string;
+  sizeMB?: string;
+  publishedAt?: string;
+  errorMsg?: string;
+}
+
+function useLatestRelease(): ReleaseInfo {
+  const [info, setInfo] = useState<ReleaseInfo>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(GH_API_LATEST, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
+        if (cancelled) return;
+        if (res.status === 404) {
+          setInfo({ status: "missing" });
+          return;
+        }
+        if (!res.ok) {
+          setInfo({ status: "error", errorMsg: `HTTP ${res.status}` });
+          return;
+        }
+        const data = await res.json();
+        const asset = (data.assets || []).find(
+          (a: { name: string }) => a.name === ASSET_NAME,
+        );
+        if (!asset) {
+          setInfo({
+            status: "missing",
+            errorMsg: "Release exists but .exe asset not uploaded yet.",
+          });
+          return;
+        }
+        setInfo({
+          status: "ready",
+          version: data.tag_name?.replace(/^pc-agent-v/, "") || data.name,
+          downloadUrl: asset.browser_download_url,
+          sizeMB: (asset.size / 1024 / 1024).toFixed(1),
+          publishedAt: data.published_at,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setInfo({
+          status: "error",
+          errorMsg: err instanceof Error ? err.message : "Network error",
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return info;
+}
 
 export const Route = createFileRoute("/install")({
   ssr: false,
@@ -38,6 +111,124 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
         {n}
       </div>
       <div className="flex-1 text-sm pt-0.5">{children}</div>
+    </div>
+  );
+}
+
+function ReleaseDownloadCard() {
+  const release = useLatestRelease();
+
+  if (release.status === "loading") {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        GitHub-ൽ release status check ചെയ്യുന്നു…
+      </div>
+    );
+  }
+
+  if (release.status === "ready" && release.downloadUrl) {
+    return (
+      <div className="grid sm:grid-cols-2 gap-3">
+        <a
+          href={release.downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors"
+        >
+          <Download className="w-6 h-6 shrink-0" />
+          <div className="flex-1">
+            <div className="font-bold text-sm">PC Agent Download (.exe)</div>
+            <div className="text-[11px] opacity-90">
+              v{release.version} · {release.sizeMB} MB · Windows 10/11
+            </div>
+          </div>
+        </a>
+        <a
+          href={GH_RELEASES_PAGE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg border-2 border-gov-blue/40 bg-white hover:bg-gov-blue/5 p-4 transition-colors"
+        >
+          <Terminal className="w-6 h-6 shrink-0 text-gov-blue" />
+          <div className="flex-1">
+            <div className="font-bold text-sm text-gov-blue">All Releases / Source</div>
+            <div className="text-[11px] text-muted-foreground">
+              GitHub · പഴയ versions + SHA-256 checksum
+            </div>
+          </div>
+        </a>
+      </div>
+    );
+  }
+
+  // status === "missing" or "error"
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border-2 border-red-300 bg-red-50 p-4 text-sm text-red-900">
+        <p className="font-bold flex items-center gap-2 mb-2">
+          <AlertTriangle className="w-4 h-4" />
+          PC Agent .exe ഇതുവരെ publish ചെയ്തിട്ടില്ല
+        </p>
+        <p className="text-xs leading-relaxed">
+          GitHub repository-യിൽ <code className="bg-white/60 px-1 rounded">pc-agent-v*</code>{" "}
+          tag push ചെയ്യുമ്പോൾ automatic build + release ആകും. ഇതുവരെ ആ tag push ചെയ്തിട്ടില്ല,
+          അല്ലെങ്കിൽ workflow run പൂർത്തിയായിട്ടില്ല.
+          {release.errorMsg && (
+            <span className="block mt-1 opacity-75">Detail: {release.errorMsg}</span>
+          )}
+        </p>
+      </div>
+
+      <div className="rounded-lg border-2 border-blue-300 bg-blue-50 p-4 text-sm text-blue-900 space-y-2">
+        <p className="font-bold">🛠️ Repository owner-നുള്ള fix:</p>
+        <ol className="list-decimal pl-5 space-y-1 text-xs">
+          <li>
+            GitHub repo-യിൽ പോകുക → <strong>Actions</strong> tab open ചെയ്യുക.
+          </li>
+          <li>
+            <strong>"Build &amp; Release WPF PC Agent"</strong> workflow select ചെയ്യുക.
+          </li>
+          <li>
+            <strong>"Run workflow"</strong> button click ചെയ്ത് manually trigger ചെയ്യുക,
+            അല്ലെങ്കിൽ terminal-ൽ:
+            <pre className="bg-white/70 p-2 rounded mt-1 overflow-x-auto text-[10px]">
+              git tag pc-agent-v1.0.0{"\n"}git push origin pc-agent-v1.0.0
+            </pre>
+          </li>
+          <li>
+            ~5 minutes കാത്തിരിക്കുക → release publish ആകും → ഈ page reload ചെയ്യുക.
+          </li>
+        </ol>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <a
+            href={GH_ACTIONS_PAGE}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded bg-gov-blue text-white px-3 py-1.5 text-xs font-medium hover:bg-gov-blue/90"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Open GitHub Actions
+          </a>
+          <a
+            href={GH_RELEASES_PAGE}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded border border-gov-blue text-gov-blue px-3 py-1.5 text-xs font-medium hover:bg-gov-blue/5"
+          >
+            <ExternalLink className="w-3 h-3" />
+            View Releases Page
+          </a>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-xs text-green-900 flex gap-2">
+        <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+        <span>
+          <strong>അതുവരെ:</strong> Browser-based <strong>L1 simulation</strong> ഉപയോഗിച്ച്
+          IPPB workflow test ചെയ്യാം. Real MFS110 LED activation-ന് മാത്രമേ ഈ .exe ആവശ്യമുള്ളൂ.
+        </span>
+      </div>
     </div>
   );
 }
@@ -176,43 +367,8 @@ function InstallPage() {
               </p>
             </div>
 
-            {/* Download buttons */}
-            <div className="grid sm:grid-cols-2 gap-3">
-              <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors"
-              >
-                <Download className="w-6 h-6 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-bold text-sm">PC Agent Download (.exe)</div>
-                  <div className="text-[11px] opacity-90">Windows 10/11 · ~25 MB · Latest Release</div>
-                </div>
-              </a>
-              <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border-2 border-gov-blue/40 bg-white hover:bg-gov-blue/5 p-4 transition-colors"
-              >
-                <Terminal className="w-6 h-6 shrink-0 text-gov-blue" />
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-gov-blue">All Releases / Source</div>
-                  <div className="text-[11px] text-muted-foreground">GitHub · പഴയ versions + checksum</div>
-                </div>
-              </a>
-            </div>
-
-            <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                <strong>Note:</strong> ആദ്യത്തെ release publish ചെയ്യുന്നതുവരെ download link
-                404 കാണിക്കാം. അങ്ങനെയെങ്കിൽ <strong>"All Releases"</strong> click ചെയ്ത് latest
-                tag-ലെ <code className="bg-white/60 px-1 rounded">EISolutions.IppbAgent.Setup.exe</code>{" "}
-                manually download ചെയ്യുക.
-              </span>
-            </div>
+            {/* Live release detector — replaces hardcoded 404 link */}
+            <ReleaseDownloadCard />
 
             {/* DETAILED Install steps — step by step */}
             <div className="space-y-3 rounded-lg border-2 border-gov-blue/30 bg-white p-4">
