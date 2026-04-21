@@ -221,31 +221,6 @@ function PanPortalPage() {
         </Card>
       )}
 
-      {vleIdSource === "pending" && (
-        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
-          <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-              <div className="text-sm">
-                <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  You don't have a PSA / VLE ID yet
-                </p>
-                <p className="mt-1 text-amber-800 dark:text-amber-300/90">
-                  To buy coupons and process PAN cards, you first need a real
-                  VLE ID issued by the provider. Use{" "}
-                  <strong>"PSA ID Create"</strong> below — once submitted, the
-                  provider will issue your official UTI PSA ID and we'll save
-                  it automatically. Already have one from the old portal?{" "}
-                  <Link to="/retailer/profile" className="underline font-semibold">
-                    Link it in Profile →
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div>
         <h2 className="mb-3 text-lg font-bold text-foreground">PAN Services</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
