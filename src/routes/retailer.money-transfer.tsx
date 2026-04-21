@@ -40,6 +40,7 @@ import {
   Clock, XCircle, RefreshCcw, ArrowLeft, Wallet, IndianRupee, Eye, Building2, Landmark,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/money-transfer")({
   ssr: false,
@@ -114,40 +115,19 @@ function MoneyTransferPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-premium-gradient p-6 sm:p-8 text-white shadow-premium">
-        <div className="pointer-events-none absolute -top-16 -right-12 h-56 w-56 rounded-full bg-white/15 blur-3xl animate-blob" />
-        <div className="pointer-events-none absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-blob" style={{ animationDelay: "2s" }} />
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center">
-                <Banknote className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-white/75 font-bold">Domestic Money Transfer</p>
-                <h1 className="text-2xl sm:text-3xl font-bold leading-tight">Money Transfer · DMT</h1>
-              </div>
-            </div>
-            <p className="text-white/85 text-sm max-w-xl">
-              Send money instantly to any bank account in India. Powered by IMPS, NEFT & RTGS. All transfers handled by our staff.
-            </p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-md ring-1 ring-white/30 rounded-2xl px-5 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-white/75 font-semibold">Wallet Balance</p>
-            <p className="text-2xl font-bold tabular-nums">₹{balance.toLocaleString("en-IN")}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label="Total Transfers" value={String(stats.total)} icon={Send} gradient="from-blue-500 to-indigo-600" />
-        <StatTile label="Successful" value={String(stats.success)} icon={CheckCircle2} gradient="from-emerald-500 to-teal-600" />
-        <StatTile label="Pending" value={String(stats.pending)} icon={Clock} gradient="from-amber-500 to-orange-600" />
-        <StatTile label="Total Sent" value={`₹${stats.totalSent.toLocaleString("en-IN")}`} icon={IndianRupee} gradient="from-fuchsia-500 to-pink-600" />
-      </div>
+    <ServicePageShell
+      icon={Banknote}
+      title="Money Transfer · DMT"
+      subtitle="Send money instantly to any bank account in India. Powered by IMPS, NEFT & RTGS."
+      eyebrow="Domestic Money Transfer"
+      gradient="from-emerald-600 via-teal-600 to-cyan-600"
+      stats={[
+        { icon: Send, label: "Total Transfers", value: stats.total, accent: "from-blue-400 to-indigo-400" },
+        { icon: CheckCircle2, label: "Successful", value: stats.success, accent: "from-emerald-400 to-teal-400" },
+        { icon: Clock, label: "Pending", value: stats.pending, accent: "from-amber-400 to-orange-400" },
+        { icon: IndianRupee, label: "Sent", value: `₹${stats.totalSent.toLocaleString("en-IN")}`, accent: "from-fuchsia-400 to-pink-400" },
+      ]}
+    >
 
       <Tabs defaultValue="transfer">
         <TabsList className="grid grid-cols-2 w-full max-w-md">
@@ -627,7 +607,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</Label>
       {children}
-    </div>
+    </ServicePageShell>
   );
 }
 
