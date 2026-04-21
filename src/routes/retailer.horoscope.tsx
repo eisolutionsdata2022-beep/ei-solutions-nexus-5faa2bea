@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2 } from "lucide-react";
+import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun } from "lucide-react";
+import { ServicePageShell } from "@/components/ServicePageShell";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
 import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
@@ -181,20 +182,22 @@ function RetailerHoroscope() {
   };
 
   return (
-    <div className="space-y-6 relative">
-      {/* cosmic header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-950 via-purple-950 to-indigo-950 text-white p-6 shadow-2xl border border-amber-500/30">
-        <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 20% 50%, #fbbf24 0%, transparent 50%), radial-gradient(circle at 80% 30%, #a855f7 0%, transparent 50%)" }} />
-        <div className="relative flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">🕉️ ജ്യോതിഷ കേന്ദ്രം</h1>
-            <p className="text-amber-200/80 text-sm mt-1">Premium Indian Astrology Platform</p>
-          </div>
-          <Badge className="bg-amber-500 text-amber-950 px-3 py-1.5 text-sm font-bold">
-            ₹{pricing.price} · {PRODUCT_LABELS[product].ml}
-          </Badge>
-        </div>
-      </div>
+    <ServicePageShell
+      icon={Sun}
+      title="ജ്യോതിഷ കേന്ദ്രം · Astrology"
+      subtitle="Premium Indian astrology — Standard, Premium & Palmistry reports."
+      eyebrow="Horoscope Studio"
+      gradient="from-amber-600 via-orange-600 to-red-600"
+      headerAction={
+        <Badge className="bg-white text-amber-700 hover:bg-white/90 px-3 py-1.5 text-xs font-bold shadow-lg">
+          ₹{pricing.price} · {PRODUCT_LABELS[product].ml}
+        </Badge>
+      }
+      stats={[
+        { icon: FileText, label: "Reports", value: requests.length, accent: "from-amber-400 to-orange-400" },
+        { icon: Star, label: "Active Product", value: PRODUCT_LABELS[product].en, accent: "from-pink-400 to-rose-400" },
+      ]}
+    >
 
       <Tabs defaultValue="new">
         <TabsList>
@@ -369,6 +372,6 @@ function RetailerHoroscope() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </ServicePageShell>
   );
 }
