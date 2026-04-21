@@ -172,6 +172,9 @@ function RetailerWallet() {
   const [upiId, setUpiId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  // Tracks last-known status per wallet-request id so we can detect transitions
+  // (pending → approved/rejected) and fire toast + chime notifications.
+  const prevRequestStatusRef = useRef<Map<string, string> | null>(null);
 
   // Validation errors
   const [errors, setErrors] = useState<{
