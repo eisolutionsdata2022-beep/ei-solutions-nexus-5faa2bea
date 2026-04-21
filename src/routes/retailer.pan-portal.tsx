@@ -249,6 +249,10 @@ function PanPortalPage() {
           vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
         },
       });
+      if (!result.success) {
+        toast.info("Still pending. Please check again later.");
+        return;
+      }
       const issuedId =
         result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef)
           ? result.providerRef
