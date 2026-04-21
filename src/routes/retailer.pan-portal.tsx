@@ -579,7 +579,11 @@ function PanExecutionDialog({
               )}
               {f.key === "vle_id" ? (
                 <p className="text-xs text-muted-foreground">
-                  Your EI SOLUTIONS VLE ID — auto-generated and locked to your account.
+                  {vleIdSource === "legacy"
+                    ? "Your existing PSA / VLE ID linked from the old portal — used for all upstream calls."
+                    : vleIdSource === "auto"
+                    ? "Your auto-generated EI SOLUTIONS PSA ID — locked to your account."
+                    : "Your EI SOLUTIONS VLE ID. If you already have a PSA ID from the old portal, link it from your Profile so coupons/services hit the right account."}
                 </p>
               ) : (
                 f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
