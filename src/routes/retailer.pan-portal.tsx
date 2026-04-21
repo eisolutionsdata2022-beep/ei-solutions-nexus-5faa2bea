@@ -50,6 +50,7 @@ import {
   RefreshCw,
   Hourglass,
 } from "lucide-react";
+import { ServicePageShell } from "@/components/ServicePageShell";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
 import type { PanMasterConfig, PanTransaction } from "@/lib/pan-types";
@@ -526,7 +527,7 @@ function PanPortalPage() {
         vleIdSource={vleIdSource}
         ready={ready}
       />
-    </div>
+    </ServicePageShell>
   );
 }
 
