@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Newspaper, Download, RefreshCw, ExternalLink, Sparkles,
-  Trophy, Building2, Globe2, AlertCircle,
+  Trophy, Building2, Globe2, AlertCircle, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,9 @@ import {
   type FeedItem, type LotteryDraw,
 } from "@/lib/updates.functions";
 import { generateLotteryPDF } from "@/lib/lottery-pdf";
+import {
+  InlineArticleViewer, type ArticleRequest,
+} from "@/components/updates/InlineArticleViewer";
 
 export const Route = createFileRoute("/retailer/updates")({
   ssr: false,
