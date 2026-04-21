@@ -11,6 +11,10 @@ interface RouteGuardProps {
 export function RouteGuard({ allowedRoles, children }: RouteGuardProps) {
   const { appUser, loading } = useAuth();
   const navigate = useNavigate();
+  // Stabilise allowedRoles so the effect below isn't retriggered every render
+  // (parent components pass an inline array, which is a new reference each render
+  // and used to cause an infinite navigation loop).
+  const rolesKey = allowedRoles.join("|");
 
   useEffect(() => {
     if (loading) return;
@@ -18,10 +22,14 @@ export function RouteGuard({ allowedRoles, children }: RouteGuardProps) {
       navigate({ to: "/" });
       return;
     }
-    if (!allowedRoles.includes(appUser.role)) {
+    const roles = rolesKey.split("|") as UserRole[];
+    if (!roles.includes(appUser.role)) {
       navigate({ to: `/${appUser.role}` as any });
     }
-  }, [appUser, loading, allowedRoles, navigate]);
+    // navigate intentionally omitted — TanStack's useNavigate result is stable
+    // by identity but including it caused the infinite loop in some versions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appUser, loading, rolesKey]);
 
   if (loading) {
     return (
