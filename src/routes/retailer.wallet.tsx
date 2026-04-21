@@ -470,76 +470,8 @@ function RetailerWallet() {
         </div>
       </div>
 
-      {/* Wallet Requests — premium DataTable */}
-      <DataTable
-        title="Top-up Requests"
-        subtitle="Track your add-money requests · Live status"
-        searchPlaceholder="Search by amount or method..."
-        exportFilename={`wallet-requests-${new Date().toISOString().slice(0, 10)}`}
-        pageSize={5}
-        emptyMessage="No top-up requests yet. Click 'Add Money' to get started."
-        loading={loading}
-        data={walletRequests}
-        columns={
-          [
-            {
-              key: "amount",
-              header: "Amount",
-              value: (r) => r.amount,
-              render: (r) => (
-                <span className="font-bold tabular-nums text-foreground">
-                  ₹{r.amount.toLocaleString("en-IN")}
-                </span>
-              ),
-            },
-            {
-              key: "method",
-              header: "Method",
-              value: (r) => r.paymentMethod,
-              render: (r) => (
-                <span className="text-muted-foreground">{r.paymentMethod}</span>
-              ),
-            },
-            {
-              key: "date",
-              header: "Date",
-              hideOnMobile: true,
-              value: (r) => new Date(r.createdAt).toLocaleString(),
-              render: (r) => (
-                <span className="text-xs text-muted-foreground">
-                  {new Date(r.createdAt).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              ),
-            },
-            {
-              key: "status",
-              header: "Status",
-              value: (r) => r.status,
-              render: (r) => (
-                <Badge
-                  variant={
-                    r.status === "approved"
-                      ? "default"
-                      : r.status === "rejected"
-                        ? "destructive"
-                        : "secondary"
-                  }
-                  className="capitalize gap-1 rounded-full"
-                >
-                  {r.status === "pending" && <Clock className="w-3 h-3" />}
-                  {r.status === "approved" && <CheckCircle className="w-3 h-3" />}
-                  {r.status === "rejected" && <XCircle className="w-3 h-3" />}
-                  {r.status}
-                </Badge>
-              ),
-            },
-          ] as DataTableColumn<WalletRequest>[]
-        }
-      />
+      {/* Wallet Requests — card list with status timeline */}
+      <WalletRequestsList loading={loading} requests={walletRequests} />
 
       {/* Transaction History — premium DataTable */}
       <DataTable
