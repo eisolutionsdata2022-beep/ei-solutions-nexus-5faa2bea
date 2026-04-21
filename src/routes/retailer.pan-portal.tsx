@@ -102,6 +102,22 @@ function PanPortalPage() {
     return unsub;
   }, [appUser]);
 
+  // Auto-create the PSA record on first portal visit so the user immediately
+  // has an internal `RMPMCST-<mobile>` ID for coupon buys.
+  useEffect(() => {
+    if (!appUser) return;
+    ensurePsaIdRecord({
+      uid: appUser.uid,
+      email: appUser.email ?? null,
+      name: appUser.name ?? null,
+      phone: appUser.phone ?? null,
+    }).catch((err) => console.error("[ensurePsaIdRecord]", err));
+  }, [appUser]);
+
+  // Loading flags for the PSA request / status-check buttons.
+  const [requestingPsa, setRequestingPsa] = useState(false);
+  const [checkingPsa, setCheckingPsa] = useState(false);
+
   // Transactions
   useEffect(() => {
     if (!appUser) return;
