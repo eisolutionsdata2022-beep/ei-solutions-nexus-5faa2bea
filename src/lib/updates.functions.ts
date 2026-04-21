@@ -127,7 +127,7 @@ async function firecrawlSearchItems(
   const fc = getFirecrawl();
   if (!fc) return [];
   try {
-    const res: any = await fc.search(query, {
+    const res: any = await (fc as any).search(query, {
       limit,
       lang: "en",
       country: "in",
