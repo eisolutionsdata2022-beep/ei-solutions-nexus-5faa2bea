@@ -367,43 +367,8 @@ function InstallPage() {
               </p>
             </div>
 
-            {/* Download buttons */}
-            <div className="grid sm:grid-cols-2 gap-3">
-              <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases/latest/download/EISolutions.IppbAgent.Setup.exe"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors"
-              >
-                <Download className="w-6 h-6 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-bold text-sm">PC Agent Download (.exe)</div>
-                  <div className="text-[11px] opacity-90">Windows 10/11 · ~25 MB · Latest Release</div>
-                </div>
-              </a>
-              <a
-                href="https://github.com/eisolutionsdata2022-beep/ei-solutions-nexus-49a3c1e4/releases"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border-2 border-gov-blue/40 bg-white hover:bg-gov-blue/5 p-4 transition-colors"
-              >
-                <Terminal className="w-6 h-6 shrink-0 text-gov-blue" />
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-gov-blue">All Releases / Source</div>
-                  <div className="text-[11px] text-muted-foreground">GitHub · പഴയ versions + checksum</div>
-                </div>
-              </a>
-            </div>
-
-            <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                <strong>Note:</strong> ആദ്യത്തെ release publish ചെയ്യുന്നതുവരെ download link
-                404 കാണിക്കാം. അങ്ങനെയെങ്കിൽ <strong>"All Releases"</strong> click ചെയ്ത് latest
-                tag-ലെ <code className="bg-white/60 px-1 rounded">EISolutions.IppbAgent.Setup.exe</code>{" "}
-                manually download ചെയ്യുക.
-              </span>
-            </div>
+            {/* Live release detector — replaces hardcoded 404 link */}
+            <ReleaseDownloadCard />
 
             {/* DETAILED Install steps — step by step */}
             <div className="space-y-3 rounded-lg border-2 border-gov-blue/30 bg-white p-4">
