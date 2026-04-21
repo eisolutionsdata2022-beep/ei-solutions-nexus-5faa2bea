@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { generateVleId } from "@/lib/pan-vle-id";
 import { getPsaIdRecord, type PsaIdRecord } from "@/lib/psa-auto-id";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 
 export const Route = createFileRoute("/retailer/")({
   ssr: false,
@@ -379,83 +380,84 @@ function RetailerDashboard() {
         <PremiumStatTile icon={XCircle} label="Rejected" count={statusCounts.rejected} gradient="from-rose-500 to-red-600" />
       </div>
 
-      {/* Search */}
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search applications by name or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-11 rounded-xl bg-background/70 backdrop-blur border-border/70 focus-visible:ring-primary/40"
-          />
-        </div>
-        <Button variant="outline" className="h-11 rounded-xl font-semibold border-border/70 backdrop-blur">
-          Filter
-        </Button>
-      </div>
-
-      {/* Recent Applications */}
-      <div className="glass-card rounded-2xl overflow-hidden">
-        <div className="border-b border-border/60 bg-background/40 px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-1 rounded-full bg-premium-gradient" aria-hidden />
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Recent Applications</h2>
-          </div>
-          <span className="text-xs text-muted-foreground">{filteredApps.length} record{filteredApps.length === 1 ? "" : "s"}</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/60 bg-muted/40">
-                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Application No.</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Service Name</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Applied Date</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-foreground/70 text-xs uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredApps.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No applications yet.</td></tr>
-              ) : (
-                filteredApps.map((app) => (
-                  <tr key={app.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs">{app.id.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-4 py-3 font-medium">{app.serviceName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(app.createdAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border capitalize ${
-                        app.status === "approved" ? "bg-success/10 text-success border-success/30" :
-                        app.status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/30" :
-                        "bg-warning/10 text-warning border-warning/30"
-                      }`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${
-                          app.status === "approved" ? "bg-success" :
-                          app.status === "rejected" ? "bg-destructive" : "bg-warning"
-                        }`} />
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Button variant="outline" size="sm" className="text-xs h-7 rounded-lg backdrop-blur">
-                        <Search className="w-3 h-3 mr-1" /> Track
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {filteredApps.length > 0 && (
-          <div className="text-center py-3 border-t border-border/60 bg-background/40">
-            <Link to="/retailer/services">
-              <Button variant="outline" size="sm" className="text-xs rounded-lg">View All</Button>
-            </Link>
-          </div>
-        )}
-      </div>
+      {/* Recent Applications — Premium DataTable with search, CSV export, pagination */}
+      <DataTable
+        title="Recent Applications"
+        subtitle="Search by service or application ID · Export to CSV"
+        searchPlaceholder="Search applications..."
+        exportFilename={`applications-${new Date().toISOString().slice(0, 10)}`}
+        pageSize={5}
+        emptyMessage="No applications yet."
+        data={applications}
+        columns={[
+          {
+            key: "id",
+            header: "App No.",
+            value: (a) => a.id,
+            render: (a) => (
+              <span className="font-mono text-xs">{a.id.slice(0, 8).toUpperCase()}</span>
+            ),
+          },
+          {
+            key: "service",
+            header: "Service Name",
+            value: (a) => a.serviceName,
+            render: (a) => <span className="font-medium">{a.serviceName || "—"}</span>,
+          },
+          {
+            key: "date",
+            header: "Applied Date",
+            hideOnMobile: true,
+            value: (a) => a.createdAt,
+            render: (a) => (
+              <span className="text-muted-foreground">
+                {new Date(a.createdAt).toLocaleDateString()}
+              </span>
+            ),
+          },
+          {
+            key: "status",
+            header: "Status",
+            value: (a) => a.status,
+            render: (a) => (
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border capitalize ${
+                  a.status === "approved"
+                    ? "bg-success/10 text-success border-success/30"
+                    : a.status === "rejected"
+                      ? "bg-destructive/10 text-destructive border-destructive/30"
+                      : "bg-warning/10 text-warning border-warning/30"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    a.status === "approved"
+                      ? "bg-success"
+                      : a.status === "rejected"
+                        ? "bg-destructive"
+                        : "bg-warning"
+                  }`}
+                />
+                {a.status}
+              </span>
+            ),
+          },
+          {
+            key: "action",
+            header: "Action",
+            hideOnMobile: true,
+            render: () => (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-7 rounded-lg backdrop-blur"
+              >
+                <Search className="w-3 h-3 mr-1" /> Track
+              </Button>
+            ),
+          },
+        ] as DataTableColumn<ServiceRequest>[]}
+      />
 
       {/* Bottom sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
