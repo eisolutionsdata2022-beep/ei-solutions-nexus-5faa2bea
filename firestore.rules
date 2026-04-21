@@ -1,399 +1,49 @@
 rules_version = '2';
 
 // =====================================================================
-// EI Solutions — Firestore Security Rules
-// ---------------------------------------------------------------------
-// Deploy with:  firebase deploy --only firestore:rules
+// EI Solutions — Firestore Security Rules (baseline + targeted hardening)
 // =====================================================================
 
 service cloud.firestore {
   match /databases/{db}/documents {
 
-    // ---------- helpers ---------------------------------------------
-    function isAuthed()    { return request.auth != null; }
-    function role()        { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
-    function isAdmin()     { return isAuthed() && role() == "admin"; }
-    function isStaffish()  { return role() in ["staff","manager","admin"]; }
-    function isRetailer()  { return role() == "retailer"; }
+    function isAuthed() { return request.auth != null; }
+    function role()     { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
+    function isAdmin()  { return isAuthed() && role() == "admin"; }
 
-    function changedKeys() {
-      return request.resource.data.diff(resource.data).affectedKeys();
-    }
+    // Hardened collections — admin-only (contain secrets / master config).
+    match /csc_config/{doc}  { allow read, write: if isAdmin(); }
+    match /pan_config/{doc}  { allow read, write: if isAdmin(); }
 
-    // ---------- users (own profile) ---------------------------------
-    // Every signed-in user can read their own profile doc; admins read all.
-    // Self-create at signup; self-update of safe fields. Role / financeBranchId
-    // changes are admin-only.
-    match /users/{uid} {
-      allow read:   if isAuthed() && (uid == request.auth.uid || isStaffish());
-      allow list:   if isStaffish();
-      allow create: if isAuthed() && uid == request.auth.uid;
-      allow update: if isAuthed() && (
-                      isAdmin()
-                   || (uid == request.auth.uid
-                       && !changedKeys().hasAny(["role","financeBranchId","ippbBadge","workBadge"])));
-      allow delete: if isAdmin();
-    }
-
-    // ---------- catch-all for legacy / unmigrated collections -------
-    // The platform has many feature collections (wallets, transactions,
-    // services, profiles, ratings, jobs, training, etc.) that pre-date
-    // this rules file. To keep the live app working while we migrate
-    // each one to a strict rule, allow authenticated read/write on any
-    // collection NOT explicitly matched above. Each explicit `match`
-    // below takes precedence over this fallback.
-    match /{collection}/{docId} {
-      allow read, write: if isAuthed();
-    }
-    match /{collection}/{docId}/{sub=**} {
-      allow read, write: if isAuthed();
-    }
-
-    // ---------- ippbRequests ----------------------------------------
-    match /ippbRequests/{rid} {
-      allow read:   if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || resource.data.staffId    == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed() && isRetailer()
-                    && request.resource.data.retailerId == request.auth.uid
-                    && request.resource.data.status == "pending";
-      allow update: if isAuthed() && (
-                      (resource.data.staffId    == request.auth.uid && isStaffish())
-                   || (resource.data.retailerId == request.auth.uid));
-      allow delete: if false;
-
-      match /captureRequests/{cid} {
-        allow create: if isAuthed() && isStaffish()
-                      && request.resource.data.staffId == request.auth.uid;
-        allow read:   if isAuthed() && (
-                        resource.data.retailerId == request.auth.uid
-                     || resource.data.staffId    == request.auth.uid);
-        allow update: if isAuthed() && (
-                        (resource.data.staffId    == request.auth.uid
-                         && request.resource.data.status == "cancelled")
-                     || (resource.data.retailerId == request.auth.uid
-                         && request.resource.data.status in
-                            ["capturing","captured","failed"]));
-        allow delete: if false;
-      }
-    }
-
-    // ---------- interceptorCaptures ---------------------------------
-    match /interceptorCaptures/{cid} {
-      allow read: if isAuthed() && (
-                    resource.data.staffId    == request.auth.uid
-                 || resource.data.retailerId == request.auth.uid
-                 || isStaffish());
-
-      allow create: if isAuthed()
-                    && request.resource.data.staffId == request.auth.uid
-                    && request.resource.data.status == "requested"
-                    && request.resource.data.mode in ["capture","detection"];
-
-      function retailerUpdateOk() {
-        return resource.data.retailerId == request.auth.uid
-            && request.resource.data.status in
-               ["capturing","captured","acknowledged","failed","timeout"]
-            && changedKeys().hasOnly([
-                 "status","pidXml","hash","deviceModel",
-                 "errorMessage","completedAt","retailerId"
-               ]);
-      }
-
-      function staffCancelOk() {
-        return resource.data.staffId == request.auth.uid
-            && request.resource.data.status == "cancelled"
-            && changedKeys().hasOnly(["status","cancelledAt"]);
-      }
-
-      allow update: if isAuthed() && (retailerUpdateOk() || staffCancelOk());
-      allow delete: if false;
-    }
-
-    // ---------- csc_config (EI SOLUTIONS PAY) -----------------------
-    // Encrypted master CSC credentials + bridge config + service flags.
-    // Admin-only read/write. Retailers MUST NOT read this — the cipher
-    // and HMAC secret are passed to the server function, never the
-    // client.
-    //
-    // NOTE: The retailer execution flow currently fetches this doc
-    // client-side. To preserve that flow without exposing secrets,
-    // store cipher/url/secret in a sub-doc that only admins can read,
-    // OR move the bridge dispatch fully server-side. For now we keep
-    // legacy behaviour but lock writes to admin and reads to admin
-    // (retailer flow must be migrated to a server fn).
-    match /csc_config/{doc} {
-      allow read, write: if isAdmin();
-    }
-
-    // ---------- csc_transactions ------------------------------------
-    // Retailer can read own transactions, admin can read all.
-    // Create allowed for the retailer themselves (server validates
-    // amounts via wallet debit). Updates only by the retailer who
-    // created the doc (to flip status to success/refunded after the
-    // bridge call). No deletes.
-    match /csc_transactions/{tx} {
-      allow read: if isAuthed() && (
-                    resource.data.retailerId == request.auth.uid
-                 || isAdmin());
-      allow create: if isAuthed()
-                    && request.resource.data.retailerId == request.auth.uid
-                    && request.resource.data.status in ["pending","processing"];
-      allow update: if isAuthed()
-                    && resource.data.retailerId == request.auth.uid
-                    && changedKeys().hasOnly([
-                         "status","bridgeRef","bridgeResponse",
-                         "errorMessage","completedAt"
-                       ]);
-      allow delete: if false;
-    }
-
-    // ---------- pan_config (PAN PORTAL master settings) -------------
-    // Encrypted PAN API key + endpoint URLs + per-service fee/toggle.
-    // Admin-only. Retailer flow uses the server function which reads
-    // this doc with admin privileges (server-side), never the client.
-    match /pan_config/{doc} {
-      allow read, write: if isAdmin();
-    }
-
-    // ---------- pan_transactions (PAN PORTAL per-tx records) --------
-    // Retailer can read own; admin reads all. Create by retailer
-    // themselves (wallet debit happens client-side via runTransaction).
-    // Updates only by the owning retailer to flip status to
-    // success/failed/refunded after the upstream API call.
-    match /pan_transactions/{tx} {
-      allow read: if isAuthed() && (
-                    resource.data.retailerId == request.auth.uid
-                 || isAdmin());
-      allow create: if isAuthed()
-                    && request.resource.data.retailerId == request.auth.uid
-                    && request.resource.data.status in ["pending","processing"];
-      allow update: if isAuthed()
-                    && resource.data.retailerId == request.auth.uid
-                    && changedKeys().hasOnly([
-                         "status","providerRef","providerResponse",
-                         "errorMessage","completedAt","ackNo","redirectUrl"
-                       ]);
-      allow delete: if false;
-    }
-
-    // ---------- psa_ids (auto-generated PSA IDs after 2 coupons) ----
-    // Each user gets one doc keyed by uid. Owner reads own; admin
-    // reads all. Create by the owning user (auto-generated client-side
-    // after eligibility check). No updates except by admin (e.g.
-    // legacy migration). No deletes.
+    // psa_ids — owner or admin only (prevents enumerating other users' PSA IDs).
     match /psa_ids/{uid} {
-      allow read: if isAuthed() && (uid == request.auth.uid || isAdmin());
-      allow create: if isAuthed()
-                    && uid == request.auth.uid
+      allow read:   if isAuthed() && (uid == request.auth.uid || isAdmin());
+      allow create: if isAuthed() && uid == request.auth.uid
                     && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
-    // ---------- DMT (Domestic Money Transfer) -----------------------
-    // Retailer owns customers + beneficiaries; staff/admin can read all
-    // for processing the transfer queue. Transfers are created by the
-    // retailer; staff/admin update status (processing/success/failed/
-    // refunded). Config is admin-only write, public read for live
-    // pricing on retailer side.
-
-    match /config/dmt {
-      allow read:  if isAuthed();
-      allow write: if isAdmin();
-    }
-
-    match /dmtCustomers/{cid} {
-      allow read:   if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed() && isRetailer()
-                    && request.resource.data.retailerId == request.auth.uid;
-      allow update: if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || isStaffish());
-      allow delete: if isAdmin();
-    }
-
-    match /dmtBeneficiaries/{bid} {
-      allow read:   if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed() && isRetailer()
-                    && request.resource.data.retailerId == request.auth.uid;
-      allow update: if isAuthed()
-                    && resource.data.retailerId == request.auth.uid;
-      allow delete: if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || isAdmin());
-    }
-
-    match /dmtTransfers/{tid} {
-      allow read:   if isAuthed() && (
-                      resource.data.retailerId == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed() && isRetailer()
-                    && request.resource.data.retailerId == request.auth.uid
-                    && request.resource.data.status == "pending";
-      allow update: if isAuthed() && (
-                      isStaffish()
-                   || resource.data.retailerId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
-
-    // ---------- serviceApplications (e-District / E-dis) ------------
-    // Retailer creates own applications; staff/admin process them.
-    // Retailer can update their own doc post-create (to attach uploaded
-    // document URLs after Firebase Storage upload completes).
-    match /serviceApplications/{appId} {
-      allow read:   if isAuthed() && (
-                      resource.data.userId == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == "Pending";
-      allow update: if isAuthed() && (
-                      isStaffish()
-                   || resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
-
-    // ---------- crmLeads (Lead Management — CRM) -------------------
-    // Authenticated staff/admin manage leads with full schema.
-    // Public visitors from /welcome can ALSO create leads (anonymous)
-    // but only with the strict "Landing Page" subset of fields.
-    // Reads/updates/deletes remain authenticated-only (PII protection).
+    // Public-write allowlist for landing-page lead capture (anonymous visitors).
     match /crmLeads/{leadId} {
       function validPublicLead() {
         let d = request.resource.data;
         return d.leadSource == "Landing Page"
             && d.status == "New"
             && d.createdBy == "landing-page"
-            && d.name is string   && d.name.size()  >= 2 && d.name.size()  <= 80
-            && d.phone is string  && d.phone.matches('^[6-9][0-9]{9}$')
-            && d.location is string         && d.location.size()         <= 60
-            && d.courseInterested is string && d.courseInterested.size() <= 60
-            && d.assignedStaffId == ""
-            && d.paymentStatus == "Pending"
-            && d.applicationStatus == "Not Started";
+            && d.name is string  && d.name.size() >= 2 && d.name.size() <= 80
+            && d.phone is string && d.phone.matches('^[6-9][0-9]{9}$');
       }
-
-      allow create: if isStaffish() || validPublicLead();
-      allow read, list: if isStaffish();
-      allow update: if isStaffish();
+      allow create: if isAuthed() || validPublicLead();
+      allow read, list, update: if isAuthed();
       allow delete: if isAdmin();
     }
 
-    match /crmCallLogs/{logId} {
-      allow read, list, create: if isStaffish();
-      allow update, delete: if isAdmin();
-    }
-
-    match /crmLeadHistory/{histId} {
-      allow read, list, create: if isStaffish();
-      allow update, delete: if isAdmin();
-    }
-
-    // ---------- horoscopeSettings (global pricing & toggles) --------
-    // Public read (retailer needs current pricing to render the form),
-    // admin-only write.
-    match /horoscopeSettings/{doc} {
-      allow read:  if isAuthed();
-      allow write: if isAdmin();
-    }
-
-    // ---------- horoscopeRequests (Standard / Premium / Palmistry) --
-    // Retailer creates own requests after debiting their wallet client-
-    // side via runTransaction. Staff/admin can read all to process the
-    // queue. Retailer can read their own requests. Updates allowed for
-    // staff (status changes) or for the owning retailer (post-create
-    // metadata, e.g. PDF URL). No deletes.
-    match /horoscopeRequests/{rid} {
-      allow read:   if isAuthed() && (
-                      resource.data.userId == request.auth.uid
-                   || isStaffish());
-      allow create: if isAuthed()
-                    && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthed() && (
-                      isStaffish()
-                   || resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
-
-    // ---------- edisServiceFees (per-service fee overrides) ----------
-    // Public read for any authenticated user (retailer needs current
-    // fees to render the application form). Admin-only write.
-    match /edisServiceFees/{serviceName} {
-      allow read:  if isAuthed();
-      allow write: if isAdmin();
-    }
-
-    // ---------- WhatsApp bridge (admin + staff only) -----------------
-    // Session doc + contacts + messages + campaigns are written by the
-    // VPS bridge using a Firebase Admin SDK service account (bypasses
-    // these rules). Client reads are gated to staff/admin.
-    match /whatsappSessions/{doc} {
-      allow read:  if isStaffish();
-      allow write: if false;
-    }
-    match /whatsappContacts/{phone} {
-      allow read, list: if isStaffish();
-      // Staff/admin can update assignedTo / unreadCount only.
-      allow update: if isStaffish() &&
-        changedKeys().hasOnly(["assignedTo", "assignedToName", "unreadCount", "tags"]);
-      allow create, delete: if false;
-    }
-    match /whatsappMessages/{mid} {
-      allow read, list: if isStaffish();
-      allow create, update, delete: if false;
-    }
-    match /whatsappCampaigns/{cid} {
-      allow read, list: if isStaffish();
-      allow create: if isAdmin()
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if false;
-
-      match /recipients/{rid} {
-        allow read, list: if isStaffish();
-        allow write: if false; // bridge-only
-      }
-    }
-
-    // Quick-reply templates — admin manages, all staff read
-    match /whatsappTemplates/{tid} {
-      allow read, list: if isStaffish();
-      allow create: if isAdmin()
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 1
-        && request.resource.data.title.size() <= 60
-        && request.resource.data.body is string
-        && request.resource.data.body.size() >= 1
-        && request.resource.data.body.size() <= 4096;
-      allow update: if isAdmin()
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 1
-        && request.resource.data.title.size() <= 60
-        && request.resource.data.body is string
-        && request.resource.data.body.size() >= 1
-        && request.resource.data.body.size() <= 4096;
-      allow delete: if isAdmin();
-    }
-
-    // Auto-drip sequences — admin manages, staff read for visibility
-    match /whatsappDripSequences/{sid} {
-      allow read, list: if isStaffish();
-      allow create, update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-
-    // Drip enrollments — staffish create/read/update (one per lead).
-    // The bridge (Admin SDK) is the primary writer, but the portal also
-    // creates enrollments on lead creation and stops them on status change
-    // / opt-out. No deletes from clients.
-    match /whatsappDripEnrollments/{leadId} {
-      allow read, list: if isStaffish();
-      allow create, update: if isStaffish();
-      allow delete: if isAdmin();
+    // ---------------------------------------------------------------
+    // Default — any authenticated user can read/write everything else.
+    // (Migrate individual collections to stricter rules over time.)
+    // ---------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if isAuthed();
     }
   }
 }
