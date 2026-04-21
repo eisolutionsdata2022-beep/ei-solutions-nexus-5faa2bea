@@ -52,8 +52,8 @@ import type { PanMasterConfig, PanTransaction } from "@/lib/pan-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
-import { generateVleId } from "@/lib/pan-vle-id";
-import { maybeGeneratePsaId, type PsaIdRecord } from "@/lib/psa-auto-id";
+import { generateVleId, PSA_PENDING_PLACEHOLDER } from "@/lib/pan-vle-id";
+import { getPsaIdRecord, savePsaIdFromProvider, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -126,16 +126,18 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // Prefer the stored PSA ID (legacy or auto) over the deterministic fallback.
+  // Show the PROVIDER-issued PSA ID when present; otherwise show a "Pending"
+  // placeholder. We never invent an ID — coupon-buy needs the real one.
+  const hasRealPsaId = !!psaRecord?.psaId;
   const vleId = useMemo(() => {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "auto" | "generated" = psaRecord?.source === "legacy"
+  const vleIdSource: "legacy" | "provider" | "pending" = psaRecord?.source === "legacy"
     ? "legacy"
-    : psaRecord?.source === "auto"
-    ? "auto"
-    : "generated";
+    : psaRecord?.source === "provider"
+    ? "provider"
+    : "pending";
 
   return (
     <div className="space-y-6">
@@ -172,9 +174,14 @@ function PanPortalPage() {
                     Legacy linked
                   </span>
                 )}
-                {vleIdSource === "auto" && (
+                {vleIdSource === "provider" && (
+                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
+                    Provider issued
+                  </span>
+                )}
+                {vleIdSource === "pending" && (
                   <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
-                    Auto
+                    Pending — Create PSA first
                   </span>
                 )}
               </div>
@@ -207,27 +214,27 @@ function PanPortalPage() {
         </Card>
       )}
 
-      {vleIdSource === "generated" && (
-        <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+      {vleIdSource === "pending" && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
           <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
             <div className="flex items-start gap-3">
-              <IdCard className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <div className="text-sm">
-                <p className="font-semibold text-sky-900 dark:text-sky-200">
-                  Already have a PSA ID from the old portal?
+                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                  You don't have a PSA / VLE ID yet
                 </p>
-                <p className="mt-1 text-sky-800 dark:text-sky-300/90">
-                  Link your existing PSA / VLE ID so Coupon Buy, PSA Reset and NSDL calls use the
-                  correct account. Otherwise upstream may reject the auto-generated ID.
+                <p className="mt-1 text-amber-800 dark:text-amber-300/90">
+                  To buy coupons and process PAN cards, you first need a real
+                  VLE ID issued by the provider. Use{" "}
+                  <strong>"PSA ID Create"</strong> below — once submitted, the
+                  provider will issue your official UTI PSA ID and we'll save
+                  it automatically. Already have one from the old portal?{" "}
+                  <Link to="/retailer/profile" className="underline font-semibold">
+                    Link it in Profile →
+                  </Link>
                 </p>
               </div>
             </div>
-            <Link
-              to="/retailer/profile"
-              className="self-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-sky-700"
-            >
-              Link in Profile →
-            </Link>
           </CardContent>
         </Card>
       )}
@@ -385,7 +392,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "auto" | "generated";
+  vleIdSource: "legacy" | "provider" | "pending";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -396,14 +403,18 @@ function PanExecutionDialog({
       const init: Record<string, string> = {};
       for (const f of service.fields) {
         if (f.defaultValue) init[f.key] = f.defaultValue;
-        // Auto-fill the user's stable VLE ID into any field keyed `vle_id`.
-        if (f.key === "vle_id") init[f.key] = vleId;
+        // Auto-fill the user's saved VLE ID into any field keyed `vle_id`,
+        // EXCEPT for "psa-create" — that form is where the user requests a
+        // brand-new ID, so the field must be empty/editable.
+        if (f.key === "vle_id" && service.key !== "psa-create" && vleIdSource !== "pending") {
+          init[f.key] = vleId;
+        }
       }
       setValues(init);
     } else {
       setValues({});
     }
-  }, [service?.key, vleId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [service?.key, vleId, vleIdSource]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!service) return null;
 
@@ -414,6 +425,15 @@ function PanExecutionDialog({
   const submit = async () => {
     if (!ready || !config) {
       toast.error("PAN portal not configured. Contact admin.");
+      return;
+    }
+    // Gate: services that send a vle_id upstream require a REAL provider-
+    // issued (or legacy-claimed) PSA ID. Without it the upstream returns
+    // "Vle Data Not Exist". The user must run "PSA ID Create" first.
+    const needsRealVleId = service.key !== "psa-create"
+      && service.fields.some((f) => f.key === "vle_id");
+    if (needsRealVleId && (vleIdSource === "pending" || !vleId || vleId.startsWith(PSA_PENDING_PLACEHOLDER))) {
+      toast.error("You don't have a PSA ID yet. Submit \"PSA ID Create\" first or link your legacy PSA ID in Profile.");
       return;
     }
     for (const f of service.fields) {
@@ -504,23 +524,35 @@ function PanExecutionDialog({
           toast.success(`${service.name} successful · ${result.message}`);
         }
 
-        // Auto-PSA-ID trigger: only after a SUCCESSFUL coupon-buy.
-        if (service.key === "coupon-buy" && !result.redirectUrl) {
+        // After a successful PSA ID Create, the provider returns the real
+        // VLE ID. Persist it so future Coupon Buy / NSDL calls send the
+        // correct, recognised account.
+        if (service.key === "psa-create") {
           try {
-            const psa = await maybeGeneratePsaId({
-              uid: retailerId,
-              email: retailerEmail,
-              name: retailerName,
-              phone: retailerPhone,
-            });
-            if (psa.generated && psa.record) {
+            // The provider returns the issued VLE ID either directly in the
+            // payload or echoes back the one we sent (which the user typed).
+            // Prefer providerRef (parsed by server fn from json.vle_id) but
+            // fall back to the form value.
+            const issuedId = (result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef))
+              ? result.providerRef
+              : (values.vle_id || "");
+            if (issuedId) {
+              const saved = await savePsaIdFromProvider({
+                uid: retailerId,
+                providerVleId: issuedId,
+                providerRef: result.providerRef,
+                email: retailerEmail,
+                name: retailerName,
+                phone: retailerPhone,
+              });
               toast.success(
-                `🎉 Congratulations! Your PSA ID ${psa.record.psaId} has been generated successfully.`,
+                `🎉 Your PSA ID ${saved.psaId} is now active. You can buy coupons and process PAN cards.`,
                 { duration: 8000 },
               );
             }
           } catch (psaErr) {
-            console.error("[PSA auto-gen]", psaErr);
+            console.error("[PSA save]", psaErr);
+            toast.error("PSA created upstream but we couldn't save it locally. Contact admin.");
           }
         }
 
@@ -600,12 +632,20 @@ function PanExecutionDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : f.key === "vle_id" && service.key !== "psa-create" ? (
+                <Input
+                  type="text"
+                  value={values.vle_id ?? vleId}
+                  readOnly
+                  className="bg-muted/40 font-mono tracking-wider"
+                />
               ) : f.key === "vle_id" ? (
                 <Input
                   type="text"
-                  value={vleId}
-                  readOnly
-                  className="bg-muted/40 font-mono tracking-wider"
+                  placeholder="e.g. PSA309978 or RMPMCST-9876543210"
+                  value={values.vle_id ?? ""}
+                  onChange={(e) => setValues((s) => ({ ...s, vle_id: e.target.value }))}
+                  className="font-mono tracking-wider"
                 />
               ) : (
                 <Input
@@ -617,11 +657,13 @@ function PanExecutionDialog({
               )}
               {f.key === "vle_id" ? (
                 <p className="text-xs text-muted-foreground">
-                  {vleIdSource === "legacy"
+                  {service.key === "psa-create"
+                    ? "Choose a VLE ID for the provider to register (or leave a placeholder — the provider will issue your real ID upon successful submission)."
+                    : vleIdSource === "legacy"
                     ? "Your existing PSA / VLE ID linked from the old portal — used for all upstream calls."
-                    : vleIdSource === "auto"
-                    ? "Your auto-generated EI SOLUTIONS PSA ID — locked to your account."
-                    : "Your EI SOLUTIONS VLE ID. If you already have a PSA ID from the old portal, link it from your Profile so coupons/services hit the right account."}
+                    : vleIdSource === "provider"
+                    ? "Your official provider-issued PSA / VLE ID — used for all upstream calls."
+                    : "PENDING — submit \"PSA ID Create\" first to get your real provider-issued ID, or link a legacy ID from Profile."}
                 </p>
               ) : (
                 f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
