@@ -374,7 +374,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "provider" | "pending";
+  vleIdSource: "legacy" | "provider" | "auto";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -388,7 +388,7 @@ function PanExecutionDialog({
         // Auto-fill the user's saved VLE ID into any field keyed `vle_id`,
         // EXCEPT for "psa-create" — that form is where the user requests a
         // brand-new ID, so the field must be empty/editable.
-        if (f.key === "vle_id" && service.key !== "psa-create" && vleIdSource !== "pending") {
+        if (f.key === "vle_id" && service.key !== "psa-create") {
           init[f.key] = vleId;
         }
       }
@@ -409,15 +409,10 @@ function PanExecutionDialog({
       toast.error("PAN portal not configured. Contact admin.");
       return;
     }
-    // Gate: services that send a vle_id upstream require a REAL provider-
-    // issued (or legacy-claimed) PSA ID. Without it the upstream returns
-    // "Vle Data Not Exist". The user must run "PSA ID Create" first.
-    const needsRealVleId = service.key !== "psa-create"
-      && service.fields.some((f) => f.key === "vle_id");
-    if (needsRealVleId && (vleIdSource === "pending" || !vleId || vleId.startsWith(PSA_PENDING_PLACEHOLDER))) {
-      toast.error("You don't have a PSA ID yet. Submit \"PSA ID Create\" first or link your legacy PSA ID in Profile.");
-      return;
-    }
+    // VLE ID is auto-generated for every user (RMPMCST-<mobile>), so coupon
+    // buy is allowed immediately. The "fully onboarded" status is just a
+    // milestone marker shown in the UI.
+    void vleIdSource;
     for (const f of service.fields) {
       if (f.required && !values[f.key]) {
         toast.error(`${f.label} is required`);
