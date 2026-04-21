@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { GraduationCap, ExternalLink, IndianRupee, MessageCircle, Send, Video } from "lucide-react";
 import { toast } from "sonner";
 import { VideoRoom } from "@/components/VideoRoom";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/trainings")({
   ssr: false,
@@ -157,11 +158,17 @@ function RetailerTrainings() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Training Sessions</h1>
-        <p className="text-muted-foreground">Join available training sessions.</p>
-      </div>
+    <ServicePageShell
+      icon={GraduationCap}
+      title="Training Sessions"
+      subtitle="Join live training sessions with our trainers."
+      eyebrow="Live Trainings"
+      gradient="from-purple-600 via-violet-600 to-indigo-700"
+      stats={[
+        { icon: Video, label: "Available", value: trainings.length, accent: "from-purple-400 to-violet-400" },
+        { icon: GraduationCap, label: "Joined", value: joinedIds.size, accent: "from-emerald-400 to-teal-400" },
+      ]}
+    >
 
       {/* Chat dialog */}
       <Dialog open={!!chatTrainingId} onOpenChange={(v) => { if (!v) setChatTrainingId(null); }}>
@@ -241,6 +248,6 @@ function RetailerTrainings() {
         })}
         {trainings.length === 0 && <p className="text-muted-foreground">No training sessions available.</p>}
       </div>
-    </div>
+    </ServicePageShell>
   );
 }

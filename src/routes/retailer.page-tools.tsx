@@ -18,6 +18,7 @@ import {
   ALL_POSTER_TEMPLATES, defaultDataForCategory, getCanvasSize,
   type PosterTemplate, type PosterData, type PosterFormat,
 } from "@/lib/poster-template-engine";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
@@ -26,31 +27,39 @@ export const Route = createFileRoute("/retailer/page-tools")({
 
 function PageToolsPage() {
   return (
-    <Tabs defaultValue="poster" className="h-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="poster">
-          <ImageIcon className="w-4 h-4 mr-1.5" /> Poster Editor
-        </TabsTrigger>
-        <TabsTrigger value="jpg2pdf">
-          <FileImage className="w-4 h-4 mr-1.5" /> JPG to PDF
-        </TabsTrigger>
-        <TabsTrigger value="billing">
-          <IndianRupee className="w-4 h-4 mr-1.5" /> Service Billing
-        </TabsTrigger>
-      </TabsList>
+    <ServicePageShell
+      icon={Palette}
+      title="Page Tools"
+      subtitle="Poster Editor · JPG to PDF · Service Billing — all in one workspace."
+      eyebrow="Creative Studio"
+      gradient="from-slate-700 via-zinc-700 to-slate-800"
+    >
+      <Tabs defaultValue="poster" className="h-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="poster">
+            <ImageIcon className="w-4 h-4 mr-1.5" /> Poster Editor
+          </TabsTrigger>
+          <TabsTrigger value="jpg2pdf">
+            <FileImage className="w-4 h-4 mr-1.5" /> JPG to PDF
+          </TabsTrigger>
+          <TabsTrigger value="billing">
+            <IndianRupee className="w-4 h-4 mr-1.5" /> Service Billing
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="poster">
-        <PosterEditor />
-      </TabsContent>
+        <TabsContent value="poster">
+          <PosterEditor />
+        </TabsContent>
 
-      <TabsContent value="jpg2pdf">
-        <JpgToPdfConverter />
-      </TabsContent>
+        <TabsContent value="jpg2pdf">
+          <JpgToPdfConverter />
+        </TabsContent>
 
-      <TabsContent value="billing">
+        <TabsContent value="billing">
         <ServiceBilling />
       </TabsContent>
     </Tabs>
+    </ServicePageShell>
   );
 }
 

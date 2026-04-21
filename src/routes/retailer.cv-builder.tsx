@@ -30,6 +30,7 @@ import {
   Cpu, FileText, Eye, ArrowLeft, Save, Sparkles, Settings2, Maximize2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/cv-builder")({
   ssr: false,
@@ -214,22 +215,22 @@ function CVBuilder() {
   // ─── Gallery phase ───
   if (phase === "gallery") {
     return (
-      <div className="space-y-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
-              CV Builder Studio
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Choose from {ALL_TEMPLATES.length}+ professional templates · 16 categories · Live preview
-            </p>
-          </div>
-          <Badge variant="outline" className="text-sm gap-1">
+      <ServicePageShell
+        icon={FileText}
+        title="CV Builder Studio"
+        subtitle={`Choose from ${ALL_TEMPLATES.length}+ professional templates · 16 categories · Live preview`}
+        eyebrow="Europass CV"
+        gradient="from-indigo-600 via-blue-600 to-cyan-600"
+        headerAction={
+          <Badge className="bg-white text-blue-700 hover:bg-white/90 px-3 py-1.5 text-xs font-bold shadow-lg gap-1">
             <IndianRupee className="w-3.5 h-3.5" /> ₹{cvFee} per download
           </Badge>
-        </div>
-
+        }
+        stats={[
+          { icon: Sparkles, label: "Templates", value: ALL_TEMPLATES.length, accent: "from-indigo-400 to-blue-400" },
+          { icon: FileText, label: "Selected", value: selectedTemplate.name, accent: "from-cyan-400 to-teal-400" },
+        ]}
+      >
         <Card>
           <CardContent className="pt-5">
             <TemplateGallery
@@ -239,7 +240,7 @@ function CVBuilder() {
             />
           </CardContent>
         </Card>
-      </div>
+      </ServicePageShell>
     );
   }
 

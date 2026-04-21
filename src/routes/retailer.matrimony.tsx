@@ -19,6 +19,7 @@ import { RELIGIONS, MARITAL_STATUSES, HEIGHTS, NAKSHATRAS } from "@/lib/matrimon
 import type { MatrimonyProfile, MatrimonyRequest } from "@/lib/matrimony-types";
 import { Plus, Upload, Users, Heart, MessageSquare, Phone, Mail, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/matrimony")({
   ssr: false,
@@ -149,16 +150,24 @@ function RetailerMatrimonyDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-pink-600">💕 Kukku Life Matrimony</h1>
-          <p className="text-sm text-muted-foreground">Franchise Dashboard</p>
-        </div>
-        <Button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(EMPTY_FORM); }} className="bg-pink-500 hover:bg-pink-600">
+    <ServicePageShell
+      icon={Heart}
+      title="Kukku Life Matrimony"
+      subtitle="Franchise dashboard — manage profiles & assigned matrimony requests."
+      eyebrow="Matrimony Franchise"
+      gradient="from-pink-600 via-rose-600 to-red-600"
+      headerAction={
+        <Button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(EMPTY_FORM); }} size="sm" className="bg-white text-pink-700 hover:bg-white/90 font-semibold shadow-lg">
           <Plus className="w-4 h-4 mr-1" /> Add Profile
         </Button>
-      </div>
+      }
+      stats={[
+        { icon: Users, label: "My Profiles", value: profiles.length, accent: "from-pink-400 to-rose-400" },
+        { icon: MessageSquare, label: "Assigned", value: assignedRequests.length, accent: "from-blue-400 to-indigo-400" },
+        { icon: AlertCircle, label: "New / Pending", value: newRequests.length, accent: "from-amber-400 to-orange-400" },
+        { icon: Heart, label: "Converted", value: assignedRequests.filter(r => r.status === "Converted").length, accent: "from-emerald-400 to-teal-400" },
+      ]}
+    >
 
       {/* Alert for new requests */}
       {newRequests.length > 0 && (
@@ -317,6 +326,6 @@ function RetailerMatrimonyDashboard() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </ServicePageShell>
   );
 }
