@@ -98,10 +98,24 @@ function UpdatesPage() {
     }
   };
 
+  const loadPari = async () => {
+    setPariLoading(true);
+    try {
+      const r = await fetchParivahanNotifications();
+      setPari(r.items);
+      setPariErr(r.error);
+    } catch (e: any) {
+      setPariErr(e?.message || "Failed to fetch Parivahan");
+    } finally {
+      setPariLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadLottery();
     loadPSC();
     loadGovt();
+    loadPari();
   }, []);
 
   const handleDownloadPDF = () => {
