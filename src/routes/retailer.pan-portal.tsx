@@ -126,19 +126,7 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // Show the PROVIDER-issued PSA ID when present; otherwise show a "Pending"
-  // placeholder. We never invent an ID — coupon-buy needs the real one.
-  const hasRealPsaId = !!psaRecord?.psaId;
-  const vleId = useMemo(() => {
-    if (psaRecord?.psaId) return psaRecord.psaId;
-    return generateVleId(appUser?.uid, appUser?.phone);
-  }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "provider" | "pending" = psaRecord?.source === "legacy"
-    ? "legacy"
-    : psaRecord?.source === "provider"
-    ? "provider"
-    : "pending";
-
+  // (vleId / source / coupon count computed below in the new auto block)
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
