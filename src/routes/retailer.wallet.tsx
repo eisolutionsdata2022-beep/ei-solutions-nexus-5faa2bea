@@ -213,6 +213,36 @@ function RetailerWallet() {
         snap.forEach((d) =>
           list.push({ id: d.id, ...d.data() } as WalletRequest),
         );
+
+        // Detect status transitions and fire toast + chime.
+        // Skip the very first snapshot so we don't replay history on mount.
+        const prev = prevRequestStatusRef.current;
+        if (prev) {
+          list.forEach((req) => {
+            const before = prev.get(req.id);
+            if (!before) return; // brand new pending request — silent
+            if (before === req.status) return;
+            if (before === "pending" && req.status === "approved") {
+              toast.success(`✅ Wallet top-up approved — ₹${req.amount.toLocaleString("en-IN")}`, {
+                description: req.remarks
+                  ? `Admin note: ${req.remarks}`
+                  : "Funds have been credited to your wallet.",
+                duration: 8000,
+              });
+              playChime("success");
+            } else if (before === "pending" && req.status === "rejected") {
+              toast.error(`❌ Wallet top-up rejected — ₹${req.amount.toLocaleString("en-IN")}`, {
+                description: req.remarks
+                  ? `Reason: ${req.remarks}`
+                  : "Please contact support or try again.",
+                duration: 10000,
+              });
+              playChime("error");
+            }
+          });
+        }
+        prevRequestStatusRef.current = new Map(list.map((r) => [r.id, r.status]));
+
         setWalletRequests(list);
       },
     );
