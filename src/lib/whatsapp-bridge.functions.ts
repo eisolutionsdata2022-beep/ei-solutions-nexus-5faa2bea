@@ -19,8 +19,42 @@ function hmacSecret(): string {
   return s;
 }
 
+function bridgeCandidates(rawUrl: string): string[] {
+  const clean = rawUrl.replace(/\/$/, "");
+  const candidates = new Set<string>([clean]);
+
+  if (!/\/wa$/i.test(clean)) candidates.add(`${clean}/wa`);
+  if (/\/wa$/i.test(clean)) candidates.add(clean.replace(/\/wa$/i, ""));
+
+  return [...candidates];
+}
+
+async function probeBridgeBaseUrl() {
+  const rawUrl = bridgeBaseUrl();
+  const attempts: Array<{ baseUrl: string; status?: number; body?: string; error?: string }> = [];
+
+  for (const baseUrl of bridgeCandidates(rawUrl)) {
+    try {
+      const res = await fetch(`${baseUrl}/health`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+      });
+      const body = await res.text().catch(() => "");
+      attempts.push({ baseUrl, status: res.status, body: body.slice(0, 200) });
+
+      if (res.ok) return { ok: true as const, baseUrl, attempts };
+    } catch (e: any) {
+      attempts.push({ baseUrl, error: e?.message || String(e) });
+    }
+  }
+
+  return { ok: false as const, attempts };
+}
+
 async function callBridge(path: string, method: "GET" | "POST", body?: any) {
-  const url = `${bridgeBaseUrl()}${path}`;
+  const resolved = await probeBridgeBaseUrl();
+  const baseUrl = resolved.ok ? resolved.baseUrl : bridgeBaseUrl();
+  const url = `${baseUrl}${path}`;
   const ts = Math.floor(Date.now() / 1000);
   const raw = body ? JSON.stringify(body) : "";
   const sig = crypto.createHmac("sha256", hmacSecret()).update(`${ts}.${raw}`).digest("hex");
@@ -75,59 +109,83 @@ export const diagnoseWhatsAppBridge = createServerFn({ method: "GET" })
         hint: "Add WA_BRIDGE_HMAC_SECRET in Lovable Secrets — it must match HMAC_SECRET in the VPS .env.",
       };
     }
-    const cleanUrl = baseUrl.replace(/\/$/, "");
-    const healthUrl = `${cleanUrl}/health`;
     const started = Date.now();
-    try {
-      const res = await fetch(healthUrl, { method: "GET", signal: AbortSignal.timeout(8000) });
-      const elapsed = Date.now() - started;
-      const text = await res.text().catch(() => "");
-      if ([520, 521, 522, 523, 524, 525, 526, 530].includes(res.status)) {
-        return {
-          ok: false,
-          stage: "cloudflare",
-          status: res.status,
-          baseUrl: cleanUrl,
-          elapsedMs: elapsed,
-          error: `Cloudflare ${res.status} — origin VPS not responding`,
-          hint:
-            "The bridge process on your VPS is DOWN or unreachable from Cloudflare. SSH in and run:\n" +
-            "  sudo systemctl status whatsapp-bridge\n" +
-            "If inactive/failed:  sudo systemctl restart whatsapp-bridge\n" +
-            "Then check the crash reason:  sudo journalctl -u whatsapp-bridge -n 100 --no-pager\n" +
-            "Also confirm: (1) port 8788 is open in firewall, (2) Cloudflare DNS A-record points to the correct VPS IP, (3) the origin SSL cert is valid if using strict mode.",
-        };
-      }
-      if (!res.ok) {
-        return {
-          ok: false,
-          stage: "http",
-          status: res.status,
-          baseUrl: cleanUrl,
-          elapsedMs: elapsed,
-          error: `HTTP ${res.status} from /health`,
-          body: text.slice(0, 300),
-          hint: "Bridge reachable but /health returned an error — check journalctl on the VPS.",
-        };
-      }
+    const resolved = await probeBridgeBaseUrl();
+    const elapsed = Date.now() - started;
+
+    if (resolved.ok) {
+      const chosen = resolved.attempts.find((a) => a.baseUrl === resolved.baseUrl);
+      const rawBase = baseUrl.replace(/\/$/, "");
+      const normalized = resolved.baseUrl !== rawBase;
       return {
         ok: true,
-        stage: "ok",
-        status: res.status,
-        baseUrl: cleanUrl,
+        stage: normalized ? "normalized" : "ok",
+        status: chosen?.status ?? 200,
+        baseUrl: resolved.baseUrl,
         elapsedMs: elapsed,
-        body: text.slice(0, 300),
+        body: chosen?.body || "",
+        hint: normalized
+          ? `Bridge responded at ${resolved.baseUrl}. Your configured URL likely needs the /wa proxy path.`
+          : undefined,
       };
-    } catch (e: any) {
-      const elapsed = Date.now() - started;
-      const msg = e?.message || String(e);
-      let hint = "Cannot reach the bridge URL at all. ";
-      if (/timeout|aborted/i.test(msg)) hint += "Request timed out — VPS firewall is blocking, or process is hung.";
-      else if (/ENOTFOUND|getaddrinfo/i.test(msg)) hint += "DNS lookup failed — WA_BRIDGE_BASE_URL domain does not resolve.";
-      else if (/ECONNREFUSED/i.test(msg)) hint += "Connection refused — bridge is not listening on that port.";
-      else hint += "Verify the URL is correct and VPS is online.";
-      return { ok: false, stage: "network", baseUrl: cleanUrl, elapsedMs: elapsed, error: msg, hint };
     }
+
+    const firstHttp = resolved.attempts.find((a) => typeof a.status === "number");
+    const firstError = resolved.attempts.find((a) => a.error);
+    const attempted = resolved.attempts.map((a) => `${a.baseUrl}${typeof a.status === "number" ? ` → HTTP ${a.status}` : a.error ? ` → ${a.error}` : ""}`).join("\n");
+
+    if (firstHttp && [520, 521, 522, 523, 524, 525, 526, 530].includes(firstHttp.status!)) {
+      return {
+        ok: false,
+        stage: "cloudflare",
+        status: firstHttp.status,
+        baseUrl: firstHttp.baseUrl,
+        elapsedMs: elapsed,
+        error: `Cloudflare ${firstHttp.status} — origin VPS not responding`,
+        hint:
+          "The bridge process on your VPS is DOWN or unreachable from the proxy. SSH in and run:\n" +
+          "  sudo systemctl status whatsapp-bridge\n" +
+          "  sudo journalctl -u whatsapp-bridge -n 100 --no-pager\n" +
+          "Also confirm the DNS record points to the correct VPS IP and nginx forwards /wa/ to 127.0.0.1:8788.\n\n" +
+          `Tried:\n${attempted}`,
+      };
+    }
+
+    if (firstHttp?.status === 403 || firstHttp?.status === 404) {
+      return {
+        ok: false,
+        stage: "proxy",
+        status: firstHttp.status,
+        baseUrl: firstHttp.baseUrl,
+        elapsedMs: elapsed,
+        error: `HTTP ${firstHttp.status} from bridge health probe`,
+        body: firstHttp.body,
+        hint:
+          "The host is reachable, but it is not serving the WhatsApp bridge route correctly. This usually means WA_BRIDGE_BASE_URL points at the main website instead of the VPS reverse proxy, or nginx is missing the /wa/ location block.\n\n" +
+          `Tried:\n${attempted}`,
+      };
+    }
+
+    if (firstHttp) {
+      return {
+        ok: false,
+        stage: "http",
+        status: firstHttp.status,
+        baseUrl: firstHttp.baseUrl,
+        elapsedMs: elapsed,
+        error: `HTTP ${firstHttp.status} from /health`,
+        body: firstHttp.body,
+        hint: `Bridge host responded unexpectedly. Tried:\n${attempted}`,
+      };
+    }
+
+    const msg = firstError?.error || "Bridge unreachable";
+    let hint = "Cannot reach the bridge URL at all. ";
+    if (/timeout|aborted/i.test(msg)) hint += "Request timed out — VPS firewall is blocking, or process is hung.";
+    else if (/ENOTFOUND|getaddrinfo/i.test(msg)) hint += "DNS lookup failed — the bridge host does not resolve.";
+    else if (/ECONNREFUSED/i.test(msg)) hint += "Connection refused — bridge is not listening on that port.";
+    else hint += "Verify the URL is correct and the VPS proxy is online.";
+    return { ok: false, stage: "network", baseUrl: baseUrl.replace(/\/$/, ""), elapsedMs: elapsed, error: msg, hint: `${hint}\n\nTried:\n${attempted}` };
   });
 
 // ── Restart bridge (admin: optionally purge session for fresh QR) ──────
