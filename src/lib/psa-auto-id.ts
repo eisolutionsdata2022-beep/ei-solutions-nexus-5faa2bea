@@ -145,7 +145,7 @@ export async function savePsaIdFromProvider(opts: {
     const record: PsaIdRecord = {
       uid: opts.uid,
       psaId: cleaned,
-      status: "active",
+      status: "provider_active",
       generatedAt: existing.exists()
         ? (existing.data() as PsaIdRecord).generatedAt
         : new Date().toISOString(),
@@ -155,9 +155,40 @@ export async function savePsaIdFromProvider(opts: {
       name: opts.name ?? null,
       phone: opts.phone ?? null,
       providerRef: opts.providerRef ?? null,
+      requestedAt: existing.exists()
+        ? (existing.data() as PsaIdRecord).requestedAt ?? null
+        : null,
+      providerIssuedAt: new Date().toISOString(),
     };
     tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
     return record;
+  });
+}
+
+/**
+ * MARK the PSA record as `provider_pending` after the user clicks
+ * "Request PSA ID". Stores `requestedAt` so the UI can show a 24h ETA.
+ */
+export async function markPsaIdRequested(opts: {
+  uid: string;
+  providerRef?: string | null;
+}): Promise<PsaIdRecord> {
+  const psaRef = doc(db, "psa_ids", opts.uid);
+  return runTransaction(db, async (tx) => {
+    const existing = await tx.get(psaRef);
+    if (!existing.exists()) {
+      throw new Error("No PSA record yet — open the PAN Portal first.");
+    }
+    const prev = existing.data() as PsaIdRecord;
+    if (prev.status === "provider_active") return prev;
+    const updated: PsaIdRecord = {
+      ...prev,
+      status: "provider_pending",
+      requestedAt: new Date().toISOString(),
+      providerRef: opts.providerRef ?? prev.providerRef ?? null,
+    };
+    tx.set(psaRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+    return updated;
   });
 }
 
