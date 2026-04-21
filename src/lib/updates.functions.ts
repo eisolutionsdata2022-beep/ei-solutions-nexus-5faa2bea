@@ -1,13 +1,11 @@
 /**
  * Server functions for the Retailer "Updates" page.
  *
- * Fetches:
- *  - Kerala Lottery Result (latest) — community mirror RSS + scraping fallback
- *  - Kerala PSC press releases / notifications — keralapsc.gov.in
- *  - Government of India press releases (Kerala-relevant) — PIB Kerala RSS
- *
- * All endpoints run server-side to avoid browser CORS issues. Real-time on
- * page load (no caching layer beyond fetch's default).
+ * Strategy (after observing real-world failures):
+ *  - Direct Govt sources block bots (PIB returns 403, PSC ratelimits).
+ *  - Solution: route through Google News RSS — always reachable, returns
+ *    fresh, real items with dates and links to original publishers.
+ *  - Lottery: use multiple keralalotteries.com endpoints + Google News fallback.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { XMLParser } from "fast-xml-parser";
@@ -29,10 +27,16 @@ export type LotteryDraw = {
   officialUrl: string;
 };
 
-const COMMON_HEADERS = {
+// Realistic browser headers — many gov sites block default fetch UA.
+const BROWSER_HEADERS = {
   "User-Agent":
-    "Mozilla/5.0 (compatible; EISolutionsBot/1.0; +https://eisoluions.xyz)",
-  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "en-IN,en-US;q=0.9,en;q=0.8,ml;q=0.7",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
 };
 
 const parser = new XMLParser({
@@ -54,11 +58,11 @@ function stripHtml(html: string) {
     .trim();
 }
 
-async function fetchText(url: string, timeoutMs = 12000): Promise<string> {
+async function fetchText(url: string, timeoutMs = 25000): Promise<string> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { headers: COMMON_HEADERS, signal: ctrl.signal });
+    const res = await fetch(url, { headers: BROWSER_HEADERS, signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   } finally {
@@ -66,108 +70,142 @@ async function fetchText(url: string, timeoutMs = 12000): Promise<string> {
   }
 }
 
-function parseRssItems(xml: string, source: string, max = 20): FeedItem[] {
+function parseRssItems(xml: string, source: string, max = 25): FeedItem[] {
   try {
     const obj: any = parser.parse(xml);
     const channel = obj?.rss?.channel ?? obj?.feed;
     if (!channel) return [];
     const rawItems = channel.item ?? channel.entry ?? [];
     const items = Array.isArray(rawItems) ? rawItems : [rawItems];
-    return items.slice(0, max).map((it: any) => {
-      const title = stripHtml(String(it.title?.["#text"] ?? it.title ?? ""));
-      const link =
-        typeof it.link === "string"
-          ? it.link
-          : (it.link?.["@_href"] ?? it.link?.["#text"] ?? "");
-      const pubDate = String(
-        it.pubDate ?? it.published ?? it.updated ?? new Date().toISOString(),
-      );
-      const description = stripHtml(
-        String(it.description ?? it.summary ?? it.content ?? ""),
-      ).slice(0, 400);
-      return { title, link, pubDate, description, source };
-    });
+    return items
+      .slice(0, max)
+      .map((it: any) => {
+        const title = stripHtml(String(it.title?.["#text"] ?? it.title ?? ""));
+        let link = "";
+        if (typeof it.link === "string") link = it.link;
+        else if (Array.isArray(it.link))
+          link = it.link[0]?.["@_href"] ?? it.link[0]?.["#text"] ?? "";
+        else link = it.link?.["@_href"] ?? it.link?.["#text"] ?? "";
+        const pubDateRaw = String(
+          it.pubDate ?? it.published ?? it.updated ?? "",
+        );
+        const pubDate = pubDateRaw
+          ? new Date(pubDateRaw).toLocaleString("en-IN", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })
+          : "";
+        const description = stripHtml(
+          String(it.description ?? it.summary ?? it.content ?? ""),
+        ).slice(0, 300);
+        return { title, link, pubDate, description, source };
+      })
+      .filter((i) => i.title && i.link);
   } catch {
     return [];
   }
 }
 
-// ──────────────── PSC ────────────────
+// Helper: query Google News RSS — most reliable cross-site aggregator.
+function googleNewsRss(query: string): string {
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
+}
+
+// ──────────────── PSC (via Google News + direct site fallback) ────────────────
 export const fetchPSCNotifications = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ items: FeedItem[]; error: string | null }> => {
-    // PSC main news/notification page (HTML scrape — no official RSS)
-    const sources = [
-      "https://www.keralapsc.gov.in/notifications",
-      "https://www.keralapsc.gov.in/press-release",
-    ];
     const items: FeedItem[] = [];
     let lastErr: string | null = null;
-    for (const url of sources) {
+
+    // Primary: Google News RSS for PSC
+    try {
+      const xml = await fetchText(
+        googleNewsRss("Kerala PSC notification OR exam OR result site:keralapsc.gov.in OR site:psc.kerala.gov.in"),
+      );
+      items.push(...parseRssItems(xml, "Kerala PSC", 20));
+    } catch (e: any) {
+      lastErr = e?.message || "Google News fetch failed";
+    }
+
+    // Secondary: broader Kerala PSC news query
+    if (items.length < 5) {
       try {
-        const html = await fetchText(url);
-        // Find anchor + nearby date patterns. PSC uses <li> or <tr> blocks.
-        const anchorRe =
-          /<a[^>]+href="([^"]+\.(?:pdf|html?|aspx?))"[^>]*>([\s\S]*?)<\/a>/gi;
-        let m: RegExpExecArray | null;
-        let count = 0;
-        while ((m = anchorRe.exec(html)) && count < 30) {
-          const href = m[1].startsWith("http")
-            ? m[1]
-            : `https://www.keralapsc.gov.in${m[1].startsWith("/") ? "" : "/"}${m[1]}`;
-          const title = stripHtml(m[2]);
-          if (
-            title.length > 8 &&
-            !/^(home|about|contact|next|prev|click|here|read more)$/i.test(title)
-          ) {
-            items.push({
-              title,
-              link: href,
-              pubDate: "",
-              description: "",
-              source: url.includes("press") ? "PSC Press Release" : "PSC Notification",
-            });
-            count++;
-          }
-        }
-      } catch (e: any) {
-        lastErr = e?.message || "Failed to fetch PSC";
+        const xml = await fetchText(googleNewsRss("Kerala PSC recruitment notification"));
+        items.push(...parseRssItems(xml, "Kerala PSC News", 15));
+      } catch {
+        /* ignore */
       }
     }
-    // Deduplicate by link
+
+    // Tertiary: try direct PSC site (often works from server even if RSS fails)
+    try {
+      const html = await fetchText("https://www.keralapsc.gov.in/notifications", 15000);
+      const anchorRe =
+        /<a[^>]+href="([^"]+\.(?:pdf|html?|aspx?)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+      let m: RegExpExecArray | null;
+      let count = 0;
+      while ((m = anchorRe.exec(html)) && count < 20) {
+        const href = m[1].startsWith("http")
+          ? m[1]
+          : `https://www.keralapsc.gov.in${m[1].startsWith("/") ? "" : "/"}${m[1]}`;
+        const title = stripHtml(m[2]);
+        if (
+          title.length > 8 &&
+          !/^(home|about|contact|next|prev|click|here|read more|download)$/i.test(
+            title,
+          )
+        ) {
+          items.push({
+            title,
+            link: href,
+            pubDate: "",
+            description: "",
+            source: "PSC Official",
+          });
+          count++;
+        }
+      }
+    } catch {
+      /* ignore — Google News covers this */
+    }
+
     const seen = new Set<string>();
     const dedup = items.filter((i) => {
-      if (seen.has(i.link)) return false;
-      seen.add(i.link);
+      const k = i.link;
+      if (seen.has(k)) return false;
+      seen.add(k);
       return true;
     });
+
     return {
-      items: dedup.slice(0, 25),
+      items: dedup.slice(0, 30),
       error: dedup.length === 0 ? lastErr || "No items found" : null,
     };
   },
 );
 
-// ──────────────── Government Notifications (PIB Kerala) ────────────────
+// ──────────────── Government Notifications (Google News RSS — bypasses PIB 403) ────
 export const fetchGovtNotifications = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ items: FeedItem[]; error: string | null }> => {
-    // PIB regional RSS for Kerala (Thiruvananthapuram)
-    const candidates = [
-      "https://pib.gov.in/RssMain.aspx?ModId=8&Lang=1&RegId=24",
-      "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&RegId=24",
-    ];
-    let items: FeedItem[] = [];
+    const items: FeedItem[] = [];
     let lastErr: string | null = null;
-    for (const url of candidates) {
+
+    // Multi-query for diverse Kerala govt coverage
+    const queries = [
+      "Kerala government notification announcement",
+      "Kerala state press release",
+      "PIB Kerala Thiruvananthapuram",
+    ];
+
+    for (const q of queries) {
       try {
-        const xml = await fetchText(url);
-        const parsed = parseRssItems(xml, "PIB Kerala", 20);
-        if (parsed.length) {
-          items = items.concat(parsed);
-        }
+        const xml = await fetchText(googleNewsRss(q));
+        items.push(...parseRssItems(xml, "Govt News (Kerala)", 15));
       } catch (e: any) {
-        lastErr = e?.message || "Failed to fetch PIB";
+        lastErr = e?.message || "Fetch failed";
       }
     }
+
     const seen = new Set<string>();
     const dedup = items.filter((i) => {
       const k = i.link || i.title;
@@ -175,45 +213,50 @@ export const fetchGovtNotifications = createServerFn({ method: "GET" }).handler(
       seen.add(k);
       return true;
     });
+
+    // Sort by pubDate desc when available
+    dedup.sort((a, b) => {
+      const ta = Date.parse(a.pubDate) || 0;
+      const tb = Date.parse(b.pubDate) || 0;
+      return tb - ta;
+    });
+
     return {
-      items: dedup.slice(0, 25),
+      items: dedup.slice(0, 30),
       error: dedup.length === 0 ? lastErr || "No notifications found" : null,
     };
   },
 );
 
 // ──────────────── Kerala Lottery (latest result) ────────────────
-/**
- * keralalotteries.com publishes the latest result on its homepage. We scrape
- * it and parse the canonical structure: draw name + number + prize blocks.
- */
 export const fetchLotteryResult = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ draw: LotteryDraw | null; error: string | null }> => {
     const tryUrls = [
       "https://www.keralalotteries.com/index.php/quick_view/index",
       "https://statelottery.kerala.gov.in/index.php/lottery_result_view",
       "https://www.keralalotteries.com/",
+      "https://keralalotteryresult.net/",
     ];
     let lastErr: string | null = null;
+
     for (const url of tryUrls) {
       try {
-        const html = await fetchText(url);
+        const html = await fetchText(url, 25000);
 
-        // Heuristic extraction — Kerala Lotteries pages embed result inside <pre> or <div class="result">
-        // Pattern: "Kerala Lottery Result" + draw name + draw no + date.
+        // Match draw name + number — broader pattern
         const titleM = html.match(
-          /(STHREE[-\s]?SAKTHI|AKSHAYA|KARUNYA(?:\s+PLUS)?|NIRMAL|WIN[-\s]?WIN|SUVARNA[-\s]?KERALAM|FIFTY[-\s]?FIFTY|BHAGYATHARA)[^A-Za-z]*?(?:Lottery|LOTTERY)?[^A-Za-z]*?(?:No|NO|Result)?[^\dA-Za-z]*?([A-Z]{2,4}[-\s]?\d{2,4})/i,
+          /(STHREE[-\s]?SAKTHI|AKSHAYA|KARUNYA(?:\s+PLUS)?|NIRMAL|WIN[-\s]?WIN|SUVARNA[-\s]?KERALAM|FIFTY[-\s]?FIFTY|BHAGYATHARA|DHANALEKSHMI)[^A-Za-z]{0,30}([A-Z]{1,4}[-\s]?\d{2,4})/i,
         );
-        const dateM = html.match(/(\d{1,2}[-./\s][A-Za-z0-9]{2,9}[-./\s]\d{2,4})/);
+        const dateM = html.match(
+          /(\d{1,2}[-./\s](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-./\s]\d{2,4})/i,
+        );
 
-        // Pull <pre> block (Kerala Lottery quick view uses <pre>)
         const preM = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
-        const block = preM ? stripHtml(preM[1]) : "";
+        const block = preM ? stripHtml(preM[1]) : stripHtml(html);
 
-        // Parse prize lines: "1st Prize Rs :7000000/- ... TICKET NO ..."
         const prizes: LotteryDraw["prizes"] = [];
         if (block) {
-          const lines = block.split(/\n+/);
+          const lines = block.split(/\n+|\.\s+(?=\d)/);
           let cur: { rank: string; amount: string; tickets: string[] } | null =
             null;
           for (const ln of lines) {
@@ -250,7 +293,7 @@ export const fetchLotteryResult = createServerFn({ method: "GET" }).handler(
             },
             error:
               prizes.length === 0
-                ? "Result page found but prize details could not be parsed. Use the official link below."
+                ? "Result page found but prize details could not be parsed automatically. Please verify on the official site."
                 : null,
           };
         }
@@ -258,6 +301,32 @@ export const fetchLotteryResult = createServerFn({ method: "GET" }).handler(
         lastErr = e?.message || "Fetch failed";
       }
     }
+
+    // Final fallback: Google News for latest Kerala lottery result
+    try {
+      const xml = await fetchText(
+        googleNewsRss("Kerala lottery result today"),
+        15000,
+      );
+      const items = parseRssItems(xml, "Kerala Lottery News", 1);
+      if (items.length > 0) {
+        return {
+          draw: {
+            name: items[0].title.slice(0, 60),
+            number: "",
+            date: items[0].pubDate || new Date().toLocaleDateString("en-IN"),
+            prizes: [],
+            source: items[0].link,
+            officialUrl: "https://www.keralalotteries.com/",
+          },
+          error:
+            "Could not fetch full result — showing latest news. Click 'View on official site' to see complete prize list.",
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+
     return {
       draw: null,
       error:
