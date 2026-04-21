@@ -126,7 +126,20 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // (vleId / source / coupon count computed below in the new auto block)
+  // VLE ID is always available — auto-generated in `RMPMCST-<mobile>` format
+  // for new users, or whatever the provider/legacy ID is once promoted.
+  const vleId = useMemo(() => {
+    if (psaRecord?.psaId) return psaRecord.psaId;
+    return generateVleId(appUser?.uid, appUser?.phone);
+  }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
+  const couponCount = psaRecord?.successfulCouponCount ?? 0;
+  const fullyOnboarded = couponCount >= PSA_ONBOARDED_THRESHOLD;
+  const vleIdSource: "legacy" | "provider" | "auto" =
+    psaRecord?.source === "legacy"
+      ? "legacy"
+      : psaRecord?.source === "provider"
+      ? "provider"
+      : "auto";
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
