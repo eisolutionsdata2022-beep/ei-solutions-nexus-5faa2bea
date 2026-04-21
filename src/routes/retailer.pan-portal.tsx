@@ -651,9 +651,7 @@ function PanExecutionDialog({
                     ? "Choose a VLE ID for the provider to register (or leave a placeholder — the provider will issue your real ID upon successful submission)."
                     : vleIdSource === "legacy"
                     ? "Your existing PSA / VLE ID linked from the old portal — used for all upstream calls."
-                    : vleIdSource === "provider"
-                    ? "Your official provider-issued PSA / VLE ID — used for all upstream calls."
-                    : "PENDING — submit \"PSA ID Create\" first to get your real provider-issued ID, or link a legacy ID from Profile."}
+                    : "Your internal portal VLE ID — used for every upstream call."}
                 </p>
               ) : (
                 f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
