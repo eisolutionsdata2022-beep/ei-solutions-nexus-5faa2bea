@@ -116,14 +116,32 @@ function PanPortalPage() {
     return unsub;
   }, [appUser]);
 
+  const psaStatus = psaRecord?.status ?? "active";
+  const couponCount = psaRecord?.successfulCouponCount ?? 0;
+  const fullyOnboarded = psaStatus === "provider_active";
+  const providerPending = psaStatus === "provider_pending";
+  const canRequestPsa =
+    !!psaRecord &&
+    psaStatus === "active" &&
+    couponCount >= PSA_ONBOARDED_THRESHOLD &&
+    (psaRecord?.source ?? "auto") === "auto";
+
   const services = useMemo(() => {
     const disabled = new Set(config?.disabledServices ?? []);
-    return PAN_SERVICES.map((s) => ({
-      ...s,
-      disabled: disabled.has(s.key),
-      fee: config?.feeOverrides?.[s.key] ?? s.defaultFee,
-    }));
-  }, [config]);
+    return PAN_SERVICES.map((s) => {
+      // Block "coupon-buy" while the PSA request is pending — user must wait
+      // for the real provider-issued ID before buying any more coupons.
+      const blockedForPending = providerPending && s.key === "coupon-buy";
+      return {
+        ...s,
+        disabled: disabled.has(s.key) || blockedForPending,
+        blockedReason: blockedForPending
+          ? "Waiting for provider to issue your PSA ID. Check status below."
+          : undefined,
+        fee: config?.feeOverrides?.[s.key] ?? s.defaultFee,
+      };
+    });
+  }, [config, providerPending]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
   // VLE ID is always available — auto-generated in `RMPMCST-<mobile>` format
@@ -132,8 +150,6 @@ function PanPortalPage() {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const couponCount = psaRecord?.successfulCouponCount ?? 0;
-  const fullyOnboarded = couponCount >= PSA_ONBOARDED_THRESHOLD;
   const vleIdSource: "legacy" | "provider" | "auto" =
     psaRecord?.source === "legacy"
       ? "legacy"
