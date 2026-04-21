@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, CreditCard } from "lucide-react";
+import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, CreditCard, ExternalLink, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { ServicePageShell } from "@/components/ServicePageShell";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
@@ -112,7 +112,8 @@ function EiPayPage() {
       eyebrow="CSC Bridge"
       gradient="from-cyan-600 via-sky-600 to-blue-700"
       stats={[
-        { icon: CheckCircle2, label: "Auto-Pay", value: services.filter((s) => s.mode === "bridge").length, accent: "from-cyan-400 to-sky-400" },
+        { icon: CheckCircle2, label: "Auto-Pay", value: services.filter((s) => s.mode === "bridge" && !s.disabled).length, accent: "from-cyan-400 to-sky-400" },
+        { icon: Globe, label: "CSC Portal", value: services.filter((s) => s.mode === "redirect" && !s.disabled).length, accent: "from-violet-400 to-fuchsia-400" },
         { icon: Receipt, label: "Transactions", value: transactions.length, accent: "from-emerald-400 to-teal-400" },
       ]}
     >
@@ -181,6 +182,63 @@ function EiPayPage() {
         </div>
       </div>
 
+
+      {/* Redirect services (CSC portal) */}
+      {services.some((s) => s.mode === "redirect") && (
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground">🌐 CSC Portal Services</h2>
+            <Badge variant="secondary" className="text-[10px]">PIN required · Opens new tab</Badge>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Opens the official CSC portal in a new tab. Enter your CSC Wallet PIN there. No EI Solutions wallet debit.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {services.filter((s) => s.mode === "redirect").map((svc) => {
+              const Icon = svc.icon;
+              const url = svc.cscUrl || "https://digitalseva.csc.gov.in/";
+              return (
+                <a
+                  key={svc.key}
+                  href={svc.disabled ? undefined : url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    if (svc.disabled) {
+                      e.preventDefault();
+                      return;
+                    }
+                    toast.success(`Opening ${svc.name} on CSC portal…`);
+                  }}
+                  className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
+                    svc.disabled
+                      ? "pointer-events-none cursor-not-allowed opacity-50"
+                      : "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                  }`}
+                >
+                  <div
+                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${svc.gradient} text-white shadow`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-semibold leading-tight text-foreground">{svc.name}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    {svc.description}
+                  </p>
+                  <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-primary">
+                    <ExternalLink className="h-3 w-3" /> Open CSC portal
+                  </div>
+                  {svc.disabled && (
+                    <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
+                      Disabled
+                    </Badge>
+                  )}
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent transactions */}
       <Card>
