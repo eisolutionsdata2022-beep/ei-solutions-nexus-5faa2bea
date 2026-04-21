@@ -697,6 +697,9 @@ function InstallPage() {
               </p>
             </div>
 
+            {/* Preflight check — verifies OS, browser, agent, RD service before download */}
+            <PreflightCheckCard />
+
             {/* Live release detector — replaces hardcoded 404 link */}
             <ReleaseDownloadCard />
 
