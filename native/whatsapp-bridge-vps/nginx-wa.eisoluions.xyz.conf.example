@@ -1,0 +1,43 @@
+# /etc/nginx/sites-available/wa.eisoluions.xyz
+#
+# Reverse-proxy for the WhatsApp Web bridge (Node.js on 127.0.0.1:8788).
+# After enabling this site:
+#   sudo ln -s /etc/nginx/sites-available/wa.eisoluions.xyz /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#   sudo certbot --nginx -d wa.eisoluions.xyz   # provisions Let's Encrypt SSL
+#
+# DNS PREREQUISITE (do this FIRST at your domain registrar / Cloudflare):
+#   Type: A
+#   Name: wa            (becomes wa.eisoluions.xyz)
+#   Value: <YOUR VPS PUBLIC IPv4>
+#   Proxy: DNS only (grey cloud) until Let's Encrypt issues the cert,
+#          then you may turn the orange cloud back on if desired.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name wa.eisoluions.xyz;
+
+    # Let certbot place the HTTP-01 challenge here.
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    # Everything else proxies to the bridge (so /health, /status, /send, /bulk all work).
+    location / {
+        proxy_pass         http://127.0.0.1:8788;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        client_max_body_size 25m;
+        proxy_read_timeout   120s;
+        proxy_send_timeout   120s;
+    }
+}
+
+# After running `sudo certbot --nginx -d wa.eisoluions.xyz`, certbot will append
+# a managed `server { listen 443 ssl; ... }` block here automatically. Do NOT
+# hand-edit that block — re-run certbot if you need to change cert config.
