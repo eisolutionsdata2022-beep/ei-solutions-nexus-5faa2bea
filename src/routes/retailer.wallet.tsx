@@ -159,6 +159,37 @@ function StatusTimeline({ req }: { req: WalletRequest }) {
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
+/**
+ * Synthesised audio chime for in-app notifications. Uses WebAudio so we don't
+ * need to ship an asset file. "success" = bright two-tone rising; "error" =
+ * darker two-tone falling. Fails silently if AudioContext is blocked.
+ */
+function playChime(kind: "success" | "error" = "success") {
+  try {
+    const Ctx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    const tones = kind === "success" ? [880, 1320] : [520, 380];
+    tones.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.18);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.18);
+      osc.stop(now + i * 0.18 + 0.2);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 900);
+  } catch {
+    /* ignore — audio is best-effort */
+  }
+}
+
 function RetailerWallet() {
   const { appUser } = useAuth();
   const [balance, setBalance] = useState(0);
@@ -172,6 +203,9 @@ function RetailerWallet() {
   const [upiId, setUpiId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  // Tracks last-known status per wallet-request id so we can detect transitions
+  // (pending → approved/rejected) and fire toast + chime notifications.
+  const prevRequestStatusRef = useRef<Map<string, string> | null>(null);
 
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -213,6 +247,36 @@ function RetailerWallet() {
         snap.forEach((d) =>
           list.push({ id: d.id, ...d.data() } as WalletRequest),
         );
+
+        // Detect status transitions and fire toast + chime.
+        // Skip the very first snapshot so we don't replay history on mount.
+        const prev = prevRequestStatusRef.current;
+        if (prev) {
+          list.forEach((req) => {
+            const before = prev.get(req.id);
+            if (!before) return; // brand new pending request — silent
+            if (before === req.status) return;
+            if (before === "pending" && req.status === "approved") {
+              toast.success(`✅ Wallet top-up approved — ₹${req.amount.toLocaleString("en-IN")}`, {
+                description: req.remarks
+                  ? `Admin note: ${req.remarks}`
+                  : "Funds have been credited to your wallet.",
+                duration: 8000,
+              });
+              playChime("success");
+            } else if (before === "pending" && req.status === "rejected") {
+              toast.error(`❌ Wallet top-up rejected — ₹${req.amount.toLocaleString("en-IN")}`, {
+                description: req.remarks
+                  ? `Reason: ${req.remarks}`
+                  : "Please contact support or try again.",
+                duration: 10000,
+              });
+              playChime("error");
+            }
+          });
+        }
+        prevRequestStatusRef.current = new Map(list.map((r) => [r.id, r.status]));
+
         setWalletRequests(list);
       },
     );
