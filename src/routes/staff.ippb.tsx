@@ -47,7 +47,7 @@ import { CompletedStepsSummary } from "@/components/ippb/CompletedStepsSummary";
 import { RemoteCapturePanel } from "@/components/ippb/RemoteCapturePanel";
 import { toast } from "sonner";
 import {
-  Banknote, ChevronDown, CheckCircle2, Fingerprint, Info, Loader2, PlayCircle, XCircle,
+  Banknote, ChevronDown, CheckCircle2, Download, Fingerprint, Info, Loader2, PlayCircle, XCircle,
 } from "lucide-react";
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 import { useIPPBStaffNotifications } from "@/hooks/use-ippb-staff-notifications";
@@ -110,20 +110,38 @@ function StaffIPPBPage() {
             Real-time queue of retailer-initiated IPPB Account Opening requests. Verify each step and click Next to advance.
           </p>
         </div>
-        {resumable && (
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
+            asChild
             size="sm"
-            variant="default"
-            className="gap-2 animate-in fade-in"
-            onClick={() => setOpenId(resumable.id)}
+            variant="outline"
+            className="gap-2 border-gov-blue/40 text-gov-blue hover:bg-gov-blue/10"
           >
-            <PlayCircle className="w-4 h-4" />
-            Resume {resumable.requestNo}
-            <Badge variant="secondary" className="ml-1 text-[10px]">
-              {STEP_LABELS[resumable.currentStep]}
-            </Badge>
+            <a
+              href="/ippb-training-malayalam.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+            >
+              <Download className="w-4 h-4" />
+              ട്രെയിനിങ് PDF (മലയാളം)
+            </a>
           </Button>
-        )}
+          {resumable && (
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-2 animate-in fade-in"
+              onClick={() => setOpenId(resumable.id)}
+            >
+              <PlayCircle className="w-4 h-4" />
+              Resume {resumable.requestNo}
+              <Badge variant="secondary" className="ml-1 text-[10px]">
+                {STEP_LABELS[resumable.currentStep]}
+              </Badge>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Collapsible defaultOpen={false}>
