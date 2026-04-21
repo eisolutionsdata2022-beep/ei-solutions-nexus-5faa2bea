@@ -38,6 +38,8 @@ interface NavItem {
   to: string;
   icon: React.ElementType;
   badge?: number;
+  /** Optional one-line hint shown as a subtitle + native tooltip. */
+  hint?: string;
 }
 
 const navByRole: Record<UserRole, NavItem[]> = {
@@ -118,7 +120,12 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Marketplace", to: "/retailer/jobs", icon: Briefcase },
     { label: "Worker Dashboard", to: "/retailer/work", icon: ShieldCheck },
     { label: "IPPB Account", to: "/retailer/ippb", icon: Banknote },
-    { label: "Finance / Gold Loan", to: "/retailer/finance", icon: Banknote },
+    {
+      label: "Finance / Gold Loan",
+      to: "/retailer/finance",
+      icon: Banknote,
+      hint: "Same login — no separate sign-in",
+    },
   ],
   trainer: [
     { label: "Dashboard", to: "/trainer", icon: LayoutDashboard },
@@ -224,10 +231,13 @@ export function AppSidebar() {
         )}
         {items.map((item) => {
           const isActive = location.pathname === item.to;
+          const tooltip = item.hint ? `${item.label} — ${item.hint}` : item.label;
           return (
             <Link
               key={item.to}
               to={item.to as any}
+              title={tooltip}
+              aria-label={tooltip}
               className={`relative group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                 isActive
                   ? "bg-premium-gradient text-white font-semibold shadow-premium"
@@ -246,7 +256,18 @@ export function AppSidebar() {
                   isActive ? "text-white" : "text-muted-foreground group-hover:text-primary group-hover:scale-110"
                 }`}
               />
-              <span className="truncate">{item.label}</span>
+              <div className="min-w-0 flex-1">
+                <span className="block truncate leading-tight">{item.label}</span>
+                {item.hint && (
+                  <span
+                    className={`block truncate text-[10px] font-normal leading-tight mt-0.5 ${
+                      isActive ? "text-white/75" : "text-muted-foreground/80"
+                    }`}
+                  >
+                    {item.hint}
+                  </span>
+                )}
+              </div>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                   isActive ? "bg-white/25 text-white" : "bg-primary/15 text-primary"
