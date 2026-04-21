@@ -45,6 +45,15 @@ function UpdatesPage() {
   const [govtErr, setGovtErr] = useState<string | null>(null);
   const [govtLoading, setGovtLoading] = useState(true);
 
+  // Inline viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerReq, setViewerReq] = useState<ArticleRequest | null>(null);
+
+  const openInline = (item: FeedItem) => {
+    setViewerReq({ url: item.link, title: item.title, source: item.source });
+    setViewerOpen(true);
+  };
+
   const loadLottery = async () => {
     setLotteryLoading(true);
     try {
