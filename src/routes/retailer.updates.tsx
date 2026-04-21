@@ -365,7 +365,7 @@ function UpdatesPage() {
             />
           </ServiceSectionCard>
         </TabsContent>
-
+      </Tabs>
 
       <InlineArticleViewer
         open={viewerOpen}
