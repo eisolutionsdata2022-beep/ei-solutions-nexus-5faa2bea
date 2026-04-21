@@ -18,6 +18,7 @@ import {
   ALL_POSTER_TEMPLATES, defaultDataForCategory, getCanvasSize,
   type PosterTemplate, type PosterData, type PosterFormat,
 } from "@/lib/poster-template-engine";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/page-tools")({
   ssr: false,
@@ -58,6 +59,7 @@ function PageToolsPage() {
         <ServiceBilling />
       </TabsContent>
     </Tabs>
+    </ServicePageShell>
   );
 }
 
