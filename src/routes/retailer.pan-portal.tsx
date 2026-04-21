@@ -126,16 +126,18 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // Prefer the stored PSA ID (legacy or auto) over the deterministic fallback.
+  // Show the PROVIDER-issued PSA ID when present; otherwise show a "Pending"
+  // placeholder. We never invent an ID — coupon-buy needs the real one.
+  const hasRealPsaId = !!psaRecord?.psaId;
   const vleId = useMemo(() => {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "auto" | "generated" = psaRecord?.source === "legacy"
+  const vleIdSource: "legacy" | "provider" | "pending" = psaRecord?.source === "legacy"
     ? "legacy"
-    : psaRecord?.source === "auto"
-    ? "auto"
-    : "generated";
+    : psaRecord?.source === "provider"
+    ? "provider"
+    : "pending";
 
   return (
     <div className="space-y-6">
