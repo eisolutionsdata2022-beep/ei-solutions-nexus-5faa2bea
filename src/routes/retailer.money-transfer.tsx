@@ -291,7 +291,7 @@ function MoneyTransferPage() {
 
       {/* Tx Viewer */}
       {viewingTx && <TransferViewer tx={viewingTx} onClose={() => setViewingTx(null)} />}
-    </div>
+    </ServicePageShell>
   );
 }
 
@@ -607,7 +607,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</Label>
       {children}
-    </ServicePageShell>
+    </div>
   );
 }
 
