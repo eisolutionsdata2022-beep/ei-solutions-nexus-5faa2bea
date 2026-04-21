@@ -159,6 +159,37 @@ function StatusTimeline({ req }: { req: WalletRequest }) {
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
+/**
+ * Synthesised audio chime for in-app notifications. Uses WebAudio so we don't
+ * need to ship an asset file. "success" = bright two-tone rising; "error" =
+ * darker two-tone falling. Fails silently if AudioContext is blocked.
+ */
+function playChime(kind: "success" | "error" = "success") {
+  try {
+    const Ctx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    const tones = kind === "success" ? [880, 1320] : [520, 380];
+    tones.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.18);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.18);
+      osc.stop(now + i * 0.18 + 0.2);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 900);
+  } catch {
+    /* ignore — audio is best-effort */
+  }
+}
+
 function RetailerWallet() {
   const { appUser } = useAuth();
   const [balance, setBalance] = useState(0);
