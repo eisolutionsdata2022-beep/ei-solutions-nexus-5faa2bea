@@ -447,7 +447,7 @@ function PanPortalPage() {
         </Card>
       )}
 
-
+      <div>
         <h2 className="mb-3 text-lg font-bold text-foreground">PAN Services</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {services.map((svc) => {
