@@ -53,7 +53,7 @@ import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
 import { generateVleId } from "@/lib/pan-vle-id";
-import { maybeGeneratePsaId } from "@/lib/psa-auto-id";
+import { maybeGeneratePsaId, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -67,6 +67,7 @@ function PanPortalPage() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [transactions, setTransactions] = useState<PanTransaction[]>([]);
   const [active, setActive] = useState<(PanService & { fee: number }) | null>(null);
+  const [psaRecord, setPsaRecord] = useState<PsaIdRecord | null>(null);
 
   // Wallet
   useEffect(() => {
@@ -85,6 +86,17 @@ function PanPortalPage() {
     });
     return unsub;
   }, []);
+
+  // Stored PSA ID (legacy claim or auto-generated). When present we use this
+  // instead of the deterministic VLE ID so upstream calls hit the correct
+  // mallikacyberzone account the user already owns.
+  useEffect(() => {
+    if (!appUser) return;
+    const unsub = onSnapshot(doc(db, "psa_ids", appUser.uid), (snap) => {
+      setPsaRecord(snap.exists() ? (snap.data() as PsaIdRecord) : null);
+    });
+    return unsub;
+  }, [appUser]);
 
   // Transactions
   useEffect(() => {
@@ -114,10 +126,16 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  const vleId = useMemo(
-    () => generateVleId(appUser?.uid, appUser?.phone),
-    [appUser?.uid, appUser?.phone],
-  );
+  // Prefer the stored PSA ID (legacy or auto) over the deterministic fallback.
+  const vleId = useMemo(() => {
+    if (psaRecord?.psaId) return psaRecord.psaId;
+    return generateVleId(appUser?.uid, appUser?.phone);
+  }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
+  const vleIdSource: "legacy" | "auto" | "generated" = psaRecord?.source === "legacy"
+    ? "legacy"
+    : psaRecord?.source === "auto"
+    ? "auto"
+    : "generated";
 
   return (
     <div className="space-y-6">
@@ -149,6 +167,16 @@ function PanPortalPage() {
               <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
                 <IdCard className="h-4 w-4" /> Your VLE ID
                 <Copy className="h-3 w-3 opacity-60 transition group-hover:opacity-100" />
+                {vleIdSource === "legacy" && (
+                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
+                    Legacy linked
+                  </span>
+                )}
+                {vleIdSource === "auto" && (
+                  <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
+                    Auto
+                  </span>
+                )}
               </div>
               <p className="mt-1 font-mono text-2xl font-bold tracking-wider">{vleId}</p>
             </button>
@@ -175,6 +203,31 @@ function PanPortalPage() {
                 URLs before services can be executed. You can browse the catalog below.
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {vleIdSource === "generated" && (
+        <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+          <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <IdCard className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+              <div className="text-sm">
+                <p className="font-semibold text-sky-900 dark:text-sky-200">
+                  Already have a PSA ID from the old portal?
+                </p>
+                <p className="mt-1 text-sky-800 dark:text-sky-300/90">
+                  Link your existing PSA / VLE ID so Coupon Buy, PSA Reset and NSDL calls use the
+                  correct account. Otherwise upstream may reject the auto-generated ID.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/retailer/profile"
+              className="self-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-sky-700"
+            >
+              Link in Profile →
+            </Link>
           </CardContent>
         </Card>
       )}
@@ -286,6 +339,7 @@ function PanPortalPage() {
         retailerName={appUser?.name ?? null}
         retailerPhone={appUser?.phone ?? null}
         vleId={vleId}
+        vleIdSource={vleIdSource}
         ready={ready}
       />
     </div>
@@ -319,6 +373,7 @@ function PanExecutionDialog({
   retailerName,
   retailerPhone,
   vleId,
+  vleIdSource,
   ready,
 }: {
   service: (PanService & { fee: number }) | null;
@@ -330,6 +385,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
+  vleIdSource: "legacy" | "auto" | "generated";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -558,7 +614,11 @@ function PanExecutionDialog({
               )}
               {f.key === "vle_id" ? (
                 <p className="text-xs text-muted-foreground">
-                  Your EI SOLUTIONS VLE ID — auto-generated and locked to your account.
+                  {vleIdSource === "legacy"
+                    ? "Your existing PSA / VLE ID linked from the old portal — used for all upstream calls."
+                    : vleIdSource === "auto"
+                    ? "Your auto-generated EI SOLUTIONS PSA ID — locked to your account."
+                    : "Your EI SOLUTIONS VLE ID. If you already have a PSA ID from the old portal, link it from your Profile so coupons/services hit the right account."}
                 </p>
               ) : (
                 f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
