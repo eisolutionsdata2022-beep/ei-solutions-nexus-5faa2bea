@@ -82,6 +82,54 @@ export const encryptPanApiKey = createServerFn({ method: "POST" })
   });
 
 // --------------------------------------------------------------------------
+// Server fn: encrypt admin-supplied API SECRET (paired with API key).
+// --------------------------------------------------------------------------
+
+const encryptSecretInput = z.object({ apiSecret: z.string().min(8).max(200) });
+
+export const encryptPanApiSecret = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => encryptSecretInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { success: false as const, error: "Authentication required" };
+    }
+    try {
+      const cipher = await encryptApiKey(data.apiSecret);
+      const last4 = data.apiSecret.slice(-4);
+      const hint = "•".repeat(Math.max(0, data.apiSecret.length - 4)) + last4;
+      return { success: true as const, cipher, apiSecretHint: hint };
+    } catch (err) {
+      console.error("[PAN] encrypt secret error:", err);
+      return { success: false as const, error: "Failed to encrypt API secret" };
+    }
+  });
+
+// --------------------------------------------------------------------------
+// Server fn: encrypt the VPS bridge HMAC secret.
+// --------------------------------------------------------------------------
+
+const encryptBridgeInput = z.object({ bridgeSecret: z.string().min(16).max(200) });
+
+export const encryptPanBridgeSecret = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => encryptBridgeInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { success: false as const, error: "Authentication required" };
+    }
+    try {
+      const cipher = await encryptApiKey(data.bridgeSecret);
+      const last4 = data.bridgeSecret.slice(-4);
+      const hint = "•".repeat(Math.max(0, data.bridgeSecret.length - 4)) + last4;
+      return { success: true as const, cipher, vpsBridgeSecretHint: hint };
+    } catch (err) {
+      console.error("[PAN] encrypt bridge secret error:", err);
+      return { success: false as const, error: "Failed to encrypt bridge secret" };
+    }
+  });
+
+// --------------------------------------------------------------------------
 // Server fn: execute a PAN service against mallikacyberzone.
 // --------------------------------------------------------------------------
 
