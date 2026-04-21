@@ -53,6 +53,83 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
     }
   });
 
+// ── Diagnostic: hits /health (no HMAC) and explains exact failure mode ─
+export const diagnoseWhatsAppBridge = createServerFn({ method: "GET" })
+  .middleware([firebaseAuthMiddleware])
+  .handler(async ({ context }) => {
+    if (!context.authUser) return { ok: false, error: "Unauthorized" };
+    const baseUrl = process.env.WA_BRIDGE_BASE_URL;
+    if (!baseUrl) {
+      return {
+        ok: false,
+        stage: "config",
+        error: "WA_BRIDGE_BASE_URL secret is not set",
+        hint: "Add WA_BRIDGE_BASE_URL in Lovable → Project Settings → Secrets (e.g. https://wa-bridge.yourdomain.com).",
+      };
+    }
+    if (!process.env.WA_BRIDGE_HMAC_SECRET) {
+      return {
+        ok: false,
+        stage: "config",
+        error: "WA_BRIDGE_HMAC_SECRET secret is not set",
+        hint: "Add WA_BRIDGE_HMAC_SECRET in Lovable Secrets — it must match HMAC_SECRET in the VPS .env.",
+      };
+    }
+    const cleanUrl = baseUrl.replace(/\/$/, "");
+    const healthUrl = `${cleanUrl}/health`;
+    const started = Date.now();
+    try {
+      const res = await fetch(healthUrl, { method: "GET", signal: AbortSignal.timeout(8000) });
+      const elapsed = Date.now() - started;
+      const text = await res.text().catch(() => "");
+      if ([520, 521, 522, 523, 524, 525, 526, 530].includes(res.status)) {
+        return {
+          ok: false,
+          stage: "cloudflare",
+          status: res.status,
+          baseUrl: cleanUrl,
+          elapsedMs: elapsed,
+          error: `Cloudflare ${res.status} — origin VPS not responding`,
+          hint:
+            "The bridge process on your VPS is DOWN or unreachable from Cloudflare. SSH in and run:\n" +
+            "  sudo systemctl status whatsapp-bridge\n" +
+            "If inactive/failed:  sudo systemctl restart whatsapp-bridge\n" +
+            "Then check the crash reason:  sudo journalctl -u whatsapp-bridge -n 100 --no-pager\n" +
+            "Also confirm: (1) port 8788 is open in firewall, (2) Cloudflare DNS A-record points to the correct VPS IP, (3) the origin SSL cert is valid if using strict mode.",
+        };
+      }
+      if (!res.ok) {
+        return {
+          ok: false,
+          stage: "http",
+          status: res.status,
+          baseUrl: cleanUrl,
+          elapsedMs: elapsed,
+          error: `HTTP ${res.status} from /health`,
+          body: text.slice(0, 300),
+          hint: "Bridge reachable but /health returned an error — check journalctl on the VPS.",
+        };
+      }
+      return {
+        ok: true,
+        stage: "ok",
+        status: res.status,
+        baseUrl: cleanUrl,
+        elapsedMs: elapsed,
+        body: text.slice(0, 300),
+      };
+    } catch (e: any) {
+      const elapsed = Date.now() - started;
+      const msg = e?.message || String(e);
+      let hint = "Cannot reach the bridge URL at all. ";
+      if (/timeout|aborted/i.test(msg)) hint += "Request timed out — VPS firewall is blocking, or process is hung.";
+      else if (/ENOTFOUND|getaddrinfo/i.test(msg)) hint += "DNS lookup failed — WA_BRIDGE_BASE_URL domain does not resolve.";
+      else if (/ECONNREFUSED/i.test(msg)) hint += "Connection refused — bridge is not listening on that port.";
+      else hint += "Verify the URL is correct and VPS is online.";
+      return { ok: false, stage: "network", baseUrl: cleanUrl, elapsedMs: elapsed, error: msg, hint };
+    }
+  });
+
 // ── Restart bridge (admin: optionally purge session for fresh QR) ──────
 export const restartWhatsApp = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
