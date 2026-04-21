@@ -387,7 +387,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "provider" | "auto";
+  vleIdSource: "legacy" | "auto";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
