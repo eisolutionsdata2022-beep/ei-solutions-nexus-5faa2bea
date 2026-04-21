@@ -128,7 +128,67 @@ function AdminPanSettings() {
     }
   };
 
-  const saveUrls = async (e: FormEvent) => {
+  const saveApiSecret = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser) return;
+    if (!apiSecret || apiSecret.length < 8) {
+      toast.error("API secret must be at least 8 characters");
+      return;
+    }
+    setSavingSecret(true);
+    try {
+      const res = await encryptPanApiSecret({ data: { apiSecret } });
+      if (!res.success) throw new Error(res.error);
+      await setDoc(
+        doc(db, "pan_config", "master"),
+        {
+          apiSecretCipher: res.cipher,
+          apiSecretHint: res.apiSecretHint,
+          updatedAt: new Date().toISOString(),
+          updatedBy: appUser.email,
+        },
+        { merge: true },
+      );
+      toast.success("PAN API secret encrypted and saved");
+      setApiSecret("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save secret");
+    } finally {
+      setSavingSecret(false);
+    }
+  };
+
+  const saveBridge = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser) return;
+    setSavingBridge(true);
+    try {
+      const update: Partial<PanMasterConfig> = {
+        vpsBridgeUrl: bridgeUrl.trim() || undefined,
+        updatedAt: new Date().toISOString(),
+        updatedBy: appUser.email,
+      };
+      if (bridgeSecret) {
+        if (bridgeSecret.length < 16) {
+          toast.error("Bridge secret must be at least 16 characters");
+          setSavingBridge(false);
+          return;
+        }
+        const res = await encryptPanBridgeSecret({ data: { bridgeSecret } });
+        if (!res.success) throw new Error(res.error);
+        update.vpsBridgeSecretCipher = res.cipher;
+        update.vpsBridgeSecretHint = res.vpsBridgeSecretHint;
+      }
+      await setDoc(doc(db, "pan_config", "master"), update, { merge: true });
+      toast.success("VPS bridge config saved");
+      setBridgeSecret("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save bridge");
+    } finally {
+      setSavingBridge(false);
+    }
+  };
+
     e.preventDefault();
     if (!appUser) return;
     setSavingUrls(true);
