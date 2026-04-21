@@ -340,7 +340,32 @@ function UpdatesPage() {
             />
           </ServiceSectionCard>
         </TabsContent>
-      </Tabs>
+
+        {/* ───── PARIVAHAN ───── */}
+        <TabsContent value="parivahan">
+          <ServiceSectionCard
+            title="Parivahan / Ministry of Road Transport — Updates"
+            icon={Car}
+            accent="from-sky-500 to-cyan-600"
+            right={
+              <Button size="sm" variant="outline" onClick={loadPari} disabled={pariLoading}>
+                <RefreshCw className={`w-3.5 h-3.5 mr-1 ${pariLoading ? "animate-spin" : ""}`} />
+                Reload
+              </Button>
+            }
+          >
+            <FeedList
+              loading={pariLoading}
+              items={pari}
+              error={pariErr}
+              emptyMsg="No Parivahan updates available right now."
+              fallbackHref="https://parivahan.gov.in/parivahan/"
+              fallbackLabel="Open parivahan.gov.in"
+              onOpen={openInline}
+            />
+          </ServiceSectionCard>
+        </TabsContent>
+
 
       <InlineArticleViewer
         open={viewerOpen}
