@@ -104,6 +104,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
+    { label: "Updates", to: "/retailer/updates", icon: Activity, tag: "new", hint: "Lottery, PSC, Govt Press — live" },
     { label: "Profile", to: "/retailer/profile", icon: User },
     { label: "Refer & Earn", to: "/retailer/referrals", icon: Gift, tag: "offer" },
     { label: "Operators", to: "/retailer/staff", icon: Users },
