@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,79 @@ import {
   AlertTriangle,
   ShieldCheck,
   Terminal,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
+
+// GitHub repo that hosts the PC Agent releases (built by .github/workflows/pc-agent-build.yml)
+const GH_OWNER = "eisolutionsdata2022-beep";
+const GH_REPO = "ei-solutions-nexus-49a3c1e4";
+const GH_API_LATEST = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/releases/latest`;
+const GH_RELEASES_PAGE = `https://github.com/${GH_OWNER}/${GH_REPO}/releases`;
+const GH_ACTIONS_PAGE = `https://github.com/${GH_OWNER}/${GH_REPO}/actions/workflows/pc-agent-build.yml`;
+const ASSET_NAME = "EISolutions.IppbAgent.Setup.exe";
+
+interface ReleaseInfo {
+  status: "loading" | "ready" | "missing" | "error";
+  version?: string;
+  downloadUrl?: string;
+  sizeMB?: string;
+  publishedAt?: string;
+  errorMsg?: string;
+}
+
+function useLatestRelease(): ReleaseInfo {
+  const [info, setInfo] = useState<ReleaseInfo>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(GH_API_LATEST, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
+        if (cancelled) return;
+        if (res.status === 404) {
+          setInfo({ status: "missing" });
+          return;
+        }
+        if (!res.ok) {
+          setInfo({ status: "error", errorMsg: `HTTP ${res.status}` });
+          return;
+        }
+        const data = await res.json();
+        const asset = (data.assets || []).find(
+          (a: { name: string }) => a.name === ASSET_NAME,
+        );
+        if (!asset) {
+          setInfo({
+            status: "missing",
+            errorMsg: "Release exists but .exe asset not uploaded yet.",
+          });
+          return;
+        }
+        setInfo({
+          status: "ready",
+          version: data.tag_name?.replace(/^pc-agent-v/, "") || data.name,
+          downloadUrl: asset.browser_download_url,
+          sizeMB: (asset.size / 1024 / 1024).toFixed(1),
+          publishedAt: data.published_at,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setInfo({
+          status: "error",
+          errorMsg: err instanceof Error ? err.message : "Network error",
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return info;
+}
 
 export const Route = createFileRoute("/install")({
   ssr: false,
