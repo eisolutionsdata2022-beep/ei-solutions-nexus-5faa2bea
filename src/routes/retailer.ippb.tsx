@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 import { applyForIPPBBadge, type IPPBBadgeApplicationDoc } from "@/lib/ippb-badge";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
@@ -153,38 +154,25 @@ function RetailerIPPBPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Banknote className="w-6 h-6 text-gov-blue" /> IPPB Account Opening
-            {hasBadge && (
-              <Badge variant="default" className="ml-2 gap-1">
-                <ShieldCheck className="w-3 h-3" /> Badged
-              </Badge>
-            )}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {hasBadge
-              ? "Step-by-step IPPB Regular Savings Account opening — fill your sections, staff verifies & advances."
-              : "IPPB badge ഇല്ലാത്തതിനാൽ ഇപ്പോൾ work ചെയ്യാൻ കഴിയില്ല."}
-          </p>
-        </div>
+    <ServicePageShell
+      icon={Banknote}
+      title="IPPB Account Opening"
+      subtitle={hasBadge
+        ? "Step-by-step IPPB Regular Savings Account opening — staff verifies & advances."
+        : "IPPB badge ഇല്ലാത്തതിനാൽ ഇപ്പോൾ work ചെയ്യാൻ കഴിയില്ല."}
+      eyebrow="India Post Payments Bank"
+      gradient="from-amber-600 via-orange-600 to-red-600"
+      headerAction={
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="gap-2 border-gov-blue/40 text-gov-blue hover:bg-gov-blue/10"
-          >
-            <a
-              href="/ippb-training-malayalam.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-            >
-              <Download className="w-4 h-4" />
-              ട്രെയിനിങ് PDF (മലയാളം)
+          {hasBadge && (
+            <Badge className="bg-emerald-500/90 text-white gap-1 border-white/30">
+              <ShieldCheck className="w-3 h-3" /> Badged
+            </Badge>
+          )}
+          <Button asChild variant="secondary" size="sm" className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl gap-1.5">
+            <a href="/ippb-training-malayalam.pdf" target="_blank" rel="noopener noreferrer" download>
+              <Download className="w-3.5 h-3.5" />
+              PDF
             </a>
           </Button>
           {(() => {
@@ -192,33 +180,28 @@ function RetailerIPPBPage() {
             const active = rows
               .filter((r) => !terminal.includes(r.status))
               .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
-            const myTurn = active.find(
-              (r) => (r.turn ?? STEP_TURN[r.currentStep]) === "retailer"
-            );
+            const myTurn = active.find((r) => (r.turn ?? STEP_TURN[r.currentStep]) === "retailer");
             const resume = myTurn ?? active[0];
             if (!resume) return null;
             return (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  document
-                    .getElementById(`ippb-req-${resume.id}`)
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                <PlayCircle className="w-4 h-4" />
-                Resume {resume.requestNo}
+              <Button variant="secondary" size="sm" className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl gap-1.5"
+                onClick={() => { document.getElementById(`ippb-req-${resume.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+                <PlayCircle className="w-3.5 h-3.5" />
+                Resume
               </Button>
             );
           })()}
-          <Button onClick={handleCreate} disabled={creating || !hasBadge}>
-            {!hasBadge ? <Lock className="w-4 h-4" /> : creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          <Button onClick={handleCreate} disabled={creating || !hasBadge} size="sm" className="bg-white text-orange-700 hover:bg-white/90 font-semibold shadow-lg gap-1.5">
+            {!hasBadge ? <Lock className="w-3.5 h-3.5" /> : creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
             New Request
           </Button>
         </div>
-      </div>
+      }
+      stats={[
+        { icon: Banknote, label: "Total Requests", value: rows.length, accent: "from-amber-400 to-orange-400" },
+        { icon: ShieldCheck, label: "Badge", value: hasBadge ? "Active" : "Pending", accent: hasBadge ? "from-emerald-400 to-teal-400" : "from-rose-400 to-pink-400" },
+      ]}
+    >
 
       {!hasBadge && (
         <Card className="border-amber-400 bg-amber-50">
@@ -314,7 +297,7 @@ function RetailerIPPBPage() {
           <RequestCard key={req.id} req={req} retailerId={appUser.uid} fee={fee} />
         ))}
       </div>
-    </div>
+    </ServicePageShell>
   );
 }
 
