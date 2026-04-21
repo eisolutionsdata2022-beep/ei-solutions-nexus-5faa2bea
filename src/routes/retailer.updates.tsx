@@ -46,6 +46,10 @@ function UpdatesPage() {
   const [govtErr, setGovtErr] = useState<string | null>(null);
   const [govtLoading, setGovtLoading] = useState(true);
 
+  const [pari, setPari] = useState<FeedItem[]>([]);
+  const [pariErr, setPariErr] = useState<string | null>(null);
+  const [pariLoading, setPariLoading] = useState(true);
+
   // Inline viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerReq, setViewerReq] = useState<ArticleRequest | null>(null);
