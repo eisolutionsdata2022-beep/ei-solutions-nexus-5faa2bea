@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useAuth, type UserRole } from "@/lib/auth-context";
 import {
   LayoutDashboard,
@@ -28,7 +29,9 @@ import {
   BookOpen,
   Gift,
   Activity,
+  Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface NavItem {
   label: string;
