@@ -17,6 +17,7 @@ import { JOB_CATEGORIES, type JobDoc } from "@/lib/job-marketplace-types";
 import { createJobWithEscrow } from "@/lib/job-marketplace";
 import { JobFileUploadField } from "@/components/JobFileUploadField";
 import { uploadJobFiles } from "@/lib/job-file-upload";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/jobs")({
   ssr: false,
@@ -131,48 +132,47 @@ function RetailerJobs() {
     >
       <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="w-4 h-4 mr-1" /> Post New Job</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Post a New Job</DialogTitle></DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-3">
-                <div><Label>Title *</Label><Input required value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-                <div><Label>Description *</Label><Textarea required rows={4} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Category *</Label>
-                    <Select value={category} onValueChange={(v) => setCategory(v as any)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {JOB_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label>Number of Pages</Label><Input type="number" value={pages} onChange={(e) => setPages(e.target.value)} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Budget (₹) *</Label><Input required type="number" min={50} value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
-                  <div><Label>Deadline *</Label><Input required type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
-                </div>
-                <div><Label>Required Documents (text)</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+          <DialogTrigger asChild>
+            <Button><Plus className="w-4 h-4 mr-1" /> Post New Job</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Post a New Job</DialogTitle></DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div><Label>Title *</Label><Input required value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+              <div><Label>Description *</Label><Textarea required rows={4} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Reference Files (optional)</Label>
-                  <p className="text-[11px] text-muted-foreground mb-1">
-                    Attach sample files, briefs, or source documents. Bidders & the assigned worker can download these.
-                  </p>
-                  <JobFileUploadField files={referenceFiles} onChange={setReferenceFiles} />
+                  <Label>Category *</Label>
+                  <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {JOB_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
-                  ⚠️ Your budget will be held in escrow when you post. Excess (budget − accepted bid) is auto-refunded on completion.
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Posting...</> : "Post Job"}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <div><Label>Number of Pages</Label><Input type="number" value={pages} onChange={(e) => setPages(e.target.value)} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Budget (₹) *</Label><Input required type="number" min={50} value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
+                <div><Label>Deadline *</Label><Input required type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
+              </div>
+              <div><Label>Required Documents (text)</Label><Textarea rows={2} placeholder="e.g. Aadhaar, PAN, source files..." value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} /></div>
+              <div>
+                <Label>Reference Files (optional)</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">
+                  Attach sample files, briefs, or source documents. Bidders & the assigned worker can download these.
+                </p>
+                <JobFileUploadField files={referenceFiles} onChange={setReferenceFiles} />
+              </div>
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
+                ⚠️ Your budget will be held in escrow when you post. Excess (budget − accepted bid) is auto-refunded on completion.
+              </div>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Posting...</> : "Post Job"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -217,6 +217,6 @@ function RetailerJobs() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </ServicePageShell>
   );
 }
