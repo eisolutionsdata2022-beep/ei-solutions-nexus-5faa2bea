@@ -285,17 +285,36 @@ export const executePanService = createServerFn({ method: "POST" })
         });
       }
 
+      const usingBridge = !!(data.vpsBridgeUrl && data.vpsBridgeSecretCipher);
+
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        console.error(`[PAN] upstream ${res.status}:`, text);
+        console.error(`[PAN] ${usingBridge ? "bridge" : "upstream"} ${res.status}:`, text);
         return {
           success: false,
-          error: `Upstream returned ${res.status}: ${text.slice(0, 200) || res.statusText}`,
+          error: `${usingBridge ? "Bridge" : "Upstream"} returned ${res.status}: ${text.slice(0, 200) || res.statusText}`,
           stage: "upstream",
         };
       }
 
-      const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      // Bridge wraps the upstream JSON as { upstreamStatus, upstream }.
+      // Direct calls return the upstream JSON as-is. Normalize both shapes.
+      const outer = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      let json: Record<string, unknown>;
+      if (usingBridge && typeof outer.upstreamStatus === "number" && outer.upstream) {
+        const upstreamStatus = outer.upstreamStatus as number;
+        json = outer.upstream as Record<string, unknown>;
+        if (upstreamStatus < 200 || upstreamStatus >= 300) {
+          console.error(`[PAN] bridge upstream ${upstreamStatus}:`, JSON.stringify(json).slice(0, 200));
+          return {
+            success: false,
+            error: `Provider returned HTTP ${upstreamStatus}`,
+            stage: "upstream",
+          };
+        }
+      } else {
+        json = outer;
+      }
       const status = String(json.status ?? "").toUpperCase();
       const message = typeof json.message === "string" ? json.message : "";
       const rawJson = JSON.stringify(json);
