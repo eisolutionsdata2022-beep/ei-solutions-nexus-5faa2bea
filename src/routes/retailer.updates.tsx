@@ -15,11 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Newspaper, Download, RefreshCw, ExternalLink, Sparkles,
-  Trophy, Building2, Globe2, AlertCircle, Eye,
+  Trophy, Building2, Globe2, AlertCircle, Eye, Car,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchLotteryResult, fetchPSCNotifications, fetchGovtNotifications,
+  fetchParivahanNotifications,
   type FeedItem, type LotteryDraw,
 } from "@/lib/updates.functions";
 import { generateLotteryPDF } from "@/lib/lottery-pdf";
