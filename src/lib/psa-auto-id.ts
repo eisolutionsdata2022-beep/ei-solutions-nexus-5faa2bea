@@ -28,10 +28,18 @@ export const PSA_ONBOARDED_THRESHOLD = 2;
 
 export type PsaIdSource = "auto" | "provider" | "legacy";
 
+/**
+ * PSA workflow status:
+ *  - `active`         → temporary auto-generated `RMPMCST-<mobile>` ID, can buy coupons
+ *  - `provider_pending` → user has requested a real PSA ID, waiting up to 24h for provider
+ *  - `provider_active`  → provider has issued the real PSA ID, fully onboarded
+ */
+export type PsaIdStatus = "active" | "provider_pending" | "provider_active";
+
 export interface PsaIdRecord {
   uid: string;
   psaId: string;
-  status: "active";
+  status: PsaIdStatus;
   generatedAt: string;
   successfulCouponCount: number;
   source: PsaIdSource;
@@ -40,7 +48,14 @@ export interface PsaIdRecord {
   phone?: string | null;
   /** Optional reference to the upstream PSA-create transaction. */
   providerRef?: string | null;
+  /** When the user clicked "Request PSA ID" (ISO). Used for 24h ETA display. */
+  requestedAt?: string | null;
+  /** When the provider issued the real ID (ISO). */
+  providerIssuedAt?: string | null;
 }
+
+/** Hours after request when provider is expected to issue the real PSA ID. */
+export const PSA_PROVIDER_ETA_HOURS = 24;
 
 /** Count successful coupon-buy transactions (refunded / failed are ignored). */
 export async function countSuccessfulCouponPurchases(uid: string): Promise<number> {
