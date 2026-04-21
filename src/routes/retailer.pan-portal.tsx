@@ -67,6 +67,7 @@ function PanPortalPage() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [transactions, setTransactions] = useState<PanTransaction[]>([]);
   const [active, setActive] = useState<(PanService & { fee: number }) | null>(null);
+  const [psaRecord, setPsaRecord] = useState<PsaIdRecord | null>(null);
 
   // Wallet
   useEffect(() => {
@@ -85,6 +86,17 @@ function PanPortalPage() {
     });
     return unsub;
   }, []);
+
+  // Stored PSA ID (legacy claim or auto-generated). When present we use this
+  // instead of the deterministic VLE ID so upstream calls hit the correct
+  // mallikacyberzone account the user already owns.
+  useEffect(() => {
+    if (!appUser) return;
+    const unsub = onSnapshot(doc(db, "psa_ids", appUser.uid), (snap) => {
+      setPsaRecord(snap.exists() ? (snap.data() as PsaIdRecord) : null);
+    });
+    return unsub;
+  }, [appUser]);
 
   // Transactions
   useEffect(() => {
@@ -114,10 +126,16 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  const vleId = useMemo(
-    () => generateVleId(appUser?.uid, appUser?.phone),
-    [appUser?.uid, appUser?.phone],
-  );
+  // Prefer the stored PSA ID (legacy or auto) over the deterministic fallback.
+  const vleId = useMemo(() => {
+    if (psaRecord?.psaId) return psaRecord.psaId;
+    return generateVleId(appUser?.uid, appUser?.phone);
+  }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
+  const vleIdSource: "legacy" | "auto" | "generated" = psaRecord?.source === "legacy"
+    ? "legacy"
+    : psaRecord?.source === "auto"
+    ? "auto"
+    : "generated";
 
   return (
     <div className="space-y-6">
