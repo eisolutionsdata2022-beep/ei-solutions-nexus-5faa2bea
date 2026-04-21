@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Newspaper, Download, RefreshCw, ExternalLink, Sparkles,
-  Trophy, Building2, Globe2, AlertCircle,
+  Trophy, Building2, Globe2, AlertCircle, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,9 @@ import {
   type FeedItem, type LotteryDraw,
 } from "@/lib/updates.functions";
 import { generateLotteryPDF } from "@/lib/lottery-pdf";
+import {
+  InlineArticleViewer, type ArticleRequest,
+} from "@/components/updates/InlineArticleViewer";
 
 export const Route = createFileRoute("/retailer/updates")({
   ssr: false,
@@ -41,6 +44,15 @@ function UpdatesPage() {
   const [govt, setGovt] = useState<FeedItem[]>([]);
   const [govtErr, setGovtErr] = useState<string | null>(null);
   const [govtLoading, setGovtLoading] = useState(true);
+
+  // Inline viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerReq, setViewerReq] = useState<ArticleRequest | null>(null);
+
+  const openInline = (item: FeedItem) => {
+    setViewerReq({ url: item.link, title: item.title, source: item.source });
+    setViewerOpen(true);
+  };
 
   const loadLottery = async () => {
     setLotteryLoading(true);
@@ -275,6 +287,7 @@ function UpdatesPage() {
               emptyMsg="No new PSC items found right now."
               fallbackHref="https://www.keralapsc.gov.in/"
               fallbackLabel="Open keralapsc.gov.in"
+              onOpen={openInline}
             />
           </ServiceSectionCard>
         </TabsContent>
@@ -299,16 +312,23 @@ function UpdatesPage() {
               emptyMsg="No press releases available right now."
               fallbackHref="https://pib.gov.in/AllRelease.aspx?reg=24"
               fallbackLabel="Open PIB Kerala"
+              onOpen={openInline}
             />
           </ServiceSectionCard>
         </TabsContent>
       </Tabs>
+
+      <InlineArticleViewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        request={viewerReq}
+      />
     </ServicePageShell>
   );
 }
 
 function FeedList({
-  loading, items, error, emptyMsg, fallbackHref, fallbackLabel,
+  loading, items, error, emptyMsg, fallbackHref, fallbackLabel, onOpen,
 }: {
   loading: boolean;
   items: FeedItem[];
@@ -316,6 +336,7 @@ function FeedList({
   emptyMsg: string;
   fallbackHref: string;
   fallbackLabel: string;
+  onOpen: (item: FeedItem) => void;
 }) {
   if (loading) {
     return (
@@ -340,11 +361,10 @@ function FeedList({
     <ul className="space-y-2">
       {items.map((item, i) => (
         <li key={i}>
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-lg border bg-card p-3 hover:bg-accent transition-colors"
+          <button
+            type="button"
+            onClick={() => onOpen(item)}
+            className="w-full text-left block rounded-lg border bg-card p-3 hover:bg-accent hover:border-rose-300 transition-colors group"
           >
             <div className="flex items-start gap-3">
               <Badge variant="outline" className="text-[10px] shrink-0 mt-0.5">
@@ -363,9 +383,11 @@ function FeedList({
                   </div>
                 )}
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="inline-flex items-center gap-1 text-xs text-rose-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Eye className="w-3.5 h-3.5" /> View
+              </span>
             </div>
-          </a>
+          </button>
         </li>
       ))}
     </ul>

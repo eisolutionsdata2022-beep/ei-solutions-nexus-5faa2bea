@@ -1,17 +1,24 @@
 ---
 name: Updates Page (Retailer)
-description: Live Kerala feeds — Lottery Result, PSC notifications, Govt press releases with branded PDF download
+description: In-portal mirror of Kerala Lottery, PSC, and Govt updates — Firecrawl-powered scraping renders full article content inline, no external nav
 type: feature
 ---
-`src/routes/retailer.updates.tsx` — Tabs UI inside ServicePageShell.
+`src/routes/retailer.updates.tsx` — Tabs UI inside ServicePageShell with inline article viewer (no external nav).
 
-Server functions in `src/lib/updates.functions.ts`:
-- `fetchLotteryResult` — scrapes keralalotteries.com / statelottery.kerala.gov.in (no official RSS), parses prize blocks via `<pre>` regex
-- `fetchPSCNotifications` — scrapes keralapsc.gov.in/notifications + /press-release (anchor regex)
-- `fetchGovtNotifications` — PIB Kerala RSS (RegId=24) parsed via fast-xml-parser
+**Server functions** (`src/lib/updates.functions.ts`):
+- `fetchLotteryResult` — Firecrawl scrape of keralalotteries.com (anti-bot bypass) + direct fetch fallback
+- `fetchPSCNotifications` — Firecrawl search (`tbs: qdr:w`) + Google News RSS fallback
+- `fetchGovtNotifications` — Firecrawl search + Google News RSS fallback (PIB blocks bots directly)
+- `mirrorArticle` — POST endpoint, scrapes any URL via Firecrawl `scrape({ formats: ["markdown"], onlyMainContent: true })` and returns markdown
 
-PDF: `src/lib/lottery-pdf.ts` — `generateLotteryPDF(draw)` builds branded jsPDF with tricolor strip, navy header, jspdf-autotable prize table.
+**Inline viewer** (`src/components/updates/InlineArticleViewer.tsx`):
+- Dialog with ScrollArea
+- Renders scraped markdown via `react-markdown` + `remark-gfm` (Tailwind `prose` classes)
+- "Open original" fallback button
+- All feed list items are buttons that open the viewer (no `target="_blank"` for items)
 
-Refresh: real-time on page load (no Firestore caching). Each tab has its own Reload button + global Refresh in shell header.
+**PDF**: `src/lib/lottery-pdf.ts` — `generateLotteryPDF(draw)` builds branded jsPDF with tricolor strip, navy header, jspdf-autotable prize table.
 
-Sidebar entry added at top of retailer nav with `tag: "new"`.
+**Connector**: Firecrawl (FIRECRAWL_API_KEY) — server-only, never exposed to browser.
+
+**Refresh**: real-time on page load. Each tab + global Refresh.
