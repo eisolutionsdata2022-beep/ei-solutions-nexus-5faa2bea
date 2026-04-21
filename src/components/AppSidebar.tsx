@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useAuth, type UserRole } from "@/lib/auth-context";
 import {
   LayoutDashboard,
@@ -28,7 +29,9 @@ import {
   BookOpen,
   Gift,
   Activity,
+  Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface NavItem {
   label: string;
@@ -162,14 +165,20 @@ const navByRole: Record<UserRole, NavItem[]> = {
 export function AppSidebar() {
   const { appUser, logout } = useAuth();
   const location = useLocation();
+  const [filter, setFilter] = useState("");
+
+  const allItems = appUser ? navByRole[appUser.role] || [] : [];
+  const items = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return allItems;
+    return allItems.filter((i) => i.label.toLowerCase().includes(q));
+  }, [allItems, filter]);
 
   if (!appUser) return null;
-
-  const items = navByRole[appUser.role] || [];
   const initial = (appUser.name || appUser.email || "U").charAt(0).toUpperCase();
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 bg-card border-r border-border min-h-0 relative">
+    <aside className="hidden lg:flex flex-col w-60 bg-card/80 backdrop-blur-xl border-r border-border min-h-0 relative">
       {/* Subtle gradient accent on the right edge */}
       <div
         className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent"
@@ -192,8 +201,28 @@ export function AppSidebar() {
         </div>
       </div>
 
+      {/* Menu filter — only show when 8+ items */}
+      {allItems.length >= 8 && (
+        <div className="px-3 pt-3 pb-1">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter menu..."
+              className="pl-7 h-8 text-xs rounded-lg bg-muted/40 border-border/60"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
+      <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5 thin-scroll">
+        {items.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-6">
+            No menu items match "{filter}"
+          </p>
+        )}
         {items.map((item) => {
           const isActive = location.pathname === item.to;
           return (
@@ -219,6 +248,13 @@ export function AppSidebar() {
                 }`}
               />
               <span className="truncate">{item.label}</span>
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  isActive ? "bg-white/25 text-white" : "bg-primary/15 text-primary"
+                }`}>
+                  {item.badge > 99 ? "99+" : item.badge}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -228,7 +264,7 @@ export function AppSidebar() {
       <div className="p-3 border-t border-border bg-background/50 backdrop-blur-sm">
         <button
           onClick={logout}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm w-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-semibold shadow-sm hover:shadow-premium hover:opacity-95 active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm w-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-semibold shadow-sm hover:shadow-premium hover:opacity-95 active:scale-[0.98] transition-all sheen-on-hover"
         >
           <LogOut className="w-4 h-4" />
           Logout
