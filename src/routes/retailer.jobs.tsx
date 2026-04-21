@@ -112,16 +112,25 @@ function RetailerJobs() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Briefcase className="w-6 h-6" /> Job Marketplace</h1>
-          <p className="text-muted-foreground text-sm">Post jobs and hire approved workers</p>
+    <ServicePageShell
+      icon={Briefcase}
+      title="Job Marketplace"
+      subtitle="Post jobs and hire approved workers — escrow-secured."
+      eyebrow="Marketplace"
+      gradient="from-orange-600 via-red-600 to-rose-600"
+      headerAction={
+        <div className="flex gap-2 flex-wrap">
+          <Link to="/retailer/work-badge"><Button size="sm" variant="secondary" className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Badge</Button></Link>
+          <Link to="/retailer/work"><Button size="sm" variant="secondary" className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl">Worker View</Button></Link>
         </div>
-        <div className="flex gap-2">
-          <Link to="/retailer/work-badge"><Button variant="outline"><ShieldCheck className="w-4 h-4 mr-1" /> Work Badge</Button></Link>
-          <Link to="/retailer/work"><Button variant="outline">Browse Jobs (Workers)</Button></Link>
-          <Dialog open={open} onOpenChange={setOpen}>
+      }
+      stats={[
+        { icon: Briefcase, label: "Open Jobs", value: jobs.length, accent: "from-orange-400 to-red-400" },
+        { icon: Plus, label: "My Jobs", value: myJobs.length, accent: "from-emerald-400 to-teal-400" },
+      ]}
+    >
+      <div className="flex items-center justify-end">
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="w-4 h-4 mr-1" /> Post New Job</Button>
             </DialogTrigger>

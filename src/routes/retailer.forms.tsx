@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Send, ArrowLeft, CheckCircle, Clock, XCircle } from "lucide-react";
+import { FileText, Send, ArrowLeft, CheckCircle, Clock, XCircle, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/forms")({
   ssr: false,
@@ -106,11 +107,17 @@ function RetailerForms() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Forms</h1>
-        <p className="text-muted-foreground">Fill and submit forms assigned by admin.</p>
-      </div>
+    <ServicePageShell
+      icon={ClipboardList}
+      title="Forms"
+      subtitle="Fill and submit forms assigned by admin."
+      eyebrow="Custom Forms"
+      gradient="from-green-600 via-emerald-600 to-teal-600"
+      stats={[
+        { icon: ClipboardList, label: "Available", value: forms.length, accent: "from-emerald-400 to-teal-400" },
+        { icon: CheckCircle, label: "Submissions", value: submissions.length, accent: "from-blue-400 to-indigo-400" },
+      ]}
+    >
 
       {/* Available Forms */}
       {forms.length > 0 && (
@@ -248,6 +255,6 @@ function RetailerForms() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </ServicePageShell>
   );
 }
