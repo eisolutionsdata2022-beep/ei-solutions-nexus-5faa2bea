@@ -43,7 +43,14 @@ export type PsaIdStatus = "active" | "provider_pending" | "provider_active";
 
 export interface PsaIdRecord {
   uid: string;
+  /** Internal portal VLE ID (`RMPMCST-<mobile>`). Used for all upstream calls. */
   psaId: string;
+  /**
+   * Provider-issued official PSA ID (UTI PSA portal login). Stored separately
+   * — never overwrites `psaId`. Set when the provider issues it (~24h after
+   * "Request PSA ID"). Shown only in the user's Profile page.
+   */
+  providerPsaId?: string | null;
   status: PsaIdStatus;
   generatedAt: string;
   successfulCouponCount: number;
