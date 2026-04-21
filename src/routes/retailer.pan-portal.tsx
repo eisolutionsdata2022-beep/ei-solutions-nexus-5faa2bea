@@ -207,6 +207,31 @@ function PanPortalPage() {
         </Card>
       )}
 
+      {vleIdSource === "generated" && (
+        <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+          <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <IdCard className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+              <div className="text-sm">
+                <p className="font-semibold text-sky-900 dark:text-sky-200">
+                  Already have a PSA ID from the old portal?
+                </p>
+                <p className="mt-1 text-sky-800 dark:text-sky-300/90">
+                  Link your existing PSA / VLE ID so Coupon Buy, PSA Reset and NSDL calls use the
+                  correct account. Otherwise upstream may reject the auto-generated ID.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/retailer/profile"
+              className="self-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-sky-700"
+            >
+              Link in Profile →
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h2 className="mb-3 text-lg font-bold text-foreground">PAN Services</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
