@@ -224,14 +224,10 @@ export const executePanService = createServerFn({ method: "POST" })
     void apiSecret;
     const merged: Record<string, string> = { api_key: apiKey, ...(data.extras ?? {}) };
     for (const [k, v] of Object.entries(data.fields)) {
-      let val = String(v);
-      // Provider expects bare PSA ID (e.g. PSA309978), not PSA309978-9876543210.
-      // Our internal display format appends the user's mobile after a hyphen for
-      // readability — strip it before sending upstream.
-      if (k === "vle_id" && val.includes("-")) {
-        val = val.split("-")[0];
-      }
-      merged[k] = val;
+      // Send all fields (including vle_id) as-is. The internal RMPMCST-<mobile>
+      // format is what the provider expects for coupon-buy and other calls;
+      // stripping the suffix would corrupt the ID.
+      merged[k] = String(v);
     }
     if (data.pOrderId) merged.p_order_id = data.pOrderId;
     if (data.redirectUrl) merged.redirect_url = data.redirectUrl;
