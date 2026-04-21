@@ -1,14 +1,19 @@
 /**
  * PSA / VLE ID storage for the PAN Portal.
  *
- * WORK LOGIC (matches the legacy UTI PSA portal):
- *   1. New user registers → we auto-create a PSA record with a VLE ID in
- *      legacy `RMPMCST-<mobile>` format (source: "auto", status: "active").
- *      User can immediately use it to buy coupons.
- *   2. After 2 successful coupon purchases, the record is marked as
- *      "fully onboarded" — congrats banner + green badges appear.
- *   3. Legacy users can claim their existing UTI PSA ID via Profile.
- *   4. If the upstream provider issues a different ID later, we update.
+ * TWO IDs PER USER (CRITICAL):
+ *   - `psaId` (Internal Portal ID) — auto-generated `RMPMCST-<mobile>` format.
+ *     Used for ALL portal calls (Coupon Buy, NSDL, etc). NEVER overwritten.
+ *   - `providerPsaId` (Official Provider PSA ID) — issued by upstream provider
+ *     after the user clicks "Request PSA ID" + waits ~24h. Used ONLY by the
+ *     retailer to log into the official UTI PSA portal externally. Shown in
+ *     the Profile page only.
+ *
+ *   1. New user → auto `RMPMCST-<mobile>` (status: "active").
+ *   2. After 2 successful coupons → "Request PSA ID" button enabled.
+ *   3. Click → upstream PSA-Create call, status: "provider_pending", requestedAt set.
+ *   4. After ~24h, user clicks "Check Status" → if provider returns ID, save
+ *      to `providerPsaId`, status: "provider_active". Internal `psaId` unchanged.
  */
 import {
   collection,
