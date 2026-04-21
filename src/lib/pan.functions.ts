@@ -216,9 +216,13 @@ export const executePanService = createServerFn({ method: "POST" })
       }
     }
 
-    // Build payload merging api_key + secret + extras + user fields.
+    // Build payload merging api_key + extras + user fields.
+    // NOTE: mallikacyberzone API only accepts `api_key` — do NOT send `secret`
+    // (the API rejects unknown parameters with "Missing or Invalid Parameter").
+    // The apiSecret field is decrypted but intentionally unused here; it is
+    // reserved for future endpoints that may require it.
+    void apiSecret;
     const merged: Record<string, string> = { api_key: apiKey, ...(data.extras ?? {}) };
-    if (apiSecret) merged.secret = apiSecret;
     for (const [k, v] of Object.entries(data.fields)) {
       let val = String(v);
       // Provider expects bare PSA ID (e.g. PSA309978), not PSA309978-9876543210.
