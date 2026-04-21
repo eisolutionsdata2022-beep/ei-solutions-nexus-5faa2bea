@@ -317,6 +317,12 @@ function UpdatesPage() {
           </ServiceSectionCard>
         </TabsContent>
       </Tabs>
+
+      <InlineArticleViewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        request={viewerReq}
+      />
     </ServicePageShell>
   );
 }
