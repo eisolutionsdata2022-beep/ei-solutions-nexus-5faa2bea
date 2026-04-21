@@ -174,9 +174,14 @@ function PanPortalPage() {
                     Legacy linked
                   </span>
                 )}
-                {vleIdSource === "auto" && (
+                {vleIdSource === "provider" && (
+                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
+                    Provider issued
+                  </span>
+                )}
+                {vleIdSource === "pending" && (
                   <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
-                    Auto
+                    Pending — Create PSA first
                   </span>
                 )}
               </div>
@@ -209,27 +214,27 @@ function PanPortalPage() {
         </Card>
       )}
 
-      {vleIdSource === "generated" && (
-        <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+      {vleIdSource === "pending" && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
           <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
             <div className="flex items-start gap-3">
-              <IdCard className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <div className="text-sm">
-                <p className="font-semibold text-sky-900 dark:text-sky-200">
-                  Already have a PSA ID from the old portal?
+                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                  You don't have a PSA / VLE ID yet
                 </p>
-                <p className="mt-1 text-sky-800 dark:text-sky-300/90">
-                  Link your existing PSA / VLE ID so Coupon Buy, PSA Reset and NSDL calls use the
-                  correct account. Otherwise upstream may reject the auto-generated ID.
+                <p className="mt-1 text-amber-800 dark:text-amber-300/90">
+                  To buy coupons and process PAN cards, you first need a real
+                  VLE ID issued by the provider. Use{" "}
+                  <strong>"PSA ID Create"</strong> below — once submitted, the
+                  provider will issue your official UTI PSA ID and we'll save
+                  it automatically. Already have one from the old portal?{" "}
+                  <Link to="/retailer/profile" className="underline font-semibold">
+                    Link it in Profile →
+                  </Link>
                 </p>
               </div>
             </div>
-            <Link
-              to="/retailer/profile"
-              className="self-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-sky-700"
-            >
-              Link in Profile →
-            </Link>
           </CardContent>
         </Card>
       )}
@@ -387,7 +392,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "auto" | "generated";
+  vleIdSource: "legacy" | "provider" | "pending";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
