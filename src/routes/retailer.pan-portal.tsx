@@ -124,7 +124,7 @@ function PanPortalPage() {
     !!psaRecord &&
     psaStatus === "active" &&
     couponCount >= PSA_ONBOARDED_THRESHOLD &&
-    (psaRecord?.source ?? "auto") === "auto";
+    !psaRecord?.providerPsaId;
 
   const services = useMemo(() => {
     const disabled = new Set(config?.disabledServices ?? []);
@@ -144,18 +144,16 @@ function PanPortalPage() {
   }, [config, providerPending]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // VLE ID is always available — auto-generated in `RMPMCST-<mobile>` format
-  // for new users, or whatever the provider/legacy ID is once promoted.
+  // Internal portal VLE ID — ALWAYS `RMPMCST-<mobile>` (or legacy if claimed).
+  // This is what every upstream API call uses. NEVER replaced by the
+  // provider-issued ID — that one is stored separately in `providerPsaId`
+  // and is only for the user to log into the official UTI PSA portal.
   const vleId = useMemo(() => {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "provider" | "auto" =
-    psaRecord?.source === "legacy"
-      ? "legacy"
-      : psaRecord?.source === "provider"
-      ? "provider"
-      : "auto";
+  const vleIdSource: "legacy" | "auto" =
+    psaRecord?.source === "legacy" ? "legacy" : "auto";
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
