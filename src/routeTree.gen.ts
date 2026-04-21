@@ -48,6 +48,7 @@ import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-ba
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
 import { Route as RetailerVirtualTrainerRouteImport } from './routes/retailer.virtual-trainer'
+import { Route as RetailerUpdatesRouteImport } from './routes/retailer.updates'
 import { Route as RetailerTransactionsRouteImport } from './routes/retailer.transactions'
 import { Route as RetailerTrainingsRouteImport } from './routes/retailer.trainings'
 import { Route as RetailerTrainingGuideRouteImport } from './routes/retailer.training-guide'
@@ -311,6 +312,11 @@ const RetailerWalletRoute = RetailerWalletRouteImport.update({
 const RetailerVirtualTrainerRoute = RetailerVirtualTrainerRouteImport.update({
   id: '/virtual-trainer',
   path: '/virtual-trainer',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerUpdatesRoute = RetailerUpdatesRouteImport.update({
+  id: '/updates',
+  path: '/updates',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerTransactionsRoute = RetailerTransactionsRouteImport.update({
@@ -744,6 +750,7 @@ export interface FileRoutesByFullPath {
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
+  '/retailer/updates': typeof RetailerUpdatesRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
@@ -847,6 +854,7 @@ export interface FileRoutesByTo {
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
+  '/retailer/updates': typeof RetailerUpdatesRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
@@ -958,6 +966,7 @@ export interface FileRoutesById {
   '/retailer/training-guide': typeof RetailerTrainingGuideRoute
   '/retailer/trainings': typeof RetailerTrainingsRoute
   '/retailer/transactions': typeof RetailerTransactionsRoute
+  '/retailer/updates': typeof RetailerUpdatesRoute
   '/retailer/virtual-trainer': typeof RetailerVirtualTrainerRoute
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
@@ -1070,6 +1079,7 @@ export interface FileRouteTypes {
     | '/retailer/training-guide'
     | '/retailer/trainings'
     | '/retailer/transactions'
+    | '/retailer/updates'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/retailer/work'
@@ -1173,6 +1183,7 @@ export interface FileRouteTypes {
     | '/retailer/training-guide'
     | '/retailer/trainings'
     | '/retailer/transactions'
+    | '/retailer/updates'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/retailer/work'
@@ -1283,6 +1294,7 @@ export interface FileRouteTypes {
     | '/retailer/training-guide'
     | '/retailer/trainings'
     | '/retailer/transactions'
+    | '/retailer/updates'
     | '/retailer/virtual-trainer'
     | '/retailer/wallet'
     | '/retailer/work'
@@ -1606,6 +1618,13 @@ declare module '@tanstack/react-router' {
       path: '/virtual-trainer'
       fullPath: '/retailer/virtual-trainer'
       preLoaderRoute: typeof RetailerVirtualTrainerRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/updates': {
+      id: '/retailer/updates'
+      path: '/updates'
+      fullPath: '/retailer/updates'
+      preLoaderRoute: typeof RetailerUpdatesRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/transactions': {
@@ -2263,6 +2282,7 @@ interface RetailerRouteChildren {
   RetailerTrainingGuideRoute: typeof RetailerTrainingGuideRoute
   RetailerTrainingsRoute: typeof RetailerTrainingsRoute
   RetailerTransactionsRoute: typeof RetailerTransactionsRoute
+  RetailerUpdatesRoute: typeof RetailerUpdatesRoute
   RetailerVirtualTrainerRoute: typeof RetailerVirtualTrainerRoute
   RetailerWalletRoute: typeof RetailerWalletRoute
   RetailerWorkRoute: typeof RetailerWorkRoute
@@ -2293,6 +2313,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerTrainingGuideRoute: RetailerTrainingGuideRoute,
   RetailerTrainingsRoute: RetailerTrainingsRoute,
   RetailerTransactionsRoute: RetailerTransactionsRoute,
+  RetailerUpdatesRoute: RetailerUpdatesRoute,
   RetailerVirtualTrainerRoute: RetailerVirtualTrainerRoute,
   RetailerWalletRoute: RetailerWalletRoute,
   RetailerWorkRoute: RetailerWorkRoute,
