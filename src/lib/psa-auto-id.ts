@@ -1,14 +1,19 @@
 /**
  * PSA / VLE ID storage for the PAN Portal.
  *
- * WORK LOGIC (matches the legacy UTI PSA portal):
- *   1. New user registers → we auto-create a PSA record with a VLE ID in
- *      legacy `RMPMCST-<mobile>` format (source: "auto", status: "active").
- *      User can immediately use it to buy coupons.
- *   2. After 2 successful coupon purchases, the record is marked as
- *      "fully onboarded" — congrats banner + green badges appear.
- *   3. Legacy users can claim their existing UTI PSA ID via Profile.
- *   4. If the upstream provider issues a different ID later, we update.
+ * TWO IDs PER USER (CRITICAL):
+ *   - `psaId` (Internal Portal ID) — auto-generated `RMPMCST-<mobile>` format.
+ *     Used for ALL portal calls (Coupon Buy, NSDL, etc). NEVER overwritten.
+ *   - `providerPsaId` (Official Provider PSA ID) — issued by upstream provider
+ *     after the user clicks "Request PSA ID" + waits ~24h. Used ONLY by the
+ *     retailer to log into the official UTI PSA portal externally. Shown in
+ *     the Profile page only.
+ *
+ *   1. New user → auto `RMPMCST-<mobile>` (status: "active").
+ *   2. After 2 successful coupons → "Request PSA ID" button enabled.
+ *   3. Click → upstream PSA-Create call, status: "provider_pending", requestedAt set.
+ *   4. After ~24h, user clicks "Check Status" → if provider returns ID, save
+ *      to `providerPsaId`, status: "provider_active". Internal `psaId` unchanged.
  */
 import {
   collection,
@@ -38,7 +43,14 @@ export type PsaIdStatus = "active" | "provider_pending" | "provider_active";
 
 export interface PsaIdRecord {
   uid: string;
+  /** Internal portal VLE ID (`RMPMCST-<mobile>`). Used for all upstream calls. */
   psaId: string;
+  /**
+   * Provider-issued official PSA ID (UTI PSA portal login). Stored separately
+   * — never overwrites `psaId`. Set when the provider issues it (~24h after
+   * "Request PSA ID"). Shown only in the user's Profile page.
+   */
+  providerPsaId?: string | null;
   status: PsaIdStatus;
   generatedAt: string;
   successfulCouponCount: number;
@@ -142,26 +154,23 @@ export async function savePsaIdFromProvider(opts: {
 
   return runTransaction(db, async (tx) => {
     const existing = await tx.get(psaRef);
-    const record: PsaIdRecord = {
-      uid: opts.uid,
-      psaId: cleaned,
+    if (!existing.exists()) {
+      throw new Error("No PSA record yet — open the PAN Portal first.");
+    }
+    const prev = existing.data() as PsaIdRecord;
+    // CRITICAL: Do NOT overwrite the internal `psaId` (RMPMCST-<mobile>).
+    // The provider-issued ID is stored separately in `providerPsaId` and is
+    // only used for the user to log into the official UTI PSA portal.
+    const updated: PsaIdRecord = {
+      ...prev,
+      providerPsaId: cleaned,
       status: "provider_active",
-      generatedAt: existing.exists()
-        ? (existing.data() as PsaIdRecord).generatedAt
-        : new Date().toISOString(),
       successfulCouponCount: successCount,
-      source: "provider",
-      email: opts.email ?? null,
-      name: opts.name ?? null,
-      phone: opts.phone ?? null,
-      providerRef: opts.providerRef ?? null,
-      requestedAt: existing.exists()
-        ? (existing.data() as PsaIdRecord).requestedAt ?? null
-        : null,
+      providerRef: opts.providerRef ?? prev.providerRef ?? null,
       providerIssuedAt: new Date().toISOString(),
     };
-    tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
-    return record;
+    tx.set(psaRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+    return updated;
   });
 }
 

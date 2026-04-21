@@ -247,7 +247,7 @@ function RetailerProfile() {
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">PSA ID</p>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Internal Portal VLE ID</p>
               {psa ? (
                 <>
                   <p className="text-2xl font-extrabold font-mono tracking-wider text-foreground break-all">{psa.psaId}</p>
@@ -258,12 +258,32 @@ function RetailerProfile() {
                       <Badge variant="outline" className="text-[10px] py-0">Migrated from old portal</Badge>
                     )}
                   </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Used by EI SOLUTIONS portal for all upstream PAN/coupon calls.
+                  </p>
+                  {psa.providerPsaId ? (
+                    <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 p-3">
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300">
+                        Official UTI PSA ID (provider-issued)
+                      </p>
+                      <p className="text-lg font-bold font-mono tracking-wider text-emerald-900 dark:text-emerald-100 break-all">
+                        {psa.providerPsaId}
+                      </p>
+                      <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 mt-1">
+                        Use this ID to log into the official UTI PSA portal externally.
+                      </p>
+                    </div>
+                  ) : psa.status === "provider_pending" ? (
+                    <p className="text-[11px] text-sky-700 dark:text-sky-300 mt-2">
+                      Official PSA ID requested — provider issues it within 24 hours.
+                    </p>
+                  ) : null}
                 </>
               ) : (
                 <>
                   <p className="text-base font-semibold text-foreground">Not yet generated</p>
                   <p className="text-xs text-muted-foreground">
-                    New users: purchase {Math.max(0, PSA_AUTO_THRESHOLD - couponCount)} more coupon{PSA_AUTO_THRESHOLD - couponCount === 1 ? "" : "s"} to auto-generate ({couponCount}/{PSA_AUTO_THRESHOLD} successful).
+                    Open the PAN Portal once and your internal VLE ID will be created automatically.
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Existing member? You can link your old PSA ID instead.

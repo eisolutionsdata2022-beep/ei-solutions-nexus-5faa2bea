@@ -45,6 +45,10 @@ import {
   IdCard,
   Download,
   Copy,
+  BadgeCheck,
+  Send,
+  RefreshCw,
+  Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES, type PanService } from "@/lib/pan-services";
@@ -98,6 +102,22 @@ function PanPortalPage() {
     return unsub;
   }, [appUser]);
 
+  // Auto-create the PSA record on first portal visit so the user immediately
+  // has an internal `RMPMCST-<mobile>` ID for coupon buys.
+  useEffect(() => {
+    if (!appUser) return;
+    ensurePsaIdRecord({
+      uid: appUser.uid,
+      email: appUser.email ?? null,
+      name: appUser.name ?? null,
+      phone: appUser.phone ?? null,
+    }).catch((err) => console.error("[ensurePsaIdRecord]", err));
+  }, [appUser]);
+
+  // Loading flags for the PSA request / status-check buttons.
+  const [requestingPsa, setRequestingPsa] = useState(false);
+  const [checkingPsa, setCheckingPsa] = useState(false);
+
   // Transactions
   useEffect(() => {
     if (!appUser) return;
@@ -124,7 +144,7 @@ function PanPortalPage() {
     !!psaRecord &&
     psaStatus === "active" &&
     couponCount >= PSA_ONBOARDED_THRESHOLD &&
-    (psaRecord?.source ?? "auto") === "auto";
+    !psaRecord?.providerPsaId;
 
   const services = useMemo(() => {
     const disabled = new Set(config?.disabledServices ?? []);
@@ -144,18 +164,119 @@ function PanPortalPage() {
   }, [config, providerPending]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // VLE ID is always available — auto-generated in `RMPMCST-<mobile>` format
-  // for new users, or whatever the provider/legacy ID is once promoted.
+  // Internal portal VLE ID — ALWAYS `RMPMCST-<mobile>` (or legacy if claimed).
+  // This is what every upstream API call uses. NEVER replaced by the
+  // provider-issued ID — that one is stored separately in `providerPsaId`
+  // and is only for the user to log into the official UTI PSA portal.
   const vleId = useMemo(() => {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "provider" | "auto" =
-    psaRecord?.source === "legacy"
-      ? "legacy"
-      : psaRecord?.source === "provider"
-      ? "provider"
-      : "auto";
+  const vleIdSource: "legacy" | "auto" =
+    psaRecord?.source === "legacy" ? "legacy" : "auto";
+
+  const handleRequestPsa = async () => {
+    if (!appUser || !config?.apiKeyCipher || !config.urls?.psaCreate) {
+      toast.error("PAN portal not configured. Contact admin.");
+      return;
+    }
+    setRequestingPsa(true);
+    try {
+      const result = await executePanService({
+        data: {
+          serviceKey: "psa-create",
+          serviceName: "PSA ID Request",
+          endpoint: "psaCreate",
+          method: "GET",
+          url: config.urls.psaCreate,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          fields: {
+            vle_id: vleId,
+            vle_name: appUser.name ?? "",
+            vle_mob: appUser.phone ?? "",
+            vle_email: appUser.email ?? "",
+          },
+          extras: {},
+          expectsRedirect: false,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      if (!result.success) {
+        throw new Error(result.error || "Provider rejected the request");
+      }
+      await markPsaIdRequested({
+        uid: appUser.uid,
+        providerRef: result.providerRef,
+      });
+      toast.success(
+        `PSA ID requested. Provider will issue your official ID within ${PSA_PROVIDER_ETA_HOURS} hours.`,
+        { duration: 8000 },
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setRequestingPsa(false);
+    }
+  };
+
+  const handleCheckPsaStatus = async () => {
+    if (!appUser || !config?.apiKeyCipher || !config.urls?.psaCreate) {
+      toast.error("PAN portal not configured. Contact admin.");
+      return;
+    }
+    setCheckingPsa(true);
+    try {
+      const result = await executePanService({
+        data: {
+          serviceKey: "psa-status-check",
+          serviceName: "PSA Status Check",
+          endpoint: "psaCreate",
+          method: "GET",
+          url: config.urls.psaCreate,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          fields: {
+            vle_id: vleId,
+            vle_name: appUser.name ?? "",
+            vle_mob: appUser.phone ?? "",
+            vle_email: appUser.email ?? "",
+          },
+          extras: {},
+          expectsRedirect: false,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      if (!result.success) {
+        toast.info("Still pending. Please check again later.");
+        return;
+      }
+      const issuedId =
+        result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef)
+          ? result.providerRef
+          : null;
+      if (issuedId && issuedId !== vleId) {
+        await savePsaIdFromProvider({
+          uid: appUser.uid,
+          providerVleId: issuedId,
+          providerRef: result.providerRef,
+          email: appUser.email ?? null,
+          name: appUser.name ?? null,
+          phone: appUser.phone ?? null,
+        });
+        toast.success(`🎉 Your provider PSA ID is ready: ${issuedId}`, { duration: 10000 });
+      } else {
+        toast.info("Still pending. Please check again later.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Status check failed");
+    } finally {
+      setCheckingPsa(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
@@ -191,19 +312,18 @@ function PanPortalPage() {
                     Legacy linked
                   </span>
                 )}
-                {vleIdSource === "provider" && (
-                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
-                    Provider issued
-                  </span>
-                )}
                 {vleIdSource === "auto" && (
                   <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                     fullyOnboarded
                       ? "bg-emerald-400/30 text-emerald-50"
+                      : providerPending
+                      ? "bg-sky-400/30 text-sky-50"
                       : "bg-amber-400/30 text-amber-50"
                   }`}>
                     {fullyOnboarded
-                      ? "Active"
+                      ? "PSA Active"
+                      : providerPending
+                      ? "PSA Requested"
                       : `${couponCount}/${PSA_ONBOARDED_THRESHOLD} coupons`}
                   </span>
                 )}
@@ -233,6 +353,96 @@ function PanPortalPage() {
                 URLs before services can be executed. You can browse the catalog below.
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* PSA Request / Status panel — three states based on workflow stage. */}
+      {ready && psaRecord && !fullyOnboarded && (
+        <>
+          {canRequestPsa && (
+            <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                      You're ready to request your official PSA ID
+                    </p>
+                    <p className="mt-1 text-emerald-800 dark:text-emerald-300/90">
+                      You've completed {couponCount} coupon purchases. Request your provider-issued
+                      UTI PSA ID now — it will be issued within {PSA_PROVIDER_ETA_HOURS} hours.
+                      You'll use it to log into the official UTI PSA portal externally.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleRequestPsa}
+                  disabled={requestingPsa}
+                  className="shrink-0 gap-2"
+                >
+                  {requestingPsa ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Request PSA ID
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {providerPending && (
+            <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <Hourglass className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-sky-900 dark:text-sky-200">
+                      PSA ID request submitted
+                    </p>
+                    <p className="mt-1 text-sky-800 dark:text-sky-300/90">
+                      Requested {psaRecord.requestedAt ? new Date(psaRecord.requestedAt).toLocaleString() : "recently"}.
+                      The provider issues PSA IDs within {PSA_PROVIDER_ETA_HOURS} hours. Coupon
+                      Buy is paused until your official ID is ready. Click below to check.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleCheckPsaStatus}
+                  disabled={checkingPsa}
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                >
+                  {checkingPsa ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Check PSA Status
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {fullyOnboarded && psaRecord?.providerPsaId && (
+        <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30">
+          <CardContent className="flex flex-col gap-2 p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                Official PSA ID active
+              </p>
+            </div>
+            <p className="text-sm text-emerald-800 dark:text-emerald-300/90">
+              Your official UTI PSA ID is{" "}
+              <code className="font-mono font-bold">{psaRecord.providerPsaId}</code>
+              . Use it to log into the official UTI PSA portal externally. All
+              portal calls here continue to use your internal ID{" "}
+              <code className="font-mono font-bold">{vleId}</code>.
+            </p>
           </CardContent>
         </Card>
       )}
@@ -390,7 +600,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "provider" | "auto";
+  vleIdSource: "legacy" | "auto";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -517,15 +727,11 @@ function PanExecutionDialog({
           toast.success(`${service.name} successful · ${result.message}`);
         }
 
-        // After a successful PSA ID Create, the provider returns the real
-        // VLE ID. Persist it so future Coupon Buy / NSDL calls send the
-        // correct, recognised account.
+        // After a successful "PSA ID Create" call from the manual service
+        // dialog, store the provider-issued ID in `providerPsaId` (separate
+        // from internal `psaId`). Internal ID is NEVER overwritten.
         if (service.key === "psa-create") {
           try {
-            // The provider returns the issued VLE ID either directly in the
-            // payload or echoes back the one we sent (which the user typed).
-            // Prefer providerRef (parsed by server fn from json.vle_id) but
-            // fall back to the form value.
             const issuedId = (result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef))
               ? result.providerRef
               : (values.vle_id || "");
@@ -539,7 +745,7 @@ function PanExecutionDialog({
                 phone: retailerPhone,
               });
               toast.success(
-                `🎉 Your PSA ID ${saved.psaId} is now active. You can buy coupons and process PAN cards.`,
+                `🎉 Your official PSA ID ${saved.providerPsaId} is now stored. Use it to log into the UTI PSA portal.`,
                 { duration: 8000 },
               );
             }
@@ -654,9 +860,7 @@ function PanExecutionDialog({
                     ? "Choose a VLE ID for the provider to register (or leave a placeholder — the provider will issue your real ID upon successful submission)."
                     : vleIdSource === "legacy"
                     ? "Your existing PSA / VLE ID linked from the old portal — used for all upstream calls."
-                    : vleIdSource === "provider"
-                    ? "Your official provider-issued PSA / VLE ID — used for all upstream calls."
-                    : "PENDING — submit \"PSA ID Create\" first to get your real provider-issued ID, or link a legacy ID from Profile."}
+                    : "Your internal portal VLE ID — used for every upstream call."}
                 </p>
               ) : (
                 f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>
