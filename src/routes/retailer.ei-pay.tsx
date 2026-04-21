@@ -33,8 +33,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download } from "lucide-react";
+import { Wallet, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
@@ -244,7 +245,7 @@ function EiPayPage() {
         retailerEmail={appUser?.email ?? ""}
         bridgeReady={bridgeReady}
       />
-    </div>
+    </ServicePageShell>
   );
 }
 
