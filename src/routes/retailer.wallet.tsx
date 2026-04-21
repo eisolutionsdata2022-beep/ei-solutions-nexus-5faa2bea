@@ -562,3 +562,139 @@ function RetailerWallet() {
     </div>
   );
 }
+
+/** Wallet top-up requests rendered as expandable cards with a status timeline. */
+function WalletRequestsList({
+  loading,
+  requests,
+}: {
+  loading: boolean;
+  requests: WalletRequest[];
+}) {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "approved" | "rejected"
+  >("all");
+
+  const filtered = requests.filter((r) => {
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      String(r.amount).includes(q) ||
+      r.paymentMethod.toLowerCase().includes(q) ||
+      r.status.toLowerCase().includes(q) ||
+      (r.remarks || "").toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 px-5 py-4 bg-gradient-to-br from-muted/40 to-transparent">
+        <div>
+          <h2 className="text-base font-bold text-foreground">Top-up Requests</h2>
+          <p className="text-xs text-muted-foreground">
+            Live status timeline for every add-money request
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search amount, method, remark…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full sm:w-64 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-1.5 px-5 pt-3">
+        {(["all", "pending", "approved", "rejected"] as const).map((s) => {
+          const count =
+            s === "all" ? requests.length : requests.filter((r) => r.status === s).length;
+          const active = statusFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1 text-xs font-semibold rounded-full border capitalize transition-all ${
+                active
+                  ? "bg-premium-gradient text-white border-transparent shadow-sm"
+                  : "bg-background border-border/70 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {s} <span className="opacity-70">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* List */}
+      <div className="p-5 space-y-3">
+        {loading ? (
+          <>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-32 rounded-xl bg-muted/40 animate-pulse"
+                aria-hidden
+              />
+            ))}
+          </>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              {requests.length === 0
+                ? "No top-up requests yet. Click 'Add Money' to get started."
+                : "No requests match your filters."}
+            </p>
+          </div>
+        ) : (
+          filtered.map((req) => (
+            <div
+              key={req.id}
+              className="rounded-xl border border-border/60 bg-background/60 p-4 transition-shadow hover:shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-premium-gradient text-white flex items-center justify-center shadow-sm shrink-0">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-lg font-extrabold tabular-nums text-foreground leading-none">
+                      ₹{req.amount.toLocaleString("en-IN")}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      via <span className="font-semibold">{req.paymentMethod}</span>
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant={
+                    req.status === "approved"
+                      ? "default"
+                      : req.status === "rejected"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                  className="capitalize gap-1 rounded-full"
+                >
+                  {req.status === "pending" && <Clock className="w-3 h-3" />}
+                  {req.status === "approved" && <CheckCircle className="w-3 h-3" />}
+                  {req.status === "rejected" && <XCircle className="w-3 h-3" />}
+                  {req.status}
+                </Badge>
+              </div>
+
+              <StatusTimeline req={req} />
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
