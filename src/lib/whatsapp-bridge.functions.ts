@@ -26,6 +26,23 @@ function bridgeCandidates(rawUrl: string): string[] {
   if (!/\/wa$/i.test(clean)) candidates.add(`${clean}/wa`);
   if (/\/wa$/i.test(clean)) candidates.add(clean.replace(/\/wa$/i, ""));
 
+  try {
+    const parsed = new URL(clean);
+    const basePath = parsed.pathname.replace(/\/$/, "");
+    const rootPath = /\/wa$/i.test(basePath) ? basePath : `${basePath}/wa`;
+
+    if (parsed.hostname.startsWith("wa.")) {
+      const rootHost = parsed.hostname.slice(3);
+      const rootOrigin = `${parsed.protocol}//${rootHost}${parsed.port ? `:${parsed.port}` : ""}`;
+      candidates.add(`${rootOrigin}${rootPath || "/wa"}`.replace(/\/$/, ""));
+    } else if (parsed.hostname.split(".").length >= 2) {
+      const waOrigin = `${parsed.protocol}//wa.${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
+      candidates.add((/\/wa$/i.test(basePath) ? waOrigin : `${waOrigin}${basePath}`).replace(/\/$/, ""));
+    }
+  } catch {
+    // Ignore malformed URLs here — downstream diagnostics already explain config issues.
+  }
+
   return [...candidates];
 }
 
@@ -185,6 +202,16 @@ export const diagnoseWhatsAppBridge = createServerFn({ method: "GET" })
     else if (/ENOTFOUND|getaddrinfo/i.test(msg)) hint += "DNS lookup failed — the bridge host does not resolve.";
     else if (/ECONNREFUSED/i.test(msg)) hint += "Connection refused — bridge is not listening on that port.";
     else hint += "Verify the URL is correct and the VPS proxy is online.";
+
+    if (/\/\/wa\./i.test(baseUrl)) {
+      try {
+        const parsed = new URL(baseUrl);
+        const rootHost = parsed.hostname.startsWith("wa.") ? parsed.hostname.slice(3) : parsed.hostname;
+        hint += ` If you intended to use the main site domain, point WA_BRIDGE_BASE_URL to ${parsed.protocol}//${rootHost}/wa after nginx is configured.`;
+      } catch {
+        // no-op
+      }
+    }
     return { ok: false, stage: "network", baseUrl: baseUrl.replace(/\/$/, ""), elapsedMs: elapsed, error: msg, hint: `${hint}\n\nTried:\n${attempted}` };
   });
 
