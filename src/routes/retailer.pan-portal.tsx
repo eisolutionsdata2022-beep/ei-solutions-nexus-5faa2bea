@@ -167,6 +167,16 @@ function PanPortalPage() {
               <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
                 <IdCard className="h-4 w-4" /> Your VLE ID
                 <Copy className="h-3 w-3 opacity-60 transition group-hover:opacity-100" />
+                {vleIdSource === "legacy" && (
+                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
+                    Legacy linked
+                  </span>
+                )}
+                {vleIdSource === "auto" && (
+                  <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
+                    Auto
+                  </span>
+                )}
               </div>
               <p className="mt-1 font-mono text-2xl font-bold tracking-wider">{vleId}</p>
             </button>
