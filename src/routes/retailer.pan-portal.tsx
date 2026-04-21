@@ -189,19 +189,18 @@ function PanPortalPage() {
                     Legacy linked
                   </span>
                 )}
-                {vleIdSource === "provider" && (
-                  <span className="rounded-full bg-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-50">
-                    Provider issued
-                  </span>
-                )}
                 {vleIdSource === "auto" && (
                   <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                     fullyOnboarded
                       ? "bg-emerald-400/30 text-emerald-50"
+                      : providerPending
+                      ? "bg-sky-400/30 text-sky-50"
                       : "bg-amber-400/30 text-amber-50"
                   }`}>
                     {fullyOnboarded
-                      ? "Active"
+                      ? "PSA Active"
+                      : providerPending
+                      ? "PSA Requested"
                       : `${couponCount}/${PSA_ONBOARDED_THRESHOLD} coupons`}
                   </span>
                 )}
