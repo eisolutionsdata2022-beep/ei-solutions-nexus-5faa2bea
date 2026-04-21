@@ -40,11 +40,15 @@ export function generateVleId(
   uid: string | undefined | null,
   mobile?: string | null,
 ): string {
-  const base = uid
-    ? `PSA${100000 + (fnv1a(uid) % 900000)}`
-    : "PSA000000";
   const m = normalizeMobile(mobile);
-  return m ? `${base}-${m}` : base;
+  // New format matches the LEGACY portal: `RMPMCST-<10-digit-mobile>`.
+  // If no mobile is registered, fall back to a deterministic 10-digit hash
+  // so the format stays uniform.
+  if (m) return `RMPMCST-${m}`;
+  const fallback = uid
+    ? String(1000000000 + (fnv1a(uid) % 8999999999)).slice(0, 10)
+    : "0000000000";
+  return `RMPMCST-${fallback}`;
 }
 
 /** Just the numeric prefix (no mobile) — used internally for storage keys. */
