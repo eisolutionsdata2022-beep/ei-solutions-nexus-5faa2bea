@@ -18,11 +18,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Save, Shield, KeyRound, Activity, Link2 } from "lucide-react";
+import { Loader2, Save, Shield, KeyRound, Activity, Link2, Lock, Server } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES } from "@/lib/pan-services";
 import { PAN_DEFAULT_URLS, type PanMasterConfig, type PanTransaction } from "@/lib/pan-types";
-import { encryptPanApiKey } from "@/lib/pan.functions";
+import {
+  encryptPanApiKey,
+  encryptPanApiSecret,
+  encryptPanBridgeSecret,
+} from "@/lib/pan.functions";
 
 export const Route = createFileRoute("/admin/pan-settings")({
   ssr: false,
@@ -49,8 +53,13 @@ function AdminPanSettings() {
   const [config, setConfig] = useState<PanMasterConfig | null>(null);
   const [transactions, setTransactions] = useState<PanTransaction[]>([]);
   const [apiKey, setApiKey] = useState("");
+  const [apiSecret, setApiSecret] = useState("");
+  const [bridgeUrl, setBridgeUrl] = useState("");
+  const [bridgeSecret, setBridgeSecret] = useState("");
   const [urls, setUrls] = useState<PanMasterConfig["urls"]>(PAN_DEFAULT_URLS);
   const [savingKey, setSavingKey] = useState(false);
+  const [savingSecret, setSavingSecret] = useState(false);
+  const [savingBridge, setSavingBridge] = useState(false);
   const [savingUrls, setSavingUrls] = useState(false);
 
   useEffect(() => {
@@ -59,6 +68,7 @@ function AdminPanSettings() {
         const data = snap.data() as PanMasterConfig;
         setConfig(data);
         if (data.urls) setUrls({ ...PAN_DEFAULT_URLS, ...data.urls });
+        if (data.vpsBridgeUrl) setBridgeUrl(data.vpsBridgeUrl);
       } else {
         setConfig(null);
       }
@@ -115,6 +125,67 @@ function AdminPanSettings() {
       toast.error(err instanceof Error ? err.message : "Failed to save key");
     } finally {
       setSavingKey(false);
+    }
+  };
+
+  const saveApiSecret = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser) return;
+    if (!apiSecret || apiSecret.length < 8) {
+      toast.error("API secret must be at least 8 characters");
+      return;
+    }
+    setSavingSecret(true);
+    try {
+      const res = await encryptPanApiSecret({ data: { apiSecret } });
+      if (!res.success) throw new Error(res.error);
+      await setDoc(
+        doc(db, "pan_config", "master"),
+        {
+          apiSecretCipher: res.cipher,
+          apiSecretHint: res.apiSecretHint,
+          updatedAt: new Date().toISOString(),
+          updatedBy: appUser.email,
+        },
+        { merge: true },
+      );
+      toast.success("PAN API secret encrypted and saved");
+      setApiSecret("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save secret");
+    } finally {
+      setSavingSecret(false);
+    }
+  };
+
+  const saveBridge = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!appUser) return;
+    setSavingBridge(true);
+    try {
+      const update: Partial<PanMasterConfig> = {
+        vpsBridgeUrl: bridgeUrl.trim() || undefined,
+        updatedAt: new Date().toISOString(),
+        updatedBy: appUser.email,
+      };
+      if (bridgeSecret) {
+        if (bridgeSecret.length < 16) {
+          toast.error("Bridge secret must be at least 16 characters");
+          setSavingBridge(false);
+          return;
+        }
+        const res = await encryptPanBridgeSecret({ data: { bridgeSecret } });
+        if (!res.success) throw new Error(res.error);
+        update.vpsBridgeSecretCipher = res.cipher;
+        update.vpsBridgeSecretHint = res.vpsBridgeSecretHint;
+      }
+      await setDoc(doc(db, "pan_config", "master"), update, { merge: true });
+      toast.success("VPS bridge config saved");
+      setBridgeSecret("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save bridge");
+    } finally {
+      setSavingBridge(false);
     }
   };
 
@@ -219,6 +290,113 @@ function AdminPanSettings() {
             <p className="text-xs text-muted-foreground">
               Encrypted with AES-GCM server-side. Plaintext is never persisted or returned to the
               browser. Used as the <code className="font-mono">api_key</code> query/body param.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* API Secret */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Lock className="h-5 w-5" /> Master PAN API Secret
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.apiSecretCipher && (
+            <div className="mb-4 rounded-lg border bg-success/5 p-3 text-sm">
+              <div className="flex items-center gap-2 text-success">
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Encrypted API secret on file</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Stored secret: <code className="font-mono">{config.apiSecretHint}</code>
+              </p>
+            </div>
+          )}
+          <form onSubmit={saveApiSecret} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>PAN API Secret (paired with API key)</Label>
+              <Input
+                type="password"
+                value={apiSecret}
+                onChange={(e) => setApiSecret(e.target.value)}
+                placeholder="wS4othL5rDlYmOMHJk7L"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={savingSecret}>
+              {savingSecret ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Encrypting…</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> Encrypt & Save</>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Sent as the <code className="font-mono">secret</code> field on every PAN
+              request. Mallikacyberzone endpoints require both
+              <code className="font-mono"> api_key</code> + <code className="font-mono">secret</code>.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* VPS Bridge */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Server className="h-5 w-5" /> Static-IP VPS Bridge
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.vpsBridgeUrl && (
+            <div className="mb-4 rounded-lg border bg-success/5 p-3 text-sm">
+              <div className="flex items-center gap-2 text-success">
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Bridge configured · routing through VPS</span>
+              </div>
+              <p className="mt-1 break-all text-xs text-muted-foreground">
+                {config.vpsBridgeUrl}
+                {config.vpsBridgeSecretHint && (
+                  <>
+                    {" · HMAC: "}
+                    <code className="font-mono">{config.vpsBridgeSecretHint}</code>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+          <form onSubmit={saveBridge} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>VPS Bridge URL (leave blank for direct call)</Label>
+              <Input
+                type="url"
+                value={bridgeUrl}
+                onChange={(e) => setBridgeUrl(e.target.value)}
+                placeholder="https://pan-bridge.eisoluions.xyz/proxy/pan"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>VPS Bridge HMAC Secret (paste once to update)</Label>
+              <Input
+                type="password"
+                value={bridgeSecret}
+                onChange={(e) => setBridgeSecret(e.target.value)}
+                placeholder="64-char random hex from the VPS .env"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={savingBridge}>
+              {savingBridge ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> Save Bridge Config</>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              When set, every PAN call is HMAC-signed and forwarded through this
+              bridge so it leaves from the VPS's whitelisted IP. Setup guide:
+              <code className="font-mono"> native/pan-bridge-vps/README.md</code>.
             </p>
           </form>
         </CardContent>

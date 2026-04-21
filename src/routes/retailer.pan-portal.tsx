@@ -478,11 +478,14 @@ function PanExecutionDialog({
           method: service.method,
           url: cfg.urls[service.endpoint],
           apiKeyCipher: cfg.apiKeyCipher,
+          apiSecretCipher: cfg.apiSecretCipher,
           fields: values,
           extras: service.extras,
           expectsRedirect: !!service.expectsRedirect,
           pOrderId,
           redirectUrl,
+          vpsBridgeUrl: cfg.vpsBridgeUrl,
+          vpsBridgeSecretCipher: cfg.vpsBridgeSecretCipher,
         },
       });
 

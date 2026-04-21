@@ -82,6 +82,54 @@ export const encryptPanApiKey = createServerFn({ method: "POST" })
   });
 
 // --------------------------------------------------------------------------
+// Server fn: encrypt admin-supplied API SECRET (paired with API key).
+// --------------------------------------------------------------------------
+
+const encryptSecretInput = z.object({ apiSecret: z.string().min(8).max(200) });
+
+export const encryptPanApiSecret = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => encryptSecretInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { success: false as const, error: "Authentication required" };
+    }
+    try {
+      const cipher = await encryptApiKey(data.apiSecret);
+      const last4 = data.apiSecret.slice(-4);
+      const hint = "•".repeat(Math.max(0, data.apiSecret.length - 4)) + last4;
+      return { success: true as const, cipher, apiSecretHint: hint };
+    } catch (err) {
+      console.error("[PAN] encrypt secret error:", err);
+      return { success: false as const, error: "Failed to encrypt API secret" };
+    }
+  });
+
+// --------------------------------------------------------------------------
+// Server fn: encrypt the VPS bridge HMAC secret.
+// --------------------------------------------------------------------------
+
+const encryptBridgeInput = z.object({ bridgeSecret: z.string().min(16).max(200) });
+
+export const encryptPanBridgeSecret = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => encryptBridgeInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { success: false as const, error: "Authentication required" };
+    }
+    try {
+      const cipher = await encryptApiKey(data.bridgeSecret);
+      const last4 = data.bridgeSecret.slice(-4);
+      const hint = "•".repeat(Math.max(0, data.bridgeSecret.length - 4)) + last4;
+      return { success: true as const, cipher, vpsBridgeSecretHint: hint };
+    } catch (err) {
+      console.error("[PAN] encrypt bridge secret error:", err);
+      return { success: false as const, error: "Failed to encrypt bridge secret" };
+    }
+  });
+
+// --------------------------------------------------------------------------
 // Server fn: execute a PAN service against mallikacyberzone.
 // --------------------------------------------------------------------------
 
@@ -103,6 +151,8 @@ const executeInput = z.object({
   url: z.string().url().max(500),
   /** Encrypted API key blob from Firestore. */
   apiKeyCipher: z.string().min(10).max(2000),
+  /** Encrypted API secret blob from Firestore (mallikacyberzone secret). */
+  apiSecretCipher: z.string().min(10).max(2000).optional(),
   /** User-entered fields. */
   fields: z.record(z.string().min(1).max(60), z.union([z.string().max(500), z.number()])),
   /** Hard-coded extras (application_type=49A, etc.). */
@@ -113,6 +163,10 @@ const executeInput = z.object({
   pOrderId: z.string().max(80).optional(),
   /** For NSDL POST calls: the redirect URL the user returns to after eKYC. */
   redirectUrl: z.string().url().max(500).optional(),
+  /** Optional VPS proxy bridge URL (for static IP whitelisting). */
+  vpsBridgeUrl: z.string().url().max(500).optional(),
+  /** Encrypted HMAC secret for the VPS bridge. */
+  vpsBridgeSecretCipher: z.string().min(10).max(2000).optional(),
 });
 
 export type PanExecuteResult =
@@ -147,8 +201,24 @@ export const executePanService = createServerFn({ method: "POST" })
       return { success: false, error: "API key is corrupted. Re-save it in admin.", stage: "decrypt" };
     }
 
-    // Build payload merging api_key + extras + user fields.
+    // Optionally decrypt the paired API secret.
+    let apiSecret: string | undefined;
+    if (data.apiSecretCipher) {
+      try {
+        apiSecret = await decryptApiKey(data.apiSecretCipher);
+      } catch (err) {
+        console.error("[PAN] secret decrypt failed:", err);
+        return {
+          success: false,
+          error: "API secret is corrupted. Re-save it in admin.",
+          stage: "decrypt",
+        };
+      }
+    }
+
+    // Build payload merging api_key + secret + extras + user fields.
     const merged: Record<string, string> = { api_key: apiKey, ...(data.extras ?? {}) };
+    if (apiSecret) merged.secret = apiSecret;
     for (const [k, v] of Object.entries(data.fields)) {
       merged[k] = String(v);
     }
@@ -157,7 +227,50 @@ export const executePanService = createServerFn({ method: "POST" })
 
     try {
       let res: Response;
-      if (data.method === "GET") {
+      // ── If a VPS bridge is configured, forward through it (HMAC-signed). ──
+      if (data.vpsBridgeUrl && data.vpsBridgeSecretCipher) {
+        let bridgeSecret: string;
+        try {
+          bridgeSecret = await decryptApiKey(data.vpsBridgeSecretCipher);
+        } catch (err) {
+          console.error("[PAN] bridge secret decrypt failed:", err);
+          return {
+            success: false,
+            error: "Bridge secret is corrupted. Re-save it in admin.",
+            stage: "decrypt",
+          };
+        }
+        const bridgeBody = JSON.stringify({
+          method: data.method,
+          url: data.url,
+          payload: merged,
+        });
+        const ts = Date.now().toString();
+        const sigBuf = await crypto.subtle.sign(
+          "HMAC",
+          await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(bridgeSecret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+          ),
+          new TextEncoder().encode(ts + "." + bridgeBody),
+        );
+        const sigHex = Array.from(new Uint8Array(sigBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        res = await fetch(data.vpsBridgeUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Signature": sigHex,
+            "X-Timestamp": ts,
+          },
+          body: bridgeBody,
+          signal: AbortSignal.timeout(45_000),
+        });
+      } else if (data.method === "GET") {
         const qs = new URLSearchParams(merged).toString();
         res = await fetch(`${data.url}?${qs}`, {
           method: "GET",
@@ -172,17 +285,36 @@ export const executePanService = createServerFn({ method: "POST" })
         });
       }
 
+      const usingBridge = !!(data.vpsBridgeUrl && data.vpsBridgeSecretCipher);
+
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        console.error(`[PAN] upstream ${res.status}:`, text);
+        console.error(`[PAN] ${usingBridge ? "bridge" : "upstream"} ${res.status}:`, text);
         return {
           success: false,
-          error: `Upstream returned ${res.status}: ${text.slice(0, 200) || res.statusText}`,
+          error: `${usingBridge ? "Bridge" : "Upstream"} returned ${res.status}: ${text.slice(0, 200) || res.statusText}`,
           stage: "upstream",
         };
       }
 
-      const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      // Bridge wraps the upstream JSON as { upstreamStatus, upstream }.
+      // Direct calls return the upstream JSON as-is. Normalize both shapes.
+      const outer = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      let json: Record<string, unknown>;
+      if (usingBridge && typeof outer.upstreamStatus === "number" && outer.upstream) {
+        const upstreamStatus = outer.upstreamStatus as number;
+        json = outer.upstream as Record<string, unknown>;
+        if (upstreamStatus < 200 || upstreamStatus >= 300) {
+          console.error(`[PAN] bridge upstream ${upstreamStatus}:`, JSON.stringify(json).slice(0, 200));
+          return {
+            success: false,
+            error: `Provider returned HTTP ${upstreamStatus}`,
+            stage: "upstream",
+          };
+        }
+      } else {
+        json = outer;
+      }
       const status = String(json.status ?? "").toUpperCase();
       const message = typeof json.message === "string" ? json.message : "";
       const rawJson = JSON.stringify(json);
