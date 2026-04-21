@@ -1,28 +1,48 @@
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff, Stethoscope, ServerCrash } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { subscribeSession } from "@/lib/whatsapp-firebase";
 import type { WaSessionDoc } from "@/lib/whatsapp-types";
-import { getWhatsAppStatus, restartWhatsApp } from "@/lib/whatsapp-bridge.functions";
+import { getWhatsAppStatus, restartWhatsApp, diagnoseWhatsAppBridge } from "@/lib/whatsapp-bridge.functions";
+
+type Diagnosis = {
+  ok: boolean;
+  stage?: string;
+  status?: number;
+  baseUrl?: string;
+  elapsedMs?: number;
+  error?: string;
+  hint?: string;
+  body?: string;
+};
 
 export function WhatsAppConnectionPanel() {
   const [session, setSession] = useState<WaSessionDoc | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<{ ok: boolean; error?: string } | null>(null);
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [polling, setPolling] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [restarting, setRestarting] = useState(false);
 
   useEffect(() => subscribeSession(setSession), []);
 
-  // Poll bridge status every 10 s
+  // Poll bridge status every 10 s; auto-run /health diagnostic on first failure
   useEffect(() => {
     let alive = true;
+    let ranDiag = false;
     const tick = async () => {
       try {
         const res = await getWhatsAppStatus();
-        if (alive) setBridgeStatus(res as any);
+        if (!alive) return;
+        setBridgeStatus(res as any);
+        if (!(res as any)?.ok && !ranDiag) {
+          ranDiag = true;
+          const d = await diagnoseWhatsAppBridge();
+          if (alive) setDiagnosis(d as Diagnosis);
+        }
       } catch (e: any) {
         if (alive) setBridgeStatus({ ok: false, error: e?.message || "Bridge unreachable" });
       }
@@ -39,6 +59,16 @@ export function WhatsAppConnectionPanel() {
       setBridgeStatus(res as any);
       toast.success("Refreshed");
     } finally { setPolling(false); }
+  };
+
+  const runDiagnostic = async () => {
+    setDiagnosing(true);
+    try {
+      const d = await diagnoseWhatsAppBridge();
+      setDiagnosis(d as Diagnosis);
+      if ((d as Diagnosis).ok) toast.success("Bridge /health is responding ✅");
+      else toast.error((d as Diagnosis).error || "Bridge unreachable");
+    } finally { setDiagnosing(false); }
   };
 
   const restart = async (purge = false) => {
