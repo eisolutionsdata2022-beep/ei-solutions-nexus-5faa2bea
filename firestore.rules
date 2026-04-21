@@ -120,6 +120,48 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- pan_config (PAN PORTAL master settings) -------------
+    // Encrypted PAN API key + endpoint URLs + per-service fee/toggle.
+    // Admin-only. Retailer flow uses the server function which reads
+    // this doc with admin privileges (server-side), never the client.
+    match /pan_config/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- pan_transactions (PAN PORTAL per-tx records) --------
+    // Retailer can read own; admin reads all. Create by retailer
+    // themselves (wallet debit happens client-side via runTransaction).
+    // Updates only by the owning retailer to flip status to
+    // success/failed/refunded after the upstream API call.
+    match /pan_transactions/{tx} {
+      allow read: if isAuthed() && (
+                    resource.data.retailerId == request.auth.uid
+                 || isAdmin());
+      allow create: if isAuthed()
+                    && request.resource.data.retailerId == request.auth.uid
+                    && request.resource.data.status in ["pending","processing"];
+      allow update: if isAuthed()
+                    && resource.data.retailerId == request.auth.uid
+                    && changedKeys().hasOnly([
+                         "status","providerRef","providerResponse",
+                         "errorMessage","completedAt","ackNo","redirectUrl"
+                       ]);
+      allow delete: if false;
+    }
+
+    // ---------- psa_ids (auto-generated PSA IDs after 2 coupons) ----
+    // Each user gets one doc keyed by uid. Owner reads own; admin
+    // reads all. Create by the owning user (auto-generated client-side
+    // after eligibility check). No updates except by admin (e.g.
+    // legacy migration). No deletes.
+    match /psa_ids/{uid} {
+      allow read: if isAuthed() && (uid == request.auth.uid || isAdmin());
+      allow create: if isAuthed()
+                    && uid == request.auth.uid
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
     // ---------- DMT (Domestic Money Transfer) -----------------------
     // Retailer owns customers + beneficiaries; staff/admin can read all
     // for processing the transfer queue. Transfers are created by the
