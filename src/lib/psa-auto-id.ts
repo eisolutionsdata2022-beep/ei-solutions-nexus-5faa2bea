@@ -2,20 +2,13 @@
  * PSA / VLE ID storage for the PAN Portal.
  *
  * WORK LOGIC (matches the legacy UTI PSA portal):
- *   1. New user registers on our portal.
- *   2. User submits "PSA ID Create" → upstream provider validates KYC and
- *      issues a real VLE ID (e.g. `RMPMCST...` / `PSA309978`).
- *   3. We persist that provider-issued ID via `savePsaIdFromProvider()`.
- *   4. From now on the user can buy coupons (the saved ID is sent upstream).
- *      Once they have ≥ 2 successful coupons they're considered fully
- *      onboarded and can also log into the official UTI portal with the
- *      same ID/password.
- *
- * Legacy users (already had a VLE ID on the old portal) can paste it in
- * via `claimLegacyPsaId()` — no provider call required.
- *
- * We NEVER fabricate a VLE ID locally — fake IDs make the upstream API
- * return "Vle Data Not Exist".
+ *   1. New user registers → we auto-create a PSA record with a VLE ID in
+ *      legacy `RMPMCST-<mobile>` format (source: "auto", status: "active").
+ *      User can immediately use it to buy coupons.
+ *   2. After 2 successful coupon purchases, the record is marked as
+ *      "fully onboarded" — congrats banner + green badges appear.
+ *   3. Legacy users can claim their existing UTI PSA ID via Profile.
+ *   4. If the upstream provider issues a different ID later, we update.
  */
 import {
   collection,
@@ -28,11 +21,12 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { generateVleId } from "@/lib/pan-vle-id";
 
 /** Retailers need ≥ this many successful coupons to be considered onboarded. */
 export const PSA_ONBOARDED_THRESHOLD = 2;
 
-export type PsaIdSource = "provider" | "legacy";
+export type PsaIdSource = "auto" | "provider" | "legacy";
 
 export interface PsaIdRecord {
   uid: string;
@@ -64,6 +58,50 @@ export async function countSuccessfulCouponPurchases(uid: string): Promise<numbe
 /** Loose validation for any provider-issued or legacy VLE ID. */
 function isValidVleId(id: string): boolean {
   return /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(id.trim());
+}
+
+/**
+ * AUTO-CREATE a PSA record on first portal visit using the legacy
+ * `RMPMCST-<mobile>` format. Idempotent — does nothing if a record already
+ * exists. Called on PAN Portal mount so the user can immediately buy coupons.
+ */
+export async function ensurePsaIdRecord(opts: {
+  uid: string;
+  email?: string | null;
+  name?: string | null;
+  phone?: string | null;
+}): Promise<PsaIdRecord> {
+  const psaRef = doc(db, "psa_ids", opts.uid);
+  const generated = generateVleId(opts.uid, opts.phone);
+  const successCount = await countSuccessfulCouponPurchases(opts.uid).catch(() => 0);
+
+  return runTransaction(db, async (tx) => {
+    const existing = await tx.get(psaRef);
+    if (existing.exists()) {
+      // Already has a record — just refresh the coupon count for accurate
+      // "fully onboarded" gating.
+      const prev = existing.data() as PsaIdRecord;
+      const updated: PsaIdRecord = {
+        ...prev,
+        successfulCouponCount: successCount,
+      };
+      tx.set(psaRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+      return updated;
+    }
+    const record: PsaIdRecord = {
+      uid: opts.uid,
+      psaId: generated,
+      status: "active",
+      generatedAt: new Date().toISOString(),
+      successfulCouponCount: successCount,
+      source: "auto",
+      email: opts.email ?? null,
+      name: opts.name ?? null,
+      phone: opts.phone ?? null,
+    };
+    tx.set(psaRef, { ...record, _serverTime: serverTimestamp(), updatedAt: new Date().toISOString() });
+    return record;
+  });
 }
 
 /**

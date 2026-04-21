@@ -53,7 +53,7 @@ import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { executePanService } from "@/lib/pan.functions";
 import { downloadPanReceipt } from "@/lib/pan-receipt-pdf";
 import { generateVleId, PSA_PENDING_PLACEHOLDER } from "@/lib/pan-vle-id";
-import { getPsaIdRecord, savePsaIdFromProvider, type PsaIdRecord } from "@/lib/psa-auto-id";
+import { getPsaIdRecord, savePsaIdFromProvider, ensurePsaIdRecord, PSA_ONBOARDED_THRESHOLD, type PsaIdRecord } from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -126,19 +126,20 @@ function PanPortalPage() {
   }, [config]);
 
   const ready = !!(config?.apiKeyCipher && config.urls);
-  // Show the PROVIDER-issued PSA ID when present; otherwise show a "Pending"
-  // placeholder. We never invent an ID — coupon-buy needs the real one.
-  const hasRealPsaId = !!psaRecord?.psaId;
+  // VLE ID is always available — auto-generated in `RMPMCST-<mobile>` format
+  // for new users, or whatever the provider/legacy ID is once promoted.
   const vleId = useMemo(() => {
     if (psaRecord?.psaId) return psaRecord.psaId;
     return generateVleId(appUser?.uid, appUser?.phone);
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
-  const vleIdSource: "legacy" | "provider" | "pending" = psaRecord?.source === "legacy"
-    ? "legacy"
-    : psaRecord?.source === "provider"
-    ? "provider"
-    : "pending";
-
+  const couponCount = psaRecord?.successfulCouponCount ?? 0;
+  const fullyOnboarded = couponCount >= PSA_ONBOARDED_THRESHOLD;
+  const vleIdSource: "legacy" | "provider" | "auto" =
+    psaRecord?.source === "legacy"
+      ? "legacy"
+      : psaRecord?.source === "provider"
+      ? "provider"
+      : "auto";
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
@@ -179,9 +180,15 @@ function PanPortalPage() {
                     Provider issued
                   </span>
                 )}
-                {vleIdSource === "pending" && (
-                  <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
-                    Pending — Create PSA first
+                {vleIdSource === "auto" && (
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                    fullyOnboarded
+                      ? "bg-emerald-400/30 text-emerald-50"
+                      : "bg-amber-400/30 text-amber-50"
+                  }`}>
+                    {fullyOnboarded
+                      ? "Active"
+                      : `${couponCount}/${PSA_ONBOARDED_THRESHOLD} coupons`}
                   </span>
                 )}
               </div>
@@ -209,31 +216,6 @@ function PanPortalPage() {
                 The EI SOLUTIONS admin needs to configure the PAN service credentials and endpoint
                 URLs before services can be executed. You can browse the catalog below.
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {vleIdSource === "pending" && (
-        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
-          <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-              <div className="text-sm">
-                <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  You don't have a PSA / VLE ID yet
-                </p>
-                <p className="mt-1 text-amber-800 dark:text-amber-300/90">
-                  To buy coupons and process PAN cards, you first need a real
-                  VLE ID issued by the provider. Use{" "}
-                  <strong>"PSA ID Create"</strong> below — once submitted, the
-                  provider will issue your official UTI PSA ID and we'll save
-                  it automatically. Already have one from the old portal?{" "}
-                  <Link to="/retailer/profile" className="underline font-semibold">
-                    Link it in Profile →
-                  </Link>
-                </p>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -392,7 +374,7 @@ function PanExecutionDialog({
   retailerName: string | null;
   retailerPhone: string | null;
   vleId: string;
-  vleIdSource: "legacy" | "provider" | "pending";
+  vleIdSource: "legacy" | "provider" | "auto";
   ready: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -406,7 +388,7 @@ function PanExecutionDialog({
         // Auto-fill the user's saved VLE ID into any field keyed `vle_id`,
         // EXCEPT for "psa-create" — that form is where the user requests a
         // brand-new ID, so the field must be empty/editable.
-        if (f.key === "vle_id" && service.key !== "psa-create" && vleIdSource !== "pending") {
+        if (f.key === "vle_id" && service.key !== "psa-create") {
           init[f.key] = vleId;
         }
       }
@@ -427,15 +409,10 @@ function PanExecutionDialog({
       toast.error("PAN portal not configured. Contact admin.");
       return;
     }
-    // Gate: services that send a vle_id upstream require a REAL provider-
-    // issued (or legacy-claimed) PSA ID. Without it the upstream returns
-    // "Vle Data Not Exist". The user must run "PSA ID Create" first.
-    const needsRealVleId = service.key !== "psa-create"
-      && service.fields.some((f) => f.key === "vle_id");
-    if (needsRealVleId && (vleIdSource === "pending" || !vleId || vleId.startsWith(PSA_PENDING_PLACEHOLDER))) {
-      toast.error("You don't have a PSA ID yet. Submit \"PSA ID Create\" first or link your legacy PSA ID in Profile.");
-      return;
-    }
+    // VLE ID is auto-generated for every user (RMPMCST-<mobile>), so coupon
+    // buy is allowed immediately. The "fully onboarded" status is just a
+    // milestone marker shown in the UI.
+    void vleIdSource;
     for (const f of service.fields) {
       if (f.required && !values[f.key]) {
         toast.error(`${f.label} is required`);
