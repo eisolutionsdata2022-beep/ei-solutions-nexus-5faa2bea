@@ -17,8 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Wallet, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
+import { Wallet, Loader2, CheckCircle, AlertCircle, ArrowLeft, Smartphone, Layers } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 export const Route = createFileRoute("/retailer/recharge")({
   ssr: false,
@@ -302,14 +303,17 @@ function RetailerRecharge() {
 
   // Service category selection
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Recharge & Bill Payment</h1>
-        <p className="text-muted-foreground">
-          Select a service to get started. Balance: <span className="font-semibold" style={{ color: "hsl(var(--gov-blue))" }}>₹{balance.toFixed(2)}</span>
-        </p>
-      </div>
-
+    <ServicePageShell
+      icon={Smartphone}
+      title="Recharge & Bill Payment"
+      subtitle="Mobile, DTH, BBPS — fast operator payouts with live wallet sync."
+      eyebrow="Recharge & BBPS"
+      gradient="from-violet-600 via-fuchsia-600 to-pink-600"
+      stats={[
+        { icon: Layers, label: "Categories", value: serviceTypes.length, accent: "from-violet-400 to-fuchsia-400" },
+        { icon: Wallet, label: "Balance", value: `₹${balance.toFixed(0)}`, accent: "from-emerald-400 to-teal-400" },
+      ]}
+    >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {serviceTypes.map(([key, catalog]) => (
           <Card
@@ -327,6 +331,6 @@ function RetailerRecharge() {
           </Card>
         ))}
       </div>
-    </div>
+    </ServicePageShell>
   );
 }
