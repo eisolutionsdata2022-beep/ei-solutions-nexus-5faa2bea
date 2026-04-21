@@ -134,6 +134,7 @@ function UpdatesPage() {
     loadLottery();
     loadPSC();
     loadGovt();
+    loadPari();
     toast.info("Refreshing all updates…");
   };
 
