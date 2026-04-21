@@ -152,10 +152,14 @@ export function WhatsAppConnectionPanel() {
             {session?.lastDisconnectReason && (
               <Row label="Last disconnect" value={<span className="text-xs text-muted-foreground">{session.lastDisconnectReason}</span>} />
             )}
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-2 flex-wrap">
               <Button size="sm" variant="outline" onClick={refresh} disabled={polling}>
                 {polling ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 Refresh
+              </Button>
+              <Button size="sm" variant="outline" onClick={runDiagnostic} disabled={diagnosing}>
+                {diagnosing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Stethoscope className="h-3.5 w-3.5 mr-1" />}
+                Diagnose
               </Button>
               <Button size="sm" variant="outline" onClick={() => restart(false)} disabled={restarting}>
                 Restart bridge
