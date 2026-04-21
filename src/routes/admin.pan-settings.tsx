@@ -189,6 +189,7 @@ function AdminPanSettings() {
     }
   };
 
+  const saveUrls = async (e: FormEvent) => {
     e.preventDefault();
     if (!appUser) return;
     setSavingUrls(true);
