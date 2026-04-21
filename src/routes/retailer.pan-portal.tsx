@@ -174,6 +174,105 @@ function PanPortalPage() {
   }, [psaRecord?.psaId, appUser?.uid, appUser?.phone]);
   const vleIdSource: "legacy" | "auto" =
     psaRecord?.source === "legacy" ? "legacy" : "auto";
+
+  const handleRequestPsa = async () => {
+    if (!appUser || !config?.apiKeyCipher || !config.urls?.psaCreate) {
+      toast.error("PAN portal not configured. Contact admin.");
+      return;
+    }
+    setRequestingPsa(true);
+    try {
+      const result = await executePanService({
+        data: {
+          serviceKey: "psa-create",
+          serviceName: "PSA ID Request",
+          endpoint: "psaCreate",
+          method: "GET",
+          url: config.urls.psaCreate,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          fields: {
+            vle_id: vleId,
+            vle_name: appUser.name ?? "",
+            vle_mob: appUser.phone ?? "",
+            vle_email: appUser.email ?? "",
+          },
+          extras: {},
+          expectsRedirect: false,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      if (!result.success) {
+        throw new Error(result.error || "Provider rejected the request");
+      }
+      await markPsaIdRequested({
+        uid: appUser.uid,
+        providerRef: result.providerRef,
+      });
+      toast.success(
+        `PSA ID requested. Provider will issue your official ID within ${PSA_PROVIDER_ETA_HOURS} hours.`,
+        { duration: 8000 },
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setRequestingPsa(false);
+    }
+  };
+
+  const handleCheckPsaStatus = async () => {
+    if (!appUser || !config?.apiKeyCipher || !config.urls?.psaCreate) {
+      toast.error("PAN portal not configured. Contact admin.");
+      return;
+    }
+    setCheckingPsa(true);
+    try {
+      const result = await executePanService({
+        data: {
+          serviceKey: "psa-status-check",
+          serviceName: "PSA Status Check",
+          endpoint: "psaCreate",
+          method: "GET",
+          url: config.urls.psaCreate,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          fields: {
+            vle_id: vleId,
+            vle_name: appUser.name ?? "",
+            vle_mob: appUser.phone ?? "",
+            vle_email: appUser.email ?? "",
+          },
+          extras: {},
+          expectsRedirect: false,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      const issuedId =
+        result.providerRef && /^[A-Z0-9][A-Z0-9\-]{3,40}$/i.test(result.providerRef)
+          ? result.providerRef
+          : null;
+      if (issuedId && issuedId !== vleId) {
+        await savePsaIdFromProvider({
+          uid: appUser.uid,
+          providerVleId: issuedId,
+          providerRef: result.providerRef,
+          email: appUser.email ?? null,
+          name: appUser.name ?? null,
+          phone: appUser.phone ?? null,
+        });
+        toast.success(`🎉 Your provider PSA ID is ready: ${issuedId}`, { duration: 10000 });
+      } else {
+        toast.info("Still pending. Please check again later.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Status check failed");
+    } finally {
+      setCheckingPsa(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
