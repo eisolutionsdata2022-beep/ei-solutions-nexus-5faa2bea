@@ -68,6 +68,7 @@ function AdminPanSettings() {
         const data = snap.data() as PanMasterConfig;
         setConfig(data);
         if (data.urls) setUrls({ ...PAN_DEFAULT_URLS, ...data.urls });
+        if (data.vpsBridgeUrl) setBridgeUrl(data.vpsBridgeUrl);
       } else {
         setConfig(null);
       }
