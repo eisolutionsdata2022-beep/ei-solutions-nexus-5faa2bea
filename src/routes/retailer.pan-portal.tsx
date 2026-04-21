@@ -180,9 +180,15 @@ function PanPortalPage() {
                     Provider issued
                   </span>
                 )}
-                {vleIdSource === "pending" && (
-                  <span className="rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-50">
-                    Pending — Create PSA first
+                {vleIdSource === "auto" && (
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                    fullyOnboarded
+                      ? "bg-emerald-400/30 text-emerald-50"
+                      : "bg-amber-400/30 text-amber-50"
+                  }`}>
+                    {fullyOnboarded
+                      ? "Active"
+                      : `${couponCount}/${PSA_ONBOARDED_THRESHOLD} coupons`}
                   </span>
                 )}
               </div>
