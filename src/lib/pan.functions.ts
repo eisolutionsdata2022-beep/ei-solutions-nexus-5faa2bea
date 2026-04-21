@@ -201,8 +201,24 @@ export const executePanService = createServerFn({ method: "POST" })
       return { success: false, error: "API key is corrupted. Re-save it in admin.", stage: "decrypt" };
     }
 
-    // Build payload merging api_key + extras + user fields.
+    // Optionally decrypt the paired API secret.
+    let apiSecret: string | undefined;
+    if (data.apiSecretCipher) {
+      try {
+        apiSecret = await decryptApiKey(data.apiSecretCipher);
+      } catch (err) {
+        console.error("[PAN] secret decrypt failed:", err);
+        return {
+          success: false,
+          error: "API secret is corrupted. Re-save it in admin.",
+          stage: "decrypt",
+        };
+      }
+    }
+
+    // Build payload merging api_key + secret + extras + user fields.
     const merged: Record<string, string> = { api_key: apiKey, ...(data.extras ?? {}) };
+    if (apiSecret) merged.secret = apiSecret;
     for (const [k, v] of Object.entries(data.fields)) {
       merged[k] = String(v);
     }
@@ -211,7 +227,50 @@ export const executePanService = createServerFn({ method: "POST" })
 
     try {
       let res: Response;
-      if (data.method === "GET") {
+      // ── If a VPS bridge is configured, forward through it (HMAC-signed). ──
+      if (data.vpsBridgeUrl && data.vpsBridgeSecretCipher) {
+        let bridgeSecret: string;
+        try {
+          bridgeSecret = await decryptApiKey(data.vpsBridgeSecretCipher);
+        } catch (err) {
+          console.error("[PAN] bridge secret decrypt failed:", err);
+          return {
+            success: false,
+            error: "Bridge secret is corrupted. Re-save it in admin.",
+            stage: "decrypt",
+          };
+        }
+        const bridgeBody = JSON.stringify({
+          method: data.method,
+          url: data.url,
+          payload: merged,
+        });
+        const ts = Date.now().toString();
+        const sigBuf = await crypto.subtle.sign(
+          "HMAC",
+          await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(bridgeSecret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+          ),
+          new TextEncoder().encode(ts + "." + bridgeBody),
+        );
+        const sigHex = Array.from(new Uint8Array(sigBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        res = await fetch(data.vpsBridgeUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Signature": sigHex,
+            "X-Timestamp": ts,
+          },
+          body: bridgeBody,
+          signal: AbortSignal.timeout(45_000),
+        });
+      } else if (data.method === "GET") {
         const qs = new URLSearchParams(merged).toString();
         res = await fetch(`${data.url}?${qs}`, {
           method: "GET",
