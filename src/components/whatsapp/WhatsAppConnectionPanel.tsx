@@ -100,6 +100,39 @@ export function WhatsAppConnectionPanel() {
         </CardContent>
       </Card>
 
+      {/* Diagnostic banner — shown when bridge is unreachable */}
+      {(diagnosis && !diagnosis.ok) && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <ServerCrash className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-destructive">
+                  Bridge diagnostic — {diagnosis.stage?.toUpperCase() || "ERROR"}
+                  {diagnosis.status ? ` (HTTP ${diagnosis.status})` : ""}
+                </p>
+                <p className="text-xs mt-1 font-medium">{diagnosis.error}</p>
+                {diagnosis.baseUrl && (
+                  <p className="text-[11px] text-muted-foreground mt-1 font-mono break-all">
+                    Target: {diagnosis.baseUrl}/health
+                    {typeof diagnosis.elapsedMs === "number" ? ` · ${diagnosis.elapsedMs}ms` : ""}
+                  </p>
+                )}
+                {diagnosis.hint && (
+                  <pre className="text-[11px] mt-2 p-2 bg-background border border-border rounded whitespace-pre-wrap font-mono leading-relaxed">
+                    {diagnosis.hint}
+                  </pre>
+                )}
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={runDiagnostic} disabled={diagnosing}>
+              {diagnosing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Stethoscope className="h-3.5 w-3.5 mr-1" />}
+              Re-run diagnostic
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         {/* Status card */}
         <Card>
