@@ -53,8 +53,13 @@ function AdminPanSettings() {
   const [config, setConfig] = useState<PanMasterConfig | null>(null);
   const [transactions, setTransactions] = useState<PanTransaction[]>([]);
   const [apiKey, setApiKey] = useState("");
+  const [apiSecret, setApiSecret] = useState("");
+  const [bridgeUrl, setBridgeUrl] = useState("");
+  const [bridgeSecret, setBridgeSecret] = useState("");
   const [urls, setUrls] = useState<PanMasterConfig["urls"]>(PAN_DEFAULT_URLS);
   const [savingKey, setSavingKey] = useState(false);
+  const [savingSecret, setSavingSecret] = useState(false);
+  const [savingBridge, setSavingBridge] = useState(false);
   const [savingUrls, setSavingUrls] = useState(false);
 
   useEffect(() => {
