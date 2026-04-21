@@ -312,6 +312,7 @@ function UpdatesPage() {
               emptyMsg="No press releases available right now."
               fallbackHref="https://pib.gov.in/AllRelease.aspx?reg=24"
               fallbackLabel="Open PIB Kerala"
+              onOpen={openInline}
             />
           </ServiceSectionCard>
         </TabsContent>
