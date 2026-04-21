@@ -309,7 +309,7 @@ export const PAN_SERVICES: PanService[] = [
     icon: Ticket,
     gradient: "from-fuchsia-500 to-pink-600",
     endpoint: "couponBuy",
-    method: "GET",
+    method: "POST",
     defaultFee: 0,
     fields: [
       { key: "vle_id", label: "VLE ID", type: "text", required: true, placeholder: "PSA123456" },
