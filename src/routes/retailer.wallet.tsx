@@ -62,7 +62,99 @@ interface WalletRequest {
   amount: number;
   paymentMethod: string;
   status: string;
+  remarks?: string;
+  processedAt?: string;
   createdAt: string;
+}
+
+/** Compact horizontal timeline: Pending → Approved/Rejected with timestamps + remark. */
+function StatusTimeline({ req }: { req: WalletRequest }) {
+  const isApproved = req.status === "approved";
+  const isRejected = req.status === "rejected";
+  const isResolved = isApproved || isRejected;
+
+  const fmt = (iso?: string) =>
+    iso
+      ? new Date(iso).toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—";
+
+  const finalLabel = isApproved ? "Approved" : isRejected ? "Rejected" : "Awaiting review";
+  const finalIcon = isApproved ? CheckCircle : isRejected ? XCircle : Clock;
+  const FinalIcon = finalIcon;
+  const finalColor = isApproved
+    ? "bg-success text-success-foreground ring-success/30"
+    : isRejected
+      ? "bg-destructive text-destructive-foreground ring-destructive/30"
+      : "bg-muted text-muted-foreground ring-border";
+
+  return (
+    <div className="mt-2 rounded-xl border border-border/60 bg-muted/20 p-3">
+      <div className="flex items-center gap-2">
+        {/* Step 1 — Submitted (always done) */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground ring-2 ring-primary/30 flex items-center justify-center shadow-sm">
+            <Clock className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-semibold text-foreground">Submitted</span>
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {fmt(req.createdAt)}
+          </span>
+        </div>
+
+        {/* Connector */}
+        <div
+          className={`flex-1 h-1 rounded-full ${
+            isResolved
+              ? isApproved
+                ? "bg-success/60"
+                : "bg-destructive/60"
+              : "bg-border animate-pulse"
+          }`}
+          aria-hidden
+        />
+
+        {/* Step 2 — Final state */}
+        <div className="flex flex-col items-center gap-1">
+          <div
+            className={`w-7 h-7 rounded-full ring-2 flex items-center justify-center shadow-sm ${finalColor} ${
+              !isResolved ? "animate-pulse" : ""
+            }`}
+          >
+            <FinalIcon className="w-3.5 h-3.5" />
+          </div>
+          <span
+            className={`text-[10px] font-semibold ${
+              isApproved
+                ? "text-success"
+                : isRejected
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+            }`}
+          >
+            {finalLabel}
+          </span>
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {isResolved ? fmt(req.processedAt) : "Pending"}
+          </span>
+        </div>
+      </div>
+
+      {/* Latest admin remark */}
+      {isResolved && req.remarks?.trim() && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg bg-background/70 border border-border/60 px-3 py-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground shrink-0 mt-0.5">
+            Admin note
+          </span>
+          <p className="text-xs text-foreground leading-relaxed">{req.remarks}</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
