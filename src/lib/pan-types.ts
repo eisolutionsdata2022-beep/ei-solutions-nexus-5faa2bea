@@ -16,6 +16,21 @@ export interface PanMasterConfig {
   apiKeyCipher: string;
   /** UI hint of the stored API key (last 4 chars + dots). */
   apiKeyHint: string;
+  /** AES-GCM encrypted blob for the PAN API secret (mallikacyberzone). */
+  apiSecretCipher?: string;
+  /** UI hint of the stored API secret. */
+  apiSecretHint?: string;
+  /**
+   * Static-IP VPS bridge URL (e.g. https://pan-bridge.eisoluions.xyz/proxy/pan).
+   * If set, executePanService() routes upstream calls through this bridge so
+   * the request comes from the whitelisted VPS IP instead of the changing
+   * Cloudflare Worker IP. If empty, falls back to a direct call.
+   */
+  vpsBridgeUrl?: string;
+  /** HMAC secret shared with the VPS bridge (used to sign proxy requests). */
+  vpsBridgeSecretCipher?: string;
+  /** UI hint of the stored bridge secret. */
+  vpsBridgeSecretHint?: string;
   /** Endpoint URLs (admin-editable). */
   urls: {
     psaCreate: string;
