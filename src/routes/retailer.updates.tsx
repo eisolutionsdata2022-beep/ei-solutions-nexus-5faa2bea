@@ -287,6 +287,7 @@ function UpdatesPage() {
               emptyMsg="No new PSC items found right now."
               fallbackHref="https://www.keralapsc.gov.in/"
               fallbackLabel="Open keralapsc.gov.in"
+              onOpen={openInline}
             />
           </ServiceSectionCard>
         </TabsContent>
