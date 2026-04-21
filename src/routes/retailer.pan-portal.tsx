@@ -357,7 +357,97 @@ function PanPortalPage() {
         </Card>
       )}
 
-      <div>
+      {/* PSA Request / Status panel — three states based on workflow stage. */}
+      {ready && psaRecord && !fullyOnboarded && (
+        <>
+          {canRequestPsa && (
+            <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                      You're ready to request your official PSA ID
+                    </p>
+                    <p className="mt-1 text-emerald-800 dark:text-emerald-300/90">
+                      You've completed {couponCount} coupon purchases. Request your provider-issued
+                      UTI PSA ID now — it will be issued within {PSA_PROVIDER_ETA_HOURS} hours.
+                      You'll use it to log into the official UTI PSA portal externally.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleRequestPsa}
+                  disabled={requestingPsa}
+                  className="shrink-0 gap-2"
+                >
+                  {requestingPsa ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Request PSA ID
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {providerPending && (
+            <Card className="border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <Hourglass className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-sky-900 dark:text-sky-200">
+                      PSA ID request submitted
+                    </p>
+                    <p className="mt-1 text-sky-800 dark:text-sky-300/90">
+                      Requested {psaRecord.requestedAt ? new Date(psaRecord.requestedAt).toLocaleString() : "recently"}.
+                      The provider issues PSA IDs within {PSA_PROVIDER_ETA_HOURS} hours. Coupon
+                      Buy is paused until your official ID is ready. Click below to check.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleCheckPsaStatus}
+                  disabled={checkingPsa}
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                >
+                  {checkingPsa ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Check PSA Status
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {fullyOnboarded && psaRecord?.providerPsaId && (
+        <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30">
+          <CardContent className="flex flex-col gap-2 p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                Official PSA ID active
+              </p>
+            </div>
+            <p className="text-sm text-emerald-800 dark:text-emerald-300/90">
+              Your official UTI PSA ID is{" "}
+              <code className="font-mono font-bold">{psaRecord.providerPsaId}</code>
+              . Use it to log into the official UTI PSA portal externally. All
+              portal calls here continue to use your internal ID{" "}
+              <code className="font-mono font-bold">{vleId}</code>.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+
         <h2 className="mb-3 text-lg font-bold text-foreground">PAN Services</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {services.map((svc) => {
