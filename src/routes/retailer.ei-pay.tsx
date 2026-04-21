@@ -104,27 +104,17 @@ function EiPayPage() {
   const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-gov-blue via-indigo-700 to-purple-700 p-6 text-white shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
-              EI SOLUTIONS
-            </p>
-            <h1 className="text-3xl font-bold">EI SOLUTIONS PAY</h1>
-            <p className="mt-1 text-sm text-white/80">
-              All Common Service Center (CSC) services in one secure dashboard.
-            </p>
-          </div>
-          <div className="rounded-xl bg-white/15 px-5 py-3 backdrop-blur">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/70">
-              <Wallet className="h-4 w-4" /> Wallet
-            </div>
-            <p className="mt-1 text-2xl font-bold">₹{balance.toFixed(2)}</p>
-          </div>
-        </div>
-      </div>
+    <ServicePageShell
+      icon={CreditCard}
+      title="EI Solutions Pay"
+      subtitle="All Common Service Center (CSC) services in one secure dashboard."
+      eyebrow="CSC Bridge"
+      gradient="from-cyan-600 via-sky-600 to-blue-700"
+      stats={[
+        { icon: CheckCircle2, label: "Auto-Pay", value: services.filter((s) => s.mode === "bridge").length, accent: "from-cyan-400 to-sky-400" },
+        { icon: Receipt, label: "Transactions", value: transactions.length, accent: "from-emerald-400 to-teal-400" },
+      ]}
+    >
 
       {/* Bridge readiness banner */}
       {configLoaded && !bridgeReady && (
