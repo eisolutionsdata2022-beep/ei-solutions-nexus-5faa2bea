@@ -15,11 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Newspaper, Download, RefreshCw, ExternalLink, Sparkles,
-  Trophy, Building2, Globe2, AlertCircle, Eye,
+  Trophy, Building2, Globe2, AlertCircle, Eye, Car,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchLotteryResult, fetchPSCNotifications, fetchGovtNotifications,
+  fetchParivahanNotifications,
   type FeedItem, type LotteryDraw,
 } from "@/lib/updates.functions";
 import { generateLotteryPDF } from "@/lib/lottery-pdf";
@@ -44,6 +45,10 @@ function UpdatesPage() {
   const [govt, setGovt] = useState<FeedItem[]>([]);
   const [govtErr, setGovtErr] = useState<string | null>(null);
   const [govtLoading, setGovtLoading] = useState(true);
+
+  const [pari, setPari] = useState<FeedItem[]>([]);
+  const [pariErr, setPariErr] = useState<string | null>(null);
+  const [pariLoading, setPariLoading] = useState(true);
 
   // Inline viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -93,10 +98,24 @@ function UpdatesPage() {
     }
   };
 
+  const loadPari = async () => {
+    setPariLoading(true);
+    try {
+      const r = await fetchParivahanNotifications();
+      setPari(r.items);
+      setPariErr(r.error);
+    } catch (e: any) {
+      setPariErr(e?.message || "Failed to fetch Parivahan");
+    } finally {
+      setPariLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadLottery();
     loadPSC();
     loadGovt();
+    loadPari();
   }, []);
 
   const handleDownloadPDF = () => {
@@ -115,6 +134,7 @@ function UpdatesPage() {
     loadLottery();
     loadPSC();
     loadGovt();
+    loadPari();
     toast.info("Refreshing all updates…");
   };
 
@@ -139,10 +159,11 @@ function UpdatesPage() {
         { icon: Trophy, label: "Lottery", value: lottery?.number || "—", accent: "from-amber-400 to-yellow-500" },
         { icon: Building2, label: "PSC Items", value: psc.length, accent: "from-blue-400 to-indigo-500" },
         { icon: Globe2, label: "Govt Press", value: govt.length, accent: "from-emerald-400 to-teal-500" },
+        { icon: Car, label: "Parivahan", value: pari.length, accent: "from-sky-400 to-cyan-500" },
       ]}
     >
       <Tabs defaultValue="lottery" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-2xl mb-4">
+        <TabsList className="grid grid-cols-4 w-full max-w-3xl mb-4">
           <TabsTrigger value="lottery">
             <Trophy className="w-4 h-4 mr-1.5" /> Lottery
           </TabsTrigger>
@@ -151,6 +172,9 @@ function UpdatesPage() {
           </TabsTrigger>
           <TabsTrigger value="govt">
             <Globe2 className="w-4 h-4 mr-1.5" /> Govt Press
+          </TabsTrigger>
+          <TabsTrigger value="parivahan">
+            <Car className="w-4 h-4 mr-1.5" /> Parivahan
           </TabsTrigger>
         </TabsList>
 
@@ -312,6 +336,31 @@ function UpdatesPage() {
               emptyMsg="No press releases available right now."
               fallbackHref="https://pib.gov.in/AllRelease.aspx?reg=24"
               fallbackLabel="Open PIB Kerala"
+              onOpen={openInline}
+            />
+          </ServiceSectionCard>
+        </TabsContent>
+
+        {/* ───── PARIVAHAN ───── */}
+        <TabsContent value="parivahan">
+          <ServiceSectionCard
+            title="Parivahan / Ministry of Road Transport — Updates"
+            icon={Car}
+            accent="from-sky-500 to-cyan-600"
+            right={
+              <Button size="sm" variant="outline" onClick={loadPari} disabled={pariLoading}>
+                <RefreshCw className={`w-3.5 h-3.5 mr-1 ${pariLoading ? "animate-spin" : ""}`} />
+                Reload
+              </Button>
+            }
+          >
+            <FeedList
+              loading={pariLoading}
+              items={pari}
+              error={pariErr}
+              emptyMsg="No Parivahan updates available right now."
+              fallbackHref="https://parivahan.gov.in/parivahan/"
+              fallbackLabel="Open parivahan.gov.in"
               onOpen={openInline}
             />
           </ServiceSectionCard>
