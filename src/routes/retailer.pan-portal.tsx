@@ -236,6 +236,42 @@ function PsaTab({
     }
   }
 
+  async function handleLinkExisting(e: FormEvent) {
+    e.preventDefault();
+    if (!linkForm.vleId.trim()) {
+      toast.error("PSA / VLE ID required");
+      return;
+    }
+    if (!/^\d{10}$/.test(linkForm.mobile)) {
+      toast.error("Registered mobile must be 10 digits");
+      return;
+    }
+    setLinking(true);
+    try {
+      await upsertPsaRecord({
+        retailerId: user.uid,
+        vleId: linkForm.vleId.trim(),
+        vleRegCode: linkForm.vleRegCode.trim() || undefined,
+        status: "approved",
+        linkedExisting: true,
+        linkedMobile: linkForm.mobile,
+        remark: "Linked existing PSA ID — coupon purchase only",
+        ownerName: user.name || user.email,
+        shopName: user.name || user.email,
+        mobile: linkForm.mobile,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success("PSA ID linked. You can now purchase coupons.");
+      setShowLinkForm(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Link failed");
+    } finally {
+      setLinking(false);
+    }
+  }
+
   if (psa?.status === "approved") {
     return (
       <Card>
