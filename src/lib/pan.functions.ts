@@ -130,6 +130,165 @@ export const encryptPanBridgeSecret = createServerFn({ method: "POST" })
   });
 
 // --------------------------------------------------------------------------
+// Server fn: TEST CONNECTION — calls couponStatus with a dummy coupon code
+// to verify (a) credentials decrypt OK, (b) upstream is reachable from this
+// IP, (c) provider accepts our api_key. Returns raw response so admin can
+// diagnose IP whitelist / invalid key / network errors.
+// --------------------------------------------------------------------------
+
+const testInput = z.object({
+  url: z.string().url().max(500),
+  apiKeyCipher: z.string().min(10).max(2000),
+  apiSecretCipher: z.string().min(10).max(2000).optional(),
+  vpsBridgeUrl: z.string().url().max(500).optional(),
+  vpsBridgeSecretCipher: z.string().min(10).max(2000).optional(),
+});
+
+export const testPanConnection = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => testInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!context.authUser) {
+      return { success: false as const, stage: "auth" as const, error: "Authentication required" };
+    }
+
+    let apiKey: string;
+    try {
+      apiKey = await decryptApiKey(data.apiKeyCipher);
+    } catch {
+      return {
+        success: false as const,
+        stage: "decrypt" as const,
+        error: "API key cipher is corrupted. Re-save the API key.",
+      };
+    }
+    let apiSecret: string | undefined;
+    if (data.apiSecretCipher) {
+      try {
+        apiSecret = await decryptApiKey(data.apiSecretCipher);
+      } catch {
+        return {
+          success: false as const,
+          stage: "decrypt" as const,
+          error: "API secret cipher is corrupted. Re-save the API secret.",
+        };
+      }
+    }
+    void apiSecret;
+
+    // Use a clearly-invalid coupon code so the provider responds quickly
+    // without consuming any real coupon. Status check is GET + free of charge.
+    const merged: Record<string, string> = {
+      api_key: apiKey,
+      coupon_code: "TEST-CONNECTION-CHECK",
+    };
+
+    const usingBridge = !!(data.vpsBridgeUrl && data.vpsBridgeSecretCipher);
+    const startedAt = Date.now();
+    try {
+      let res: Response;
+      if (usingBridge) {
+        let bridgeSecret: string;
+        try {
+          bridgeSecret = await decryptApiKey(data.vpsBridgeSecretCipher!);
+        } catch {
+          return {
+            success: false as const,
+            stage: "decrypt" as const,
+            error: "Bridge secret cipher is corrupted. Re-save the bridge secret.",
+          };
+        }
+        const bridgeBody = JSON.stringify({ method: "GET", url: data.url, payload: merged });
+        const ts = Date.now().toString();
+        const sigBuf = await crypto.subtle.sign(
+          "HMAC",
+          await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(bridgeSecret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+          ),
+          new TextEncoder().encode(ts + "." + bridgeBody),
+        );
+        const sigHex = Array.from(new Uint8Array(sigBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        res = await fetch(data.vpsBridgeUrl!, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Signature": sigHex,
+            "X-Timestamp": ts,
+          },
+          body: bridgeBody,
+          signal: AbortSignal.timeout(20_000),
+        });
+      } else {
+        const qs = new URLSearchParams(merged).toString();
+        res = await fetch(`${data.url}?${qs}`, {
+          method: "GET",
+          signal: AbortSignal.timeout(20_000),
+        });
+      }
+
+      const elapsedMs = Date.now() - startedAt;
+      const httpStatus = res.status;
+      const text = await res.text().catch(() => "");
+      let parsed: Record<string, unknown> | null = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = null;
+      }
+
+      // Diagnose common failure modes from the response shape.
+      const blob = (text || "").toLowerCase();
+      const isIpBlock =
+        httpStatus === 403 ||
+        blob.includes("ip not") ||
+        blob.includes("ip address") ||
+        blob.includes("whitelist") ||
+        blob.includes("forbidden");
+      const isInvalidKey =
+        blob.includes("invalid api") ||
+        blob.includes("api key") ||
+        blob.includes("unauthor") ||
+        httpStatus === 401;
+
+      return {
+        success: true as const,
+        usingBridge,
+        elapsedMs,
+        httpStatus,
+        bodyPreview: text.slice(0, 600),
+        parsedStatus:
+          parsed && typeof parsed.status === "string" ? parsed.status : null,
+        parsedMessage:
+          parsed && typeof parsed.message === "string" ? parsed.message : null,
+        diagnosis: !res.ok
+          ? isIpBlock
+            ? "IP_BLOCKED"
+            : isInvalidKey
+              ? "INVALID_KEY"
+              : "HTTP_ERROR"
+          : isInvalidKey
+            ? "INVALID_KEY"
+            : "REACHABLE",
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      return {
+        success: false as const,
+        stage: "upstream" as const,
+        error: msg.includes("timeout")
+          ? "Request timed out (>20s). Provider unreachable from this IP."
+          : `Network error: ${msg}`,
+      };
+    }
+  });
+
+// --------------------------------------------------------------------------
 // Server fn: execute a PAN service against mallikacyberzone.
 // --------------------------------------------------------------------------
 
