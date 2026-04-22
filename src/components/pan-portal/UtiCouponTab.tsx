@@ -197,6 +197,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Training PDF — quick access right above the purchase card */}
+      <UtiTrainingPdfCard />
       {/* Purchase card */}
       <Card className="border-primary/20 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 p-1" />
