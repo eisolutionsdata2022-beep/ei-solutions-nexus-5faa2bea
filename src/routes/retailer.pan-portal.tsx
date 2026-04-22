@@ -880,6 +880,8 @@ function PanTab({
 }
 
 function OrdersHistory({ orders }: { orders: PanOrder[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   if (orders.length === 0) {
     return (
       <Card className="border-dashed">
@@ -895,6 +897,7 @@ function OrdersHistory({ orders }: { orders: PanOrder[] }) {
       </Card>
     );
   }
+
   return (
     <div className="space-y-3">
       {orders.map((o) => {
@@ -904,34 +907,255 @@ function OrdersHistory({ orders }: { orders: PanOrder[] }) {
           failed: { color: "bg-rose-100 text-rose-700 border-rose-200", icon: <XCircle className="h-3 w-3" /> },
           refunded: { color: "bg-slate-100 text-slate-700 border-slate-200", icon: <RefreshCw className="h-3 w-3" /> },
         }[o.status];
+        const isExpanded = expandedId === o.orderId;
+        const accentClass =
+          o.status === "success" ? "border-l-emerald-500" :
+          o.status === "failed" ? "border-l-rose-500" :
+          o.status === "refunded" ? "border-l-slate-400" :
+          "border-l-amber-500";
         return (
-          <Card key={o.orderId} className="hover:shadow-md transition-shadow border-l-4 border-l-primary/40">
-            <CardContent className="p-4 flex items-center justify-between flex-wrap gap-4">
-              <div className="space-y-1">
-                <p className="font-mono text-[11px] text-muted-foreground tracking-wide">{o.orderId}</p>
-                <p className="font-semibold text-foreground text-base">{o.name}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span>📱 {o.mobile}</span>
-                  <span>·</span>
-                  <span>{new Date(o.createdAt).toLocaleString()}</span>
-                </p>
-                {o.ackNo && (
-                  <p className="text-xs">
-                    Ack No: <span className="font-mono font-semibold text-foreground">{o.ackNo}</span>
+          <Card key={o.orderId} className={`hover:shadow-md transition-all border-l-4 ${accentClass}`}>
+            <CardContent className="p-0">
+              {/* Summary row */}
+              <button
+                type="button"
+                onClick={() => setExpandedId(isExpanded ? null : o.orderId)}
+                className="w-full p-4 flex items-center justify-between flex-wrap gap-4 text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors rounded-lg"
+              >
+                <div className="space-y-1 flex-1 min-w-0">
+                  <p className="font-mono text-[11px] text-muted-foreground tracking-wide truncate">{o.orderId}</p>
+                  <p className="font-semibold text-foreground text-base">{o.name}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                    <span>📱 {o.mobile}</span>
+                    <span>·</span>
+                    <span>{new Date(o.createdAt).toLocaleString()}</span>
                   </p>
-                )}
-              </div>
-              <div className="text-right space-y-2">
-                <Badge className={`${statusConfig.color} border gap-1 capitalize`}>
-                  {statusConfig.icon}
-                  {o.status}
-                </Badge>
-                <p className="text-lg font-bold text-foreground">₹{o.amount}</p>
-              </div>
+                  {o.ackNo && (
+                    <p className="text-xs">
+                      Ack No: <span className="font-mono font-semibold text-foreground">{o.ackNo}</span>
+                    </p>
+                  )}
+                </div>
+                <div className="text-right space-y-2 flex flex-col items-end">
+                  <Badge className={`${statusConfig.color} border gap-1 capitalize`}>
+                    {statusConfig.icon}
+                    {o.status}
+                  </Badge>
+                  <p className="text-lg font-bold text-foreground">₹{o.amount}</p>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    {isExpanded ? "Hide timeline" : "View timeline"}
+                  </span>
+                </div>
+              </button>
+
+              {/* Timeline */}
+              {isExpanded && (
+                <div className="border-t bg-gradient-to-br from-slate-50/80 to-white dark:from-slate-900/60 dark:to-slate-900 p-6">
+                  <OrderTimeline order={o} />
+                </div>
+              )}
             </CardContent>
           </Card>
         );
       })}
+    </div>
+  );
+}
+
+/* ----------------------------- Order Timeline ---------------------------- */
+type TimelineStep = {
+  key: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  state: "done" | "active" | "failed" | "pending";
+  timestamp?: string;
+};
+
+function OrderTimeline({ order }: { order: PanOrder }) {
+  const steps: TimelineStep[] = [];
+
+  // Step 1 — Always done (order created + wallet debited)
+  steps.push({
+    key: "submitted",
+    label: "Application Submitted",
+    description: `₹${order.amount} debited from wallet · Order ID generated`,
+    icon: <Send className="h-4 w-4" />,
+    state: "done",
+    timestamp: order.createdAt,
+  });
+
+  // Step 2 — NSDL Authorization
+  const hasAuth = !!order.authorization || !!order.refId;
+  steps.push({
+    key: "authorized",
+    label: "NSDL Authorization",
+    description: order.refId
+      ? `Auth token received · Ref: ${order.refId}`
+      : "Awaiting NSDL authorization token",
+    icon: <ShieldCheck className="h-4 w-4" />,
+    state: hasAuth ? "done" : order.status === "pending" ? "active" : "failed",
+    timestamp: hasAuth ? order.updatedAt : undefined,
+  });
+
+  // Step 3 — Aadhaar eKYC / NSDL processing
+  const isProcessing = order.status === "pending" && hasAuth;
+  const isProcessed = order.status === "success" || order.status === "failed" || !!order.ackNo;
+  steps.push({
+    key: "processing",
+    label: "Aadhaar eKYC Processing",
+    description: order.ackNo
+      ? `Acknowledged by NSDL · Ack No: ${order.ackNo}`
+      : isProcessing
+        ? "Customer completing Aadhaar OTP / Biometric"
+        : order.status === "failed"
+          ? "Processing failed before completion"
+          : "Waiting for previous step",
+    icon: <Server className="h-4 w-4" />,
+    state: isProcessed ? "done" : isProcessing ? "active" : order.status === "failed" ? "failed" : "pending",
+    timestamp: order.ackNo ? order.updatedAt : undefined,
+  });
+
+  // Step 4 — Final outcome
+  if (order.status === "success") {
+    steps.push({
+      key: "success",
+      label: "PAN Application Successful",
+      description: "Your PAN application is approved and being processed by NSDL.",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      state: "done",
+      timestamp: order.updatedAt,
+    });
+  } else if (order.status === "failed") {
+    steps.push({
+      key: "failed",
+      label: "Application Failed",
+      description: order.remark || "Application could not be processed.",
+      icon: <ShieldAlert className="h-4 w-4" />,
+      state: "failed",
+      timestamp: order.updatedAt,
+    });
+  } else if (order.status === "refunded") {
+    steps.push({
+      key: "refunded",
+      label: "Amount Refunded",
+      description: `₹${order.amount} credited back to your wallet · ${order.remark || "Auto refund processed"}`,
+      icon: <Undo2 className="h-4 w-4" />,
+      state: "done",
+      timestamp: order.updatedAt,
+    });
+  } else {
+    steps.push({
+      key: "final",
+      label: "Awaiting Final Status",
+      description: "Result will appear here once NSDL completes processing.",
+      icon: <Clock className="h-4 w-4" />,
+      state: "pending",
+    });
+  }
+
+  return (
+    <div className="relative">
+      {/* Header strip */}
+      <div className="flex items-center justify-between mb-5 pb-3 border-b">
+        <div>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Order Timeline</p>
+          <p className="text-sm font-semibold text-foreground">Lifecycle of this PAN application</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[11px] text-muted-foreground">Wallet</p>
+          <p className="text-xs font-mono text-foreground">
+            ₹{order.oldBalance} → <span className="font-bold">₹{order.newBalance}</span>
+          </p>
+        </div>
+      </div>
+
+      <ol className="relative space-y-4">
+        {steps.map((step, idx) => {
+          const isLast = idx === steps.length - 1;
+          const dotStyles =
+            step.state === "done"
+              ? "bg-emerald-500 text-white ring-emerald-100 dark:ring-emerald-950"
+              : step.state === "active"
+                ? "bg-amber-500 text-white ring-amber-100 dark:ring-amber-950 animate-pulse"
+                : step.state === "failed"
+                  ? "bg-rose-500 text-white ring-rose-100 dark:ring-rose-950"
+                  : "bg-slate-200 text-slate-500 ring-slate-100 dark:bg-slate-700 dark:text-slate-400 dark:ring-slate-800";
+          const lineStyles =
+            step.state === "done"
+              ? "bg-emerald-300 dark:bg-emerald-700"
+              : step.state === "failed"
+                ? "bg-rose-300 dark:bg-rose-700"
+                : "bg-slate-200 dark:bg-slate-700";
+          const labelStyles =
+            step.state === "done"
+              ? "text-emerald-700 dark:text-emerald-300"
+              : step.state === "active"
+                ? "text-amber-700 dark:text-amber-300"
+                : step.state === "failed"
+                  ? "text-rose-700 dark:text-rose-300"
+                  : "text-muted-foreground";
+
+          return (
+            <li key={step.key} className="flex gap-4 relative">
+              {/* Vertical connector + dot */}
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center ring-4 shadow-sm ${dotStyles}`}>
+                  {step.icon}
+                </div>
+                {!isLast && <div className={`w-0.5 flex-1 mt-1 ${lineStyles}`} style={{ minHeight: 24 }} />}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 pb-2">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold text-sm ${labelStyles}`}>{step.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 break-words">{step.description}</p>
+                  </div>
+                  {step.timestamp && (
+                    <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap bg-white dark:bg-slate-800 px-2 py-1 rounded border">
+                      {new Date(step.timestamp).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+                {step.state === "active" && (
+                  <Badge className="mt-2 bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px]">
+                    <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" />
+                    In progress
+                  </Badge>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      {/* Application metadata footer */}
+      <div className="mt-6 pt-4 border-t grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div>
+          <p className="text-muted-foreground">Type</p>
+          <p className="font-semibold text-foreground">{order.applicationType === "P" ? "Physical PAN" : "e-PAN"}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Mode</p>
+          <p className="font-semibold text-foreground">{order.applicationMode}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Email</p>
+          <p className="font-semibold text-foreground truncate">{order.email}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">DOB</p>
+          <p className="font-semibold text-foreground">{order.dob}</p>
+        </div>
+      </div>
     </div>
   );
 }
