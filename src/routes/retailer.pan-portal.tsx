@@ -15,7 +15,9 @@ import {
   subscribeRetailerOrders,
   updatePanOrder,
   upsertPsaRecord,
+  subscribeRetailerUtiCoupons,
 } from "@/lib/pan-portal-firebase";
+import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
 import {
   panNsdlGetAuthorization,
   panPsaCreate,
@@ -26,6 +28,7 @@ import type {
   PanOrder,
   PanPsaRecord,
   PanServiceActivation,
+  PanUtiCoupon,
 } from "@/lib/pan-portal-types";
 import { generateVleId } from "@/lib/vle-id";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
