@@ -432,25 +432,39 @@ function PsaTab({
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-primary/30 bg-primary/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Already have a PSA / UTI VLE ID?</CardTitle>
+    <div className="space-y-5">
+      {/* Premium "Link existing ID" callout */}
+      <Card className="overflow-hidden border-amber-200 dark:border-amber-900/50 shadow-md">
+        <div className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-1" />
+        <CardHeader className="bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+              <Link2 className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Already have a UTI / PSA VLE ID?</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Skip registration — link in 30 seconds</p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5">
           {!showLinkForm ? (
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <p className="text-sm text-muted-foreground">
-                Skip registration and link your existing PSA ID to start purchasing PAN coupons immediately.
+              <p className="text-sm text-muted-foreground max-w-md">
+                Link your existing PSA ID to start applying immediately. No re-registration needed.
               </p>
-              <Button variant="outline" onClick={() => setShowLinkForm(true)}>
-                Link Existing PSA ID
+              <Button
+                onClick={() => setShowLinkForm(true)}
+                className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+              >
+                <Link2 className="h-4 w-4 mr-2" /> Link Existing ID
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleLinkExisting} className="space-y-3">
-              <div className="grid md:grid-cols-2 gap-3">
-                <div>
+            <form onSubmit={handleLinkExisting} className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <Label>PSA / VLE ID *</Label>
                   <Input
                     value={linkForm.vleId}
@@ -459,7 +473,7 @@ function PsaTab({
                     required
                   />
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Registered Mobile *</Label>
                   <Input
                     value={linkForm.mobile}
@@ -469,7 +483,7 @@ function PsaTab({
                     required
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-1.5">
                   <Label>Reg Code (optional)</Label>
                   <Input
                     value={linkForm.vleRegCode}
@@ -479,61 +493,82 @@ function PsaTab({
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={linking}>
-                  {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                <Button type="submit" disabled={linking} className="bg-amber-500 hover:bg-amber-600 text-white">
+                  {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
                   Confirm & Link
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setShowLinkForm(false)}>
                   Cancel
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                ⚠ Make sure the PSA ID is correct. Wrong details may cause failed coupon purchases.
+              <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded border border-amber-200/50">
+                ⚠ Make sure the PSA ID is correct. Wrong details may cause failed applications.
               </p>
             </form>
           )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Register New PSA Auto-ID</CardTitle>
+      {/* Premium register card */}
+      <Card className="overflow-hidden border shadow-md">
+        <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
+        <CardHeader className="bg-gradient-to-br from-blue-50/60 to-white dark:from-blue-950/20 dark:to-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Register New PSA Auto-ID</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">First time? Register a fresh agent ID</p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-1.5">
                 <Label>Shop Name</Label>
                 <Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>State</Label>
                 <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 space-y-1.5">
                 <Label>Address (max 50 chars)</Label>
                 <Input value={form.address} maxLength={50} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>PIN Code</Label>
                 <Input value={form.pinCode} maxLength={6} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} required />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>Aadhaar Number (12 digits)</Label>
                 <Input value={form.uidNo} maxLength={12} onChange={(e) => setForm({ ...form, uidNo: e.target.value })} required />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 space-y-1.5">
                 <Label>PAN Number</Label>
                 <Input value={form.panNo} maxLength={10} placeholder="ABCDE1234F" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} required />
               </div>
             </div>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            <Button type="submit" disabled={submitting} size="lg" className="w-full sm:w-auto">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Register PSA Auto-ID
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </form>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/* ----------------------------- InfoRow ----------------------------------- */
+function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-3 border border-slate-200/60 dark:border-slate-700/40">
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">{label}</p>
+      <p className={`text-sm font-semibold text-foreground ${mono ? "font-mono" : ""}`}>{value}</p>
     </div>
   );
 }
