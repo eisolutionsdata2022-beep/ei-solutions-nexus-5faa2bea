@@ -326,7 +326,7 @@ function AdminPanPortalSettings() {
             </div>
             <div className="text-sm">
               <span className="text-muted-foreground">Admin margin per PAN:</span>{" "}
-              <span className={margin >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+              <span className={margin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
                 ₹{margin}
               </span>
             </div>
