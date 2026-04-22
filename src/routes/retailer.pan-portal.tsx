@@ -173,9 +173,17 @@ function PanPortalPage() {
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
       <div className="container mx-auto px-6 max-w-6xl py-8">
         <Tabs defaultValue="psa">
-          <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl">
+          <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl flex-wrap">
             <TabsTrigger value="psa" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
               <ShieldCheck className="h-4 w-4" /> PSA Auto-ID
+            </TabsTrigger>
+            <TabsTrigger value="uti" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
+              <Sparkles className="h-4 w-4" /> UTI PAN Coupon
+              {coupons.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-400 text-slate-900 rounded-full font-bold">
+                  {coupons.length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="pan" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
               <CreditCard className="h-4 w-4" /> NSDL eKYC PAN
@@ -192,6 +200,10 @@ function PanPortalPage() {
 
           <TabsContent value="psa" className="mt-6">
             <PsaTab user={appUser} config={config} psa={psa} />
+          </TabsContent>
+
+          <TabsContent value="uti" className="mt-6">
+            <UtiCouponTab user={appUser} config={config} psa={psa} coupons={coupons} />
           </TabsContent>
 
           <TabsContent value="pan" className="mt-6">
