@@ -26,6 +26,9 @@ export interface PanMasterConfig {
   /** HMAC secret for signing webhook callbacks (admin-rotatable). */
   webhookSecret?: string;
 
+  /** Comma/newline-separated list of IPs whitelisted with the upstream provider. */
+  allowedIps?: string;
+
   /** Service master switch. */
   enabled?: boolean;
 

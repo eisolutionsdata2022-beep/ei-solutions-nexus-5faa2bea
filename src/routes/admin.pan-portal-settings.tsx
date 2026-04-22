@@ -54,6 +54,7 @@ function AdminPanPortalSettings() {
     psaRegistrationFee: 0,
   });
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [allowedIps, setAllowedIps] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [savingUrls, setSavingUrls] = useState(false);
   const [savingFees, setSavingFees] = useState(false);
@@ -79,6 +80,7 @@ function AdminPanPortalSettings() {
         psaRegistrationFee: cfg.psaRegistrationFee ?? PAN_DEFAULT_FEES.psaRegistrationFee,
       });
       setWebhookSecret(cfg.webhookSecret || "");
+      setAllowedIps(cfg.allowedIps || "");
       setEnabled(cfg.enabled ?? true);
     });
   }, []);
@@ -118,7 +120,7 @@ function AdminPanPortalSettings() {
     if (!isAdmin || !appUser) return;
     setSavingUrls(true);
     try {
-      await savePanConfigPublic({ ...urls, webhookSecret, enabled }, appUser.uid);
+      await savePanConfigPublic({ ...urls, webhookSecret, allowedIps, enabled }, appUser.uid);
       toast.success("Provider URLs saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
