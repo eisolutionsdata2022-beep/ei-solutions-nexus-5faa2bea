@@ -41,7 +41,7 @@ const SERVICE_META: Record<string, { icon: any; gradient: string; glow: string }
   "money-transfer":  { icon: Send,          gradient: "from-emerald-500 via-teal-500 to-cyan-500",    glow: "shadow-teal-500/30"    },
   "ippb":            { icon: Building2,     gradient: "from-amber-500 via-orange-500 to-red-500",     glow: "shadow-orange-500/30"  },
   "ei-pay":          { icon: CreditCard,    gradient: "from-cyan-500 via-sky-500 to-blue-600",        glow: "shadow-sky-500/30"     },
-  "pan-portal":      { icon: IdCard,        gradient: "from-rose-500 via-pink-500 to-fuchsia-500",    glow: "shadow-pink-500/30"    },
+  
   "horoscope":       { icon: Sun,           gradient: "from-yellow-400 via-amber-500 to-orange-500",  glow: "shadow-amber-500/30"   },
   "matrimony":       { icon: Heart,         gradient: "from-pink-500 via-rose-500 to-red-500",        glow: "shadow-rose-500/30"    },
   "cv-builder":      { icon: FileUser,      gradient: "from-indigo-500 via-blue-500 to-cyan-500",     glow: "shadow-blue-500/30"    },
