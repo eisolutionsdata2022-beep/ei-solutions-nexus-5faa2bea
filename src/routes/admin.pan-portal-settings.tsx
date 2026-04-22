@@ -296,9 +296,15 @@ function AdminPanPortalSettings() {
                 Register these IPs with the upstream provider (NSDL/UTI). Used as a reference — outbound calls originate from the server's static egress IP.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={enabled} onCheckedChange={setEnabled} />
-              <Label>Service enabled</Label>
+            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                <Switch checked={enabled} onCheckedChange={setEnabled} id="nsdl-enabled" />
+                <Label htmlFor="nsdl-enabled" className="cursor-pointer">NSDL eKYC enabled</Label>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                <Switch checked={utiEnabled} onCheckedChange={setUtiEnabled} id="uti-enabled" />
+                <Label htmlFor="uti-enabled" className="cursor-pointer">UTI Coupon enabled</Label>
+              </div>
             </div>
             <Button type="submit" disabled={savingUrls}>
               {savingUrls ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
@@ -349,12 +355,36 @@ function AdminPanPortalSettings() {
                   onChange={(e) => setFees({ ...fees, panProviderCost: Number(e.target.value) })}
                 />
               </div>
+              <div>
+                <Label className="text-blue-700 dark:text-blue-300">UTI Coupon Retailer Fee (₹)</Label>
+                <Input
+                  type="number"
+                  value={fees.utiPanRetailerFee}
+                  onChange={(e) => setFees({ ...fees, utiPanRetailerFee: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label className="text-blue-700 dark:text-blue-300">UTI Coupon Provider Cost (₹)</Label>
+                <Input
+                  type="number"
+                  value={fees.utiPanProviderCost}
+                  onChange={(e) => setFees({ ...fees, utiPanProviderCost: Number(e.target.value) })}
+                />
+              </div>
             </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Admin margin per PAN:</span>{" "}
-              <span className={margin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
-                ₹{margin}
-              </span>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm p-3 rounded-lg bg-muted/30 border">
+              <div>
+                <span className="text-muted-foreground">NSDL margin:</span>{" "}
+                <span className={margin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
+                  ₹{margin}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">UTI margin:</span>{" "}
+                <span className={utiMargin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
+                  ₹{utiMargin}
+                </span>
+              </div>
             </div>
             <Button type="submit" disabled={savingFees}>
               {savingFees ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
