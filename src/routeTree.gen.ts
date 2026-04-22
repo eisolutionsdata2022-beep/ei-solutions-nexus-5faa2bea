@@ -39,6 +39,7 @@ import { Route as StaffWhatsappRouteImport } from './routes/staff.whatsapp'
 import { Route as StaffServicesRouteImport } from './routes/staff.services'
 import { Route as StaffReportsRouteImport } from './routes/staff.reports'
 import { Route as StaffPerformanceRouteImport } from './routes/staff.performance'
+import { Route as StaffMarketingRouteImport } from './routes/staff.marketing'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
@@ -96,6 +97,7 @@ import { Route as AdminPsaIdsRouteImport } from './routes/admin.psa-ids'
 import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminLandingCmsRouteImport } from './routes/admin.landing-cms'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
@@ -268,6 +270,11 @@ const StaffReportsRoute = StaffReportsRouteImport.update({
 const StaffPerformanceRoute = StaffPerformanceRouteImport.update({
   id: '/performance',
   path: '/performance',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffMarketingRoute = StaffMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffLeadsRoute = StaffLeadsRouteImport.update({
@@ -557,6 +564,11 @@ const AdminMatrimonyRoute = AdminMatrimonyRouteImport.update({
   path: '/matrimony',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLandingCmsRoute = AdminLandingCmsRouteImport.update({
   id: '/landing-cms',
   path: '/landing-cms',
@@ -711,6 +723,7 @@ export interface FileRoutesByFullPath {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -768,6 +781,7 @@ export interface FileRoutesByFullPath {
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
+  '/staff/marketing': typeof StaffMarketingRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
@@ -816,6 +830,7 @@ export interface FileRoutesByTo {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -873,6 +888,7 @@ export interface FileRoutesByTo {
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
+  '/staff/marketing': typeof StaffMarketingRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
@@ -929,6 +945,7 @@ export interface FileRoutesById {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
@@ -986,6 +1003,7 @@ export interface FileRoutesById {
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
+  '/staff/marketing': typeof StaffMarketingRoute
   '/staff/performance': typeof StaffPerformanceRoute
   '/staff/reports': typeof StaffReportsRoute
   '/staff/services': typeof StaffServicesRoute
@@ -1043,6 +1061,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1100,6 +1119,7 @@ export interface FileRouteTypes {
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
+    | '/staff/marketing'
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
@@ -1148,6 +1168,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1205,6 +1226,7 @@ export interface FileRouteTypes {
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
+    | '/staff/marketing'
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
@@ -1260,6 +1282,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
     | '/admin/pan-settings'
@@ -1317,6 +1340,7 @@ export interface FileRouteTypes {
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
+    | '/staff/marketing'
     | '/staff/performance'
     | '/staff/reports'
     | '/staff/services'
@@ -1568,6 +1592,13 @@ declare module '@tanstack/react-router' {
       path: '/performance'
       fullPath: '/staff/performance'
       preLoaderRoute: typeof StaffPerformanceRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/marketing': {
+      id: '/staff/marketing'
+      path: '/marketing'
+      fullPath: '/staff/marketing'
+      preLoaderRoute: typeof StaffMarketingRouteImport
       parentRoute: typeof StaffRoute
     }
     '/staff/leads': {
@@ -1969,6 +2000,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMatrimonyRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/landing-cms': {
       id: '/admin/landing-cms'
       path: '/landing-cms'
@@ -2154,6 +2192,7 @@ interface AdminRouteChildren {
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminLandingCmsRoute: typeof AdminLandingCmsRoute
+  AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanSettingsRoute: typeof AdminPanSettingsRoute
@@ -2199,6 +2238,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,
   AdminLandingCmsRoute: AdminLandingCmsRoute,
+  AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanSettingsRoute: AdminPanSettingsRoute,
@@ -2352,6 +2392,7 @@ interface StaffRouteChildren {
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
+  StaffMarketingRoute: typeof StaffMarketingRoute
   StaffPerformanceRoute: typeof StaffPerformanceRoute
   StaffReportsRoute: typeof StaffReportsRoute
   StaffServicesRoute: typeof StaffServicesRoute
@@ -2366,6 +2407,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,
+  StaffMarketingRoute: StaffMarketingRoute,
   StaffPerformanceRoute: StaffPerformanceRoute,
   StaffReportsRoute: StaffReportsRoute,
   StaffServicesRoute: StaffServicesRoute,
