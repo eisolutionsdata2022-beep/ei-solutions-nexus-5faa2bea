@@ -32,6 +32,7 @@ import {
   Gift,
   Activity,
   Search,
+  IdCard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
