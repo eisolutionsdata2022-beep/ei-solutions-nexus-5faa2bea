@@ -131,7 +131,7 @@ function AdminPanPortalSettings() {
     if (!isAdmin || !appUser) return;
     setSavingUrls(true);
     try {
-      await savePanConfigPublic({ ...urls, webhookSecret, allowedIps, enabled }, appUser.uid);
+      await savePanConfigPublic({ ...urls, webhookSecret, allowedIps, enabled, utiEnabled }, appUser.uid);
       toast.success("Provider URLs saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
