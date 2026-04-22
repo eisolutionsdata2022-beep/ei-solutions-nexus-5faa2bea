@@ -51,6 +51,12 @@ import {
   TrendingUp,
   CreditCard,
   Zap,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  ShieldAlert,
+  Server,
+  Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
 
