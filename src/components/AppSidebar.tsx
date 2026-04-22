@@ -93,7 +93,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
-    { label: "Marketing Materials", to: "/admin/marketing", icon: Gift, tag: "new", hint: "Brochures, posters, share links" },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
