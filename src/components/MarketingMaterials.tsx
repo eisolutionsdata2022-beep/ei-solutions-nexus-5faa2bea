@@ -198,8 +198,12 @@ function whatsappShareUrl(text: string, url: string) {
 }
 
 export function MarketingMaterials() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const origin = getOrigin();
+
+  const visibleTools = GROWTH_TOOLS.filter((t) => !t.adminOnly || isAdmin);
 
   const handleCopy = async (key: string, url: string) => {
     const ok = await copyToClipboard(url);
@@ -221,15 +225,28 @@ export function MarketingMaterials() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Marketing Materials</h1>
-        <p className="text-muted-foreground">
-          Download or share the official EI Solutions brochures, social posters, and web pages.
-        </p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6 sm:p-8">
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+        <div className="relative flex items-start gap-4">
+          <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground items-center justify-center shadow-lg shrink-0">
+            <Rocket className="w-7 h-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Marketing & Growth Hub</h1>
+            <p className="text-muted-foreground mt-1 max-w-2xl">
+              ഒരൊറ്റ സ്ഥലത്ത് — ലാൻഡിംഗ് CMS, ലീഡ് മാനേജ്മെന്റ്, ബൾക്ക് ഇമെയിൽ, വാട്സ്ആപ്പ് ഇൻബോക്സ്, ബ്രോഷർ, പോസ്റ്റർ — എല്ലാം പെട്ടെന്ന് ആക്സസ് ചെയ്യാം.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue="brochures" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="hub" className="space-y-4">
+        <TabsList className="flex flex-wrap h-auto">
+          <TabsTrigger value="hub">
+            <Rocket className="w-4 h-4 mr-2" /> Growth Hub
+          </TabsTrigger>
           <TabsTrigger value="brochures">
             <FileText className="w-4 h-4 mr-2" /> Brochures
           </TabsTrigger>
@@ -240,6 +257,50 @@ export function MarketingMaterials() {
             <Globe className="w-4 h-4 mr-2" /> Web Pages
           </TabsTrigger>
         </TabsList>
+
+        {/* ---------------- Growth Hub ---------------- */}
+        <TabsContent value="hub">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {visibleTools.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <Link
+                  key={tool.to}
+                  to={tool.to as any}
+                  className="group relative overflow-hidden rounded-2xl border bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-[0.08] group-hover:opacity-[0.14] transition-opacity`} />
+                  <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br ${tool.gradient} opacity-20 blur-2xl`} />
+                  <div className="relative p-5 sm:p-6 flex flex-col h-full">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.gradient} text-white flex items-center justify-center shadow-md`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      {tool.badge && (
+                        <Badge variant="secondary" className="backdrop-blur bg-background/70">
+                          {tool.badge}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold leading-tight">{tool.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">{tool.malayalam}</p>
+                    <p className="text-sm text-foreground/80 mt-3 flex-1">{tool.description}</p>
+                    <div className="mt-4 flex items-center text-sm font-medium text-primary group-hover:gap-2 transition-all">
+                      Open
+                      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {!isAdmin && (
+            <p className="text-xs text-muted-foreground mt-4">
+              Some tools (CMS, Bulk Email, WhatsApp Bridge) are admin-only.
+            </p>
+          )}
+        </TabsContent>
 
         {/* ---------------- Brochures ---------------- */}
         <TabsContent value="brochures">
