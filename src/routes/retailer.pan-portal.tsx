@@ -199,7 +199,7 @@ function PanPortalPage() {
           </TabsList>
 
           <TabsContent value="psa" className="mt-6">
-            <PsaTab user={appUser} config={config} psa={psa} />
+            <PsaTab user={appUser} config={config} psa={psa} coupons={coupons} />
           </TabsContent>
 
           <TabsContent value="uti" className="mt-6">
@@ -258,11 +258,18 @@ function PsaTab({
   user,
   config,
   psa,
+  coupons,
 }: {
   user: { uid: string; email: string; name?: string; phone?: string };
   config: PanMasterConfig;
   psa: PanPsaRecord | null;
+  coupons: PanUtiCoupon[];
 }) {
+  const purchasedCoupons = coupons.filter(
+    (c) => c.status === "purchased" || c.status === "consumed",
+  ).length;
+  const idUnlocked = purchasedCoupons >= 2;
+  const couponsRemaining = Math.max(0, 2 - purchasedCoupons);
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -429,13 +436,53 @@ function PsaTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <InfoRow label="VLE / PSA ID" value={psa.vleId} mono />
-            {psa.vleRegCode && <InfoRow label="Reg Code" value={psa.vleRegCode} mono />}
-            {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
-            {psa.panNo && <InfoRow label="PAN" value={psa.panNo} mono />}
-            <InfoRow label="Mobile" value={psa.linkedMobile || psa.mobile} />
-          </div>
+          {/* Gate: PSA login ID is only revealed after 2 UTI coupon purchases
+              (matches legacy mallikarecharge behaviour — provider activates
+              the agent ID once the retailer has bought ≥2 coupons). Linked
+              existing accounts skip this gate because the retailer already
+              has the credentials. */}
+          {!psa.linkedExisting && !idUnlocked ? (
+            <div className="rounded-xl border border-amber-300/70 dark:border-amber-900/60 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-slate-900 dark:to-orange-950/20 p-5 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-amber-900 dark:text-amber-200">
+                    PSA Login ID will unlock after {couponsRemaining} more coupon
+                    {couponsRemaining > 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-1">
+                    UTI activates your agent login only after 2 coupon purchases.
+                    You've bought <strong>{purchasedCoupons}</strong> / 2 so far.
+                  </p>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-amber-100 dark:bg-amber-900/40 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
+                  style={{ width: `${Math.min(100, (purchasedCoupons / 2) * 100)}%` }}
+                />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-white/60 dark:bg-slate-900/40 p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">PSA Login ID</p>
+                  <p className="font-mono text-sm font-semibold text-foreground/40 select-none">
+                    •••••••• {couponsRemaining > 0 ? `(buy ${couponsRemaining} more)` : ""}
+                  </p>
+                </div>
+                {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
+              </div>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-4">
+              <InfoRow label="VLE / PSA ID" value={psa.vleId} mono />
+              {psa.vleRegCode && <InfoRow label="Reg Code" value={psa.vleRegCode} mono />}
+              {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
+              {psa.panNo && <InfoRow label="PAN" value={psa.panNo} mono />}
+              <InfoRow label="Mobile" value={psa.linkedMobile || psa.mobile} />
+            </div>
+          )}
           {psa.linkedExisting ? (
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4 text-sm">
               <p className="text-blue-900 dark:text-blue-200">
@@ -444,7 +491,12 @@ function PsaTab({
               </p>
             </div>
           ) : (
-            <Button onClick={handlePasswordReset} disabled={resetting} variant="outline" className="border-emerald-200 hover:bg-emerald-50">
+            <Button
+              onClick={handlePasswordReset}
+              disabled={resetting || !idUnlocked}
+              variant="outline"
+              className="border-emerald-200 hover:bg-emerald-50"
+            >
               {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Reset PSA Password
             </Button>
