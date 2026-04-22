@@ -52,11 +52,7 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
-    { label: "Landing CMS", to: "/admin/landing-cms", icon: FileText },
-    { label: "CRM Leads", to: "/admin/crm-leads", icon: Users, tag: "hot" },
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
-    { label: "Bulk Comm", to: "/admin/crm-bulk-comm", icon: MessageSquare },
-    { label: "WhatsApp", to: "/admin/whatsapp", icon: MessageSquare },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList, tag: "pending" },
