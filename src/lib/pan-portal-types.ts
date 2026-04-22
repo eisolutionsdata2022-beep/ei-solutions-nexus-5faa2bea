@@ -17,11 +17,22 @@ export interface PanMasterConfig {
   ssoRedirectUrl?: string;       // https://sso-nsdl-ekyc-app.pages.dev/sso_nsdl_ekyc_redirect
   digipayDashboardUrl?: string;  // https://digipaydashboard.religaredigital.in/Login/Authenticate
 
+  /** UTI coupon endpoints (admin-editable). Same provider/api-key, different paths. */
+  utiCouponPurchaseUrl?: string; // {botapi_url}/Api/PSACoupon  (provider-specific path)
+  utiPanStatusUrl?: string;      // {botapi_url}/Api/PANStatus
+
+  /** UTI service master switch — controls visibility of UTI tab. */
+  utiEnabled?: boolean;
+
   /** Fees & margin (in ₹). */
   nsdlIdCharge?: number;         // one-time service activation charge
-  panRetailerFee?: number;       // per-application retailer charge
-  panProviderCost?: number;      // upstream cost — used for margin display
+  panRetailerFee?: number;       // NSDL per-application retailer charge
+  panProviderCost?: number;      // NSDL upstream cost — used for margin display
   psaRegistrationFee?: number;   // one-time PSA registration charge
+
+  /** UTI per-coupon pricing (separate from NSDL). */
+  utiPanRetailerFee?: number;    // per-coupon retailer charge
+  utiPanProviderCost?: number;   // per-coupon upstream cost — for margin display
 
   /** HMAC secret for signing webhook callbacks (admin-rotatable). */
   webhookSecret?: string;
@@ -114,6 +125,8 @@ export const PAN_DEFAULT_URLS = {
   psaPasswordUrl: "https://mallikacyberzone.com/api/psa_password",
   ssoRedirectUrl: "https://sso-nsdl-ekyc-app.pages.dev/sso_nsdl_ekyc_redirect",
   digipayDashboardUrl: "https://digipaydashboard.religaredigital.in/Login/Authenticate",
+  utiCouponPurchaseUrl: "https://mallikacyberzone.com/Api/PSACoupon",
+  utiPanStatusUrl: "https://mallikacyberzone.com/Api/PANStatus",
 } as const;
 
 export const PAN_DEFAULT_FEES = {
@@ -121,4 +134,47 @@ export const PAN_DEFAULT_FEES = {
   panRetailerFee: 107,      // per application
   panProviderCost: 95,      // upstream — margin = 12
   psaRegistrationFee: 0,    // free in this clone
+  utiPanRetailerFee: 107,   // UTI per-coupon retailer
+  utiPanProviderCost: 93,   // UTI per-coupon upstream — margin = 14
 } as const;
+
+/* ------------------------------ UTI Coupons ------------------------------ */
+
+export type PanUtiCouponStatus =
+  | "purchased"   // wallet debited, coupon issued by upstream
+  | "consumed"    // customer PAN application completed
+  | "failed"      // purchase failed at upstream
+  | "refunded";   // wallet refunded after failure
+
+export interface PanUtiCoupon {
+  id?: string;
+  couponId: string;          // upstream coupon/ack number — primary identifier
+  retailerId: string;
+  retailerUsername: string;
+  vleId: string;             // PSA ID this coupon is tied to
+
+  /** Money. */
+  amount: number;            // retailer fee debited
+  providerCost?: number;
+  oldBalance: number;
+  newBalance: number;
+
+  /** Coupon lifecycle. */
+  status: PanUtiCouponStatus;
+  ackNo?: string;            // tracking number (often same as couponId)
+  panNumber?: string;        // populated when consumed
+  applicationStatus?: string; // human readable upstream status
+  remark?: string;
+  rawResponse?: string;      // last 2KB of upstream response
+
+  /** Optional applicant snapshot (filled when retailer marks consumed). */
+  applicantName?: string;
+  applicantMobile?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function newCouponOrderId(retailerId: string): string {
+  return `UTIPAN${Date.now()}A${retailerId.slice(-6)}`;
+}
