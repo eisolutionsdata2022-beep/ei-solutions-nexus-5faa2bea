@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { UtiCouponHistoryTable } from "./UtiCouponHistoryTable";
+import { UtiTrainingPdfCard } from "./UtiTrainingPdfCard";
 
 interface Props {
   user: { uid: string; email: string; name?: string; phone?: string };
