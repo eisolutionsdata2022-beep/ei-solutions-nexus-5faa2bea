@@ -190,6 +190,7 @@ function AdminPanPortalSettings() {
   }
 
   const margin = (fees.panRetailerFee || 0) - (fees.panProviderCost || 0);
+  const utiMargin = (fees.utiPanRetailerFee || 0) - (fees.utiPanProviderCost || 0);
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-5xl">
