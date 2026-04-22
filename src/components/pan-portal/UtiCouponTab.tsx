@@ -26,20 +26,15 @@ import { newCouponOrderId } from "@/lib/pan-portal-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
   Ticket,
   ShoppingCart,
   Search,
-  Copy,
-  CheckCircle2,
-  Clock,
-  XCircle,
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { UtiCouponHistoryTable } from "./UtiCouponHistoryTable";
 
 interface Props {
   user: { uid: string; email: string; name?: string; phone?: string };
@@ -276,88 +271,9 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         </CardContent>
       </Card>
 
-      {/* Coupons list */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">My Coupons ({coupons.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {coupons.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground text-sm">
-              <Ticket className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              No coupons purchased yet.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {coupons.map((c) => (
-                <CouponRow
-                  key={c.couponId}
-                  coupon={c}
-                  busy={trackingId === c.couponId}
-                  onCopy={copyId}
-                  onTrack={() => handleTrack(c.couponId, c.ackNo)}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Premium history table with wallet transactions */}
+      <UtiCouponHistoryTable retailerId={user.uid} coupons={coupons} />
     </div>
   );
 }
 
-function CouponRow({
-  coupon,
-  busy,
-  onCopy,
-  onTrack,
-}: {
-  coupon: PanUtiCoupon;
-  busy: boolean;
-  onCopy: (id: string) => void;
-  onTrack: () => void;
-}) {
-  const tone =
-    coupon.status === "consumed"
-      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30"
-      : coupon.status === "purchased"
-        ? "bg-blue-50 border-blue-200 dark:bg-blue-950/30"
-        : coupon.status === "refunded"
-          ? "bg-amber-50 border-amber-200 dark:bg-amber-950/30"
-          : "bg-rose-50 border-rose-200 dark:bg-rose-950/30";
-
-  const Icon =
-    coupon.status === "consumed" ? CheckCircle2 :
-    coupon.status === "purchased" ? Clock :
-    XCircle;
-
-  return (
-    <div className={`rounded-lg border p-3 ${tone}`}>
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Icon className="h-5 w-5 flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <code className="font-mono font-bold text-sm">{coupon.couponId}</code>
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onCopy(coupon.couponId)}>
-                <Copy className="h-3 w-3" />
-              </Button>
-              <Badge variant="outline" className="text-[10px]">{coupon.status.toUpperCase()}</Badge>
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {new Date(coupon.createdAt).toLocaleString()} • ₹{coupon.amount}
-              {coupon.panNumber && <span className="ml-2 text-emerald-700 font-bold">PAN: {coupon.panNumber}</span>}
-              {coupon.applicationStatus && !coupon.panNumber && <span className="ml-2">{coupon.applicationStatus}</span>}
-            </div>
-          </div>
-        </div>
-        {coupon.status !== "refunded" && coupon.status !== "failed" && (
-          <Button size="sm" variant="outline" onClick={onTrack} disabled={busy}>
-            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3 mr-1" />}
-            Track
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
