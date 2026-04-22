@@ -294,3 +294,136 @@ export const testPanConnection = createServerFn({ method: "POST" })
       return { ok: false as const, error: msg, elapsed: Date.now() - t0 };
     }
   });
+
+/* --------------- 6. UTI — purchase coupon -------------------------------- */
+
+const utiPurchaseInput = z.object({
+  url: z.string().url().max(500),
+  cipher: z.string().min(10).max(2000),
+  vleId: z.string().min(2).max(80),
+  orderId: z.string().min(4).max(80),
+  shopName: z.string().min(1).max(200),
+  weburl: z.string().min(3).max(200),
+});
+
+export type PanUtiPurchaseResult =
+  | {
+      success: true;
+      couponId: string;
+      ackNo?: string;
+      message: string;
+      raw: string;
+    }
+  | { success: false; error: string };
+
+/**
+ * Calls upstream UTI coupon purchase endpoint.
+ * Provider returns a coupon/ack number that the retailer uses to fill the
+ * customer's PAN application on the UTI portal.
+ */
+export const panUtiCouponPurchase = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
+  .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
+    if (!context.authUser) return { success: false, error: "Authentication required" };
+    let creds: { apiKey: string };
+    try {
+      creds = await decryptCreds(data.cipher);
+    } catch {
+      return { success: false, error: "Provider credentials are corrupted." };
+    }
+    const body = {
+      api_key: creds.apiKey,
+      vle_id: data.vleId,
+      orderId: data.orderId,
+      weburl: data.weburl,
+      shop_name: data.shopName,
+    };
+    try {
+      const res = await fetch(data.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(45_000),
+      });
+      const text = await res.text();
+      let json: Record<string, unknown> = {};
+      try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
+      const status = String(json.status ?? json.Status ?? "").toLowerCase();
+      const message = String(json.message ?? json.Message ?? text.slice(0, 200) ?? "Unknown response");
+      const couponId = String(
+        json.coupon_no ?? json.couponNo ?? json.coupon_id ?? json.couponId ?? json.ack_no ?? json.ackNo ?? "",
+      );
+      const ackNo = String(json.ack_no ?? json.ackNo ?? couponId ?? "");
+      if (res.ok && (status === "success" || status === "1") && couponId) {
+        return { success: true, couponId, ackNo, message, raw: text.slice(0, 2000) };
+      }
+      return { success: false, error: message || `Upstream returned ${res.status}` };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Provider unreachable";
+      console.error("[PAN][UTI purchase] fetch error:", err);
+      return { success: false, error: msg.includes("timeout") ? "Provider timed out" : msg };
+    }
+  });
+
+/* --------------- 7. UTI — track PAN application by ack/coupon ------------ */
+
+const utiTrackInput = z.object({
+  url: z.string().url().max(500),
+  cipher: z.string().min(10).max(2000),
+  ackNo: z.string().min(4).max(80),
+});
+
+export type PanUtiTrackResult =
+  | {
+      success: true;
+      applicationStatus: string;
+      panNumber?: string;
+      message: string;
+      raw: string;
+    }
+  | { success: false; error: string };
+
+export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => utiTrackInput.parse(input))
+  .handler(async ({ data, context }): Promise<PanUtiTrackResult> => {
+    if (!context.authUser) return { success: false, error: "Authentication required" };
+    let creds: { apiKey: string };
+    try {
+      creds = await decryptCreds(data.cipher);
+    } catch {
+      return { success: false, error: "Provider credentials are corrupted." };
+    }
+    const body = { api_key: creds.apiKey, ack_no: data.ackNo };
+    try {
+      const res = await fetch(data.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const text = await res.text();
+      let json: Record<string, unknown> = {};
+      try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
+      const status = String(json.status ?? "").toLowerCase();
+      const message = String(json.message ?? "Unknown response");
+      const results = (json.results as Record<string, unknown>) || {};
+      const applicationStatus = String(results.status ?? json.applicationStatus ?? "").trim();
+      const panNumber = String(results.pan_no ?? results.panNo ?? json.pan ?? "").trim();
+      if (res.ok && (status === "success" || status === "1")) {
+        return {
+          success: true,
+          applicationStatus: applicationStatus || "Processing",
+          panNumber: panNumber && panNumber.toLowerCase() !== "null" ? panNumber.toUpperCase() : undefined,
+          message,
+          raw: text.slice(0, 2000),
+        };
+      }
+      return { success: false, error: message || `Upstream returned ${res.status}` };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Provider unreachable";
+      console.error("[PAN][UTI track] fetch error:", err);
+      return { success: false, error: msg };
+    }
+  });
