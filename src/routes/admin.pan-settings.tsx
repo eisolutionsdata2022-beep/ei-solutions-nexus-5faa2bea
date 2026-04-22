@@ -62,6 +62,13 @@ function AdminPanSettings() {
   const [savingSecret, setSavingSecret] = useState(false);
   const [savingBridge, setSavingBridge] = useState(false);
   const [savingUrls, setSavingUrls] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<null | {
+    ok: boolean;
+    title: string;
+    detail: string;
+    raw?: string;
+  }>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "pan_config", "master"), (snap) => {
