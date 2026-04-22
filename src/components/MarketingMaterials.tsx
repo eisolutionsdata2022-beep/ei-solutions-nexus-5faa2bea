@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +14,68 @@ import {
   Check,
   Presentation,
   ExternalLink,
+  Rocket,
+  LayoutTemplate,
+  Users,
+  Megaphone,
+  MessageCircle,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+
+type GrowthTool = {
+  title: string;
+  malayalam: string;
+  description: string;
+  to: string;
+  icon: typeof Rocket;
+  gradient: string;
+  badge?: string;
+  adminOnly?: boolean;
+};
+
+const GROWTH_TOOLS: GrowthTool[] = [
+  {
+    title: "Landing & Booklet CMS",
+    malayalam: "ലാൻഡിംഗ് & ബുക്ക്‌ലെറ്റ് CMS",
+    description: "Edit website hero, services, testimonials, pricing & company booklet — live in seconds.",
+    to: "/admin/landing-cms",
+    icon: LayoutTemplate,
+    gradient: "from-blue-600 via-indigo-600 to-violet-600",
+    badge: "Live site",
+    adminOnly: true,
+  },
+  {
+    title: "Lead Management",
+    malayalam: "ലീഡ് മാനേജ്മെന്റ്",
+    description: "All leads in one place — call logs, follow-ups, drip status, conversion tracking.",
+    to: "/admin/crm-leads",
+    icon: Users,
+    gradient: "from-emerald-500 via-teal-500 to-cyan-600",
+    badge: "Hot",
+  },
+  {
+    title: "Bulk Email Campaigns",
+    malayalam: "ബൾക്ക് ഇമെയിൽ കാമ്പെയ്ൻ",
+    description: "Send personalized email blasts to retailers, leads & uploaded contacts. Open tracking included.",
+    to: "/admin/crm-bulk-comm",
+    icon: Megaphone,
+    gradient: "from-amber-500 via-orange-500 to-rose-500",
+    badge: "Resend",
+    adminOnly: true,
+  },
+  {
+    title: "WhatsApp Inbox",
+    malayalam: "വാട്സ്ആപ്പ് ഇൻബോക്സ്",
+    description: "2-way WhatsApp chat, quick-reply templates, auto drip sequences, bulk broadcasts.",
+    to: "/admin/whatsapp",
+    icon: MessageCircle,
+    gradient: "from-green-500 via-emerald-500 to-lime-500",
+    badge: "Bridge",
+    adminOnly: true,
+  },
+];
 
 type DocItem = {
   title: string;
