@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { generateVleId } from "@/lib/pan-vle-id";
+import { generateVleId } from "@/lib/vle-id";
 import { downloadVleIdCard } from "@/lib/vle-id-card-pdf";
 import { openVleCertificate } from "@/lib/vle-certificate";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,6 @@ import {
   changeUserPassword, getEditHistory, type UserEditLog,
 } from "@/lib/profile-edits";
 import { requestReissue, subscribeMyReissues, type CertificateReissueRequest } from "@/lib/certificate-reissue";
-import {
-  getPsaIdRecord, countSuccessfulCouponPurchases, claimLegacyPsaId,
-  type PsaIdRecord, PSA_AUTO_THRESHOLD,
-} from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/profile")({
   ssr: false,
@@ -50,11 +46,6 @@ function RetailerProfile() {
   const [history, setHistory] = useState<UserEditLog[]>([]);
   const [reissues, setReissues] = useState<CertificateReissueRequest[]>([]);
   const [staffCount, setStaffCount] = useState(0);
-  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
-  const [couponCount, setCouponCount] = useState(0);
-  const [legacyOpen, setLegacyOpen] = useState(false);
-  const [legacyId, setLegacyId] = useState("");
-  const [savingLegacy, setSavingLegacy] = useState(false);
 
   useEffect(() => {
     setName(appUser?.name || "");
@@ -67,8 +58,6 @@ function RetailerProfile() {
     const unsub = subscribeMyReissues(appUser.uid, setReissues);
     getDocs(query(collection(db, "users"), where("parentRetailerId", "==", appUser.uid)))
       .then((snap) => setStaffCount(snap.size)).catch(() => setStaffCount(0));
-    getPsaIdRecord(appUser.uid).then(setPsa).catch(() => setPsa(null));
-    countSuccessfulCouponPurchases(appUser.uid).then(setCouponCount).catch(() => setCouponCount(0));
     return unsub;
   }, [appUser]);
 
@@ -118,29 +107,6 @@ function RetailerProfile() {
     });
     toast.success("Reissue request submitted for admin approval");
     setReissueOpen(null); setReason("");
-  };
-
-  const submitLegacy = async () => {
-    if (!appUser) return;
-    if (!legacyId.trim()) return toast.error("Enter your existing PSA ID");
-    setSavingLegacy(true);
-    try {
-      const rec = await claimLegacyPsaId({
-        uid: appUser.uid,
-        legacyPsaId: legacyId.trim(),
-        email: appUser.email,
-        name: appUser.name ?? null,
-        phone: (appUser as any).phone ?? null,
-      });
-      setPsa(rec);
-      toast.success(`PSA ID ${rec.psaId} linked to your account`);
-      setLegacyOpen(false);
-      setLegacyId("");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to save PSA ID");
-    } finally {
-      setSavingLegacy(false);
-    }
   };
 
   return (
@@ -235,111 +201,6 @@ function RetailerProfile() {
           </div>
         </div>
       </div>
-
-      {/* PSA ID Status */}
-      <div className={`relative overflow-hidden rounded-2xl glass-card p-5 ${psa ? "ring-1 ring-emerald-500/30" : ""}`}>
-        {psa && (
-          <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 opacity-20 blur-3xl" aria-hidden />
-        )}
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${psa ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
-              <Award className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Internal Portal VLE ID</p>
-              {psa ? (
-                <>
-                  <p className="text-2xl font-extrabold font-mono tracking-wider text-foreground break-all">{psa.psaId}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
-                    Generated {new Date(psa.generatedAt).toLocaleDateString("en-IN")}
-                    <Badge className="bg-emerald-600 text-[10px] py-0">ACTIVE</Badge>
-                    {psa.source === "legacy" && (
-                      <Badge variant="outline" className="text-[10px] py-0">Migrated from old portal</Badge>
-                    )}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Used by EI SOLUTIONS portal for all upstream PAN/coupon calls.
-                  </p>
-                  {psa.providerPsaId ? (
-                    <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 p-3">
-                      <p className="text-[11px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300">
-                        Official UTI PSA ID (provider-issued)
-                      </p>
-                      <p className="text-lg font-bold font-mono tracking-wider text-emerald-900 dark:text-emerald-100 break-all">
-                        {psa.providerPsaId}
-                      </p>
-                      <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 mt-1">
-                        Use this ID to log into the official UTI PSA portal externally.
-                      </p>
-                    </div>
-                  ) : psa.status === "provider_pending" ? (
-                    <p className="text-[11px] text-sky-700 dark:text-sky-300 mt-2">
-                      Official PSA ID requested — provider issues it within 24 hours.
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <p className="text-base font-semibold text-foreground">Not yet generated</p>
-                  <p className="text-xs text-muted-foreground">
-                    Open the PAN Portal once and your internal VLE ID will be created automatically.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Existing member? You can link your old PSA ID instead.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 sm:items-end">
-            <Button variant="outline" size="sm" className="backdrop-blur" onClick={() => { setLegacyId(psa?.psaId ?? ""); setLegacyOpen(true); }}>
-              <Edit3 className="w-3.5 h-3.5 mr-1" />
-              {psa ? "Update PSA ID" : "I have an existing PSA ID"}
-            </Button>
-            {!psa && (
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/retailer/pan-portal">Buy Coupons</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Legacy PSA ID claim dialog */}
-      <Dialog open={legacyOpen} onOpenChange={setLegacyOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{psa ? "Update PSA ID" : "Link your existing PSA ID"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              പഴയ പോർട്ടലിൽ ഉണ്ടായിരുന്ന <b>PSA ID</b> ഇവിടെ enter ചെയ്യുക. Format: <code>PSA######</code> അല്ലെങ്കിൽ <code>PSA######-9876543210</code>.
-            </p>
-            <div>
-              <Label className="text-xs">Existing PSA ID</Label>
-              <Input
-                value={legacyId}
-                onChange={(e) => setLegacyId(e.target.value.toUpperCase())}
-                placeholder="PSA482917-9876543210"
-                className="font-mono mt-1"
-                autoFocus
-              />
-            </div>
-            {(appUser as any)?.phone && (
-              <p className="text-xs text-muted-foreground">
-                Registered mobile: <span className="font-mono">{(appUser as any).phone}</span>
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLegacyOpen(false)} disabled={savingLegacy}>Cancel</Button>
-            <Button onClick={submitLegacy} disabled={savingLegacy}>
-              {savingLegacy ? "Saving…" : "Save PSA ID"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edits + Certificates grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
