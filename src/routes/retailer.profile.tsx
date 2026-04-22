@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { generateVleId } from "@/lib/pan-vle-id";
+import { generateVleId } from "@/lib/vle-id";
 import { downloadVleIdCard } from "@/lib/vle-id-card-pdf";
 import { openVleCertificate } from "@/lib/vle-certificate";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,6 @@ import {
   changeUserPassword, getEditHistory, type UserEditLog,
 } from "@/lib/profile-edits";
 import { requestReissue, subscribeMyReissues, type CertificateReissueRequest } from "@/lib/certificate-reissue";
-import {
-  getPsaIdRecord, countSuccessfulCouponPurchases, claimLegacyPsaId,
-  type PsaIdRecord, PSA_AUTO_THRESHOLD,
-} from "@/lib/psa-auto-id";
 
 export const Route = createFileRoute("/retailer/profile")({
   ssr: false,
@@ -50,11 +46,6 @@ function RetailerProfile() {
   const [history, setHistory] = useState<UserEditLog[]>([]);
   const [reissues, setReissues] = useState<CertificateReissueRequest[]>([]);
   const [staffCount, setStaffCount] = useState(0);
-  const [psa, setPsa] = useState<PsaIdRecord | null>(null);
-  const [couponCount, setCouponCount] = useState(0);
-  const [legacyOpen, setLegacyOpen] = useState(false);
-  const [legacyId, setLegacyId] = useState("");
-  const [savingLegacy, setSavingLegacy] = useState(false);
 
   useEffect(() => {
     setName(appUser?.name || "");
@@ -67,8 +58,6 @@ function RetailerProfile() {
     const unsub = subscribeMyReissues(appUser.uid, setReissues);
     getDocs(query(collection(db, "users"), where("parentRetailerId", "==", appUser.uid)))
       .then((snap) => setStaffCount(snap.size)).catch(() => setStaffCount(0));
-    getPsaIdRecord(appUser.uid).then(setPsa).catch(() => setPsa(null));
-    countSuccessfulCouponPurchases(appUser.uid).then(setCouponCount).catch(() => setCouponCount(0));
     return unsub;
   }, [appUser]);
 
@@ -118,29 +107,6 @@ function RetailerProfile() {
     });
     toast.success("Reissue request submitted for admin approval");
     setReissueOpen(null); setReason("");
-  };
-
-  const submitLegacy = async () => {
-    if (!appUser) return;
-    if (!legacyId.trim()) return toast.error("Enter your existing PSA ID");
-    setSavingLegacy(true);
-    try {
-      const rec = await claimLegacyPsaId({
-        uid: appUser.uid,
-        legacyPsaId: legacyId.trim(),
-        email: appUser.email,
-        name: appUser.name ?? null,
-        phone: (appUser as any).phone ?? null,
-      });
-      setPsa(rec);
-      toast.success(`PSA ID ${rec.psaId} linked to your account`);
-      setLegacyOpen(false);
-      setLegacyId("");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to save PSA ID");
-    } finally {
-      setSavingLegacy(false);
-    }
   };
 
   return (
