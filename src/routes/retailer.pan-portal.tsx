@@ -133,6 +133,13 @@ function PsaTab({
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkForm, setLinkForm] = useState({
+    vleId: "",
+    vleRegCode: "",
+    mobile: user.phone || "",
+  });
   const [form, setForm] = useState({
     shopName: "",
     address: "",
