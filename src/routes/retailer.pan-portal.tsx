@@ -278,64 +278,139 @@ function PsaTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-green-600" /> PSA Active
+            {psa.linkedExisting && (
+              <Badge variant="secondary" className="ml-2">Linked Existing</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><span className="text-muted-foreground">VLE ID:</span> <span className="font-mono">{psa.vleId}</span></div>
+            <div><span className="text-muted-foreground">VLE / PSA ID:</span> <span className="font-mono">{psa.vleId}</span></div>
             {psa.vleRegCode && <div><span className="text-muted-foreground">Reg Code:</span> <span className="font-mono">{psa.vleRegCode}</span></div>}
-            <div><span className="text-muted-foreground">Shop:</span> {psa.shopName}</div>
-            <div><span className="text-muted-foreground">PAN:</span> {psa.panNo}</div>
+            {psa.shopName && <div><span className="text-muted-foreground">Shop:</span> {psa.shopName}</div>}
+            {psa.panNo && <div><span className="text-muted-foreground">PAN:</span> {psa.panNo}</div>}
+            <div><span className="text-muted-foreground">Mobile:</span> {psa.linkedMobile || psa.mobile}</div>
           </div>
-          <Button onClick={handlePasswordReset} disabled={resetting} variant="outline">
-            {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Reset PSA Password
-          </Button>
+          {psa.linkedExisting ? (
+            <p className="text-xs text-muted-foreground">
+              You linked an existing PSA ID. Use the <strong>NSDL eKYC PAN</strong> tab to purchase coupons / apply for PAN.
+              Password reset is not available for linked accounts — please use the original PSA portal.
+            </p>
+          ) : (
+            <Button onClick={handlePasswordReset} disabled={resetting} variant="outline">
+              {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Reset PSA Password
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Register for PSA Auto-ID</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Shop Name</Label>
-              <Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
+    <div className="space-y-4">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Already have a PSA / UTI VLE ID?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!showLinkForm ? (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                Skip registration and link your existing PSA ID to start purchasing PAN coupons immediately.
+              </p>
+              <Button variant="outline" onClick={() => setShowLinkForm(true)}>
+                Link Existing PSA ID
+              </Button>
             </div>
-            <div>
-              <Label>State</Label>
-              <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
+          ) : (
+            <form onSubmit={handleLinkExisting} className="space-y-3">
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <Label>PSA / VLE ID *</Label>
+                  <Input
+                    value={linkForm.vleId}
+                    onChange={(e) => setLinkForm({ ...linkForm, vleId: e.target.value })}
+                    placeholder="Your existing UTI / PSA ID"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Registered Mobile *</Label>
+                  <Input
+                    value={linkForm.mobile}
+                    maxLength={10}
+                    onChange={(e) => setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") })}
+                    placeholder="10-digit mobile"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Reg Code (optional)</Label>
+                  <Input
+                    value={linkForm.vleRegCode}
+                    onChange={(e) => setLinkForm({ ...linkForm, vleRegCode: e.target.value })}
+                    placeholder="If you have it from the old portal"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={linking}>
+                  {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Confirm & Link
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowLinkForm(false)}>
+                  Cancel
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ⚠ Make sure the PSA ID is correct. Wrong details may cause failed coupon purchases.
+              </p>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Register New PSA Auto-ID</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>Shop Name</Label>
+                <Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Address (max 50 chars)</Label>
+                <Input value={form.address} maxLength={50} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
+              </div>
+              <div>
+                <Label>PIN Code</Label>
+                <Input value={form.pinCode} maxLength={6} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Aadhaar Number (12 digits)</Label>
+                <Input value={form.uidNo} maxLength={12} onChange={(e) => setForm({ ...form, uidNo: e.target.value })} required />
+              </div>
+              <div className="md:col-span-2">
+                <Label>PAN Number</Label>
+                <Input value={form.panNo} maxLength={10} placeholder="ABCDE1234F" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} required />
+              </div>
             </div>
-            <div className="md:col-span-2">
-              <Label>Address (max 50 chars)</Label>
-              <Input value={form.address} maxLength={50} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
-            </div>
-            <div>
-              <Label>PIN Code</Label>
-              <Input value={form.pinCode} maxLength={6} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} required />
-            </div>
-            <div>
-              <Label>Aadhaar Number (12 digits)</Label>
-              <Input value={form.uidNo} maxLength={12} onChange={(e) => setForm({ ...form, uidNo: e.target.value })} required />
-            </div>
-            <div className="md:col-span-2">
-              <Label>PAN Number</Label>
-              <Input value={form.panNo} maxLength={10} placeholder="ABCDE1234F" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} required />
-            </div>
-          </div>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Register PSA Auto-ID
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Register PSA Auto-ID
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
