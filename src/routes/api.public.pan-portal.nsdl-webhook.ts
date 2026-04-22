@@ -8,25 +8,33 @@
  * Security: validates HMAC-SHA256 signature when `webhookSecret` is set in
  * pan_config/master. Without a configured secret the endpoint accepts any
  * payload (matches the legacy PHP behaviour while still allowing rotation).
+ *
+ * Uses Firebase Web SDK on the server (matches src/routes/api.email.* pattern).
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  addDoc,
+  collection,
+  runTransaction,
+} from "firebase/firestore";
 
-function getAdminDb() {
-  if (!getApps().length) {
-    const projectId = process.env.FIREBASE_PROJECT_ID || "ei-fix";
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
-    if (clientEmail && privateKey) {
-      initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
-    } else {
-      // Fallback for environments where admin creds aren't configured yet —
-      // app init will throw on first DB call which we catch below.
-      initializeApp({ projectId });
-    }
-  }
-  return getFirestore();
+const firebaseConfig = {
+  apiKey: "AIzaSyDCCMmXPtFxcylhjRNvlR5PFgLYwgzb12U",
+  authDomain: "ei-fix.firebaseapp.com",
+  projectId: "ei-fix",
+  storageBucket: "ei-fix.firebasestorage.app",
+  messagingSenderId: "80350889731",
+  appId: "1:80350889731:web:4a7a9af9ec8a10e1c4cb36",
+};
+
+function getDb() {
+  const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+  return getFirestore(app);
 }
 
 async function hmacSha256(secret: string, message: string): Promise<string> {
@@ -65,23 +73,22 @@ interface NsdlPayload {
 export const Route = createFileRoute("/api/public/pan-portal/nsdl-webhook")({
   server: {
     handlers: {
+      GET: async () => new Response("pan-portal webhook ready", { status: 200 }),
+
       POST: async ({ request }) => {
         const body = await request.text();
         let payload: NsdlPayload;
         try { payload = JSON.parse(body) as NsdlPayload; }
         catch { return new Response("Invalid JSON", { status: 400 }); }
 
-        let firestoreDb;
-        try { firestoreDb = getAdminDb(); }
-        catch (err) {
-          console.error("[PAN webhook] firebase admin init failed:", err);
-          return new Response("Internal config error", { status: 500 });
-        }
+        const db = getDb();
 
-        // Verify HMAC if admin configured a secret.
+        // Verify HMAC signature if admin configured one.
         try {
-          const cfgSnap = await firestoreDb.collection("pan_config").doc("master").get();
-          const webhookSecret = (cfgSnap.exists ? cfgSnap.data()?.webhookSecret : "") as string | undefined;
+          const cfgSnap = await getDoc(doc(db, "pan_config", "master"));
+          const webhookSecret = cfgSnap.exists()
+            ? ((cfgSnap.data() as Record<string, unknown>).webhookSecret as string | undefined)
+            : undefined;
           if (webhookSecret && webhookSecret.length >= 8) {
             const sig = request.headers.get("x-webhook-signature") || "";
             const expected = await hmacSha256(webhookSecret, body);
@@ -97,11 +104,11 @@ export const Route = createFileRoute("/api/public/pan-portal/nsdl-webhook")({
         const orderId = payload.TxnId || payload.Transactions?.OrderID || "";
         if (!orderId) return new Response("Missing TxnId", { status: 400 });
 
-        const orderRef = firestoreDb.collection("pan_orders").doc(orderId);
-        const orderSnap = await orderRef.get();
-        if (!orderSnap.exists) {
+        const orderRef = doc(db, "pan_orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+        if (!orderSnap.exists()) {
           console.warn(`[PAN webhook] unknown order ${orderId}`);
-          return new Response("ok", { status: 200 }); // 200 to avoid retry storm
+          return new Response("ok", { status: 200 });
         }
         const order = orderSnap.data() as Record<string, unknown>;
         if (order.status !== "pending") {
@@ -110,14 +117,15 @@ export const Route = createFileRoute("/api/public/pan-portal/nsdl-webhook")({
 
         const ackNo = payload.Transactions?.AckNo || "";
         const message = payload.Message || "";
+        const nowIso = new Date().toISOString();
 
         if (payload.StatusCode === "1") {
-          await orderRef.update({
+          await updateDoc(orderRef, {
             status: "success",
             ackNo,
             remark: message,
             encryptedData: body.slice(0, 8000),
-            updatedAt: new Date().toISOString(),
+            updatedAt: nowIso,
           });
           console.log(`[PAN webhook] success ${orderId} ack=${ackNo}`);
           return new Response("ok", { status: 200 });
@@ -128,38 +136,37 @@ export const Route = createFileRoute("/api/public/pan-portal/nsdl-webhook")({
         const amount = Number(order.amount || 0);
         if (retailerId && amount > 0) {
           try {
-            const walletRef = firestoreDb.collection("wallets").doc(retailerId);
-            await firestoreDb.runTransaction(async (tx) => {
+            const walletRef = doc(db, "wallets", retailerId);
+            await runTransaction(db, async (tx) => {
               const w = await tx.get(walletRef);
-              if (!w.exists) return;
-              const current = (w.data()?.balance as number) || 0;
+              if (!w.exists()) return;
+              const current = (w.data().balance as number) || 0;
               tx.update(walletRef, { balance: current + amount });
             });
-            await firestoreDb.collection("transactions").add({
+            await addDoc(collection(db, "transactions"), {
               userId: retailerId,
               amount,
               type: "credit",
               source: "pan-portal",
               description: `NSDL eKYC PAN refund — ${orderId}`,
               orderId,
-              createdAt: new Date().toISOString(),
+              createdAt: nowIso,
             });
           } catch (err) {
             console.error("[PAN webhook] refund failed:", err);
           }
         }
 
-        await orderRef.update({
+        await updateDoc(orderRef, {
           status: "refunded",
           remark: message || "Application failed at NSDL",
           encryptedData: body.slice(0, 8000),
-          updatedAt: new Date().toISOString(),
-          refundedAt: FieldValue.serverTimestamp(),
+          updatedAt: nowIso,
+          refundedAt: nowIso,
         });
         console.log(`[PAN webhook] refunded ${orderId}`);
         return new Response("ok", { status: 200 });
       },
-      GET: async () => new Response("pan-portal webhook ready", { status: 200 }),
     },
   },
 });
