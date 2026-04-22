@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Save, Shield, KeyRound, Activity, Link2, Lock, Server } from "lucide-react";
+import { Loader2, Save, Shield, KeyRound, Activity, Link2, Lock, Server, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES } from "@/lib/pan-services";
 import { PAN_DEFAULT_URLS, type PanMasterConfig, type PanTransaction } from "@/lib/pan-types";
@@ -26,6 +26,7 @@ import {
   encryptPanApiKey,
   encryptPanApiSecret,
   encryptPanBridgeSecret,
+  testPanConnection,
 } from "@/lib/pan.functions";
 
 export const Route = createFileRoute("/admin/pan-settings")({
@@ -61,6 +62,13 @@ function AdminPanSettings() {
   const [savingSecret, setSavingSecret] = useState(false);
   const [savingBridge, setSavingBridge] = useState(false);
   const [savingUrls, setSavingUrls] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<null | {
+    ok: boolean;
+    title: string;
+    detail: string;
+    raw?: string;
+  }>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "pan_config", "master"), (snap) => {
@@ -211,6 +219,77 @@ function AdminPanSettings() {
     }
   };
 
+  const runTest = async () => {
+    if (!config?.apiKeyCipher) {
+      toast.error("Save the API key first");
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await testPanConnection({
+        data: {
+          url: urls.couponStatus,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      if (!res.success) {
+        setTestResult({
+          ok: false,
+          title: res.stage === "decrypt" ? "Cipher decrypt failed" : "Network failure",
+          detail: res.error,
+        });
+        return;
+      }
+      const route = res.usingBridge ? "via VPS bridge" : "direct from Cloudflare Worker";
+      const tail = `HTTP ${res.httpStatus} · ${res.elapsedMs}ms · ${route}`;
+      switch (res.diagnosis) {
+        case "REACHABLE":
+          setTestResult({
+            ok: true,
+            title: "✅ Reachable — credentials accepted",
+            detail: `Provider responded normally. ${tail}\n\nNote: a "coupon not found" message here is expected and means the connection works.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        case "IP_BLOCKED":
+          setTestResult({
+            ok: false,
+            title: "🚫 IP whitelist required",
+            detail: `Provider blocked this IP. ${tail}\n\nDeploy the VPS bridge (native/pan-bridge-vps/) and ask provider to whitelist the VPS static IP.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        case "INVALID_KEY":
+          setTestResult({
+            ok: false,
+            title: "🔑 Invalid API key / secret",
+            detail: `Provider rejected the credentials. ${tail}\n\nDouble-check the API key + secret you saved above.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        default:
+          setTestResult({
+            ok: false,
+            title: `HTTP ${res.httpStatus} from provider`,
+            detail: `Unexpected upstream status. ${tail}`,
+            raw: res.bodyPreview,
+          });
+      }
+    } catch (err: unknown) {
+      setTestResult({
+        ok: false,
+        title: "Test failed",
+        detail: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const toggleService = async (key: string, enabled: boolean) => {
     const current = new Set(config?.disabledServices ?? []);
     if (enabled) current.delete(key);
@@ -338,6 +417,62 @@ function AdminPanSettings() {
               <code className="font-mono"> api_key</code> + <code className="font-mono">secret</code>.
             </p>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Test Connection */}
+      <Card className="border-primary/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Zap className="h-5 w-5 text-primary" /> Test Connection
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sends a free <code className="font-mono">coupon-status</code> probe to mallikacyberzone
+            using the saved API key + secret (and VPS bridge if configured). Use this to detect IP
+            whitelist blocks, invalid keys, or upstream outages — no fee is charged.
+          </p>
+          <Button onClick={runTest} disabled={testing || !config?.apiKeyCipher} variant="default">
+            {testing ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Probing provider…</>
+            ) : (
+              <><Zap className="mr-2 h-4 w-4" /> Run Test Connection</>
+            )}
+          </Button>
+          {!config?.apiKeyCipher && (
+            <p className="text-xs text-destructive">Save the API key first.</p>
+          )}
+          {testResult && (
+            <div
+              className={`rounded-lg border p-3 text-sm ${
+                testResult.ok
+                  ? "border-success/40 bg-success/5"
+                  : "border-destructive/40 bg-destructive/5"
+              }`}
+            >
+              <div
+                className={`flex items-center gap-2 font-semibold ${
+                  testResult.ok ? "text-success" : "text-destructive"
+                }`}
+              >
+                {testResult.ok ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                {testResult.title}
+              </div>
+              <p className="mt-1 whitespace-pre-line text-xs text-muted-foreground">
+                {testResult.detail}
+              </p>
+              {testResult.raw && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/40 p-2 text-[10px] font-mono">
+                  {testResult.raw}
+                </pre>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
