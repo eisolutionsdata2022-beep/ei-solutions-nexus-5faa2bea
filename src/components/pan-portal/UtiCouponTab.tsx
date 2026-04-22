@@ -276,32 +276,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         </CardContent>
       </Card>
 
-      {/* Coupons list */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">My Coupons ({coupons.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {coupons.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground text-sm">
-              <Ticket className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              No coupons purchased yet.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {coupons.map((c) => (
-                <CouponRow
-                  key={c.couponId}
-                  coupon={c}
-                  busy={trackingId === c.couponId}
-                  onCopy={copyId}
-                  onTrack={() => handleTrack(c.couponId, c.ackNo)}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Premium history table with wallet transactions */}
+      <UtiCouponHistoryTable retailerId={user.uid} coupons={coupons} />
     </div>
   );
 }
