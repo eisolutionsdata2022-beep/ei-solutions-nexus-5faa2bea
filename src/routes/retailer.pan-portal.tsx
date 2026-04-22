@@ -383,30 +383,45 @@ function PsaTab({
 
   if (psa?.status === "approved") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-green-600" /> PSA Active
+      <Card className="border-emerald-200 dark:border-emerald-900/50 shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 p-1" />
+        <CardHeader className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <div>PSA Account Active</div>
+                <p className="text-xs font-normal text-muted-foreground mt-0.5">
+                  Your retailer account is verified and ready
+                </p>
+              </div>
+            </CardTitle>
             {psa.linkedExisting && (
-              <Badge variant="secondary" className="ml-2">Linked Existing</Badge>
+              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
+                <Link2 className="h-3 w-3 mr-1" /> Linked Existing
+              </Badge>
             )}
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><span className="text-muted-foreground">VLE / PSA ID:</span> <span className="font-mono">{psa.vleId}</span></div>
-            {psa.vleRegCode && <div><span className="text-muted-foreground">Reg Code:</span> <span className="font-mono">{psa.vleRegCode}</span></div>}
-            {psa.shopName && <div><span className="text-muted-foreground">Shop:</span> {psa.shopName}</div>}
-            {psa.panNo && <div><span className="text-muted-foreground">PAN:</span> {psa.panNo}</div>}
-            <div><span className="text-muted-foreground">Mobile:</span> {psa.linkedMobile || psa.mobile}</div>
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <InfoRow label="VLE / PSA ID" value={psa.vleId} mono />
+            {psa.vleRegCode && <InfoRow label="Reg Code" value={psa.vleRegCode} mono />}
+            {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
+            {psa.panNo && <InfoRow label="PAN" value={psa.panNo} mono />}
+            <InfoRow label="Mobile" value={psa.linkedMobile || psa.mobile} />
           </div>
           {psa.linkedExisting ? (
-            <p className="text-xs text-muted-foreground">
-              You linked an existing PSA ID. Use the <strong>NSDL eKYC PAN</strong> tab to purchase coupons / apply for PAN.
-              Password reset is not available for linked accounts — please use the original PSA portal.
-            </p>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4 text-sm">
+              <p className="text-blue-900 dark:text-blue-200">
+                ✓ You linked an existing PSA ID. Switch to the <strong>NSDL eKYC PAN</strong> tab to start applying.
+                Password reset is not available for linked accounts.
+              </p>
+            </div>
           ) : (
-            <Button onClick={handlePasswordReset} disabled={resetting} variant="outline">
+            <Button onClick={handlePasswordReset} disabled={resetting} variant="outline" className="border-emerald-200 hover:bg-emerald-50">
               {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Reset PSA Password
             </Button>
