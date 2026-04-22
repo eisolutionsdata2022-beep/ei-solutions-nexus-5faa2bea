@@ -71,6 +71,7 @@ import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
+import { Route as RetailerBillPaymentRouteImport } from './routes/retailer.bill-payment'
 import { Route as RetailerActivateRouteImport } from './routes/retailer.activate'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
@@ -115,6 +116,8 @@ import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-co
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
+import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-transactions'
+import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
@@ -429,6 +432,11 @@ const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
   path: '/cv-builder',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerBillPaymentRoute = RetailerBillPaymentRouteImport.update({
+  id: '/bill-payment',
+  path: '/bill-payment',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerActivateRoute = RetailerActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
@@ -651,6 +659,16 @@ const AdminCertificateReissuesRoute =
     path: '/certificate-reissues',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminBbpsTransactionsRoute = AdminBbpsTransactionsRouteImport.update({
+  id: '/bbps-transactions',
+  path: '/bbps-transactions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBbpsSettingsRoute = AdminBbpsSettingsRouteImport.update({
+  id: '/bbps-settings',
+  path: '/bbps-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
@@ -684,6 +702,8 @@ export interface FileRoutesByFullPath {
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -728,6 +748,7 @@ export interface FileRoutesByFullPath {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -788,6 +809,8 @@ export interface FileRoutesByTo {
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -832,6 +855,7 @@ export interface FileRoutesByTo {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -900,6 +924,8 @@ export interface FileRoutesById {
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -944,6 +970,7 @@ export interface FileRoutesById {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -1013,6 +1040,8 @@ export interface FileRouteTypes {
     | '/staff'
     | '/trainer'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -1057,6 +1086,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1117,6 +1147,8 @@ export interface FileRouteTypes {
     | '/nsdl-callback'
     | '/register'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -1161,6 +1193,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1228,6 +1261,8 @@ export interface FileRouteTypes {
     | '/staff'
     | '/trainer'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -1272,6 +1307,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1781,6 +1817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerCvBuilderRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/bill-payment': {
+      id: '/retailer/bill-payment'
+      path: '/bill-payment'
+      fullPath: '/retailer/bill-payment'
+      preLoaderRoute: typeof RetailerBillPaymentRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/activate': {
       id: '/retailer/activate'
       path: '/activate'
@@ -2089,6 +2132,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCertificateReissuesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bbps-transactions': {
+      id: '/admin/bbps-transactions'
+      path: '/bbps-transactions'
+      fullPath: '/admin/bbps-transactions'
+      preLoaderRoute: typeof AdminBbpsTransactionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bbps-settings': {
+      id: '/admin/bbps-settings'
+      path: '/bbps-settings'
+      fullPath: '/admin/bbps-settings'
+      preLoaderRoute: typeof AdminBbpsSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/retailer/jobs/$jobId': {
       id: '/retailer/jobs/$jobId'
       path: '/$jobId'
@@ -2114,6 +2171,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBbpsSettingsRoute: typeof AdminBbpsSettingsRoute
+  AdminBbpsTransactionsRoute: typeof AdminBbpsTransactionsRoute
   AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
@@ -2158,6 +2217,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBbpsSettingsRoute: AdminBbpsSettingsRoute,
+  AdminBbpsTransactionsRoute: AdminBbpsTransactionsRoute,
   AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
@@ -2259,6 +2320,7 @@ const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
 
 interface RetailerRouteChildren {
   RetailerActivateRoute: typeof RetailerActivateRoute
+  RetailerBillPaymentRoute: typeof RetailerBillPaymentRoute
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFinanceRoute: typeof RetailerFinanceRoute
@@ -2289,6 +2351,7 @@ interface RetailerRouteChildren {
 
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerActivateRoute: RetailerActivateRoute,
+  RetailerBillPaymentRoute: RetailerBillPaymentRoute,
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFinanceRoute: RetailerFinanceRoute,
