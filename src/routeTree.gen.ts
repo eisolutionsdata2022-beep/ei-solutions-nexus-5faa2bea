@@ -117,6 +117,7 @@ import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-setti
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
+import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -660,6 +661,12 @@ const ApiEmailOpenRoute = ApiEmailOpenRouteImport.update({
   path: '/api/email/open',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPanPortalNsdlWebhookRoute =
+  ApiPublicPanPortalNsdlWebhookRouteImport.update({
+    id: '/api/public/pan-portal/nsdl-webhook',
+    path: '/api/public/pan-portal/nsdl-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -770,6 +777,7 @@ export interface FileRoutesByFullPath {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -873,6 +881,7 @@ export interface FileRoutesByTo {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -984,6 +993,7 @@ export interface FileRoutesById {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1096,6 +1106,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1199,6 +1210,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   id:
     | '__root__'
     | '/'
@@ -1309,6 +1321,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1330,6 +1343,7 @@ export interface RootRouteChildren {
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
+  ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2090,6 +2104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailOpenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pan-portal/nsdl-webhook': {
+      id: '/api/public/pan-portal/nsdl-webhook'
+      path: '/api/public/pan-portal/nsdl-webhook'
+      fullPath: '/api/public/pan-portal/nsdl-webhook'
+      preLoaderRoute: typeof ApiPublicPanPortalNsdlWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2367,6 +2388,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
+  ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
