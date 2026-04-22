@@ -6,7 +6,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, IdCard, Banknote, ArrowLeftRight, ShoppingBag, User } from "lucide-react";
-import { generateVleId } from "@/lib/pan-vle-id";
+import { generateVleId } from "@/lib/vle-id";
 
 export const Route = createFileRoute("/operator/")({
   ssr: false,
