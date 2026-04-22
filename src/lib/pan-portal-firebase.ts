@@ -22,12 +22,14 @@ import {
   type PanOrder,
   type PanPsaRecord,
   type PanServiceActivation,
+  type PanUtiCoupon,
 } from "./pan-portal-types";
 
 const CONFIG_DOC = doc(db, "pan_config", "master");
 const PSA_COL = collection(db, "pan_psa_records");
 const ORDERS_COL = collection(db, "pan_orders");
 const ACTIVATIONS_COL = collection(db, "pan_activations");
+const UTI_COUPONS_COL = collection(db, "pan_uti_coupons");
 
 /* ------------------------------ master config ----------------------------- */
 
