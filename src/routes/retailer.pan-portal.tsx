@@ -769,22 +769,38 @@ function PanTab({
   }
 
   return (
-    <Card>
-      <CardHeader><CardTitle>Apply for New PAN (Form 49A)</CardTitle></CardHeader>
-      <CardContent>
-        <form onSubmit={handleApply} className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+    <Card className="overflow-hidden border shadow-md">
+      <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
+      <CardHeader className="bg-gradient-to-br from-blue-50/60 to-white dark:from-blue-950/20 dark:to-slate-900">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <CreditCard className="h-5 w-5 text-primary" />
+            </div>
             <div>
+              <CardTitle className="text-base">Apply for New PAN (Form 49A)</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Aadhaar-based instant eKYC</p>
+            </div>
+          </div>
+          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+            <Wallet className="h-3 w-3 mr-1" /> ₹{fee} per application
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <form onSubmit={handleApply} className="space-y-5">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
               <Label>Application Type</Label>
               <Select value={form.applicationType} onValueChange={(v) => setForm({ ...form, applicationType: v as "P" | "E" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="P">Physical PAN</SelectItem>
-                  <SelectItem value="E">Electronic PAN</SelectItem>
+                  <SelectItem value="E">Electronic PAN (e-PAN)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Application Mode</Label>
               <Select value={form.applicationMode} onValueChange={(v) => setForm({ ...form, applicationMode: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -794,15 +810,15 @@ function PanTab({
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-1.5">
               <Label>Applicant Full Name</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="As per Aadhaar" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Date of Birth</Label>
               <Input type="date" value={form.dob} onChange={(e) => setForm({ ...form, dob: e.target.value })} required />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Gender</Label>
               <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as "M" | "F" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -812,25 +828,44 @@ function PanTab({
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Mobile</Label>
-              <Input value={form.mobile} maxLength={10} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required />
+              <Input value={form.mobile} maxLength={10} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required placeholder="Aadhaar-linked mobile" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Email</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             </div>
           </div>
-          <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-1" />
-            <span>I (Consumer) hereby state that I have no objection in authenticating myself with Aadhaar based UID/VID authentication system and provide my consent.</span>
+
+          <label className="flex items-start gap-3 text-sm bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 rounded-lg p-3 cursor-pointer hover:bg-amber-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={form.consent}
+              onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+              className="mt-1 h-4 w-4 rounded accent-primary"
+            />
+            <span className="text-foreground">
+              I (Consumer) hereby state that I have <strong>no objection</strong> in authenticating myself with Aadhaar based UID/VID authentication system and provide my consent.
+            </span>
           </label>
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Submit & Continue to NSDL (₹{fee})
+
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t">
+            <div>
+              <p className="text-xs text-muted-foreground">Total charge</p>
+              <p className="text-2xl font-bold text-foreground">
+                ₹{fee} <span className="text-xs font-normal text-emerald-600">· auto refund if failed</span>
+              </p>
+            </div>
+            <Button
+              type="submit"
+              disabled={submitting}
+              size="lg"
+              className="bg-gradient-to-r from-primary to-blue-700 hover:from-primary hover:to-blue-800 shadow-md shadow-primary/20 px-6"
+            >
+              {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ArrowRight className="h-5 w-5 mr-2" />}
+              Submit & Continue to NSDL
             </Button>
-            <span className="text-xs text-muted-foreground">Application charge: ₹{fee}</span>
           </div>
         </form>
       </CardContent>
@@ -840,30 +875,57 @@ function PanTab({
 
 function OrdersHistory({ orders }: { orders: PanOrder[] }) {
   if (orders.length === 0) {
-    return <p className="text-center text-muted-foreground p-8">No orders yet.</p>;
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-12 text-center space-y-3">
+          <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-semibold text-foreground">No PAN orders yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Your submitted PAN applications will appear here. Switch to the <strong>NSDL eKYC PAN</strong> tab to apply.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
   return (
     <div className="space-y-3">
-      {orders.map((o) => (
-        <Card key={o.orderId}>
-          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">{o.orderId}</p>
-              <p className="font-semibold">{o.name} — {o.mobile}</p>
-              <p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleString()}</p>
-              {o.ackNo && <p className="text-xs">Ack: <span className="font-mono">{o.ackNo}</span></p>}
-            </div>
-            <div className="text-right">
-              <Badge
-                variant={o.status === "success" ? "default" : o.status === "pending" ? "secondary" : "destructive"}
-              >
-                {o.status}
-              </Badge>
-              <p className="text-sm font-bold mt-1">₹{o.amount}</p>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {orders.map((o) => {
+        const statusConfig = {
+          success: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: <CheckCircle2 className="h-3 w-3" /> },
+          pending: { color: "bg-amber-100 text-amber-700 border-amber-200", icon: <Clock className="h-3 w-3" /> },
+          failed: { color: "bg-rose-100 text-rose-700 border-rose-200", icon: <XCircle className="h-3 w-3" /> },
+          refunded: { color: "bg-slate-100 text-slate-700 border-slate-200", icon: <RefreshCw className="h-3 w-3" /> },
+        }[o.status];
+        return (
+          <Card key={o.orderId} className="hover:shadow-md transition-shadow border-l-4 border-l-primary/40">
+            <CardContent className="p-4 flex items-center justify-between flex-wrap gap-4">
+              <div className="space-y-1">
+                <p className="font-mono text-[11px] text-muted-foreground tracking-wide">{o.orderId}</p>
+                <p className="font-semibold text-foreground text-base">{o.name}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span>📱 {o.mobile}</span>
+                  <span>·</span>
+                  <span>{new Date(o.createdAt).toLocaleString()}</span>
+                </p>
+                {o.ackNo && (
+                  <p className="text-xs">
+                    Ack No: <span className="font-mono font-semibold text-foreground">{o.ackNo}</span>
+                  </p>
+                )}
+              </div>
+              <div className="text-right space-y-2">
+                <Badge className={`${statusConfig.color} border gap-1 capitalize`}>
+                  {statusConfig.icon}
+                  {o.status}
+                </Badge>
+                <p className="text-lg font-bold text-foreground">₹{o.amount}</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
