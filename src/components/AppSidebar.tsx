@@ -96,6 +96,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
+    { label: "Marketing Materials", to: "/admin/marketing", icon: Gift, tag: "new", hint: "Brochures, posters, share links" },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
@@ -153,6 +154,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
     { label: "WhatsApp", to: "/staff/whatsapp", icon: MessageSquare },
+    { label: "Marketing", to: "/staff/marketing", icon: Gift, tag: "new", hint: "Brochures & posters" },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
@@ -164,6 +166,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "IPPB Tablet", to: "/staff/ippb", icon: Banknote },
     { label: "DMT Queue", to: "/staff/dmt", icon: ArrowLeftRight },
     { label: "WhatsApp", to: "/staff/whatsapp", icon: MessageSquare },
+    { label: "Marketing", to: "/staff/marketing", icon: Gift, tag: "new", hint: "Brochures & posters" },
   ],
   operator: [
     { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
