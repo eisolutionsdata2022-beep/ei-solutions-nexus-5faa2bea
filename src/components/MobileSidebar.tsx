@@ -39,12 +39,12 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList },
     { label: "Services", to: "/admin/services", icon: ShoppingBag },
     { label: "Service Buttons", to: "/admin/service-buttons", icon: ShoppingBag },
-    { label: "Recharge Txns", to: "/admin/recharge-transactions", icon: ArrowLeftRight },
+    { label: "Bill Payment Txns", to: "/admin/bbps-transactions", icon: ArrowLeftRight },
+    { label: "Bill Payment Settings", to: "/admin/bbps-settings", icon: Banknote },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
     { label: "Wallet Requests", to: "/admin/wallet-requests", icon: Banknote },
     { label: "Trainings", to: "/admin/trainings", icon: GraduationCap },
     { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
-    { label: "Commissions", to: "/admin/commissions", icon: BarChart3 },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
   ],
   distributor: [
@@ -54,7 +54,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   retailer: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
-    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
+    { label: "Bill Payment", to: "/retailer/bill-payment", icon: Banknote },
     { label: "E-dis", to: "/retailer/services", icon: ShoppingBag },
     { label: "Transactions", to: "/retailer/transactions", icon: ArrowLeftRight },
     { label: "My Wallet", to: "/retailer/wallet", icon: Wallet },
@@ -90,7 +90,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   staffSub: [
     { label: "Dashboard", to: "/retailer", icon: LayoutDashboard },
     { label: "Profile", to: "/retailer/profile" as any, icon: User },
-    { label: "Recharge & BBPS", to: "/retailer/recharge", icon: Banknote },
+    { label: "Bill Payment", to: "/retailer/bill-payment", icon: Banknote },
   ],
 };
 

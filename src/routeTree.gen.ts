@@ -57,7 +57,6 @@ import { Route as RetailerTrainingGuideRouteImport } from './routes/retailer.tra
 import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
-import { Route as RetailerRechargeRouteImport } from './routes/retailer.recharge'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
 import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
@@ -72,6 +71,7 @@ import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
+import { Route as RetailerBillPaymentRouteImport } from './routes/retailer.bill-payment'
 import { Route as RetailerActivateRouteImport } from './routes/retailer.activate'
 import { Route as MatrimonyProfileIdRouteImport } from './routes/matrimony.$profileId'
 import { Route as DistributorWalletRouteImport } from './routes/distributor.wallet'
@@ -92,7 +92,6 @@ import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
-import { Route as AdminRechargeTransactionsRouteImport } from './routes/admin.recharge-transactions'
 import { Route as AdminPsaIdsRouteImport } from './routes/admin.psa-ids'
 import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
@@ -115,9 +114,10 @@ import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-comm'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
-import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
+import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-transactions'
+import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
@@ -362,11 +362,6 @@ const RetailerReferralsRoute = RetailerReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => RetailerRoute,
 } as any)
-const RetailerRechargeRoute = RetailerRechargeRouteImport.update({
-  id: '/recharge',
-  path: '/recharge',
-  getParentRoute: () => RetailerRoute,
-} as any)
 const RetailerProfileRoute = RetailerProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -435,6 +430,11 @@ const RetailerEiPayRoute = RetailerEiPayRouteImport.update({
 const RetailerCvBuilderRoute = RetailerCvBuilderRouteImport.update({
   id: '/cv-builder',
   path: '/cv-builder',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerBillPaymentRoute = RetailerBillPaymentRouteImport.update({
+  id: '/bill-payment',
+  path: '/bill-payment',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerActivateRoute = RetailerActivateRouteImport.update({
@@ -538,12 +538,6 @@ const AdminReferralsRoute = AdminReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminRechargeTransactionsRoute =
-  AdminRechargeTransactionsRouteImport.update({
-    id: '/recharge-transactions',
-    path: '/recharge-transactions',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminPsaIdsRoute = AdminPsaIdsRouteImport.update({
   id: '/psa-ids',
   path: '/psa-ids',
@@ -654,11 +648,6 @@ const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   path: '/create-user',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
-  id: '/commissions',
-  path: '/commissions',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
   id: '/chat-inbox',
   path: '/chat-inbox',
@@ -670,6 +659,16 @@ const AdminCertificateReissuesRoute =
     path: '/certificate-reissues',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminBbpsTransactionsRoute = AdminBbpsTransactionsRouteImport.update({
+  id: '/bbps-transactions',
+  path: '/bbps-transactions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBbpsSettingsRoute = AdminBbpsSettingsRouteImport.update({
+  id: '/bbps-settings',
+  path: '/bbps-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
@@ -703,9 +702,10 @@ export interface FileRoutesByFullPath {
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
-  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -728,7 +728,6 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/psa-ids': typeof AdminPsaIdsRoute
-  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -749,6 +748,7 @@ export interface FileRoutesByFullPath {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -763,7 +763,6 @@ export interface FileRoutesByFullPath {
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
-  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
@@ -810,9 +809,10 @@ export interface FileRoutesByTo {
   '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
-  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -835,7 +835,6 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/psa-ids': typeof AdminPsaIdsRoute
-  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -856,6 +855,7 @@ export interface FileRoutesByTo {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -870,7 +870,6 @@ export interface FileRoutesByTo {
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
-  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
@@ -925,9 +924,10 @@ export interface FileRoutesById {
   '/staff': typeof StaffRouteWithChildren
   '/trainer': typeof TrainerRouteWithChildren
   '/welcome': typeof WelcomeRoute
+  '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
+  '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
-  '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -950,7 +950,6 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-settings': typeof AdminPanSettingsRoute
   '/admin/psa-ids': typeof AdminPsaIdsRoute
-  '/admin/recharge-transactions': typeof AdminRechargeTransactionsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -971,6 +970,7 @@ export interface FileRoutesById {
   '/distributor/wallet': typeof DistributorWalletRoute
   '/matrimony/$profileId': typeof MatrimonyProfileIdRoute
   '/retailer/activate': typeof RetailerActivateRoute
+  '/retailer/bill-payment': typeof RetailerBillPaymentRoute
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
@@ -985,7 +985,6 @@ export interface FileRoutesById {
   '/retailer/page-tools': typeof RetailerPageToolsRoute
   '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
-  '/retailer/recharge': typeof RetailerRechargeRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
   '/retailer/staff': typeof RetailerStaffRoute
@@ -1041,9 +1040,10 @@ export interface FileRouteTypes {
     | '/staff'
     | '/trainer'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
-    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -1066,7 +1066,6 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/psa-ids'
-    | '/admin/recharge-transactions'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1087,6 +1086,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1101,7 +1101,6 @@ export interface FileRouteTypes {
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
-    | '/retailer/recharge'
     | '/retailer/referrals'
     | '/retailer/services'
     | '/retailer/staff'
@@ -1148,9 +1147,10 @@ export interface FileRouteTypes {
     | '/nsdl-callback'
     | '/register'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
-    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -1173,7 +1173,6 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/psa-ids'
-    | '/admin/recharge-transactions'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1194,6 +1193,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1208,7 +1208,6 @@ export interface FileRouteTypes {
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
-    | '/retailer/recharge'
     | '/retailer/referrals'
     | '/retailer/services'
     | '/retailer/staff'
@@ -1262,9 +1261,10 @@ export interface FileRouteTypes {
     | '/staff'
     | '/trainer'
     | '/welcome'
+    | '/admin/bbps-settings'
+    | '/admin/bbps-transactions'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
-    | '/admin/commissions'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -1287,7 +1287,6 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-settings'
     | '/admin/psa-ids'
-    | '/admin/recharge-transactions'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1308,6 +1307,7 @@ export interface FileRouteTypes {
     | '/distributor/wallet'
     | '/matrimony/$profileId'
     | '/retailer/activate'
+    | '/retailer/bill-payment'
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
@@ -1322,7 +1322,6 @@ export interface FileRouteTypes {
     | '/retailer/page-tools'
     | '/retailer/pan-portal'
     | '/retailer/profile'
-    | '/retailer/recharge'
     | '/retailer/referrals'
     | '/retailer/services'
     | '/retailer/staff'
@@ -1720,13 +1719,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerReferralsRouteImport
       parentRoute: typeof RetailerRoute
     }
-    '/retailer/recharge': {
-      id: '/retailer/recharge'
-      path: '/recharge'
-      fullPath: '/retailer/recharge'
-      preLoaderRoute: typeof RetailerRechargeRouteImport
-      parentRoute: typeof RetailerRoute
-    }
     '/retailer/profile': {
       id: '/retailer/profile'
       path: '/profile'
@@ -1823,6 +1815,13 @@ declare module '@tanstack/react-router' {
       path: '/cv-builder'
       fullPath: '/retailer/cv-builder'
       preLoaderRoute: typeof RetailerCvBuilderRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/bill-payment': {
+      id: '/retailer/bill-payment'
+      path: '/bill-payment'
+      fullPath: '/retailer/bill-payment'
+      preLoaderRoute: typeof RetailerBillPaymentRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/activate': {
@@ -1963,13 +1962,6 @@ declare module '@tanstack/react-router' {
       path: '/referrals'
       fullPath: '/admin/referrals'
       preLoaderRoute: typeof AdminReferralsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/recharge-transactions': {
-      id: '/admin/recharge-transactions'
-      path: '/recharge-transactions'
-      fullPath: '/admin/recharge-transactions'
-      preLoaderRoute: typeof AdminRechargeTransactionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/psa-ids': {
@@ -2126,13 +2118,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreateUserRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/commissions': {
-      id: '/admin/commissions'
-      path: '/commissions'
-      fullPath: '/admin/commissions'
-      preLoaderRoute: typeof AdminCommissionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/chat-inbox': {
       id: '/admin/chat-inbox'
       path: '/chat-inbox'
@@ -2145,6 +2130,20 @@ declare module '@tanstack/react-router' {
       path: '/certificate-reissues'
       fullPath: '/admin/certificate-reissues'
       preLoaderRoute: typeof AdminCertificateReissuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bbps-transactions': {
+      id: '/admin/bbps-transactions'
+      path: '/bbps-transactions'
+      fullPath: '/admin/bbps-transactions'
+      preLoaderRoute: typeof AdminBbpsTransactionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bbps-settings': {
+      id: '/admin/bbps-settings'
+      path: '/bbps-settings'
+      fullPath: '/admin/bbps-settings'
+      preLoaderRoute: typeof AdminBbpsSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/retailer/jobs/$jobId': {
@@ -2172,9 +2171,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBbpsSettingsRoute: typeof AdminBbpsSettingsRoute
+  AdminBbpsTransactionsRoute: typeof AdminBbpsTransactionsRoute
   AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
-  AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminCrmBulkCommRoute: typeof AdminCrmBulkCommRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
@@ -2197,7 +2197,6 @@ interface AdminRouteChildren {
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanSettingsRoute: typeof AdminPanSettingsRoute
   AdminPsaIdsRoute: typeof AdminPsaIdsRoute
-  AdminRechargeTransactionsRoute: typeof AdminRechargeTransactionsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
@@ -2218,9 +2217,10 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBbpsSettingsRoute: AdminBbpsSettingsRoute,
+  AdminBbpsTransactionsRoute: AdminBbpsTransactionsRoute,
   AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
-  AdminCommissionsRoute: AdminCommissionsRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminCrmBulkCommRoute: AdminCrmBulkCommRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,
@@ -2243,7 +2243,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanSettingsRoute: AdminPanSettingsRoute,
   AdminPsaIdsRoute: AdminPsaIdsRoute,
-  AdminRechargeTransactionsRoute: AdminRechargeTransactionsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
@@ -2321,6 +2320,7 @@ const RetailerJobsRouteWithChildren = RetailerJobsRoute._addFileChildren(
 
 interface RetailerRouteChildren {
   RetailerActivateRoute: typeof RetailerActivateRoute
+  RetailerBillPaymentRoute: typeof RetailerBillPaymentRoute
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFinanceRoute: typeof RetailerFinanceRoute
@@ -2335,7 +2335,6 @@ interface RetailerRouteChildren {
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
   RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerProfileRoute: typeof RetailerProfileRoute
-  RetailerRechargeRoute: typeof RetailerRechargeRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
   RetailerStaffRoute: typeof RetailerStaffRoute
@@ -2352,6 +2351,7 @@ interface RetailerRouteChildren {
 
 const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerActivateRoute: RetailerActivateRoute,
+  RetailerBillPaymentRoute: RetailerBillPaymentRoute,
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFinanceRoute: RetailerFinanceRoute,
@@ -2366,7 +2366,6 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerPageToolsRoute: RetailerPageToolsRoute,
   RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerProfileRoute: RetailerProfileRoute,
-  RetailerRechargeRoute: RetailerRechargeRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
   RetailerServicesRoute: RetailerServicesRoute,
   RetailerStaffRoute: RetailerStaffRoute,

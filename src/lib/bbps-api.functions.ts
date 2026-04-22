@@ -1,0 +1,488 @@
+/**
+ * Bharat Connect / AceNeoBank BBPS — server-only API client.
+ *
+ * Exposes the 6 documented endpoints as TanStack server functions, all
+ * protected by `firebaseAuthMiddleware`. Credentials are stored as runtime
+ * secrets and NEVER reach the browser. Token caching is in-memory per worker
+ * (token TTL is taken from the `exp` claim of the JWT).
+ *
+ * Endpoints:
+ *  - bbpsGetCategories       → POST /billpay/bill-category
+ *  - bbpsGetBillers          → POST /billpay/biller-info
+ *  - bbpsGetCustomerParams   → POST /billpay/customer-params
+ *  - bbpsFetchBill           → POST /billpay/bill-fetch
+ *  - bbpsValidateBill        → POST /billpay/bill-validation (no fetch flow)
+ *  - bbpsPayBill             → POST /billpay/bill-pay (with wallet debit + atomic refund on failure)
+ */
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  updateDoc,
+  runTransaction,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
+import { buildApiKeyHeader, encrypt } from "./bbps-encryption.server";
+import type {
+  BbpsCategory,
+  BbpsBiller,
+  BbpsCustomerParam,
+  BbpsBillFetchResult,
+  BbpsBillPayResult,
+  BbpsTransaction,
+} from "./bbps-types";
+import { DEFAULT_BBPS_CONFIG } from "./bbps-types";
+
+// ──────────────── Token cache ────────────────
+
+interface TokenCache {
+  accessToken: string;
+  expiresAt: number; // epoch ms
+}
+let tokenCache: TokenCache | null = null;
+
+async function getProviderConfig(): Promise<{
+  baseUrl: string;
+  agentId: string;
+  defaultFee: number;
+  feeByCategory: Record<string, number>;
+}> {
+  const snap = await getDoc(doc(db, "bbps_config/master"));
+  if (!snap.exists()) return {
+    baseUrl: process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
+    agentId: DEFAULT_BBPS_CONFIG.agentId,
+    defaultFee: DEFAULT_BBPS_CONFIG.defaultFee,
+    feeByCategory: {},
+  };
+  const data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
+  return {
+    baseUrl: data.baseUrl ?? process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
+    agentId: data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
+    defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
+    feeByCategory: data.feeByCategory ?? {},
+  };
+}
+
+/** Decode JWT exp without verifying the signature (provider issues, we just read). */
+function jwtExpiryMs(jwt: string): number | null {
+  const parts = jwt.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    if (typeof payload.exp === "number") return payload.exp * 1000;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function getAccessToken(baseUrl: string): Promise<string> {
+  // Use cached token if still valid for ≥60s.
+  if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
+    return tokenCache.accessToken;
+  }
+  const clientId = process.env.BBPS_CLIENT_ID;
+  const clientSecret = process.env.BBPS_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "Bharat Connect not configured — BBPS_CLIENT_ID / BBPS_CLIENT_SECRET missing. Add them in Lovable Cloud Settings.",
+    );
+  }
+
+  const res = await fetch(`${baseUrl}/getAccessToken`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apiKey: buildApiKeyHeader(clientId),
+    },
+    body: JSON.stringify({
+      clientId: encrypt(clientId),
+      clientSecret: encrypt(clientSecret),
+    }),
+  });
+
+  const json = (await res.json().catch(() => ({}))) as {
+    success?: boolean;
+    accessToken?: string;
+    message?: string;
+  };
+
+  if (!res.ok || !json.success || !json.accessToken) {
+    throw new Error(json.message ?? `Auth failed (HTTP ${res.status})`);
+  }
+
+  const expiresAt = jwtExpiryMs(json.accessToken) ?? Date.now() + 30 * 60_000;
+  tokenCache = { accessToken: json.accessToken, expiresAt };
+  return json.accessToken;
+}
+
+/** Generic authenticated POST helper. */
+async function callBbps<T>(
+  endpoint: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  const cfg = await getProviderConfig();
+  const token = await getAccessToken(cfg.baseUrl);
+
+  const res = await fetch(`${cfg.baseUrl}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      apiKey: buildApiKeyHeader(process.env.BBPS_CLIENT_ID ?? ""),
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  let parsed: unknown;
+  try {
+    parsed = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`Bharat Connect returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
+  }
+
+  if (!res.ok) {
+    const msg = (parsed as { message?: string }).message ?? `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return parsed as T;
+}
+
+// ──────────────── 1. Get Categories ────────────────
+
+export const bbpsGetCategories = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; message?: string }> => {
+    try {
+      const cfg = await getProviderConfig();
+      const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
+        "/billpay/bill-category",
+        { agent: cfg.agentId },
+      );
+      return { success: true, categories: json.data ?? [] };
+    } catch (err) {
+      return { success: false, categories: [], message: err instanceof Error ? err.message : "Unknown error" };
+    }
+  });
+
+// ──────────────── 2. Get Billers ────────────────
+
+const billersInputSchema = z.object({
+  category: z.string().min(1).max(100),
+});
+
+export const bbpsGetBillers = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
+  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; message?: string }> => {
+    try {
+      const cfg = await getProviderConfig();
+      const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
+        "/billpay/biller-info",
+        { agent: cfg.agentId, category: data.category },
+      );
+      return { success: true, billers: json.biller ?? [] };
+    } catch (err) {
+      return { success: false, billers: [], message: err instanceof Error ? err.message : "Unknown error" };
+    }
+  });
+
+// ──────────────── 3. Get Customer Params ────────────────
+
+const paramsInputSchema = z.object({
+  billerId: z.string().min(1).max(50),
+});
+
+export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: z.infer<typeof paramsInputSchema>) => paramsInputSchema.parse(input))
+  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; message?: string }> => {
+    try {
+      const cfg = await getProviderConfig();
+      const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
+        "/billpay/customer-params",
+        { agent: cfg.agentId, billerid: data.billerId },
+      );
+      return { success: true, params: json.param ?? [], mode: json.mode ?? null };
+    } catch (err) {
+      return { success: false, params: [], mode: null, message: err instanceof Error ? err.message : "Unknown error" };
+    }
+  });
+
+// ──────────────── 4. Bill Fetch ────────────────
+
+const fetchInputSchema = z.object({
+  billerId: z.string().min(1).max(50),
+  paramNames: z.array(z.string().min(1).max(100)).min(1).max(20),
+  paramValues: z.array(z.string().min(0).max(200)).min(1).max(20),
+});
+
+export const bbpsFetchBill = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
+  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+    try {
+      const cfg = await getProviderConfig();
+      // Provider expects stringified JSON-array-ish: {"Consumer Number"} format.
+      const paramName = `{${data.paramNames.map((n) => `"${n}"`).join(",")}}`;
+      const paramValue = `{${data.paramValues.map((v) => `"${v}"`).join(",")}}`;
+      const json = await callBbps<{
+        success: boolean;
+        insertid: number;
+        amount: number;
+        custname: string;
+        dueDate: string;
+        billDate: string;
+        billNumber: string;
+        message: string;
+        requestId: string;
+      }>("/billpay/bill-fetch", {
+        agent: cfg.agentId,
+        billerid: data.billerId,
+        paramName,
+        paramValue,
+      });
+      if (!json.success) return { success: false, message: json.message ?? "Bill not found" };
+      return {
+        success: true,
+        bill: {
+          insertid: json.insertid,
+          amount: Number(json.amount) || 0,
+          custname: json.custname ?? "",
+          dueDate: json.dueDate ?? "",
+          billDate: json.billDate ?? "",
+          billNumber: json.billNumber ?? "",
+          message: json.message ?? "",
+          requestId: json.requestId,
+        },
+      };
+    } catch (err) {
+      return { success: false, message: err instanceof Error ? err.message : "Unknown error" };
+    }
+  });
+
+// ──────────────── 5. Bill Validation (no-fetch) ────────────────
+
+const validateInputSchema = z.object({
+  billerId: z.string().min(1).max(50),
+  paramNames: z.array(z.string().min(1).max(100)).min(1).max(20),
+  paramValues: z.array(z.string().min(0).max(200)).min(1).max(20),
+  amount: z.number().min(1).max(1_000_000).optional(),
+});
+
+export const bbpsValidateBill = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: z.infer<typeof validateInputSchema>) => validateInputSchema.parse(input))
+  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+    try {
+      const cfg = await getProviderConfig();
+      const paramName = `{${data.paramNames.map((n) => `"${n}"`).join(",")}}`;
+      const paramValue = `{${data.paramValues.map((v) => `"${v}"`).join(",")}}`;
+      const body: Record<string, unknown> = {
+        agent: cfg.agentId,
+        billerid: data.billerId,
+        paramName,
+        paramValue,
+      };
+      if (data.amount) body.amount = data.amount;
+      const json = await callBbps<{
+        success: boolean;
+        insertid: number;
+        amount: string | number;
+        custname: string;
+        dueDate: string;
+        billDate: string;
+        billNumber: string;
+        message: string;
+        requestId: string;
+      }>("/billpay/bill-validation", body);
+      if (!json.success) return { success: false, message: json.message ?? "Validation failed" };
+      return {
+        success: true,
+        bill: {
+          insertid: json.insertid,
+          amount: Number(json.amount) || 0,
+          custname: json.custname ?? "",
+          dueDate: json.dueDate ?? "",
+          billDate: json.billDate ?? "",
+          billNumber: json.billNumber ?? "",
+          message: json.message ?? "",
+          requestId: json.requestId,
+        },
+      };
+    } catch (err) {
+      return { success: false, message: err instanceof Error ? err.message : "Unknown error" };
+    }
+  });
+
+// ──────────────── 6. Bill Pay (atomic wallet flow) ────────────────
+
+const payInputSchema = z.object({
+  billerId: z.string().min(1).max(50),
+  billerName: z.string().min(1).max(200),
+  categoryName: z.string().min(1).max(100),
+  billPaymentId: z.number().int().positive(),
+  requestId: z.string().min(1).max(200),
+  billerMode: z.number().int().min(1).max(10).optional(),
+  mobileNo: z.string().regex(/^\d{10}$/).optional(),
+  amount: z.number().min(1).max(1_000_000),
+  /** Customer-entered params, preserved on the txn record for the receipt. */
+  params: z.record(z.string(), z.string().max(200)),
+  /** Optional bill metadata captured at fetch time. */
+  customerName: z.string().max(200).optional(),
+  billDate: z.string().max(50).optional(),
+  dueDate: z.string().max(50).optional(),
+  billNumber: z.string().max(100).optional(),
+});
+
+export const bbpsPayBill = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: z.infer<typeof payInputSchema>) => payInputSchema.parse(input))
+  .handler(async ({ data, context }): Promise<{
+    success: boolean;
+    transactionId?: string;
+    receipt?: string | number;
+    newBalance?: number;
+    message?: string;
+  }> => {
+    if (!context.authUser) return { success: false, message: "Not signed in" };
+    const retailerId = context.authUser.uid;
+    const retailerEmail = context.authUser.email ?? "";
+
+    const cfg = await getProviderConfig();
+    const fee = cfg.feeByCategory[data.categoryName] ?? cfg.defaultFee;
+    const totalDebit = data.amount + fee;
+
+    // 1. Atomic wallet debit.
+    const walletRef = doc(db, "wallets", retailerId);
+    let newBalance: number;
+    try {
+      newBalance = await runTransaction(db, async (tx) => {
+        const w = await tx.get(walletRef);
+        if (!w.exists()) throw new Error("Wallet not found");
+        const current = Number(w.data().balance) || 0;
+        if (current < totalDebit) {
+          throw new Error(
+            `Insufficient balance. Need ₹${totalDebit.toFixed(2)}, have ₹${current.toFixed(2)}`,
+          );
+        }
+        const updated = current - totalDebit;
+        tx.update(walletRef, { balance: updated });
+        return updated;
+      });
+    } catch (err) {
+      return { success: false, message: err instanceof Error ? err.message : "Wallet debit failed" };
+    }
+
+    // 2. Create the txn record in `processing` state.
+    const txDoc = await addDoc(collection(db, "bbps_transactions"), {
+      retailerId,
+      retailerEmail,
+      categoryName: data.categoryName,
+      billerCode: data.billerId,
+      billerName: data.billerName,
+      params: data.params,
+      amount: data.amount,
+      fee,
+      totalDebited: totalDebit,
+      status: "processing",
+      providerBillId: data.billPaymentId,
+      providerRequestId: data.requestId,
+      providerMode: data.billerMode ?? null,
+      mobileNo: data.mobileNo ?? "",
+      customerName: data.customerName ?? "",
+      billDate: data.billDate ?? "",
+      dueDate: data.dueDate ?? "",
+      billNumber: data.billNumber ?? "",
+      createdAt: new Date().toISOString(),
+    } satisfies Omit<BbpsTransaction, "id">);
+
+    // Wallet history entry for debit.
+    await addDoc(collection(db, "transactions"), {
+      userId: retailerId,
+      amount: totalDebit,
+      type: "debit",
+      source: "bbps",
+      description: `${data.categoryName} — ${data.billerName}`,
+      bbpsTransactionId: txDoc.id,
+      createdAt: new Date().toISOString(),
+    });
+
+    // 3. Call provider /bill-pay.
+    try {
+      const json = await callBbps<{ success: boolean; message: string; receipt: string | number }>(
+        "/billpay/bill-pay",
+        {
+          agent: cfg.agentId,
+          billerid: data.billerId,
+          billcategory: data.categoryName,
+          billpaymentid: data.billPaymentId,
+          requestId: data.requestId,
+          billermode: data.billerMode ?? 1,
+          ...(data.mobileNo ? { mobileno: data.mobileNo } : {}),
+        },
+      );
+
+      if (!json.success) {
+        // Refund.
+        await refund(walletRef, totalDebit, retailerId, txDoc.id, json.message ?? "Bill payment failed");
+        await updateDoc(txDoc, {
+          status: "refunded",
+          errorMessage: json.message ?? "Bill payment failed",
+          refundedAt: new Date().toISOString(),
+        });
+        return { success: false, message: json.message ?? "Bill payment failed" };
+      }
+
+      await updateDoc(txDoc, {
+        status: "success",
+        providerReceipt: json.receipt,
+        paidAt: new Date().toISOString(),
+      });
+      return {
+        success: true,
+        transactionId: txDoc.id,
+        receipt: json.receipt,
+        newBalance,
+        message: json.message,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Provider error";
+      await refund(walletRef, totalDebit, retailerId, txDoc.id, msg);
+      await updateDoc(txDoc, {
+        status: "refunded",
+        errorMessage: msg,
+        refundedAt: new Date().toISOString(),
+      });
+      return { success: false, message: `${msg} — wallet refunded` };
+    }
+  });
+
+async function refund(
+  walletRef: ReturnType<typeof doc>,
+  amount: number,
+  retailerId: string,
+  bbpsTransactionId: string,
+  reason: string,
+): Promise<void> {
+  await runTransaction(db, async (tx) => {
+    const w = await tx.get(walletRef);
+    if (!w.exists()) return;
+    const current = Number(w.data().balance) || 0;
+    tx.update(walletRef, { balance: current + amount });
+  });
+  await addDoc(collection(db, "transactions"), {
+    userId: retailerId,
+    amount,
+    type: "credit",
+    source: "refund",
+    description: `Refund: ${reason}`,
+    bbpsTransactionId,
+    createdAt: new Date().toISOString(),
+  });
+}
