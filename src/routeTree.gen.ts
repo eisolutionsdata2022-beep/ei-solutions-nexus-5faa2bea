@@ -15,7 +15,6 @@ import { Route as StaffRouteImport } from './routes/staff'
 import { Route as RetailerRouteImport } from './routes/retailer'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OperatorRouteImport } from './routes/operator'
-import { Route as NsdlCallbackRouteImport } from './routes/nsdl-callback'
 import { Route as MatrimonyRouteImport } from './routes/matrimony'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
@@ -58,7 +57,6 @@ import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
-import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
@@ -92,8 +90,6 @@ import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
-import { Route as AdminPsaIdsRouteImport } from './routes/admin.psa-ids'
-import { Route as AdminPanSettingsRouteImport } from './routes/admin.pan-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -150,11 +146,6 @@ const RegisterRoute = RegisterRouteImport.update({
 const OperatorRoute = OperatorRouteImport.update({
   id: '/operator',
   path: '/operator',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NsdlCallbackRoute = NsdlCallbackRouteImport.update({
-  id: '/nsdl-callback',
-  path: '/nsdl-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatrimonyRoute = MatrimonyRouteImport.update({
@@ -367,11 +358,6 @@ const RetailerProfileRoute = RetailerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => RetailerRoute,
 } as any)
-const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
-  id: '/pan-portal',
-  path: '/pan-portal',
-  getParentRoute: () => RetailerRoute,
-} as any)
 const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
   id: '/page-tools',
   path: '/page-tools',
@@ -538,16 +524,6 @@ const AdminReferralsRoute = AdminReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPsaIdsRoute = AdminPsaIdsRouteImport.update({
-  id: '/psa-ids',
-  path: '/psa-ids',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPanSettingsRoute = AdminPanSettingsRouteImport.update({
-  id: '/pan-settings',
-  path: '/pan-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -695,7 +671,6 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
-  '/nsdl-callback': typeof NsdlCallbackRoute
   '/operator': typeof OperatorRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
@@ -726,8 +701,6 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-settings': typeof AdminPanSettingsRoute
-  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -761,7 +734,6 @@ export interface FileRoutesByFullPath {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
-  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -806,7 +778,6 @@ export interface FileRoutesByTo {
   '/finance': typeof FinanceRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
-  '/nsdl-callback': typeof NsdlCallbackRoute
   '/register': typeof RegisterRoute
   '/welcome': typeof WelcomeRoute
   '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
@@ -833,8 +804,6 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-settings': typeof AdminPanSettingsRoute
-  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -868,7 +837,6 @@ export interface FileRoutesByTo {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
-  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -917,7 +885,6 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/matrimony': typeof MatrimonyRouteWithChildren
-  '/nsdl-callback': typeof NsdlCallbackRoute
   '/operator': typeof OperatorRouteWithChildren
   '/register': typeof RegisterRoute
   '/retailer': typeof RetailerRouteWithChildren
@@ -948,8 +915,6 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-settings': typeof AdminPanSettingsRoute
-  '/admin/psa-ids': typeof AdminPsaIdsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -983,7 +948,6 @@ export interface FileRoutesById {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
-  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -1033,7 +997,6 @@ export interface FileRouteTypes {
     | '/install'
     | '/login'
     | '/matrimony'
-    | '/nsdl-callback'
     | '/operator'
     | '/register'
     | '/retailer'
@@ -1064,8 +1027,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-settings'
-    | '/admin/psa-ids'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1099,7 +1060,6 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
-    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1144,7 +1104,6 @@ export interface FileRouteTypes {
     | '/finance'
     | '/install'
     | '/login'
-    | '/nsdl-callback'
     | '/register'
     | '/welcome'
     | '/admin/bbps-settings'
@@ -1171,8 +1130,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-settings'
-    | '/admin/psa-ids'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1206,7 +1163,6 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
-    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1254,7 +1210,6 @@ export interface FileRouteTypes {
     | '/install'
     | '/login'
     | '/matrimony'
-    | '/nsdl-callback'
     | '/operator'
     | '/register'
     | '/retailer'
@@ -1285,8 +1240,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-settings'
-    | '/admin/psa-ids'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1320,7 +1273,6 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
-    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1369,7 +1321,6 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
   MatrimonyRoute: typeof MatrimonyRouteWithChildren
-  NsdlCallbackRoute: typeof NsdlCallbackRoute
   OperatorRoute: typeof OperatorRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   RetailerRoute: typeof RetailerRouteWithChildren
@@ -1423,13 +1374,6 @@ declare module '@tanstack/react-router' {
       path: '/operator'
       fullPath: '/operator'
       preLoaderRoute: typeof OperatorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nsdl-callback': {
-      id: '/nsdl-callback'
-      path: '/nsdl-callback'
-      fullPath: '/nsdl-callback'
-      preLoaderRoute: typeof NsdlCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/matrimony': {
@@ -1726,13 +1670,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerProfileRouteImport
       parentRoute: typeof RetailerRoute
     }
-    '/retailer/pan-portal': {
-      id: '/retailer/pan-portal'
-      path: '/pan-portal'
-      fullPath: '/retailer/pan-portal'
-      preLoaderRoute: typeof RetailerPanPortalRouteImport
-      parentRoute: typeof RetailerRoute
-    }
     '/retailer/page-tools': {
       id: '/retailer/page-tools'
       path: '/page-tools'
@@ -1964,20 +1901,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReferralsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/psa-ids': {
-      id: '/admin/psa-ids'
-      path: '/psa-ids'
-      fullPath: '/admin/psa-ids'
-      preLoaderRoute: typeof AdminPsaIdsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pan-settings': {
-      id: '/admin/pan-settings'
-      path: '/pan-settings'
-      fullPath: '/admin/pan-settings'
-      preLoaderRoute: typeof AdminPanSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/notices': {
       id: '/admin/notices'
       path: '/notices'
@@ -2195,8 +2118,6 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
-  AdminPanSettingsRoute: typeof AdminPanSettingsRoute
-  AdminPsaIdsRoute: typeof AdminPsaIdsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
@@ -2241,8 +2162,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
-  AdminPanSettingsRoute: AdminPanSettingsRoute,
-  AdminPsaIdsRoute: AdminPsaIdsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
@@ -2333,7 +2252,6 @@ interface RetailerRouteChildren {
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
-  RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
@@ -2364,7 +2282,6 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
-  RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
   RetailerServicesRoute: RetailerServicesRoute,
@@ -2441,7 +2358,6 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
   MatrimonyRoute: MatrimonyRouteWithChildren,
-  NsdlCallbackRoute: NsdlCallbackRoute,
   OperatorRoute: OperatorRouteWithChildren,
   RegisterRoute: RegisterRoute,
   RetailerRoute: RetailerRouteWithChildren,
