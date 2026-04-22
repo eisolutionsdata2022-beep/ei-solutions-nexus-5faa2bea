@@ -108,10 +108,10 @@ export interface PanServiceActivation {
 
 /** Default upstream URLs from legacy portal — admin can override. */
 export const PAN_DEFAULT_URLS = {
-  nsdlAuthUrl: "https://mallikarecharge.in/portallogin/nsdlAuth",
+  nsdlAuthUrl: "https://mallikacyberzone.com/portallogin/nsdlAuth",
   nsdlGetAuthorizationUrl: "https://utibot.in/api/nsdl/get_authorization",
-  psaCreateUrl: "https://mallikarecharge.in/api/psa_create",
-  psaPasswordUrl: "https://mallikarecharge.in/api/psa_password",
+  psaCreateUrl: "https://mallikacyberzone.com/api/psa_create",
+  psaPasswordUrl: "https://mallikacyberzone.com/api/psa_password",
   ssoRedirectUrl: "https://sso-nsdl-ekyc-app.pages.dev/sso_nsdl_ekyc_redirect",
   digipayDashboardUrl: "https://digipaydashboard.religaredigital.in/Login/Authenticate",
 } as const;
