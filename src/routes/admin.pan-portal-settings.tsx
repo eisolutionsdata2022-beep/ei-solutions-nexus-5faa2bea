@@ -357,7 +357,7 @@ function AdminPanPortalSettings() {
                 />
               </div>
               <div>
-                <Label className="text-blue-700 dark:text-blue-300">UTI Coupon Retailer Fee (₹)</Label>
+                <Label className="text-primary">UTI Coupon Retailer Fee (₹)</Label>
                 <Input
                   type="number"
                   value={fees.utiPanRetailerFee}
@@ -365,7 +365,7 @@ function AdminPanPortalSettings() {
                 />
               </div>
               <div>
-                <Label className="text-blue-700 dark:text-blue-300">UTI Coupon Provider Cost (₹)</Label>
+                <Label className="text-primary">UTI Coupon Provider Cost (₹)</Label>
                 <Input
                   type="number"
                   value={fees.utiPanProviderCost}
