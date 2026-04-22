@@ -7,7 +7,7 @@
  * that coupon to file the customer's PAN application.
  */
 import { useState, type FormEvent } from "react";
-import { atomicDebit } from "@/lib/firebase-transactions";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import {
   createUtiCoupon,
   getPanConfig,
@@ -87,9 +87,16 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     if (!psa || !config.cipher) return;
     setPurchasing(true);
     const orderId = newCouponOrderId(user.uid);
-    const debit = await atomicDebit(user.uid, fee, `UTI PAN coupon — ${orderId}`, "pan-portal");
-    if (!debit.success) {
-      toast.error(debit.error || "Wallet debit failed");
+    let oldBalance = 0;
+    let newBalance = 0;
+    try {
+      newBalance = await atomicDebit(user.uid, fee, {
+        source: "pan-portal",
+        description: `UTI PAN coupon — ${orderId}`,
+      });
+      oldBalance = newBalance + fee;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Wallet debit failed");
       setPurchasing(false);
       return;
     }
@@ -107,8 +114,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       });
       const nowIso = new Date().toISOString();
       if (!res.success) {
-        // Refund
-        await atomicDebit(user.uid, -fee, `Refund — UTI coupon ${orderId}`, "pan-portal");
+        await atomicCredit(user.uid, fee, {
+          source: "pan-portal",
+          description: `Refund — UTI coupon ${orderId}`,
+        });
         await createUtiCoupon({
           couponId: orderId,
           retailerId: user.uid,
@@ -116,8 +125,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           vleId: psa.vleId,
           amount: fee,
           providerCost: cfg.utiPanProviderCost,
-          oldBalance: debit.oldBalance,
-          newBalance: debit.newBalance,
+          oldBalance,
+          newBalance: oldBalance,
           status: "refunded",
           remark: res.error,
           createdAt: nowIso,
@@ -133,8 +142,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         vleId: psa.vleId,
         amount: fee,
         providerCost: cfg.utiPanProviderCost,
-        oldBalance: debit.oldBalance,
-        newBalance: debit.newBalance,
+        oldBalance,
+        newBalance,
         status: "purchased",
         ackNo: res.ackNo,
         remark: res.message,
@@ -144,7 +153,12 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       });
       toast.success(`Coupon ${res.couponId} purchased!`);
     } catch (err) {
-      await atomicDebit(user.uid, -fee, `Refund — UTI coupon ${orderId}`, "pan-portal");
+      try {
+        await atomicCredit(user.uid, fee, {
+          source: "pan-portal",
+          description: `Refund — UTI coupon ${orderId}`,
+        });
+      } catch { /* ignore */ }
       toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
     } finally {
       setPurchasing(false);
