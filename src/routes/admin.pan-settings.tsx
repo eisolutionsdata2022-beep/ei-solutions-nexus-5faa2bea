@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Save, Shield, KeyRound, Activity, Link2, Lock, Server } from "lucide-react";
+import { Loader2, Save, Shield, KeyRound, Activity, Link2, Lock, Server, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { PAN_SERVICES } from "@/lib/pan-services";
 import { PAN_DEFAULT_URLS, type PanMasterConfig, type PanTransaction } from "@/lib/pan-types";
@@ -26,6 +26,7 @@ import {
   encryptPanApiKey,
   encryptPanApiSecret,
   encryptPanBridgeSecret,
+  testPanConnection,
 } from "@/lib/pan.functions";
 
 export const Route = createFileRoute("/admin/pan-settings")({
