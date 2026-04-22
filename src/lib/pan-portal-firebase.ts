@@ -166,3 +166,38 @@ export function subscribeAllOrders(cb: (orders: PanOrder[]) => void) {
 export function newOrderId(retailerId: string): string {
   return `EKYC${Date.now()}A${retailerId.slice(-8)}`;
 }
+
+/* ------------------------------ UTI Coupons ------------------------------ */
+
+export async function createUtiCoupon(coupon: PanUtiCoupon) {
+  await setDoc(doc(UTI_COUPONS_COL, coupon.couponId), coupon, { merge: true });
+}
+
+export async function updateUtiCoupon(couponId: string, patch: Partial<PanUtiCoupon>) {
+  await updateDoc(doc(UTI_COUPONS_COL, couponId), {
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export function subscribeRetailerUtiCoupons(
+  retailerId: string,
+  cb: (coupons: PanUtiCoupon[]) => void,
+) {
+  const q = query(UTI_COUPONS_COL, where("retailerId", "==", retailerId));
+  return onSnapshot(q, (snap) => {
+    const list: PanUtiCoupon[] = [];
+    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
+    list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    cb(list);
+  });
+}
+
+export function subscribeAllUtiCoupons(cb: (coupons: PanUtiCoupon[]) => void) {
+  const q = query(UTI_COUPONS_COL, orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    const list: PanUtiCoupon[] = [];
+    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
+    cb(list);
+  });
+}
