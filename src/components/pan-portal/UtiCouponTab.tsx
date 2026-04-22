@@ -26,20 +26,15 @@ import { newCouponOrderId } from "@/lib/pan-portal-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
   Ticket,
   ShoppingCart,
   Search,
-  Copy,
-  CheckCircle2,
-  Clock,
-  XCircle,
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { UtiCouponHistoryTable } from "./UtiCouponHistoryTable";
 
 interface Props {
   user: { uid: string; email: string; name?: string; phone?: string };
