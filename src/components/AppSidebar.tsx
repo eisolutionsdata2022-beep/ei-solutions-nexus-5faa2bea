@@ -52,11 +52,8 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
-    { label: "Landing CMS", to: "/admin/landing-cms", icon: FileText },
-    { label: "CRM Leads", to: "/admin/crm-leads", icon: Users, tag: "hot" },
+    { label: "Marketing Hub", to: "/admin/marketing", icon: Gift, tag: "new", hint: "CMS, Leads, Bulk Email, WhatsApp, Brochures" },
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
-    { label: "Bulk Comm", to: "/admin/crm-bulk-comm", icon: MessageSquare },
-    { label: "WhatsApp", to: "/admin/whatsapp", icon: MessageSquare },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList, tag: "pending" },
@@ -96,7 +93,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
-    { label: "Marketing Materials", to: "/admin/marketing", icon: Gift, tag: "new", hint: "Brochures, posters, share links" },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },
