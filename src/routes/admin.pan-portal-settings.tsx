@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save, KeyRound, Activity, ShieldCheck, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -270,6 +271,19 @@ function AdminPanPortalSettings() {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Webhook URL: <code>/api/public/pan-portal/nsdl-webhook</code>
+              </p>
+            </div>
+            <div>
+              <Label>Allowed IP Addresses (provider whitelist)</Label>
+              <Textarea
+                value={allowedIps}
+                onChange={(e) => setAllowedIps(e.target.value)}
+                placeholder="One IP per line, e.g.&#10;103.21.45.10&#10;103.21.45.11"
+                rows={3}
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Register these IPs with the upstream provider (NSDL/UTI). Used as a reference — outbound calls originate from the server's static egress IP.
               </p>
             </div>
             <div className="flex items-center gap-2">
