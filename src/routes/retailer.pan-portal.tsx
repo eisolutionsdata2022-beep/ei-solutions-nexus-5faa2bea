@@ -103,7 +103,7 @@ function PanPortalPage() {
 
   const vleId = generateVleId(appUser.uid, appUser.phone);
   const successCount = orders.filter((o) => o.status === "success").length;
-  const pendingCount = orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
   const psaActive = psa?.status === "approved";
   const nsdlActive = !!activation?.nsdlActive;
 
