@@ -151,7 +151,27 @@ export const diagnoseWhatsAppBridge = createServerFn({ method: "GET" })
     const firstError = resolved.attempts.find((a) => a.error);
     const attempted = resolved.attempts.map((a) => `${a.baseUrl}${typeof a.status === "number" ? ` → HTTP ${a.status}` : a.error ? ` → ${a.error}` : ""}`).join("\n");
 
-    if (firstHttp && [520, 521, 522, 523, 524, 525, 526, 530].includes(firstHttp.status!)) {
+    if (firstHttp?.status === 526) {
+      const rawBase = baseUrl.replace(/\/$/, "");
+      const isDedicatedWaHost = /\/\/wa\./i.test(rawBase);
+      return {
+        ok: false,
+        stage: "ssl",
+        status: 526,
+        baseUrl: firstHttp.baseUrl,
+        elapsedMs: elapsed,
+        error: "Cloudflare 526 — invalid SSL certificate on the bridge host",
+        hint:
+          (isDedicatedWaHost
+            ? "Your bridge is configured on a dedicated wa subdomain. nginx should proxy location / to 127.0.0.1:8788, and the TLS certificate must be issued for wa.eisoluions.xyz specifically.\n\nRun on the VPS:\n  sudo cp /opt/whatsapp-bridge/nginx-wa.eisoluions.xyz.conf.example /etc/nginx/sites-available/wa.eisoluions.xyz\n  sudo ln -sf /etc/nginx/sites-available/wa.eisoluions.xyz /etc/nginx/sites-enabled/wa.eisoluions.xyz\n  sudo nginx -t && sudo systemctl reload nginx\n  sudo certbot --nginx -d wa.eisoluions.xyz --redirect --agree-tos -m admin@eisoluions.xyz --non-interactive\n\nThen verify:\n  curl -i https://wa.eisoluions.xyz/health"
+            : "Your bridge appears to be behind a path-based proxy. nginx must forward /wa/ to 127.0.0.1:8788/, and the TLS certificate must match the public hostname you configured in WA_BRIDGE_BASE_URL.\n\nAfter fixing nginx + cert, verify the public URL returns 200.") +
+          `\n\nTried:\n${attempted}`,
+      };
+    }
+
+    if (firstHttp && [520, 521, 522, 523, 524, 525, 530].includes(firstHttp.status!)) {
+      const rawBase = baseUrl.replace(/\/$/, "");
+      const isDedicatedWaHost = /\/\/wa\./i.test(rawBase);
       return {
         ok: false,
         stage: "cloudflare",
@@ -163,7 +183,9 @@ export const diagnoseWhatsAppBridge = createServerFn({ method: "GET" })
           "The bridge process on your VPS is DOWN or unreachable from the proxy. SSH in and run:\n" +
           "  sudo systemctl status whatsapp-bridge\n" +
           "  sudo journalctl -u whatsapp-bridge -n 100 --no-pager\n" +
-          "Also confirm the DNS record points to the correct VPS IP and nginx forwards /wa/ to 127.0.0.1:8788.\n\n" +
+          (isDedicatedWaHost
+            ? "Also confirm wa.eisoluions.xyz points to the correct VPS IP and nginx proxies location / to 127.0.0.1:8788.\n\n"
+            : "Also confirm the DNS record points to the correct VPS IP and nginx forwards /wa/ to 127.0.0.1:8788.\n\n") +
           `Tried:\n${attempted}`,
       };
     }
