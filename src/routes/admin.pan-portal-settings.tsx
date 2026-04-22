@@ -78,16 +78,7 @@ function AdminPanPortalSettings() {
         psaCreateUrl: cfg.psaCreateUrl || PAN_DEFAULT_URLS.psaCreateUrl,
         psaPasswordUrl: cfg.psaPasswordUrl || PAN_DEFAULT_URLS.psaPasswordUrl,
         ssoRedirectUrl: cfg.ssoRedirectUrl || PAN_DEFAULT_URLS.ssoRedirectUrl,
-      });
-      setFees({
-        nsdlIdCharge: cfg.nsdlIdCharge ?? PAN_DEFAULT_FEES.nsdlIdCharge,
-        panRetailerFee: cfg.panRetailerFee ?? PAN_DEFAULT_FEES.panRetailerFee,
-        panProviderCost: cfg.panProviderCost ?? PAN_DEFAULT_FEES.panProviderCost,
-        psaRegistrationFee: cfg.psaRegistrationFee ?? PAN_DEFAULT_FEES.psaRegistrationFee,
-      });
-      setWebhookSecret(cfg.webhookSecret || "");
-      setAllowedIps(cfg.allowedIps || "");
-      setEnabled(cfg.enabled ?? true);
+        utiCouponPurchaseUrl: cfg.utiCouponPurchaseUrl || PAN_DEF
     });
   }, []);
 
