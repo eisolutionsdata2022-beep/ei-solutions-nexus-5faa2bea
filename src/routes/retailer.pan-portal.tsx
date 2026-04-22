@@ -199,7 +199,7 @@ function PanPortalPage() {
           </TabsList>
 
           <TabsContent value="psa" className="mt-6">
-            <PsaTab user={appUser} config={config} psa={psa} />
+            <PsaTab user={appUser} config={config} psa={psa} coupons={coupons} />
           </TabsContent>
 
           <TabsContent value="uti" className="mt-6">
@@ -258,11 +258,18 @@ function PsaTab({
   user,
   config,
   psa,
+  coupons,
 }: {
   user: { uid: string; email: string; name?: string; phone?: string };
   config: PanMasterConfig;
   psa: PanPsaRecord | null;
+  coupons: PanUtiCoupon[];
 }) {
+  const purchasedCoupons = coupons.filter(
+    (c) => c.status === "purchased" || c.status === "consumed",
+  ).length;
+  const idUnlocked = purchasedCoupons >= 2;
+  const couponsRemaining = Math.max(0, 2 - purchasedCoupons);
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [linking, setLinking] = useState(false);
