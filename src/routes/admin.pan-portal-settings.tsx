@@ -47,16 +47,21 @@ function AdminPanPortalSettings() {
     psaCreateUrl: "",
     psaPasswordUrl: "",
     ssoRedirectUrl: "",
+    utiCouponPurchaseUrl: "",
+    utiPanStatusUrl: "",
   });
   const [fees, setFees] = useState({
     nsdlIdCharge: 0,
     panRetailerFee: 0,
     panProviderCost: 0,
     psaRegistrationFee: 0,
+    utiPanRetailerFee: 0,
+    utiPanProviderCost: 0,
   });
   const [webhookSecret, setWebhookSecret] = useState("");
   const [allowedIps, setAllowedIps] = useState("");
   const [enabled, setEnabled] = useState(true);
+  const [utiEnabled, setUtiEnabled] = useState(true);
   const [savingUrls, setSavingUrls] = useState(false);
   const [savingFees, setSavingFees] = useState(false);
 
