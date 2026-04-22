@@ -198,8 +198,8 @@ function whatsappShareUrl(text: string, url: string) {
 }
 
 export function MarketingMaterials() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const { appUser } = useAuth();
+  const isAdmin = appUser?.role === "admin";
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const origin = getOrigin();
 
