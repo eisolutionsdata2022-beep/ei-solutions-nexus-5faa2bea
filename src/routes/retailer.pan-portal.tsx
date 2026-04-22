@@ -79,59 +79,152 @@ function PanPortalPage() {
     return <div className="p-8 text-center">Please log in.</div>;
   }
   if (!config) {
-    return <div className="p-8 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   if (!config.enabled) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold">PAN Portal is currently disabled.</h2>
-        <p className="text-muted-foreground">Please check back later or contact support.</p>
+      <div className="container mx-auto p-6 max-w-3xl">
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardContent className="p-10 text-center space-y-3">
+            <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+              <Clock className="h-7 w-7 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold">PAN Portal is currently disabled</h2>
+            <p className="text-muted-foreground">Please check back later or contact support.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const vleId = generateVleId(appUser.uid, appUser.phone);
+  const successCount = orders.filter((o) => o.status === "success").length;
+  const pendingCount = orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+  const psaActive = psa?.status === "approved";
+  const nsdlActive = !!activation?.nsdlActive;
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <IdCard className="h-6 w-6" /> PAN Portal
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            PSA Auto-ID & NSDL eKYC PAN application services.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20">
+      {/* ── Premium Hero ─────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-blue-700" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+        <div className="absolute top-0 inset-x-0 h-1 flex">
+          <div className="flex-1 bg-[#FF9933]" />
+          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-[#138808]" />
         </div>
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">VLE ID</p>
-          <p className="font-mono text-sm">{vleId}</p>
+
+        <div className="relative container mx-auto px-6 pt-12 pb-20 max-w-6xl">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="text-white space-y-3">
+              <Badge className="bg-white/15 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
+                <Sparkles className="h-3 w-3 mr-1" /> Premium Service
+              </Badge>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20">
+                  <IdCard className="h-7 w-7 md:h-8 md:w-8" />
+                </span>
+                PAN Portal
+              </h1>
+              <p className="text-blue-100 text-base md:text-lg max-w-xl">
+                Instant PAN card services with NSDL eKYC. One wallet, zero hassle.
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 min-w-[240px] shadow-2xl">
+              <p className="text-xs uppercase tracking-wider text-blue-100 mb-1">Your VLE ID</p>
+              <p className="font-mono text-lg font-bold text-white">{vleId}</p>
+              <div className="mt-3 pt-3 border-t border-white/20 flex items-center gap-2 text-xs text-blue-100">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                <span>Active retailer account</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="psa">
-        <TabsList>
-          <TabsTrigger value="psa">PSA Auto-ID</TabsTrigger>
-          <TabsTrigger value="pan">NSDL eKYC PAN</TabsTrigger>
-          <TabsTrigger value="history">My Orders ({orders.length})</TabsTrigger>
-        </TabsList>
+      {/* ── Stats Strip ──────────────────────────────────────────────── */}
+      <div className="container mx-auto px-6 max-w-6xl -mt-12 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatTile icon={<ShieldCheck className="h-5 w-5" />} label="PSA Status" value={psaActive ? "Active" : "Pending"} tone={psaActive ? "green" : "amber"} />
+          <StatTile icon={<Zap className="h-5 w-5" />} label="NSDL Service" value={nsdlActive ? "Activated" : "Inactive"} tone={nsdlActive ? "green" : "slate"} />
+          <StatTile icon={<TrendingUp className="h-5 w-5" />} label="Successful" value={String(successCount)} tone="blue" />
+          <StatTile icon={<Clock className="h-5 w-5" />} label="In Progress" value={String(pendingCount)} tone="amber" />
+        </div>
+      </div>
 
-        <TabsContent value="psa" className="mt-6">
-          <PsaTab user={appUser} config={config} psa={psa} />
-        </TabsContent>
+      {/* ── Tabs ─────────────────────────────────────────────────────── */}
+      <div className="container mx-auto px-6 max-w-6xl py-8">
+        <Tabs defaultValue="psa">
+          <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl">
+            <TabsTrigger value="psa" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
+              <ShieldCheck className="h-4 w-4" /> PSA Auto-ID
+            </TabsTrigger>
+            <TabsTrigger value="pan" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
+              <CreditCard className="h-4 w-4" /> NSDL eKYC PAN
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
+              <FileText className="h-4 w-4" /> My Orders
+              {orders.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-400 text-slate-900 rounded-full font-bold">
+                  {orders.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="pan" className="mt-6">
-          <PanTab
-            user={appUser}
-            config={config}
-            activation={activation}
-          />
-        </TabsContent>
+          <TabsContent value="psa" className="mt-6">
+            <PsaTab user={appUser} config={config} psa={psa} />
+          </TabsContent>
 
-        <TabsContent value="history" className="mt-6">
-          <OrdersHistory orders={orders} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="pan" className="mt-6">
+            <PanTab user={appUser} config={config} activation={activation} />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <OrdersHistory orders={orders} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- Stat Tile --------------------------------- */
+function StatTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: "green" | "amber" | "blue" | "slate";
+}) {
+  const tones: Record<string, string> = {
+    green: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60",
+    amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60",
+    blue: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/60",
+    slate: "bg-slate-50 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300 border-slate-200/60",
+  };
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${tones[tone]}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="font-bold text-base text-foreground">{value}</p>
+        </div>
+      </div>
     </div>
   );
 }
