@@ -420,6 +420,62 @@ function AdminPanSettings() {
         </CardContent>
       </Card>
 
+      {/* Test Connection */}
+      <Card className="border-primary/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Zap className="h-5 w-5 text-primary" /> Test Connection
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sends a free <code className="font-mono">coupon-status</code> probe to mallikacyberzone
+            using the saved API key + secret (and VPS bridge if configured). Use this to detect IP
+            whitelist blocks, invalid keys, or upstream outages — no fee is charged.
+          </p>
+          <Button onClick={runTest} disabled={testing || !config?.apiKeyCipher} variant="default">
+            {testing ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Probing provider…</>
+            ) : (
+              <><Zap className="mr-2 h-4 w-4" /> Run Test Connection</>
+            )}
+          </Button>
+          {!config?.apiKeyCipher && (
+            <p className="text-xs text-destructive">Save the API key first.</p>
+          )}
+          {testResult && (
+            <div
+              className={`rounded-lg border p-3 text-sm ${
+                testResult.ok
+                  ? "border-success/40 bg-success/5"
+                  : "border-destructive/40 bg-destructive/5"
+              }`}
+            >
+              <div
+                className={`flex items-center gap-2 font-semibold ${
+                  testResult.ok ? "text-success" : "text-destructive"
+                }`}
+              >
+                {testResult.ok ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                {testResult.title}
+              </div>
+              <p className="mt-1 whitespace-pre-line text-xs text-muted-foreground">
+                {testResult.detail}
+              </p>
+              {testResult.raw && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/40 p-2 text-[10px] font-mono">
+                  {testResult.raw}
+                </pre>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* VPS Bridge */}
       <Card>
         <CardHeader>
