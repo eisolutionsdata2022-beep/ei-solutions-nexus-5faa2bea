@@ -722,20 +722,48 @@ function PanTab({
 
   if (!activation?.nsdlActive) {
     return (
-      <Card>
-        <CardHeader><CardTitle>Activate NSDL eKYC PAN Service</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm">
-            One-time activation charge: <span className="font-bold">₹{activationCharge}</span> (deducted from wallet).
-          </p>
-          <p className="text-xs text-muted-foreground">
-            After activation, each PAN application will charge ₹{fee} per order.
-          </p>
-          <Button onClick={handleActivate} disabled={activating || activationCharge <= 0}>
-            {activating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Activate Service (₹{activationCharge})
-          </Button>
-        </CardContent>
+      <Card className="overflow-hidden border shadow-lg">
+        <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
+        <div className="bg-gradient-to-br from-blue-50/60 via-white to-amber-50/40 dark:from-blue-950/30 dark:via-slate-900 dark:to-amber-950/10 p-8 md:p-10">
+          <div className="max-w-xl mx-auto text-center space-y-5">
+            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center shadow-xl shadow-primary/30">
+              <Zap className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Activate NSDL eKYC PAN Service</h2>
+              <p className="text-muted-foreground mt-2">One-time activation. Apply unlimited PAN cards after.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-left bg-white dark:bg-slate-900 rounded-xl p-4 border shadow-sm">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Activation</p>
+                <p className="text-2xl font-bold text-foreground">₹{activationCharge}</p>
+                <p className="text-[11px] text-muted-foreground">one-time</p>
+              </div>
+              <div className="border-l pl-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Per PAN</p>
+                <p className="text-2xl font-bold text-emerald-600">₹{fee}</p>
+                <p className="text-[11px] text-muted-foreground">auto-debit from wallet</p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleActivate}
+              disabled={activating || activationCharge <= 0}
+              size="lg"
+              className="w-full sm:w-auto bg-gradient-to-r from-primary to-blue-700 hover:from-primary hover:to-blue-800 shadow-lg shadow-primary/30 px-8"
+            >
+              {activating ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Wallet className="h-5 w-5 mr-2" />}
+              Activate Now (₹{activationCharge})
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Instant activation</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Auto refund on failure</span>
+            </div>
+          </div>
+        </div>
       </Card>
     );
   }
