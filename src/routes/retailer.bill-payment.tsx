@@ -67,23 +67,15 @@ function BillPaymentPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Bharat Connect sonic ping when payment succeeds.
+  // Bharat Connect official MOGO sonic identity — plays on every B Assured success screen.
   useEffect(() => {
     if (step !== "success") return;
     try {
-      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.65);
+      const audio = new Audio("/bharat-connect/mogo.mp3");
+      audio.volume = 0.85;
+      void audio.play().catch(() => {
+        /* autoplay blocked — user gesture brought them here, should be allowed */
+      });
     } catch {
       /* audio unavailable — ignore */
     }
@@ -197,17 +189,13 @@ function BillPaymentPage() {
       gradient="from-indigo-700 via-blue-600 to-cyan-500"
     >
       <div className="space-y-4">
-        {/* Bharat Connect brand strip */}
+        {/* Bharat Connect brand strip — official primary logo */}
         <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-indigo-600 to-cyan-500 font-black text-white">
-              BC
-            </div>
-            <div className="text-sm">
-              <div className="font-semibold">Bharat Connect</div>
-              <div className="text-xs text-muted-foreground">B Assured • NPCI Bharat BillPay</div>
-            </div>
-          </div>
+          <img
+            src="/bharat-connect/bharat-connect-primary.svg"
+            alt="Bharat Connect"
+            className="h-9 w-auto"
+          />
           <Badge variant="secondary">UAT</Badge>
         </div>
 
@@ -352,13 +340,27 @@ function BillPaymentPage() {
 
         {step === "success" && receipt && (
           <Card className="border-emerald-500/50 bg-emerald-500/5">
-            <CardContent className="space-y-3 p-6 text-center">
+            <CardContent className="space-y-4 p-6 text-center">
               <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-600" />
-              <div className="text-xl font-bold">B Assured</div>
-              <div className="text-sm text-muted-foreground">Payment Successful</div>
+              <img
+                src="/bharat-connect/b-assured.svg"
+                alt="B Assured — Bharat Connect"
+                className="mx-auto h-16 w-auto"
+              />
+              <div className="text-sm font-medium text-emerald-700">Payment Successful</div>
               <div className="rounded-lg bg-card p-3 text-left text-sm">
                 <Row label="Receipt" value={String(receipt.receipt)} />
                 <Row label="Txn ID" value={receipt.txId.slice(0, 12)} />
+              </div>
+              <div className="flex items-center justify-center gap-2 border-t pt-3">
+                <img
+                  src="/bharat-connect/b-mnemonic.svg"
+                  alt=""
+                  className="h-5 w-auto opacity-70"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Powered by Bharat Connect • NPCI Bharat BillPay
+                </span>
               </div>
               <Button onClick={reset} className="w-full">
                 <Receipt className="mr-2 h-4 w-4" />
