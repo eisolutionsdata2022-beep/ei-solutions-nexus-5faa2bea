@@ -47,16 +47,21 @@ function AdminPanPortalSettings() {
     psaCreateUrl: "",
     psaPasswordUrl: "",
     ssoRedirectUrl: "",
+    utiCouponPurchaseUrl: "",
+    utiPanStatusUrl: "",
   });
   const [fees, setFees] = useState({
     nsdlIdCharge: 0,
     panRetailerFee: 0,
     panProviderCost: 0,
     psaRegistrationFee: 0,
+    utiPanRetailerFee: 0,
+    utiPanProviderCost: 0,
   });
   const [webhookSecret, setWebhookSecret] = useState("");
   const [allowedIps, setAllowedIps] = useState("");
   const [enabled, setEnabled] = useState(true);
+  const [utiEnabled, setUtiEnabled] = useState(true);
   const [savingUrls, setSavingUrls] = useState(false);
   const [savingFees, setSavingFees] = useState(false);
 
@@ -73,16 +78,21 @@ function AdminPanPortalSettings() {
         psaCreateUrl: cfg.psaCreateUrl || PAN_DEFAULT_URLS.psaCreateUrl,
         psaPasswordUrl: cfg.psaPasswordUrl || PAN_DEFAULT_URLS.psaPasswordUrl,
         ssoRedirectUrl: cfg.ssoRedirectUrl || PAN_DEFAULT_URLS.ssoRedirectUrl,
+        utiCouponPurchaseUrl: cfg.utiCouponPurchaseUrl || PAN_DEFAULT_URLS.utiCouponPurchaseUrl,
+        utiPanStatusUrl: cfg.utiPanStatusUrl || PAN_DEFAULT_URLS.utiPanStatusUrl,
       });
       setFees({
         nsdlIdCharge: cfg.nsdlIdCharge ?? PAN_DEFAULT_FEES.nsdlIdCharge,
         panRetailerFee: cfg.panRetailerFee ?? PAN_DEFAULT_FEES.panRetailerFee,
         panProviderCost: cfg.panProviderCost ?? PAN_DEFAULT_FEES.panProviderCost,
         psaRegistrationFee: cfg.psaRegistrationFee ?? PAN_DEFAULT_FEES.psaRegistrationFee,
+        utiPanRetailerFee: cfg.utiPanRetailerFee ?? PAN_DEFAULT_FEES.utiPanRetailerFee,
+        utiPanProviderCost: cfg.utiPanProviderCost ?? PAN_DEFAULT_FEES.utiPanProviderCost,
       });
       setWebhookSecret(cfg.webhookSecret || "");
       setAllowedIps(cfg.allowedIps || "");
       setEnabled(cfg.enabled ?? true);
+      setUtiEnabled(cfg.utiEnabled ?? true);
     });
   }, []);
 
@@ -121,7 +131,7 @@ function AdminPanPortalSettings() {
     if (!isAdmin || !appUser) return;
     setSavingUrls(true);
     try {
-      await savePanConfigPublic({ ...urls, webhookSecret, allowedIps, enabled }, appUser.uid);
+      await savePanConfigPublic({ ...urls, webhookSecret, allowedIps, enabled, utiEnabled }, appUser.uid);
       toast.success("Provider URLs saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -180,6 +190,7 @@ function AdminPanPortalSettings() {
   }
 
   const margin = (fees.panRetailerFee || 0) - (fees.panProviderCost || 0);
+  const utiMargin = (fees.utiPanRetailerFee || 0) - (fees.utiPanProviderCost || 0);
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-5xl">
@@ -286,9 +297,15 @@ function AdminPanPortalSettings() {
                 Register these IPs with the upstream provider (NSDL/UTI). Used as a reference — outbound calls originate from the server's static egress IP.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={enabled} onCheckedChange={setEnabled} />
-              <Label>Service enabled</Label>
+            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                <Switch checked={enabled} onCheckedChange={setEnabled} id="nsdl-enabled" />
+                <Label htmlFor="nsdl-enabled" className="cursor-pointer">NSDL eKYC enabled</Label>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                <Switch checked={utiEnabled} onCheckedChange={setUtiEnabled} id="uti-enabled" />
+                <Label htmlFor="uti-enabled" className="cursor-pointer">UTI Coupon enabled</Label>
+              </div>
             </div>
             <Button type="submit" disabled={savingUrls}>
               {savingUrls ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
@@ -339,12 +356,36 @@ function AdminPanPortalSettings() {
                   onChange={(e) => setFees({ ...fees, panProviderCost: Number(e.target.value) })}
                 />
               </div>
+              <div>
+                <Label className="text-primary">UTI Coupon Retailer Fee (₹)</Label>
+                <Input
+                  type="number"
+                  value={fees.utiPanRetailerFee}
+                  onChange={(e) => setFees({ ...fees, utiPanRetailerFee: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label className="text-primary">UTI Coupon Provider Cost (₹)</Label>
+                <Input
+                  type="number"
+                  value={fees.utiPanProviderCost}
+                  onChange={(e) => setFees({ ...fees, utiPanProviderCost: Number(e.target.value) })}
+                />
+              </div>
             </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Admin margin per PAN:</span>{" "}
-              <span className={margin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
-                ₹{margin}
-              </span>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm p-3 rounded-lg bg-muted/30 border">
+              <div>
+                <span className="text-muted-foreground">NSDL margin:</span>{" "}
+                <span className={margin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
+                  ₹{margin}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">UTI margin:</span>{" "}
+                <span className={utiMargin >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}>
+                  ₹{utiMargin}
+                </span>
+              </div>
             </div>
             <Button type="submit" disabled={savingFees}>
               {savingFees ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
