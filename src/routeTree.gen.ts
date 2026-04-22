@@ -21,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as DistributorRouteImport } from './routes/distributor'
+import { Route as BrochureRouteImport } from './routes/brochure'
 import { Route as BookletRouteImport } from './routes/booklet'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -177,6 +178,11 @@ const FinanceRoute = FinanceRouteImport.update({
 const DistributorRoute = DistributorRouteImport.update({
   id: '/distributor',
   path: '/distributor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrochureRoute = BrochureRouteImport.update({
+  id: '/brochure',
+  path: '/brochure',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookletRoute = BookletRouteImport.update({
@@ -672,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
+  '/brochure': typeof BrochureRoute
   '/distributor': typeof DistributorRouteWithChildren
   '/finance': typeof FinanceRoute
   '/install': typeof InstallRoute
@@ -782,6 +789,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/booklet': typeof BookletRoute
+  '/brochure': typeof BrochureRoute
   '/finance': typeof FinanceRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
@@ -888,6 +896,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/booklet': typeof BookletRoute
+  '/brochure': typeof BrochureRoute
   '/distributor': typeof DistributorRouteWithChildren
   '/finance': typeof FinanceRoute
   '/install': typeof InstallRoute
@@ -1001,6 +1010,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/booklet'
+    | '/brochure'
     | '/distributor'
     | '/finance'
     | '/install'
@@ -1111,6 +1121,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/booklet'
+    | '/brochure'
     | '/finance'
     | '/install'
     | '/login'
@@ -1216,6 +1227,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/booklet'
+    | '/brochure'
     | '/distributor'
     | '/finance'
     | '/install'
@@ -1328,6 +1340,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   BookletRoute: typeof BookletRoute
+  BrochureRoute: typeof BrochureRoute
   DistributorRoute: typeof DistributorRouteWithChildren
   FinanceRoute: typeof FinanceRoute
   InstallRoute: typeof InstallRoute
@@ -1429,6 +1442,13 @@ declare module '@tanstack/react-router' {
       path: '/distributor'
       fullPath: '/distributor'
       preLoaderRoute: typeof DistributorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brochure': {
+      id: '/brochure'
+      path: '/brochure'
+      fullPath: '/brochure'
+      preLoaderRoute: typeof BrochureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/booklet': {
@@ -2374,6 +2394,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BookletRoute: BookletRoute,
+  BrochureRoute: BrochureRoute,
   DistributorRoute: DistributorRouteWithChildren,
   FinanceRoute: FinanceRoute,
   InstallRoute: InstallRoute,
