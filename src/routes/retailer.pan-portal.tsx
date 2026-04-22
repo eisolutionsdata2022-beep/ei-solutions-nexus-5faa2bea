@@ -74,6 +74,7 @@ function PanPortalPage() {
   const [activation, setActivation] = useState<PanServiceActivation | null>(null);
   const [psa, setPsa] = useState<PanPsaRecord | null>(null);
   const [orders, setOrders] = useState<PanOrder[]>([]);
+  const [coupons, setCoupons] = useState<PanUtiCoupon[]>([]);
 
   useEffect(() => subscribePanConfig(setConfig), []);
   useEffect(() => {
@@ -81,7 +82,8 @@ function PanPortalPage() {
     const u1 = subscribePanActivation(appUser.uid, setActivation);
     const u2 = subscribePsaRecord(appUser.uid, setPsa);
     const u3 = subscribeRetailerOrders(appUser.uid, setOrders);
-    return () => { u1(); u2(); u3(); };
+    const u4 = subscribeRetailerUtiCoupons(appUser.uid, setCoupons);
+    return () => { u1(); u2(); u3(); u4(); };
   }, [appUser?.uid]);
 
   if (!appUser) {
