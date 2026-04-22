@@ -41,6 +41,10 @@ export interface PanPsaRecord {
   vleRegCode?: string;      // returned by upstream on success
   status: PsaStatus;
   remark?: string;
+  /** True when retailer self-linked an existing PSA ID instead of registering fresh. */
+  linkedExisting?: boolean;
+  /** Mobile that was registered with the existing PSA (for verification). */
+  linkedMobile?: string;
   /** Snapshot of retailer info sent to upstream. */
   ownerName: string;
   shopName: string;
