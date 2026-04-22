@@ -57,6 +57,7 @@ import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
+import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
@@ -90,6 +91,7 @@ import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
+import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -117,6 +119,7 @@ import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-setti
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
+import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -358,6 +361,11 @@ const RetailerProfileRoute = RetailerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => RetailerRoute,
 } as any)
+const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
+  id: '/pan-portal',
+  path: '/pan-portal',
+  getParentRoute: () => RetailerRoute,
+} as any)
 const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
   id: '/page-tools',
   path: '/page-tools',
@@ -524,6 +532,11 @@ const AdminReferralsRoute = AdminReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
+  id: '/pan-portal-settings',
+  path: '/pan-portal-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -660,6 +673,12 @@ const ApiEmailOpenRoute = ApiEmailOpenRouteImport.update({
   path: '/api/email/open',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPanPortalNsdlWebhookRoute =
+  ApiPublicPanPortalNsdlWebhookRouteImport.update({
+    id: '/api/public/pan-portal/nsdl-webhook',
+    path: '/api/public/pan-portal/nsdl-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -701,6 +720,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -734,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -770,6 +791,7 @@ export interface FileRoutesByFullPath {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -804,6 +826,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -837,6 +860,7 @@ export interface FileRoutesByTo {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -873,6 +897,7 @@ export interface FileRoutesByTo {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -915,6 +940,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -948,6 +974,7 @@ export interface FileRoutesById {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -984,6 +1011,7 @@ export interface FileRoutesById {
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
+  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1027,6 +1055,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1060,6 +1089,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1096,6 +1126,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1130,6 +1161,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1163,6 +1195,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1199,6 +1232,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   id:
     | '__root__'
     | '/'
@@ -1240,6 +1274,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1273,6 +1308,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1309,6 +1345,7 @@ export interface FileRouteTypes {
     | '/api/email/open'
     | '/api/email/unsubscribe'
     | '/retailer/jobs/$jobId'
+    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1330,6 +1367,7 @@ export interface RootRouteChildren {
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
+  ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1670,6 +1708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerProfileRouteImport
       parentRoute: typeof RetailerRoute
     }
+    '/retailer/pan-portal': {
+      id: '/retailer/pan-portal'
+      path: '/pan-portal'
+      fullPath: '/retailer/pan-portal'
+      preLoaderRoute: typeof RetailerPanPortalRouteImport
+      parentRoute: typeof RetailerRoute
+    }
     '/retailer/page-tools': {
       id: '/retailer/page-tools'
       path: '/page-tools'
@@ -1901,6 +1946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReferralsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pan-portal-settings': {
+      id: '/admin/pan-portal-settings'
+      path: '/pan-portal-settings'
+      fullPath: '/admin/pan-portal-settings'
+      preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/notices': {
       id: '/admin/notices'
       path: '/notices'
@@ -2090,6 +2142,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailOpenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pan-portal/nsdl-webhook': {
+      id: '/api/public/pan-portal/nsdl-webhook'
+      path: '/api/public/pan-portal/nsdl-webhook'
+      fullPath: '/api/public/pan-portal/nsdl-webhook'
+      preLoaderRoute: typeof ApiPublicPanPortalNsdlWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2118,6 +2177,7 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
+  AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
@@ -2162,6 +2222,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
+  AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
@@ -2252,6 +2313,7 @@ interface RetailerRouteChildren {
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
+  RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
@@ -2282,6 +2344,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
+  RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
   RetailerServicesRoute: RetailerServicesRoute,
@@ -2367,6 +2430,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
+  ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
