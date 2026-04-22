@@ -78,7 +78,21 @@ function AdminPanPortalSettings() {
         psaCreateUrl: cfg.psaCreateUrl || PAN_DEFAULT_URLS.psaCreateUrl,
         psaPasswordUrl: cfg.psaPasswordUrl || PAN_DEFAULT_URLS.psaPasswordUrl,
         ssoRedirectUrl: cfg.ssoRedirectUrl || PAN_DEFAULT_URLS.ssoRedirectUrl,
-        utiCouponPurchaseUrl: cfg.utiCouponPurchaseUrl || PAN_DEF
+        utiCouponPurchaseUrl: cfg.utiCouponPurchaseUrl || PAN_DEFAULT_URLS.utiCouponPurchaseUrl,
+        utiPanStatusUrl: cfg.utiPanStatusUrl || PAN_DEFAULT_URLS.utiPanStatusUrl,
+      });
+      setFees({
+        nsdlIdCharge: cfg.nsdlIdCharge ?? PAN_DEFAULT_FEES.nsdlIdCharge,
+        panRetailerFee: cfg.panRetailerFee ?? PAN_DEFAULT_FEES.panRetailerFee,
+        panProviderCost: cfg.panProviderCost ?? PAN_DEFAULT_FEES.panProviderCost,
+        psaRegistrationFee: cfg.psaRegistrationFee ?? PAN_DEFAULT_FEES.psaRegistrationFee,
+        utiPanRetailerFee: cfg.utiPanRetailerFee ?? PAN_DEFAULT_FEES.utiPanRetailerFee,
+        utiPanProviderCost: cfg.utiPanProviderCost ?? PAN_DEFAULT_FEES.utiPanProviderCost,
+      });
+      setWebhookSecret(cfg.webhookSecret || "");
+      setAllowedIps(cfg.allowedIps || "");
+      setEnabled(cfg.enabled ?? true);
+      setUtiEnabled(cfg.utiEnabled ?? true);
     });
   }, []);
 
