@@ -219,6 +219,77 @@ function AdminPanSettings() {
     }
   };
 
+  const runTest = async () => {
+    if (!config?.apiKeyCipher) {
+      toast.error("Save the API key first");
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await testPanConnection({
+        data: {
+          url: urls.couponStatus,
+          apiKeyCipher: config.apiKeyCipher,
+          apiSecretCipher: config.apiSecretCipher,
+          vpsBridgeUrl: config.vpsBridgeUrl,
+          vpsBridgeSecretCipher: config.vpsBridgeSecretCipher,
+        },
+      });
+      if (!res.success) {
+        setTestResult({
+          ok: false,
+          title: res.stage === "decrypt" ? "Cipher decrypt failed" : "Network failure",
+          detail: res.error,
+        });
+        return;
+      }
+      const route = res.usingBridge ? "via VPS bridge" : "direct from Cloudflare Worker";
+      const tail = `HTTP ${res.httpStatus} · ${res.elapsedMs}ms · ${route}`;
+      switch (res.diagnosis) {
+        case "REACHABLE":
+          setTestResult({
+            ok: true,
+            title: "✅ Reachable — credentials accepted",
+            detail: `Provider responded normally. ${tail}\n\nNote: a "coupon not found" message here is expected and means the connection works.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        case "IP_BLOCKED":
+          setTestResult({
+            ok: false,
+            title: "🚫 IP whitelist required",
+            detail: `Provider blocked this IP. ${tail}\n\nDeploy the VPS bridge (native/pan-bridge-vps/) and ask provider to whitelist the VPS static IP.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        case "INVALID_KEY":
+          setTestResult({
+            ok: false,
+            title: "🔑 Invalid API key / secret",
+            detail: `Provider rejected the credentials. ${tail}\n\nDouble-check the API key + secret you saved above.`,
+            raw: res.bodyPreview,
+          });
+          break;
+        default:
+          setTestResult({
+            ok: false,
+            title: `HTTP ${res.httpStatus} from provider`,
+            detail: `Unexpected upstream status. ${tail}`,
+            raw: res.bodyPreview,
+          });
+      }
+    } catch (err: unknown) {
+      setTestResult({
+        ok: false,
+        title: "Test failed",
+        detail: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const toggleService = async (key: string, enabled: boolean) => {
     const current = new Set(config?.disabledServices ?? []);
     if (enabled) current.delete(key);
