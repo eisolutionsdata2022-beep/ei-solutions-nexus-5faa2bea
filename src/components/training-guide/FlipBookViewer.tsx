@@ -291,6 +291,7 @@ export function FlipBookViewer() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
