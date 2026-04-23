@@ -316,6 +316,8 @@ export interface PanUtiPurchasedCoupon {
 export type PanUtiPurchaseResult =
   | {
       success: true;
+      orderId: string;
+      providerStatus: "success" | "pending";
       coupons: PanUtiPurchasedCoupon[];
       /** Convenience — first coupon (back-compat for single-purchase callers). */
       couponId: string;
@@ -342,24 +344,41 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const qs = new URL(data.url);
-    qs.searchParams.set("api_key", creds.apiKey);
-    qs.searchParams.set("vle_id", data.vleId);
-    qs.searchParams.set("type", "1");
-    qs.searchParams.set("qty", String(data.qty));
+    const requestBody = {
+      api_key: creds.apiKey,
+      vle_id: data.vleId,
+      weburl: data.weburl,
+      type: 1,
+      qty: data.qty,
+    };
     try {
-      const res = await fetch(qs.toString(), {
-        method: "GET",
+      const res = await fetch(data.url, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Accept: "application/json, text/plain, text/html, */*",
         },
+        body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(60_000),
       });
       const text = await res.text();
       let json: Record<string, unknown> = {};
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
+      const results = typeof json.results === "object" && json.results
+        ? (json.results as Record<string, unknown>)
+        : {};
       const status = String(json.status ?? json.Status ?? "").toLowerCase();
       const message = String(json.message ?? json.Message ?? text.slice(0, 200) ?? "Unknown response");
+      const providerOrderId = String(
+        json.order_id ?? json.orderId ?? results.order_id ?? results.orderId ?? "",
+      ).trim();
+      const purchasedQty = Math.max(
+        1,
+        Math.min(
+          data.qty,
+          Number(json.qty ?? json.Qty ?? results.qty ?? results.Qty ?? data.qty) || data.qty,
+        ),
+      );
       const normalizedText = text
         .replace(/<[^>]+>/g, " ")
         .replace(/&nbsp;/gi, " ")
@@ -454,7 +473,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         addCoupon(collapsedCouponMatch[1], collapsedAckMatch?.[1] ?? htmlAckMatch?.[1]);
       }
 
-      pushOne(json.results ?? null);
+      pushOne(results);
       pushOne(json.coupons ?? null);
       pushOne(json.data ?? null);
       if (coupons.length === 0) {
@@ -477,20 +496,31 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         parseTextCoupons(text);
       }
 
-      const providerExplicitSuccess = status === "success" || status === "1";
+      const providerExplicitSuccess = status === "success" || status === "pending" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
+      if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
+        for (let i = coupons.length; i < purchasedQty; i++) {
+          addCoupon(`REF-${providerOrderId}-${String(i + 1).padStart(2, "0")}`, providerOrderId);
+        }
+      }
+      const normalizedCoupons = coupons.map((coupon) => ({
+        couponId: coupon.couponId,
+        ackNo: coupon.ackNo || providerOrderId || coupon.couponId,
+      }));
 
-      if (res.ok && coupons.length > 0 && (providerExplicitSuccess || providerHtmlSuccess)) {
+      if (res.ok && normalizedCoupons.length > 0 && (providerExplicitSuccess || providerHtmlSuccess)) {
         return {
           success: true,
-          coupons,
-          couponId: coupons[0].couponId,
-          ackNo: coupons[0].ackNo,
+          orderId: providerOrderId || data.orderId,
+          providerStatus: status === "pending" ? "pending" : "success",
+          coupons: normalizedCoupons,
+          couponId: normalizedCoupons[0].couponId,
+          ackNo: normalizedCoupons[0].ackNo,
           message: providerExplicitSuccess ? message : "Coupon purchased successfully",
           raw: text.slice(0, 4000),
         };
       }
-      if (res.ok && (providerExplicitSuccess || hasCouponDetailHtml) && coupons.length === 0) {
+      if (res.ok && (providerExplicitSuccess || hasCouponDetailHtml) && normalizedCoupons.length === 0) {
         console.warn("[PAN][UTI purchase] success response without coupon number", text.slice(0, 1000));
       }
       const safeError = /^<!doctype html/i.test(text.trim())
@@ -550,10 +580,10 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
       const results = (json.results as Record<string, unknown>) || (json.data as Record<string, unknown>) || {};
       const applicationStatus = String(results.status ?? json.applicationStatus ?? json.txn_status ?? message ?? "").trim();
       const panNumber = String(results.pan_no ?? results.panNo ?? json.pan ?? results.pan ?? "").trim();
-      if (res.ok && (status === "success" || status === "1")) {
+      if (res.ok && (status === "success" || status === "pending" || status === "1")) {
         return {
           success: true,
-          applicationStatus: applicationStatus || "Processing",
+          applicationStatus: applicationStatus || (status === "pending" ? "Pending" : "Processing"),
           panNumber: panNumber && panNumber.toLowerCase() !== "null" ? panNumber.toUpperCase() : undefined,
           message,
           raw: text.slice(0, 2000),
