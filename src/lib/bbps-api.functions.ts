@@ -36,6 +36,14 @@ import type {
   BbpsTransaction,
 } from "./bbps-types";
 import { DEFAULT_BBPS_CONFIG } from "./bbps-types";
+import {
+  isMockMode,
+  MOCK_CATEGORIES,
+  mockBillersFor,
+  mockParamsFor,
+  mockBillFor,
+  mockReceipt,
+} from "./bbps-mock-data";
 
 // ──────────────── Token cache ────────────────
 
