@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Banknote, Loader2, Search, Receipt, CheckCircle2, AlertCircle } from "lucide-react";
+import { Banknote, Loader2, Search, Receipt, CheckCircle2, AlertCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { ServicePageShell } from "@/components/ServicePageShell";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   bbpsGetCategories,
   bbpsGetBillers,
@@ -23,6 +22,7 @@ import type {
   BbpsCustomerParam,
   BbpsBillFetchResult,
 } from "@/lib/bbps-types";
+import { downloadBbpsReceipt } from "@/lib/bbps-receipt-pdf";
 
 export const Route = createFileRoute("/retailer/bill-payment")({
   ssr: false,
@@ -50,7 +50,13 @@ function BillPaymentPage() {
   const [bill, setBill] = useState<BbpsBillFetchResult | null>(null);
   const [mobileNo, setMobileNo] = useState("");
   const [paying, setPaying] = useState(false);
-  const [receipt, setReceipt] = useState<{ receipt: string | number; txId: string } | null>(null);
+  const [receipt, setReceipt] = useState<{
+    receipt: string | number;
+    txId: string;
+    amount: number;
+    fee: number;
+    totalDebited: number;
+  } | null>(null);
 
   // Load categories on mount
   useEffect(() => {
@@ -164,7 +170,13 @@ function BillPaymentPage() {
       toast.error(res.message ?? "Payment failed");
       return;
     }
-    setReceipt({ receipt: res.receipt ?? "", txId: res.transactionId ?? "" });
+    setReceipt({
+      receipt: res.receipt ?? "",
+      txId: res.transactionId ?? "",
+      amount: bill.amount,
+      fee: res.fee ?? 0,
+      totalDebited: res.totalDebited ?? bill.amount,
+    });
     setStep("success");
   }
 
@@ -351,6 +363,9 @@ function BillPaymentPage() {
               <div className="rounded-lg bg-card p-3 text-left text-sm">
                 <Row label="Receipt" value={String(receipt.receipt)} />
                 <Row label="Txn ID" value={receipt.txId.slice(0, 12)} />
+                <Row label="Amount" value={`₹${receipt.amount.toFixed(2)}`} />
+                <Row label="Service Fee" value={`₹${receipt.fee.toFixed(2)}`} />
+                <Row label="Total Debited" value={`₹${receipt.totalDebited.toFixed(2)}`} bold />
               </div>
               <div className="flex items-center justify-center gap-2 border-t pt-3">
                 <img
@@ -362,10 +377,38 @@ function BillPaymentPage() {
                   Powered by Bharat Connect • NPCI Bharat BillPay
                 </span>
               </div>
-              <Button onClick={reset} className="w-full">
-                <Receipt className="mr-2 h-4 w-4" />
-                New Payment
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!bill || !selectedBiller || !selectedCategory) return;
+                    downloadBbpsReceipt({
+                      transactionId: receipt.txId,
+                      receipt: receipt.receipt,
+                      retailerEmail: appUser?.email ?? "",
+                      categoryName: selectedCategory.name,
+                      billerName: selectedBiller.name,
+                      customerName: bill.custname,
+                      billNumber: bill.billNumber,
+                      billDate: bill.billDate,
+                      dueDate: bill.dueDate,
+                      mobileNo: mobileNo || undefined,
+                      params: paramValues,
+                      amount: receipt.amount,
+                      fee: receipt.fee,
+                      totalDebited: receipt.totalDebited,
+                      paidAt: new Date().toISOString(),
+                    });
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Receipt
+                </Button>
+                <Button onClick={reset}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  New Payment
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

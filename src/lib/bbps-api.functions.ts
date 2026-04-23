@@ -80,7 +80,7 @@ function jwtExpiryMs(jwt: string): number | null {
   return null;
 }
 
-async function getAccessToken(baseUrl: string): Promise<string> {
+async function getAccessToken(_baseUrl: string): Promise<string> {
   // Use cached token if still valid for ≥60s.
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
     return tokenCache.accessToken;
@@ -93,26 +93,22 @@ async function getAccessToken(baseUrl: string): Promise<string> {
     );
   }
 
-  const res = await fetch(`${baseUrl}/getAccessToken`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apiKey: buildApiKeyHeader(clientId),
-    },
-    body: JSON.stringify({
-      clientId: encrypt(clientId),
-      clientSecret: encrypt(clientSecret),
-    }),
-  });
-
-  const json = (await res.json().catch(() => ({}))) as {
+  // Route through the bridge too — provider IP-checks the auth endpoint.
+  const json = await callBbps<{
     success?: boolean;
     accessToken?: string;
     message?: string;
-  };
+  }>(
+    "/getAccessToken",
+    {
+      clientId: encrypt(clientId),
+      clientSecret: encrypt(clientSecret),
+    },
+    { skipAuth: true },
+  );
 
-  if (!res.ok || !json.success || !json.accessToken) {
-    throw new Error(json.message ?? `Auth failed (HTTP ${res.status})`);
+  if (!json.success || !json.accessToken) {
+    throw new Error(json.message ?? "Auth failed");
   }
 
   const expiresAt = jwtExpiryMs(json.accessToken) ?? Date.now() + 30 * 60_000;
@@ -120,21 +116,90 @@ async function getAccessToken(baseUrl: string): Promise<string> {
   return json.accessToken;
 }
 
-/** Generic authenticated POST helper. */
+/** HMAC-SHA256 hex (used to sign bridge requests). */
+async function hmacHex(secret: string, message: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Generic authenticated POST helper.
+ *
+ * Provider whitelists static IPs only. Cloudflare Workers has no fixed egress
+ * IP, so all calls are routed through the VPS bridge (native/bbps-bridge-vps/)
+ * when BBPS_BRIDGE_BASE_URL is configured. Set BBPS_DIRECT=1 to bypass the
+ * bridge for local testing only.
+ */
 async function callBbps<T>(
   endpoint: string,
   body: Record<string, unknown>,
+  opts: { skipAuth?: boolean } = {},
 ): Promise<T> {
   const cfg = await getProviderConfig();
-  const token = await getAccessToken(cfg.baseUrl);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    apiKey: buildApiKeyHeader(process.env.BBPS_CLIENT_ID ?? ""),
+  };
+  if (!opts.skipAuth) {
+    const token = await getAccessToken(cfg.baseUrl);
+    headers.Authorization = `Bearer ${token}`;
+  }
 
-  const res = await fetch(`${cfg.baseUrl}${endpoint}`, {
+  const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
+  const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET;
+  const direct = process.env.BBPS_DIRECT === "1";
+
+  let res: Response;
+  if (!direct && bridgeBase && bridgeSecret) {
+    // Route via VPS bridge — provider sees the bridge's static IP.
+    const apiPath = endpoint.replace(/^\/+/, "");
+    const wrapped = JSON.stringify({ __headers: headers, __payload: body });
+    const ts = Date.now();
+    const signature = await hmacHex(bridgeSecret, wrapped);
+    const url = `${bridgeBase.replace(/\/+$/, "")}/provider/${apiPath}`;
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Signature": signature,
+        "X-Timestamp": String(ts),
+      },
+      body: wrapped,
+      signal: AbortSignal.timeout(60_000),
+    });
+    // Bridge wraps the upstream body — unwrap before returning.
+    const wrappedJson = (await res.json().catch(() => ({}))) as {
+      success?: boolean;
+      status?: number;
+      body?: unknown;
+      error?: string;
+    };
+    if (!res.ok || wrappedJson.success === false) {
+      throw new Error(
+        wrappedJson.error ??
+          (typeof wrappedJson.body === "object"
+            ? (wrappedJson.body as { message?: string })?.message
+            : undefined) ??
+          `Bridge HTTP ${wrappedJson.status ?? res.status}`,
+      );
+    }
+    return (wrappedJson.body ?? {}) as T;
+  }
+
+  // Direct call — only works if the worker's IP is whitelisted (it isn't on
+  // Cloudflare). Useful for local dev or once-off testing from a fixed host.
+  res = await fetch(`${cfg.baseUrl}${endpoint}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      apiKey: buildApiKeyHeader(process.env.BBPS_CLIENT_ID ?? ""),
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -348,6 +413,8 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     transactionId?: string;
     receipt?: string | number;
     newBalance?: number;
+    fee?: number;
+    totalDebited?: number;
     message?: string;
   }> => {
     if (!context.authUser) return { success: false, message: "Not signed in" };
@@ -449,6 +516,8 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
         transactionId: txDoc.id,
         receipt: json.receipt,
         newBalance,
+        fee,
+        totalDebited: totalDebit,
         message: json.message,
       };
     } catch (err) {
