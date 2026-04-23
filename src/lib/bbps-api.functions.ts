@@ -413,6 +413,8 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     transactionId?: string;
     receipt?: string | number;
     newBalance?: number;
+    fee?: number;
+    totalDebited?: number;
     message?: string;
   }> => {
     if (!context.authUser) return { success: false, message: "Not signed in" };
