@@ -95,17 +95,30 @@ function AdminBbpsSettings() {
         <CardHeader>
           <CardTitle>Required Secrets</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p className="text-muted-foreground">
-            Add these in <strong>Lovable Cloud → Settings → Secrets</strong> once UAT keys arrive:
-          </p>
-          <ul className="list-inside list-disc space-y-1 font-mono text-xs">
-            <li>BBPS_CLIENT_ID</li>
-            <li>BBPS_CLIENT_SECRET</li>
-            <li>BBPS_AES_KEY</li>
-            <li>BBPS_AES_IV (optional)</li>
-            <li>BBPS_BASE_URL (optional override)</li>
-          </ul>
+        <CardContent className="space-y-3 text-sm">
+          <div className="rounded-lg border bg-muted/50 p-3">
+            <div className="font-medium">Bridge (route through static IP)</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Provider requires IP whitelisting; the app routes calls via a small VPS proxy.
+              Deploy <code>native/bbps-bridge-vps/</code> and add these secrets:
+            </div>
+            <ul className="mt-2 list-inside list-disc space-y-0.5 font-mono text-xs">
+              <li>BBPS_BRIDGE_BASE_URL — e.g. https://bbps-bridge.eisoluions.xyz</li>
+              <li>BBPS_BRIDGE_HMAC_SECRET — 32-byte hex (matches VPS .env)</li>
+            </ul>
+          </div>
+          <div className="rounded-lg border bg-muted/50 p-3">
+            <div className="font-medium">Provider credentials</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Add these once UAT credentials arrive after IP whitelisting is approved:
+            </div>
+            <ul className="mt-2 list-inside list-disc space-y-0.5 font-mono text-xs">
+              <li>BBPS_CLIENT_ID</li>
+              <li>BBPS_CLIENT_SECRET</li>
+              <li>BBPS_AES_KEY</li>
+              <li>BBPS_AES_IV (optional)</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>
