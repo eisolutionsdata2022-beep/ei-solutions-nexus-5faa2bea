@@ -26,7 +26,9 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
-import { buildApiKeyHeader, encrypt } from "./bbps-encryption.server";
+// Encryption helpers retained for future use; provider currently issues
+// pre-encrypted credentials so we do not re-encrypt at request time.
+// import { buildApiKeyHeader, encrypt } from "./bbps-encryption.server";
 import type {
   BbpsCategory,
   BbpsBiller,
@@ -156,9 +158,11 @@ async function callBbps<T>(
   opts: { skipAuth?: boolean } = {},
 ): Promise<T> {
   const cfg = await getProviderConfig();
+  // Provider supplies the apiKey as a long pre-encrypted token — send it
+  // verbatim in the `apiKey` header (no per-request re-encryption needed).
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    apiKey: buildApiKeyHeader(process.env.BBPS_CLIENT_ID ?? ""),
+    apiKey: process.env.BBPS_API_KEY ?? "",
   };
   if (!opts.skipAuth) {
     const token = await getAccessToken(cfg.baseUrl);
