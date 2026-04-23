@@ -104,6 +104,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       const newBalance = await atomicDebit(user.uid, totalDebit, {
         source: "pan-portal",
         description: `UTI PAN coupons × ${qty} — ${batchOrderId}`,
+        orderId: batchOrderId,
       });
       oldBalance = newBalance + totalDebit;
     } catch (err) {
@@ -134,6 +135,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         await atomicCredit(user.uid, totalDebit, {
           source: "pan-portal",
           description: `Refund — UTI coupons × ${qty} ${batchOrderId}`,
+          orderId: batchOrderId,
         });
         await createUtiCoupon({
           couponId: batchOrderId,
@@ -164,6 +166,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           await atomicCredit(user.uid, refundAmt, {
             source: "pan-portal",
             description: `Partial refund — UTI batch ${batchOrderId} (${qty - received} short)`,
+            orderId: batchOrderId,
           });
         } catch { /* ignore */ }
       }
@@ -203,6 +206,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         await atomicCredit(user.uid, totalDebit, {
           source: "pan-portal",
           description: `Refund — UTI batch error ${batchOrderId}`,
+          orderId: batchOrderId,
         });
       } catch { /* ignore */ }
       toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
