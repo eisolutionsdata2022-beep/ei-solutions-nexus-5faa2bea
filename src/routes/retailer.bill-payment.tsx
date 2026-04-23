@@ -50,7 +50,13 @@ function BillPaymentPage() {
   const [bill, setBill] = useState<BbpsBillFetchResult | null>(null);
   const [mobileNo, setMobileNo] = useState("");
   const [paying, setPaying] = useState(false);
-  const [receipt, setReceipt] = useState<{ receipt: string | number; txId: string } | null>(null);
+  const [receipt, setReceipt] = useState<{
+    receipt: string | number;
+    txId: string;
+    amount: number;
+    fee: number;
+    totalDebited: number;
+  } | null>(null);
 
   // Load categories on mount
   useEffect(() => {
