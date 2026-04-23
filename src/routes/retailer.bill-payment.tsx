@@ -218,14 +218,14 @@ function BillPaymentPage() {
         </div>
 
         {demoMode && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-            <div className="font-semibold">⚠️ Bharat Connect Demo Mode</div>
-            <div className="mt-1">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground">
+            <div className="font-semibold text-destructive">⚠️ Bharat Connect Demo Mode</div>
+            <div className="mt-1 text-muted-foreground">
               Provider credentials not yet configured. All categories, billers, bills and
-              receipts shown are <strong>simulated test data</strong>. <strong>No wallet
-              will be debited</strong> and no real bills will be paid. Once the provider
-              whitelists our IP and shares credentials, this banner will disappear and
-              live BBPS will activate automatically.
+              receipts shown are <strong className="text-foreground">simulated test data</strong>.
+              <strong className="text-foreground"> No wallet will be debited</strong> and no
+              real bills will be paid. Once the provider whitelists our IP and shares
+              credentials, this banner will disappear and live BBPS will activate automatically.
             </div>
           </div>
         )}
