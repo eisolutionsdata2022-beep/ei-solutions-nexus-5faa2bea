@@ -31,11 +31,25 @@ const ORDERS_COL = collection(db, "pan_orders");
 const ACTIVATIONS_COL = collection(db, "pan_activations");
 const UTI_COUPONS_COL = collection(db, "pan_uti_coupons");
 
+function normalizePanConfig(data: PanMasterConfig): PanMasterConfig {
+  return {
+    ...data,
+    utiCouponPurchaseUrl:
+      !data.utiCouponPurchaseUrl || /\/Api\/PSACoupon$/i.test(data.utiCouponPurchaseUrl)
+        ? PAN_DEFAULT_URLS.utiCouponPurchaseUrl
+        : data.utiCouponPurchaseUrl,
+    utiPanStatusUrl:
+      !data.utiPanStatusUrl || /\/Api\/PANStatus$/i.test(data.utiPanStatusUrl)
+        ? PAN_DEFAULT_URLS.utiPanStatusUrl
+        : data.utiPanStatusUrl,
+  };
+}
+
 /* ------------------------------ master config ----------------------------- */
 
 export async function getPanConfig(): Promise<PanMasterConfig> {
   const snap = await getDoc(CONFIG_DOC);
-  const data = snap.exists() ? (snap.data() as PanMasterConfig) : {};
+  const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
   return {
     ...PAN_DEFAULT_URLS,
     ...PAN_DEFAULT_FEES,
@@ -46,7 +60,7 @@ export async function getPanConfig(): Promise<PanMasterConfig> {
 
 export function subscribePanConfig(cb: (cfg: PanMasterConfig) => void) {
   return onSnapshot(CONFIG_DOC, (snap) => {
-    const data = snap.exists() ? (snap.data() as PanMasterConfig) : {};
+    const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
     cb({
       ...PAN_DEFAULT_URLS,
       ...PAN_DEFAULT_FEES,
