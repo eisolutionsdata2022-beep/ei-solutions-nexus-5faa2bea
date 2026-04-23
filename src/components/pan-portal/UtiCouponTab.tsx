@@ -98,6 +98,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     // requests in a loop would all be rejected as "minimum 2 coupons".
     const batchOrderId = newCouponOrderId(user.uid);
     let oldBalance = 0;
+    let shouldAutoRefund = true;
 
     // 1. Atomic debit for the full batch up-front.
     try {
@@ -156,6 +157,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         toast.error(`❌ Purchase failed — ${res.error}. ₹${totalDebit} refunded.`);
         return;
       }
+      shouldAutoRefund = false;
 
       // 3. Persist each returned coupon as its own row.
       const list = res.coupons.length > 0 ? res.coupons : [{ couponId: res.couponId, ackNo: res.ackNo }];
@@ -204,15 +206,19 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         toast.warning(`⚠️ Got ${received}/${qty} coupons — ₹${(qty - received) * fee} refunded.`);
       }
     } catch (err) {
-      // Network/exception → full refund.
-      try {
-        await atomicCredit(user.uid, totalDebit, {
-          source: "pan-portal",
-          description: `Refund — UTI batch error ${batchOrderId}`,
-          orderId: batchOrderId,
-        });
-      } catch { /* ignore */ }
-      toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
+      if (shouldAutoRefund) {
+        try {
+          await atomicCredit(user.uid, totalDebit, {
+            source: "pan-portal",
+            description: `Refund — UTI batch error ${batchOrderId}`,
+            orderId: batchOrderId,
+          });
+        } catch { /* ignore */ }
+        toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
+      } else {
+        console.error("[PAN][UTI purchase] local persistence error after accepted provider response", err);
+        toast.error("Provider accepted the request. Auto-refund skipped — check coupon history once it refreshes.");
+      }
     } finally {
       setPurchasing(false);
       setProgress(null);
