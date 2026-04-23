@@ -85,20 +85,35 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     );
   }
 
-  async function purchaseSingle(): Promise<{ ok: boolean; couponId?: string; error?: string }> {
-    if (!psa || !config.cipher) return { ok: false, error: "Missing PSA/config" };
-    const orderId = newCouponOrderId(user.uid);
+  async function handlePurchase(e: FormEvent) {
+    e.preventDefault();
+    if (!psa || !config.cipher) return;
+    const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
+    const totalDebit = fee * qty;
+    setPurchasing(true);
+    setProgress({ done: 0, total: qty });
+
+    // Single batch request — upstream PSACoupon endpoint requires qty ≥ 2 in
+    // ONE call and returns multiple coupon numbers. Sending N single-coupon
+    // requests in a loop would all be rejected as "minimum 2 coupons".
+    const batchOrderId = newCouponOrderId(user.uid);
     let oldBalance = 0;
-    let newBalance = 0;
+
+    // 1. Atomic debit for the full batch up-front.
     try {
-      newBalance = await atomicDebit(user.uid, fee, {
+      const newBalance = await atomicDebit(user.uid, totalDebit, {
         source: "pan-portal",
-        description: `UTI PAN coupon — ${orderId}`,
+        description: `UTI PAN coupons × ${qty} — ${batchOrderId}`,
       });
-      oldBalance = newBalance + fee;
+      oldBalance = newBalance + totalDebit;
     } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : "Wallet debit failed" };
+      setPurchasing(false);
+      setProgress(null);
+      toast.error(err instanceof Error ? err.message : "Wallet debit failed");
+      return;
     }
+
+    // 2. Single upstream call.
     try {
       const cfg = await getPanConfig();
       const res = await panUtiCouponPurchase({
@@ -106,24 +121,27 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           url: cfg.utiCouponPurchaseUrl!,
           cipher: cfg.cipher!,
           vleId: psa.vleId,
-          orderId,
+          orderId: batchOrderId,
           shopName: psa.shopName || user.name || user.email,
           weburl: typeof window !== "undefined" ? window.location.hostname : "ei-solutions",
+          qty,
         },
       });
       const nowIso = new Date().toISOString();
+
       if (!res.success) {
-        await atomicCredit(user.uid, fee, {
+        // Refund full batch.
+        await atomicCredit(user.uid, totalDebit, {
           source: "pan-portal",
-          description: `Refund — UTI coupon ${orderId}`,
+          description: `Refund — UTI coupons × ${qty} ${batchOrderId}`,
         });
         await createUtiCoupon({
-          couponId: orderId,
+          couponId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
           vleId: psa.vleId,
-          amount: fee,
-          providerCost: cfg.utiPanProviderCost,
+          amount: totalDebit,
+          providerCost: cfg.utiPanProviderCost ? cfg.utiPanProviderCost * qty : undefined,
           oldBalance,
           newBalance: oldBalance,
           status: "refunded",
@@ -131,62 +149,66 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           createdAt: nowIso,
           updatedAt: nowIso,
         });
-        return { ok: false, error: res.error };
+        toast.error(`❌ Purchase failed — ${res.error}. ₹${totalDebit} refunded.`);
+        return;
       }
-      await createUtiCoupon({
-        couponId: res.couponId,
-        retailerId: user.uid,
-        retailerUsername: user.name || user.email,
-        vleId: psa.vleId,
-        amount: fee,
-        providerCost: cfg.utiPanProviderCost,
-        oldBalance,
-        newBalance,
-        status: "purchased",
-        ackNo: res.ackNo,
-        remark: res.message,
-        rawResponse: res.raw,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      });
-      return { ok: true, couponId: res.couponId };
+
+      // 3. Persist each returned coupon as its own row.
+      const list = res.coupons.length > 0 ? res.coupons : [{ couponId: res.couponId, ackNo: res.ackNo }];
+      const received = list.length;
+
+      // If provider returned fewer coupons than paid for, refund the diff.
+      if (received < qty) {
+        const refundAmt = (qty - received) * fee;
+        try {
+          await atomicCredit(user.uid, refundAmt, {
+            source: "pan-portal",
+            description: `Partial refund — UTI batch ${batchOrderId} (${qty - received} short)`,
+          });
+        } catch { /* ignore */ }
+      }
+
+      let runningBalance = oldBalance;
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+        const before = runningBalance;
+        runningBalance = runningBalance - fee;
+        await createUtiCoupon({
+          couponId: c.couponId,
+          retailerId: user.uid,
+          retailerUsername: user.name || user.email,
+          vleId: psa.vleId,
+          amount: fee,
+          providerCost: cfg.utiPanProviderCost,
+          oldBalance: before,
+          newBalance: runningBalance,
+          status: "purchased",
+          ackNo: c.ackNo,
+          remark: i === 0 ? res.message : `Batch ${batchOrderId} (${i + 1}/${received})`,
+          rawResponse: i === 0 ? res.raw : undefined,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        });
+        setProgress({ done: i + 1, total: qty });
+      }
+
+      if (received === qty) {
+        toast.success(`✅ ${received} coupon${received > 1 ? "s" : ""} purchased successfully!`);
+      } else {
+        toast.warning(`⚠️ Got ${received}/${qty} coupons — ₹${(qty - received) * fee} refunded.`);
+      }
     } catch (err) {
+      // Network/exception → full refund.
       try {
-        await atomicCredit(user.uid, fee, {
+        await atomicCredit(user.uid, totalDebit, {
           source: "pan-portal",
-          description: `Refund — UTI coupon ${orderId}`,
+          description: `Refund — UTI batch error ${batchOrderId}`,
         });
       } catch { /* ignore */ }
-      return { ok: false, error: err instanceof Error ? err.message : "Purchase failed" };
-    }
-  }
-
-  async function handlePurchase(e: FormEvent) {
-    e.preventDefault();
-    if (!psa || !config.cipher) return;
-    const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
-    setPurchasing(true);
-    setProgress({ done: 0, total: qty });
-    let success = 0;
-    let failed = 0;
-    const failures: string[] = [];
-    for (let i = 0; i < qty; i++) {
-      const res = await purchaseSingle();
-      if (res.ok) success++;
-      else {
-        failed++;
-        if (res.error) failures.push(res.error);
-      }
-      setProgress({ done: i + 1, total: qty });
-    }
-    setPurchasing(false);
-    setProgress(null);
-    if (success > 0 && failed === 0) {
-      toast.success(`✅ ${success} coupon${success > 1 ? "s" : ""} purchased successfully!`);
-    } else if (success > 0 && failed > 0) {
-      toast.warning(`⚠️ ${success} succeeded, ${failed} failed (refunded). ${failures[0] || ""}`);
-    } else {
-      toast.error(`❌ All ${failed} purchases failed. ${failures[0] || "Wallet refunded."}`);
+      toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
+    } finally {
+      setPurchasing(false);
+      setProgress(null);
     }
   }
 

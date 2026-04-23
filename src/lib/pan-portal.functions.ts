@@ -304,11 +304,20 @@ const utiPurchaseInput = z.object({
   orderId: z.string().min(4).max(80),
   shopName: z.string().min(1).max(200),
   weburl: z.string().min(3).max(200),
+  /** Bulk quantity — upstream PSACoupon endpoint requires qty ≥ 2. */
+  qty: z.number().int().min(1).max(100).default(2),
 });
+
+export interface PanUtiPurchasedCoupon {
+  couponId: string;
+  ackNo?: string;
+}
 
 export type PanUtiPurchaseResult =
   | {
       success: true;
+      coupons: PanUtiPurchasedCoupon[];
+      /** Convenience — first coupon (back-compat for single-purchase callers). */
       couponId: string;
       ackNo?: string;
       message: string;
@@ -317,9 +326,10 @@ export type PanUtiPurchaseResult =
   | { success: false; error: string };
 
 /**
- * Calls upstream UTI coupon purchase endpoint.
- * Provider returns a coupon/ack number that the retailer uses to fill the
- * customer's PAN application on the UTI portal.
+ * Calls upstream UTI PSACoupon endpoint.
+ * The legacy provider (mallikarecharge) requires `qty ≥ 2` per request and
+ * returns multiple coupon numbers in one response — sending one-coupon
+ * requests in a loop fails with "minimum 2 coupons" upstream.
  */
 export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
@@ -336,27 +346,71 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       api_key: creds.apiKey,
       vle_id: data.vleId,
       orderId: data.orderId,
+      order_id: data.orderId,
       weburl: data.weburl,
       shop_name: data.shopName,
+      qty: data.qty,
+      quantity: data.qty,
+      no_of_coupon: data.qty,
     };
     try {
       const res = await fetch(data.url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(60_000),
       });
       const text = await res.text();
       let json: Record<string, unknown> = {};
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
       const status = String(json.status ?? json.Status ?? "").toLowerCase();
       const message = String(json.message ?? json.Message ?? text.slice(0, 200) ?? "Unknown response");
-      const couponId = String(
-        json.coupon_no ?? json.couponNo ?? json.coupon_id ?? json.couponId ?? json.ack_no ?? json.ackNo ?? "",
-      );
-      const ackNo = String(json.ack_no ?? json.ackNo ?? couponId ?? "");
-      if (res.ok && (status === "success" || status === "1") && couponId) {
-        return { success: true, couponId, ackNo, message, raw: text.slice(0, 2000) };
+
+      // Extract coupons. Provider may return:
+      //   { results: [{coupon_no, ack_no}, ...] }
+      //   { coupons: [...] }
+      //   { coupon_no: "X,Y" } (comma-separated)
+      //   { coupon_no: "X" } (single)
+      const coupons: PanUtiPurchasedCoupon[] = [];
+      const pushOne = (c: unknown) => {
+        if (!c) return;
+        if (typeof c === "string" || typeof c === "number") {
+          const s = String(c).trim();
+          if (s) coupons.push({ couponId: s, ackNo: s });
+          return;
+        }
+        if (typeof c === "object") {
+          const obj = c as Record<string, unknown>;
+          const couponId = String(
+            obj.coupon_no ?? obj.couponNo ?? obj.coupon_id ?? obj.couponId ?? obj.ack_no ?? obj.ackNo ?? "",
+          ).trim();
+          const ackNo = String(obj.ack_no ?? obj.ackNo ?? couponId ?? "").trim();
+          if (couponId) coupons.push({ couponId, ackNo: ackNo || undefined });
+        }
+      };
+      const arr = json.results ?? json.coupons ?? json.data ?? null;
+      if (Array.isArray(arr)) arr.forEach(pushOne);
+      if (coupons.length === 0) {
+        const flat = String(
+          json.coupon_no ?? json.couponNo ?? json.coupon_id ?? json.couponId ?? json.ack_no ?? json.ackNo ?? "",
+        ).trim();
+        if (flat) {
+          // Comma / pipe / newline separated batch.
+          flat.split(/[,|\n;]+/).map((s) => s.trim()).filter(Boolean).forEach((s) => {
+            coupons.push({ couponId: s, ackNo: s });
+          });
+        }
+      }
+
+      if (res.ok && (status === "success" || status === "1") && coupons.length > 0) {
+        return {
+          success: true,
+          coupons,
+          couponId: coupons[0].couponId,
+          ackNo: coupons[0].ackNo,
+          message,
+          raw: text.slice(0, 4000),
+        };
       }
       return { success: false, error: message || `Upstream returned ${res.status}` };
     } catch (err) {
