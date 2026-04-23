@@ -159,17 +159,12 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       }
       shouldAutoRefund = false;
 
-      const isManualReview = res.providerStatus === "manual_review";
-
       // 3. Persist each returned coupon as its own row.
       const list = res.coupons.length > 0 ? res.coupons : [{ couponId: res.couponId, ackNo: res.ackNo }];
       const received = list.length;
 
-      // If provider returned fewer coupons than paid for, refund the diff —
-      // but ONLY for clearly successful purchases. For manual-review responses
-      // we hold the full amount because the provider may have debited their
-      // PSA wallet even without echoing back coupon numbers.
-      if (received < qty && !isManualReview) {
+      // If provider returned fewer coupons than paid for, refund the diff.
+      if (received < qty) {
         const refundAmt = (qty - received) * fee;
         try {
           await atomicCredit(user.uid, refundAmt, {
@@ -197,9 +192,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           newBalance: runningBalance,
           status: "purchased",
           ackNo: c.ackNo,
-          remark: isManualReview
-            ? `⚠️ Manual review — provider response unclear. Verify in PSA portal before retrying. (Batch ${batchOrderId})`
-            : i === 0 ? res.message : `Batch ${batchOrderId} (${i + 1}/${received})`,
+          remark: i === 0 ? res.message : `Batch ${batchOrderId} (${i + 1}/${received})`,
           rawResponse: i === 0 ? res.raw : undefined,
           createdAt: nowIso,
           updatedAt: nowIso,
@@ -207,12 +200,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         setProgress({ done: i + 1, total: qty });
       }
 
-      if (isManualReview) {
-        toast.warning(
-          `⚠️ Provider response unclear. ₹${totalDebit} held — please verify in PSA portal. NOT auto-refunded.`,
-          { duration: 9000 },
-        );
-      } else if (received === qty) {
+      if (received === qty) {
         toast.success(`✅ ${received} coupon${received > 1 ? "s" : ""} purchased successfully!`);
       } else {
         toast.warning(`⚠️ Got ${received}/${qty} coupons — ₹${(qty - received) * fee} refunded.`);

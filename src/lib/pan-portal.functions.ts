@@ -317,7 +317,7 @@ export type PanUtiPurchaseResult =
   | {
       success: true;
       orderId: string;
-      providerStatus: "success" | "pending" | "manual_review";
+      providerStatus: "success" | "pending";
       coupons: PanUtiPurchasedCoupon[];
       /** Convenience — first coupon (back-compat for single-purchase callers). */
       couponId: string;
@@ -344,39 +344,24 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const requestParams = new URLSearchParams({
+    const requestBody = {
       api_key: creds.apiKey,
       vle_id: data.vleId,
       weburl: data.weburl,
-      order_id: data.orderId,
-      type: "1",
-      qty: String(data.qty),
-    });
+      type: 1,
+      qty: data.qty,
+    };
     try {
-      const sendPurchaseRequest = async (method: "POST" | "GET") => {
-        const targetUrl = method === "GET"
-          ? `${data.url}${data.url.includes("?") ? "&" : "?"}${requestParams.toString()}`
-          : data.url;
-        const response = await fetch(targetUrl, {
-          method,
-          headers: {
-            ...(method === "POST"
-              ? { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }
-              : {}),
-            Accept: "application/json, text/plain, text/html, */*",
-          },
-          body: method === "POST" ? requestParams.toString() : undefined,
-          signal: AbortSignal.timeout(60_000),
-        });
-        const responseText = await response.text();
-        return { response, responseText };
-      };
-
-      let { response: res, responseText: text } = await sendPurchaseRequest("POST");
-      if (/missing or invalid parameter/i.test(text)) {
-        ({ response: res, responseText: text } = await sendPurchaseRequest("GET"));
-      }
-
+      const res = await fetch(data.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/plain, text/html, */*",
+        },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(60_000),
+      });
+      const text = await res.text();
       let json: Record<string, unknown> = {};
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
       const results = typeof json.results === "object" && json.results
@@ -391,17 +376,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         1,
         Math.min(
           data.qty,
-          Number(
-            json.qty ??
-            json.Qty ??
-            json.quantity ??
-            json.Quantity ??
-            results.qty ??
-            results.Qty ??
-            results.quantity ??
-            results.Quantity ??
-            data.qty,
-          ) || data.qty,
+          Number(json.qty ?? json.Qty ?? results.qty ?? results.Qty ?? data.qty) || data.qty,
         ),
       );
       const normalizedText = text
@@ -523,50 +498,11 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         parseTextCoupons(text);
       }
 
-      const providerToken = String(
-        json.token ??
-        json.Token ??
-        results.token ??
-        results.Token ??
-        results.txn_no ??
-        results.txnNo ??
-        results.utr_no ??
-        results.utrNo ??
-        "",
-      ).trim();
-      const providerPsaId = String(
-        json.psa_id ?? json.psaId ?? json.vle_id ?? json.vleId ?? results.psa_id ?? results.psaId ?? results.vle_id ?? results.vleId ?? "",
-      ).trim();
-      // STRICT failure list — ONLY these mean provider definitely did NOT debit.
-      // "missing or invalid parameter" is intentionally EXCLUDED here because
-      // the upstream provider has been observed returning that exact string
-      // AFTER successfully debiting the PSA wallet and issuing coupons (it is
-      // their generic fallback when the response template can't render). If we
-      // treat it as a hard failure we auto-refund the retailer while the
-      // provider keeps the money — the exact bug being fixed.
-      const providerExplicitFailure =
-        status === "failed" ||
-        status === "0" ||
-        /invalid api key|insufficient balance|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
-      // Soft / ambiguous failures — provider may or may not have debited.
-      // Hold the order for manual reconciliation rather than auto-refund.
-      const providerAmbiguous =
-        !providerExplicitFailure &&
-        /missing or invalid parameter|internal processing error|internal server error/i.test(normalizedMessage);
-      const providerExplicitSuccess = status === "success" || status === "pending" || status === "approved" || status === "1";
+      const providerExplicitSuccess = status === "success" || status === "pending" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
       const providerMessageSuccess = /coupon request submit successfully|coupon submitted successfully|coupon purchase request submitted|request submit successfully|request submitted successfully/i.test(normalizedMessage);
-      const providerLegacyPending =
-        res.ok &&
-        !providerExplicitFailure &&
-        !providerExplicitSuccess &&
-        !providerMessageSuccess &&
-        !providerHtmlSuccess &&
-        (!!providerToken || !!providerPsaId || /"quantity"\s*:\s*"?\d+/i.test(text));
-      const providerAccepted =
-        !providerExplicitFailure &&
-        (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending || providerAmbiguous);
-      const providerReference = providerOrderId || providerToken || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
+      const providerAccepted = providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess;
+      const providerReference = providerOrderId || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
       if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
         for (let i = coupons.length; i < purchasedQty; i++) {
           addCoupon(`REF-${providerOrderId}-${String(i + 1).padStart(2, "0")}`, providerOrderId);
@@ -583,28 +519,17 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       }));
 
       const successMessage =
-        providerAmbiguous
-          ? "Provider response unclear — order held for manual review (do NOT auto-refund). Please verify in PSA portal."
-          : providerMessageSuccess
-            ? "Coupon Request Submit Successfully"
-          : providerLegacyPending
-            ? "Coupon Request Submit Successfully"
+        providerMessageSuccess
+          ? "Coupon Request Submit Successfully"
           : providerHtmlSuccess && /^missing or invalid parameter$/i.test(message)
             ? "Coupon issued successfully"
             : message;
-
-      const resolvedProviderStatus: "success" | "pending" | "manual_review" =
-        providerAmbiguous
-          ? "manual_review"
-          : status === "pending" || providerMessageSuccess || providerLegacyPending
-            ? "pending"
-            : "success";
 
       if (res.ok && normalizedCoupons.length > 0 && providerAccepted) {
         return {
           success: true,
           orderId: providerReference,
-          providerStatus: resolvedProviderStatus,
+          providerStatus: status === "pending" || providerMessageSuccess ? "pending" : "success",
           coupons: normalizedCoupons,
           couponId: normalizedCoupons[0].couponId,
           ackNo: normalizedCoupons[0].ackNo,
