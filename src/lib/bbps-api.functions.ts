@@ -516,6 +516,8 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
         transactionId: txDoc.id,
         receipt: json.receipt,
         newBalance,
+        fee,
+        totalDebited: totalDebit,
         message: json.message,
       };
     } catch (err) {

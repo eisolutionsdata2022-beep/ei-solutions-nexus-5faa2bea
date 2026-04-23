@@ -170,7 +170,13 @@ function BillPaymentPage() {
       toast.error(res.message ?? "Payment failed");
       return;
     }
-    setReceipt({ receipt: res.receipt ?? "", txId: res.transactionId ?? "" });
+    setReceipt({
+      receipt: res.receipt ?? "",
+      txId: res.transactionId ?? "",
+      amount: bill.amount,
+      fee: res.fee ?? 0,
+      totalDebited: res.totalDebited ?? bill.amount,
+    });
     setStep("success");
   }
 
