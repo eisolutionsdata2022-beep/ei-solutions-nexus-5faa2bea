@@ -98,11 +98,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     // requests in a loop would all be rejected as "minimum 2 coupons".
     const batchOrderId = newCouponOrderId(user.uid);
     let oldBalance = 0;
-    let newBalance = 0;
 
     // 1. Atomic debit for the full batch up-front.
     try {
-      newBalance = await atomicDebit(user.uid, totalDebit, {
+      const newBalance = await atomicDebit(user.uid, totalDebit, {
         source: "pan-portal",
         description: `UTI PAN coupons × ${qty} — ${batchOrderId}`,
       });
