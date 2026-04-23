@@ -102,7 +102,9 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
     );
   }
 
-  // Route through the bridge too — provider IP-checks the auth endpoint.
+  // Provider issues credentials in pre-encrypted form (version-prefixed
+   // base64 strings like "_v9...", "_PzJN..."). Send them as-is — do NOT
+  // re-encrypt locally.
   const json = await callBbps<{
     success?: boolean;
     accessToken?: string;
@@ -110,8 +112,8 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
   }>(
     "/getAccessToken",
     {
-      clientId: encrypt(clientId),
-      clientSecret: encrypt(clientSecret),
+      clientId,
+      clientSecret,
     },
     { skipAuth: true },
   );
