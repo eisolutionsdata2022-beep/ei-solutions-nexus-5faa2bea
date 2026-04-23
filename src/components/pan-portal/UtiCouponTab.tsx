@@ -49,14 +49,15 @@ interface Props {
 export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const [purchasing, setPurchasing] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(2);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackInput, setTrackInput] = useState("");
 
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
-  const MAX_QTY = 2;
+  const MIN_QTY = 2;
+  const MAX_QTY = 100;
   const totalAmount = fee * quantity;
 
   if (!utiEnabled) {
@@ -163,7 +164,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   async function handlePurchase(e: FormEvent) {
     e.preventDefault();
     if (!psa || !config.cipher) return;
-    const qty = Math.max(1, Math.min(MAX_QTY, quantity));
+    const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
     setPurchasing(true);
     setProgress({ done: 0, total: qty });
     let success = 0;
@@ -263,28 +264,28 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <p className="text-sm font-semibold">Quantity</p>
-                  <p className="text-xs text-muted-foreground">How many coupons to buy at once?</p>
+                  <p className="text-xs text-muted-foreground">Minimum 2 coupons per purchase</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    disabled={purchasing || quantity <= 1}
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={purchasing || quantity <= MIN_QTY}
+                    onClick={() => setQuantity((q) => Math.max(MIN_QTY, q - 1))}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
-                    min={1}
+                    min={MIN_QTY}
                     max={MAX_QTY}
                     value={quantity}
                     disabled={purchasing}
                     onChange={(e) => {
                       const v = parseInt(e.target.value, 10);
-                      if (!Number.isNaN(v)) setQuantity(Math.max(1, Math.min(MAX_QTY, v)));
-                      else setQuantity(1);
+                      if (!Number.isNaN(v)) setQuantity(Math.max(MIN_QTY, Math.min(MAX_QTY, v)));
+                      else setQuantity(MIN_QTY);
                     }}
                     className="w-20 text-center text-lg font-bold"
                   />
@@ -305,7 +306,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 <span className="text-xs text-muted-foreground self-center mr-1">Quick:</span>
-                {[1, 2].map((n) => (
+                {[2, 5, 10, 25].map((n) => (
                   <Button
                     key={n}
                     type="button"
