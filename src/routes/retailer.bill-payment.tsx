@@ -249,7 +249,7 @@ function BillPaymentPage() {
               ) : categories.length === 0 ? (
                 <EmptyState
                   message={loadError ? `Provider error: ${loadError}` : "No categories returned by provider."}
-                  hint={loadError ? "Likely cause: bridge IP (146.190.74.49) not yet whitelisted by provider, or BBPS_BRIDGE_HMAC_SECRET mismatch between Lovable secret and bridge .env. Open the browser console for the full response payload." : "Provider responded but with empty data."}
+                  hint={hintForError(loadError)}
                 />
               ) : (
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
