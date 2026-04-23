@@ -230,7 +230,10 @@ async function callBbps<T>(
 
 export const bbpsGetCategories = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; message?: string }> => {
+  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      return { success: true, categories: MOCK_CATEGORIES, mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
@@ -252,7 +255,10 @@ const billersInputSchema = z.object({
 export const bbpsGetBillers = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      return { success: true, billers: mockBillersFor(data.category), mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
@@ -274,7 +280,15 @@ const paramsInputSchema = z.object({
 export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof paramsInputSchema>) => paramsInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      // Find category from biller code via mock catalogue.
+      const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
+      const biller = allMockBillers.find((b) => b.id === data.billerId);
+      const cat = biller?.categoryName ?? "Electricity";
+      const { params, mode } = mockParamsFor(data.billerId, cat);
+      return { success: true, params, mode, mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
@@ -298,7 +312,13 @@ const fetchInputSchema = z.object({
 export const bbpsFetchBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
+      const biller = allMockBillers.find((b) => b.id === data.billerId);
+      const cat = biller?.categoryName ?? "Electricity";
+      return { success: true, bill: mockBillFor(data.billerId, cat, data.paramValues), mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       // Provider expects stringified JSON-array-ish: {"Consumer Number"} format.
