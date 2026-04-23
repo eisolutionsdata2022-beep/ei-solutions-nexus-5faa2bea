@@ -386,6 +386,8 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         .trim();
       const alnumCollapsedText = text.replace(/[^A-Za-z0-9]/g, "");
       const hasCouponDetailHtml = /coupon details/i.test(normalizedText) && /coupon id/i.test(normalizedText);
+      const htmlReferenceMatch = normalizedText.match(/\b\d{15,20}\b/);
+      const normalizedMessage = `${message} ${normalizedText}`.toLowerCase();
 
       // Extract coupons. Provider may return:
       //   { results: [{coupon_no, ack_no}, ...] }
@@ -498,29 +500,44 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
 
       const providerExplicitSuccess = status === "success" || status === "pending" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
+      const providerMessageSuccess = /coupon request submit successfully|coupon submitted successfully|coupon purchase request submitted|request submit successfully|request submitted successfully/i.test(normalizedMessage);
+      const providerAccepted = providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess;
+      const providerReference = providerOrderId || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
       if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
         for (let i = coupons.length; i < purchasedQty; i++) {
           addCoupon(`REF-${providerOrderId}-${String(i + 1).padStart(2, "0")}`, providerOrderId);
         }
       }
+      if (providerAccepted && providerReference && coupons.length < purchasedQty) {
+        for (let i = coupons.length; i < purchasedQty; i++) {
+          addCoupon(`REF-${providerReference}-${String(i + 1).padStart(2, "0")}`, providerReference);
+        }
+      }
       const normalizedCoupons = coupons.map((coupon) => ({
         couponId: coupon.couponId,
-        ackNo: coupon.ackNo || providerOrderId || coupon.couponId,
+        ackNo: coupon.ackNo || providerReference || coupon.couponId,
       }));
 
-      if (res.ok && normalizedCoupons.length > 0 && (providerExplicitSuccess || providerHtmlSuccess)) {
+      const successMessage =
+        providerMessageSuccess
+          ? "Coupon Request Submit Successfully"
+          : providerHtmlSuccess && /^missing or invalid parameter$/i.test(message)
+            ? "Coupon issued successfully"
+            : message;
+
+      if (res.ok && normalizedCoupons.length > 0 && providerAccepted) {
         return {
           success: true,
-          orderId: providerOrderId || data.orderId,
-          providerStatus: status === "pending" ? "pending" : "success",
+          orderId: providerReference,
+          providerStatus: status === "pending" || providerMessageSuccess ? "pending" : "success",
           coupons: normalizedCoupons,
           couponId: normalizedCoupons[0].couponId,
           ackNo: normalizedCoupons[0].ackNo,
-          message: providerExplicitSuccess ? message : "Coupon purchased successfully",
+          message: successMessage || "Coupon purchased successfully",
           raw: text.slice(0, 4000),
         };
       }
-      if (res.ok && (providerExplicitSuccess || hasCouponDetailHtml) && normalizedCoupons.length === 0) {
+      if (res.ok && (providerAccepted || hasCouponDetailHtml) && normalizedCoupons.length === 0) {
         console.warn("[PAN][UTI purchase] success response without coupon number", text.slice(0, 1000));
       }
       const safeError = /^<!doctype html/i.test(text.trim())
