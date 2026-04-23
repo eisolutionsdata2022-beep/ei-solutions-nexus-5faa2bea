@@ -59,17 +59,18 @@ async function getProviderConfig(): Promise<{
   defaultFee: number;
   feeByCategory: Record<string, number>;
 }> {
+  const envAgent = process.env.BBPS_AGENT_ID;
   const snap = await getDoc(doc(db, "bbps_config/master"));
   if (!snap.exists()) return {
     baseUrl: process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: DEFAULT_BBPS_CONFIG.agentId,
+    agentId: envAgent ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: {},
   };
   const data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
   return {
     baseUrl: data.baseUrl ?? process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
+    agentId: envAgent ?? data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
   };
