@@ -354,10 +354,18 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       no_of_coupon: data.qty,
     };
     try {
+      const formBody = new URLSearchParams();
+      Object.entries(body).forEach(([key, value]) => {
+        formBody.set(key, String(value));
+      });
+
       const res = await fetch(data.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          Accept: "application/json, text/plain, text/html, */*",
+        },
+        body: formBody.toString(),
         signal: AbortSignal.timeout(60_000),
       });
       const text = await res.text();
