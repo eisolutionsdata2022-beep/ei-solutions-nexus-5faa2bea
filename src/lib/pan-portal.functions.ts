@@ -317,7 +317,7 @@ export type PanUtiPurchaseResult =
   | {
       success: true;
       orderId: string;
-      providerStatus: "success" | "pending";
+      providerStatus: "success" | "pending" | "manual_review";
       coupons: PanUtiPurchasedCoupon[];
       /** Convenience — first coupon (back-compat for single-purchase callers). */
       couponId: string;
@@ -537,10 +537,22 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       const providerPsaId = String(
         json.psa_id ?? json.psaId ?? json.vle_id ?? json.vleId ?? results.psa_id ?? results.psaId ?? results.vle_id ?? results.vleId ?? "",
       ).trim();
+      // STRICT failure list — ONLY these mean provider definitely did NOT debit.
+      // "missing or invalid parameter" is intentionally EXCLUDED here because
+      // the upstream provider has been observed returning that exact string
+      // AFTER successfully debiting the PSA wallet and issuing coupons (it is
+      // their generic fallback when the response template can't render). If we
+      // treat it as a hard failure we auto-refund the retailer while the
+      // provider keeps the money — the exact bug being fixed.
       const providerExplicitFailure =
         status === "failed" ||
         status === "0" ||
-        /missing or invalid parameter|invalid api key|insufficient balance|internal processing error|internal server error|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
+        /invalid api key|insufficient balance|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
+      // Soft / ambiguous failures — provider may or may not have debited.
+      // Hold the order for manual reconciliation rather than auto-refund.
+      const providerAmbiguous =
+        !providerExplicitFailure &&
+        /missing or invalid parameter|internal processing error|internal server error/i.test(normalizedMessage);
       const providerExplicitSuccess = status === "success" || status === "pending" || status === "approved" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
       const providerMessageSuccess = /coupon request submit successfully|coupon submitted successfully|coupon purchase request submitted|request submit successfully|request submitted successfully/i.test(normalizedMessage);
@@ -551,7 +563,9 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         !providerMessageSuccess &&
         !providerHtmlSuccess &&
         (!!providerToken || !!providerPsaId || /"quantity"\s*:\s*"?\d+/i.test(text));
-      const providerAccepted = !providerExplicitFailure && (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending);
+      const providerAccepted =
+        !providerExplicitFailure &&
+        (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending || providerAmbiguous);
       const providerReference = providerOrderId || providerToken || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
       if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
         for (let i = coupons.length; i < purchasedQty; i++) {
@@ -569,19 +583,28 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       }));
 
       const successMessage =
-        providerMessageSuccess
-          ? "Coupon Request Submit Successfully"
+        providerAmbiguous
+          ? "Provider response unclear — order held for manual review (do NOT auto-refund). Please verify in PSA portal."
+          : providerMessageSuccess
+            ? "Coupon Request Submit Successfully"
           : providerLegacyPending
             ? "Coupon Request Submit Successfully"
           : providerHtmlSuccess && /^missing or invalid parameter$/i.test(message)
             ? "Coupon issued successfully"
             : message;
 
+      const resolvedProviderStatus: "success" | "pending" | "manual_review" =
+        providerAmbiguous
+          ? "manual_review"
+          : status === "pending" || providerMessageSuccess || providerLegacyPending
+            ? "pending"
+            : "success";
+
       if (res.ok && normalizedCoupons.length > 0 && providerAccepted) {
         return {
           success: true,
           orderId: providerReference,
-          providerStatus: status === "pending" || providerMessageSuccess ? "pending" : "success",
+          providerStatus: resolvedProviderStatus,
           coupons: normalizedCoupons,
           couponId: normalizedCoupons[0].couponId,
           ackNo: normalizedCoupons[0].ackNo,
