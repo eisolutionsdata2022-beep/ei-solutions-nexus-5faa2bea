@@ -149,6 +149,7 @@ export type PanUtiCouponStatus =
 export interface PanUtiCoupon {
   id?: string;
   couponId: string;          // upstream coupon/ack number — primary identifier
+  orderId?: string;          // internal batch purchase id for wallet cross-reference
   retailerId: string;
   retailerUsername: string;
   vleId: string;             // PSA ID this coupon is tied to
