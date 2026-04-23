@@ -62,16 +62,18 @@ async function getProviderConfig(): Promise<{
   feeByCategory: Record<string, number>;
 }> {
   const envAgent = process.env.BBPS_AGENT_ID;
-  const snap = await getDoc(doc(db, "bbps_config/master"));
-  if (!snap.exists()) return {
-    baseUrl: process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: envAgent ?? DEFAULT_BBPS_CONFIG.agentId,
-    defaultFee: DEFAULT_BBPS_CONFIG.defaultFee,
-    feeByCategory: {},
-  };
-  const data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
+  const envBase = process.env.BBPS_BASE_URL;
+  // Try to read overrides from Firestore, but never fail the whole request if
+  // rules block the read (the server uses the unauthenticated client SDK).
+  let data: Partial<typeof DEFAULT_BBPS_CONFIG> = {};
+  try {
+    const snap = await getDoc(doc(db, "bbps_config/master"));
+    if (snap.exists()) data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
+  } catch (err) {
+    console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
+  }
   return {
-    baseUrl: data.baseUrl ?? process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
+    baseUrl: data.baseUrl ?? envBase ?? DEFAULT_BBPS_CONFIG.baseUrl,
     agentId: envAgent ?? data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
