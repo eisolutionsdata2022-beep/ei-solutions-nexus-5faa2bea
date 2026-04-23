@@ -342,30 +342,17 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const body = {
-      api_key: creds.apiKey,
-      vle_id: data.vleId,
-      orderId: data.orderId,
-      order_id: data.orderId,
-      weburl: data.weburl,
-      shop_name: data.shopName,
-      qty: data.qty,
-      quantity: data.qty,
-      no_of_coupon: data.qty,
-    };
+    const qs = new URL(data.url);
+    qs.searchParams.set("api_key", creds.apiKey);
+    qs.searchParams.set("vle_id", data.vleId);
+    qs.searchParams.set("type", "1");
+    qs.searchParams.set("qty", String(data.qty));
     try {
-      const formBody = new URLSearchParams();
-      Object.entries(body).forEach(([key, value]) => {
-        formBody.set(key, String(value));
-      });
-
-      const res = await fetch(data.url, {
-        method: "POST",
+      const res = await fetch(qs.toString(), {
+        method: "GET",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           Accept: "application/json, text/plain, text/html, */*",
         },
-        body: formBody.toString(),
         signal: AbortSignal.timeout(60_000),
       });
       const text = await res.text();
@@ -546,12 +533,13 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const body = { api_key: creds.apiKey, ack_no: data.ackNo };
+    const qs = new URL(data.url);
+    qs.searchParams.set("api_key", creds.apiKey);
+    qs.searchParams.set("order_id", data.ackNo);
     try {
-      const res = await fetch(data.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      const res = await fetch(qs.toString(), {
+        method: "GET",
+        headers: { Accept: "application/json, text/plain, text/html, */*" },
         signal: AbortSignal.timeout(30_000),
       });
       const text = await res.text();
@@ -559,9 +547,9 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
       const status = String(json.status ?? "").toLowerCase();
       const message = String(json.message ?? "Unknown response");
-      const results = (json.results as Record<string, unknown>) || {};
-      const applicationStatus = String(results.status ?? json.applicationStatus ?? "").trim();
-      const panNumber = String(results.pan_no ?? results.panNo ?? json.pan ?? "").trim();
+      const results = (json.results as Record<string, unknown>) || (json.data as Record<string, unknown>) || {};
+      const applicationStatus = String(results.status ?? json.applicationStatus ?? json.txn_status ?? message ?? "").trim();
+      const panNumber = String(results.pan_no ?? results.panNo ?? json.pan ?? results.pan ?? "").trim();
       if (res.ok && (status === "success" || status === "1")) {
         return {
           success: true,
