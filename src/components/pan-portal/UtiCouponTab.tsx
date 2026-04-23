@@ -56,7 +56,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
-  const MAX_QTY = 25;
+  const MAX_QTY = 2;
   const totalAmount = fee * quantity;
 
   if (!utiEnabled) {
@@ -305,7 +305,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 <span className="text-xs text-muted-foreground self-center mr-1">Quick:</span>
-                {[1, 5, 10, 25].map((n) => (
+                {[1, 2].map((n) => (
                   <Button
                     key={n}
                     type="button"
