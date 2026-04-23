@@ -344,24 +344,39 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const requestBody = {
+    const requestParams = new URLSearchParams({
       api_key: creds.apiKey,
       vle_id: data.vleId,
       weburl: data.weburl,
-      type: 1,
-      qty: data.qty,
-    };
+      order_id: data.orderId,
+      type: "1",
+      qty: String(data.qty),
+    });
     try {
-      const res = await fetch(data.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json, text/plain, text/html, */*",
-        },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(60_000),
-      });
-      const text = await res.text();
+      const sendPurchaseRequest = async (method: "POST" | "GET") => {
+        const targetUrl = method === "GET"
+          ? `${data.url}${data.url.includes("?") ? "&" : "?"}${requestParams.toString()}`
+          : data.url;
+        const response = await fetch(targetUrl, {
+          method,
+          headers: {
+            ...(method === "POST"
+              ? { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }
+              : {}),
+            Accept: "application/json, text/plain, text/html, */*",
+          },
+          body: method === "POST" ? requestParams.toString() : undefined,
+          signal: AbortSignal.timeout(60_000),
+        });
+        const responseText = await response.text();
+        return { response, responseText };
+      };
+
+      let { response: res, responseText: text } = await sendPurchaseRequest("POST");
+      if (/missing or invalid parameter/i.test(text)) {
+        ({ response: res, responseText: text } = await sendPurchaseRequest("GET"));
+      }
+
       let json: Record<string, unknown> = {};
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
       const results = typeof json.results === "object" && json.results
