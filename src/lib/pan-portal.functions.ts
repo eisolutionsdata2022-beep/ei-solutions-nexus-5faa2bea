@@ -365,6 +365,12 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       try { json = JSON.parse(text) as Record<string, unknown>; } catch { /* non-JSON */ }
       const status = String(json.status ?? json.Status ?? "").toLowerCase();
       const message = String(json.message ?? json.Message ?? text.slice(0, 200) ?? "Unknown response");
+      const normalizedText = text
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const hasCouponDetailHtml = /coupon details/i.test(normalizedText) && /coupon id/i.test(normalizedText);
 
       // Extract coupons. Provider may return:
       //   { results: [{coupon_no, ack_no}, ...] }
@@ -441,6 +447,12 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         }
       };
 
+      const htmlCouponMatch = normalizedText.match(/coupon id\s*[:\-]?\s*(UTIPAN[A-Z0-9]+)/i);
+      const htmlAckMatch = normalizedText.match(/(?:ack(?:nowledg(?:e)?ment)?\s*(?:no|number)?)[\s:\-#]*([0-9]{15,20})/i);
+      if (htmlCouponMatch?.[1]) {
+        addCoupon(htmlCouponMatch[1], htmlAckMatch?.[1]);
+      }
+
       pushOne(json.results ?? null);
       pushOne(json.coupons ?? null);
       pushOne(json.data ?? null);
@@ -464,20 +476,26 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         parseTextCoupons(text);
       }
 
-      if (res.ok && (status === "success" || status === "1") && coupons.length > 0) {
+      const providerExplicitSuccess = status === "success" || status === "1";
+      const providerHtmlSuccess = hasCouponDetailHtml && coupons.length > 0;
+
+      if (res.ok && coupons.length > 0 && (providerExplicitSuccess || providerHtmlSuccess)) {
         return {
           success: true,
           coupons,
           couponId: coupons[0].couponId,
           ackNo: coupons[0].ackNo,
-          message,
+          message: providerExplicitSuccess ? message : "Coupon purchased successfully",
           raw: text.slice(0, 4000),
         };
       }
-      if (res.ok && (status === "success" || status === "1") && coupons.length === 0) {
+      if (res.ok && (providerExplicitSuccess || hasCouponDetailHtml) && coupons.length === 0) {
         console.warn("[PAN][UTI purchase] success response without coupon number", text.slice(0, 1000));
       }
-      return { success: false, error: message || `Upstream returned ${res.status}` };
+      const safeError = /^<!doctype html/i.test(text.trim())
+        ? "Provider returned HTML without a readable coupon number"
+        : message || `Upstream returned ${res.status}`;
+      return { success: false, error: safeError };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Provider unreachable";
       console.error("[PAN][UTI purchase] fetch error:", err);
