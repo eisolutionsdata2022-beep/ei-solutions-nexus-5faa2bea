@@ -132,7 +132,7 @@ export interface BbpsMasterConfig {
 
 export const DEFAULT_BBPS_CONFIG: BbpsMasterConfig = {
   baseUrl: "https://aceneobank.dev.acepe.co.in/apiService",
-  agentId: "2",
+  agentId: "2183",
   defaultFee: 5,
   feeByCategory: {},
   disabledCategories: [],

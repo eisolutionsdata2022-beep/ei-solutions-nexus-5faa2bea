@@ -26,7 +26,9 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
-import { buildApiKeyHeader, encrypt } from "./bbps-encryption.server";
+// Encryption helpers retained for future use; provider currently issues
+// pre-encrypted credentials so we do not re-encrypt at request time.
+// import { buildApiKeyHeader, encrypt } from "./bbps-encryption.server";
 import type {
   BbpsCategory,
   BbpsBiller,
@@ -59,17 +61,18 @@ async function getProviderConfig(): Promise<{
   defaultFee: number;
   feeByCategory: Record<string, number>;
 }> {
+  const envAgent = process.env.BBPS_AGENT_ID;
   const snap = await getDoc(doc(db, "bbps_config/master"));
   if (!snap.exists()) return {
     baseUrl: process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: DEFAULT_BBPS_CONFIG.agentId,
+    agentId: envAgent ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: {},
   };
   const data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
   return {
     baseUrl: data.baseUrl ?? process.env.BBPS_BASE_URL ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
+    agentId: envAgent ?? data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
   };
@@ -101,7 +104,9 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
     );
   }
 
-  // Route through the bridge too — provider IP-checks the auth endpoint.
+  // Provider issues credentials in pre-encrypted form (version-prefixed
+   // base64 strings like "_v9...", "_PzJN..."). Send them as-is — do NOT
+  // re-encrypt locally.
   const json = await callBbps<{
     success?: boolean;
     accessToken?: string;
@@ -109,8 +114,8 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
   }>(
     "/getAccessToken",
     {
-      clientId: encrypt(clientId),
-      clientSecret: encrypt(clientSecret),
+      clientId,
+      clientSecret,
     },
     { skipAuth: true },
   );
@@ -153,9 +158,11 @@ async function callBbps<T>(
   opts: { skipAuth?: boolean } = {},
 ): Promise<T> {
   const cfg = await getProviderConfig();
+  // Provider supplies the apiKey as a long pre-encrypted token — send it
+  // verbatim in the `apiKey` header (no per-request re-encryption needed).
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    apiKey: buildApiKeyHeader(process.env.BBPS_CLIENT_ID ?? ""),
+    apiKey: process.env.BBPS_API_KEY ?? "",
   };
   if (!opts.skipAuth) {
     const token = await getAccessToken(cfg.baseUrl);
