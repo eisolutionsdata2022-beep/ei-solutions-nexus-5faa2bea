@@ -370,6 +370,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         .replace(/&nbsp;/gi, " ")
         .replace(/\s+/g, " ")
         .trim();
+      const alnumCollapsedText = text.replace(/[^A-Za-z0-9]/g, "");
       const hasCouponDetailHtml = /coupon details/i.test(normalizedText) && /coupon id/i.test(normalizedText);
 
       // Extract coupons. Provider may return:
@@ -452,6 +453,11 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       if (htmlCouponMatch?.[1]) {
         addCoupon(htmlCouponMatch[1], htmlAckMatch?.[1]);
       }
+      const collapsedCouponMatch = alnumCollapsedText.match(/(UTIPAN[A-Z0-9]{10,})/i);
+      const collapsedAckMatch = alnumCollapsedText.match(/(?:AckNo|AckNumber|AcknowledgementNo|AcknowledgementNumber)(\d{15,20})/i);
+      if (collapsedCouponMatch?.[1]) {
+        addCoupon(collapsedCouponMatch[1], collapsedAckMatch?.[1] ?? htmlAckMatch?.[1]);
+      }
 
       pushOne(json.results ?? null);
       pushOne(json.coupons ?? null);
@@ -477,7 +483,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       }
 
       const providerExplicitSuccess = status === "success" || status === "1";
-      const providerHtmlSuccess = hasCouponDetailHtml && coupons.length > 0;
+      const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
 
       if (res.ok && coupons.length > 0 && (providerExplicitSuccess || providerHtmlSuccess)) {
         return {
