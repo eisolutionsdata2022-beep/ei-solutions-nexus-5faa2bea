@@ -317,7 +317,7 @@ export type PanUtiPurchaseResult =
   | {
       success: true;
       orderId: string;
-      providerStatus: "success" | "pending";
+      providerStatus: "success" | "pending" | "manual_review";
       coupons: PanUtiPurchasedCoupon[];
       /** Convenience — first coupon (back-compat for single-purchase callers). */
       couponId: string;
