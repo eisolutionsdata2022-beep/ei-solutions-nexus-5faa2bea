@@ -38,6 +38,7 @@ function BillPaymentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<BbpsCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<BbpsCategory | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
 
   const [billers, setBillers] = useState<BbpsBiller[]>([]);
   const [billerQuery, setBillerQuery] = useState("");
@@ -56,6 +57,7 @@ function BillPaymentPage() {
     amount: number;
     fee: number;
     totalDebited: number;
+    mock?: boolean;
   } | null>(null);
 
   // Load categories on mount
@@ -68,6 +70,7 @@ function BillPaymentPage() {
           return;
         }
         setCategories(res.categories);
+        if (res.mock) setDemoMode(true);
       })
       .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Network error"))
       .finally(() => setLoading(false));
@@ -176,6 +179,7 @@ function BillPaymentPage() {
       amount: bill.amount,
       fee: res.fee ?? 0,
       totalDebited: res.totalDebited ?? bill.amount,
+      mock: res.mock,
     });
     setStep("success");
   }
@@ -208,8 +212,23 @@ function BillPaymentPage() {
             alt="Bharat Connect"
             className="h-9 w-auto"
           />
-          <Badge variant="secondary">UAT</Badge>
+          <Badge variant={demoMode ? "destructive" : "secondary"}>
+            {demoMode ? "DEMO MODE" : "UAT"}
+          </Badge>
         </div>
+
+        {demoMode && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground">
+            <div className="font-semibold text-destructive">⚠️ Bharat Connect Demo Mode</div>
+            <div className="mt-1 text-muted-foreground">
+              Provider credentials not yet configured. All categories, billers, bills and
+              receipts shown are <strong className="text-foreground">simulated test data</strong>.
+              <strong className="text-foreground"> No wallet will be debited</strong> and no
+              real bills will be paid. Once the provider whitelists our IP and shares
+              credentials, this banner will disappear and live BBPS will activate automatically.
+            </div>
+          </div>
+        )}
 
         {step === "category" && (
           <Card>
@@ -359,7 +378,14 @@ function BillPaymentPage() {
                 alt="B Assured — Bharat Connect"
                 className="mx-auto h-16 w-auto"
               />
-              <div className="text-sm font-medium text-emerald-700">Payment Successful</div>
+              <div className="text-sm font-medium text-emerald-700">
+                Payment Successful{receipt.mock ? " (DEMO)" : ""}
+              </div>
+              {receipt.mock && (
+                <div className="rounded border border-destructive/30 bg-destructive/5 p-2 text-xs text-muted-foreground">
+                  This was a simulated transaction — no wallet was debited and no real payment was made.
+                </div>
+              )}
               <div className="rounded-lg bg-card p-3 text-left text-sm">
                 <Row label="Receipt" value={String(receipt.receipt)} />
                 <Row label="Txn ID" value={receipt.txId.slice(0, 12)} />

@@ -36,6 +36,14 @@ import type {
   BbpsTransaction,
 } from "./bbps-types";
 import { DEFAULT_BBPS_CONFIG } from "./bbps-types";
+import {
+  isMockMode,
+  MOCK_CATEGORIES,
+  mockBillersFor,
+  mockParamsFor,
+  mockBillFor,
+  mockReceipt,
+} from "./bbps-mock-data";
 
 // ──────────────── Token cache ────────────────
 
@@ -222,7 +230,10 @@ async function callBbps<T>(
 
 export const bbpsGetCategories = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; message?: string }> => {
+  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      return { success: true, categories: MOCK_CATEGORIES, mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
@@ -244,7 +255,10 @@ const billersInputSchema = z.object({
 export const bbpsGetBillers = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      return { success: true, billers: mockBillersFor(data.category), mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
@@ -266,7 +280,15 @@ const paramsInputSchema = z.object({
 export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof paramsInputSchema>) => paramsInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      // Find category from biller code via mock catalogue.
+      const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
+      const biller = allMockBillers.find((b) => b.id === data.billerId);
+      const cat = biller?.categoryName ?? "Electricity";
+      const { params, mode } = mockParamsFor(data.billerId, cat);
+      return { success: true, params, mode, mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
@@ -290,7 +312,13 @@ const fetchInputSchema = z.object({
 export const bbpsFetchBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
+    if (isMockMode()) {
+      const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
+      const biller = allMockBillers.find((b) => b.id === data.billerId);
+      const cat = biller?.categoryName ?? "Electricity";
+      return { success: true, bill: mockBillFor(data.billerId, cat, data.paramValues), mock: true };
+    }
     try {
       const cfg = await getProviderConfig();
       // Provider expects stringified JSON-array-ish: {"Consumer Number"} format.
@@ -415,6 +443,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     newBalance?: number;
     fee?: number;
     totalDebited?: number;
+    mock?: boolean;
     message?: string;
   }> => {
     if (!context.authUser) return { success: false, message: "Not signed in" };
@@ -424,6 +453,45 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     const cfg = await getProviderConfig();
     const fee = cfg.feeByCategory[data.categoryName] ?? cfg.defaultFee;
     const totalDebit = data.amount + fee;
+
+    // ── DEMO MODE — skip wallet & provider entirely. ──
+    if (isMockMode()) {
+      const receipt = mockReceipt();
+      const demoDoc = await addDoc(collection(db, "bbps_transactions"), {
+        retailerId,
+        retailerEmail,
+        categoryName: data.categoryName,
+        billerCode: data.billerId,
+        billerName: data.billerName,
+        params: data.params,
+        amount: data.amount,
+        fee: 0,
+        totalDebited: 0,
+        status: "success",
+        providerBillId: data.billPaymentId,
+        providerRequestId: data.requestId,
+        providerReceipt: receipt,
+        providerMode: data.billerMode ?? null,
+        mobileNo: data.mobileNo ?? "",
+        customerName: data.customerName ?? "",
+        billDate: data.billDate ?? "",
+        dueDate: data.dueDate ?? "",
+        billNumber: data.billNumber ?? "",
+        errorMessage: "DEMO MODE — no wallet debit, no provider call",
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      } satisfies Omit<BbpsTransaction, "id">);
+      return {
+        success: true,
+        transactionId: demoDoc.id,
+        receipt,
+        newBalance: undefined,
+        fee: 0,
+        totalDebited: 0,
+        mock: true,
+        message: "Payment successful (DEMO MODE)",
+      };
+    }
 
     // 1. Atomic wallet debit.
     const walletRef = doc(db, "wallets", retailerId);
