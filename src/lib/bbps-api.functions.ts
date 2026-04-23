@@ -197,17 +197,30 @@ async function callBbps<T>(
     const wrappedJson = (await res.json().catch(() => ({}))) as {
       success?: boolean;
       status?: number;
+      statusText?: string;
       body?: unknown;
       error?: string;
     };
     if (!res.ok || wrappedJson.success === false) {
-      throw new Error(
-        wrappedJson.error ??
-          (typeof wrappedJson.body === "object"
-            ? (wrappedJson.body as { message?: string })?.message
-            : undefined) ??
-          `Bridge HTTP ${wrappedJson.status ?? res.status}`,
-      );
+      // Surface as much detail as possible to the caller.
+      const upstreamMsg =
+        typeof wrappedJson.body === "string"
+          ? wrappedJson.body.slice(0, 300)
+          : typeof wrappedJson.body === "object" && wrappedJson.body
+            ? ((wrappedJson.body as { message?: string; error?: string }).message ??
+                (wrappedJson.body as { error?: string }).error ??
+                JSON.stringify(wrappedJson.body).slice(0, 300))
+            : undefined;
+      const httpInfo = `HTTP ${wrappedJson.status ?? res.status}${
+        wrappedJson.statusText ? ` ${wrappedJson.statusText}` : ""
+      }`;
+      const finalMsg = wrappedJson.error
+        ? `Bridge: ${wrappedJson.error}`
+        : upstreamMsg
+          ? `Provider ${httpInfo}: ${upstreamMsg}`
+          : `Bridge ${httpInfo} (no body) — likely IP not whitelisted by provider yet`;
+      console.error("[BBPS] bridge error:", { endpoint, ...wrappedJson });
+      throw new Error(finalMsg);
     }
     return (wrappedJson.body ?? {}) as T;
   }

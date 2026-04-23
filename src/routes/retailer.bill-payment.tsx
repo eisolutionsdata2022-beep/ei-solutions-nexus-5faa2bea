@@ -249,7 +249,7 @@ function BillPaymentPage() {
               ) : categories.length === 0 ? (
                 <EmptyState
                   message={loadError ? `Provider error: ${loadError}` : "No categories returned by provider."}
-                  hint={loadError ? "Likely cause: bridge IP (146.190.74.49) not yet whitelisted by provider, or BBPS_BRIDGE_HMAC_SECRET mismatch between Lovable secret and bridge .env. Open the browser console for the full response payload." : "Provider responded but with empty data."}
+                  hint={hintForError(loadError)}
                 />
               ) : (
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -476,4 +476,29 @@ function EmptyState({ message, hint }: { message: string; hint?: string }) {
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
+}
+
+/**
+ * Map a raw provider/bridge error to a human-readable hint.
+ * Different errors point to different root causes — show the right next step.
+ */
+function hintForError(err: string | null): string {
+  if (!err) return "Provider responded but with empty data.";
+  const lower = err.toLowerCase();
+  if (lower.includes("403") || lower.includes("forbidden") || lower.includes("not whitelist")) {
+    return "Provider returned 403 Forbidden. Bridge IP 146.190.74.49 is not whitelisted yet — follow up with the provider to confirm whitelist activation.";
+  }
+  if (lower.includes("401") || lower.includes("auth") || lower.includes("unauthor") || lower.includes("invalid token")) {
+    return "Provider rejected our credentials (401). Verify BBPS_CLIENT_ID / BBPS_CLIENT_SECRET / BBPS_API_KEY match the values shared by the provider exactly.";
+  }
+  if (lower.includes("bad signature") || lower.includes("missing signature") || lower.includes("timestamp")) {
+    return "Bridge rejected our HMAC signature. The BBPS_BRIDGE_HMAC_SECRET in Lovable Cloud must exactly match HMAC_SECRET in the bridge's .env file.";
+  }
+  if (lower.includes("timeout") || lower.includes("fetch failed") || lower.includes("network")) {
+    return "Bridge or provider did not respond in time. Check that the VPS bridge service is running and BBPS_BRIDGE_BASE_URL is correct.";
+  }
+  if (lower.includes("permissions")) {
+    return "Internal config read was blocked. Hard refresh — this should be resolved by the latest deploy.";
+  }
+  return "Open the browser console for the full response payload from the bridge.";
 }
