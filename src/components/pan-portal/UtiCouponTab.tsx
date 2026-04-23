@@ -258,10 +258,98 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
               <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{consumedCount}</p>
             </div>
           </div>
-          <form onSubmit={handlePurchase}>
+          <form onSubmit={handlePurchase} className="space-y-3">
+            <div className="rounded-lg border bg-gradient-to-br from-primary/5 to-blue-50 dark:from-primary/10 dark:to-blue-950/20 p-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-sm font-semibold">Quantity</p>
+                  <p className="text-xs text-muted-foreground">How many coupons to buy at once?</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={purchasing || quantity <= 1}
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={MAX_QTY}
+                    value={quantity}
+                    disabled={purchasing}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!Number.isNaN(v)) setQuantity(Math.max(1, Math.min(MAX_QTY, v)));
+                      else setQuantity(1);
+                    }}
+                    className="w-20 text-center text-lg font-bold"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={purchasing || quantity >= MAX_QTY}
+                    onClick={() => setQuantity((q) => Math.min(MAX_QTY, q + 1))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
+                <span className="text-sm text-muted-foreground">Total amount</span>
+                <span className="text-xl font-bold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
+              </div>
+              {quantity > 1 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {[1, 5, 10, 25].map((n) => (
+                    <Button
+                      key={n}
+                      type="button"
+                      size="sm"
+                      variant={quantity === n ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      disabled={purchasing}
+                      onClick={() => setQuantity(n)}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                </div>
+              )}
+              {quantity === 1 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {[1, 5, 10, 25].map((n) => (
+                    <Button
+                      key={n}
+                      type="button"
+                      size="sm"
+                      variant={quantity === n ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      disabled={purchasing}
+                      onClick={() => setQuantity(n)}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
             <Button type="submit" disabled={purchasing} size="lg" className="w-full">
-              {purchasing ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShoppingCart className="h-5 w-5 mr-2" />}
-              Buy 1 Coupon for ₹{fee}
+              {purchasing ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  {progress ? `Purchasing ${progress.done + 1}/${progress.total}…` : "Processing…"}
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Buy {quantity} Coupon{quantity > 1 ? "s" : ""} for ₹{totalAmount.toLocaleString("en-IN")}
+                </>
+              )}
             </Button>
           </form>
           <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3 space-y-1">
