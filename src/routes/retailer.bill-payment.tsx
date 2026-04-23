@@ -61,18 +61,26 @@ function BillPaymentPage() {
   } | null>(null);
 
   // Load categories on mount
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     setLoading(true);
+    setLoadError(null);
     bbpsGetCategories()
       .then((res) => {
+        console.log("[BBPS] categories response:", res);
         if (!res.success) {
+          setLoadError(res.message ?? "Failed to load categories");
           toast.error(res.message ?? "Failed to load categories");
           return;
         }
         setCategories(res.categories);
         if (res.mock) setDemoMode(true);
       })
-      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Network error"))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Network error";
+        setLoadError(msg);
+        toast.error(msg);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -240,8 +248,8 @@ function BillPaymentPage() {
                 <Loading label="Loading categories…" />
               ) : categories.length === 0 ? (
                 <EmptyState
-                  message="No categories available. UAT credentials may not be configured yet."
-                  hint="Add BBPS_CLIENT_ID, BBPS_CLIENT_SECRET, BBPS_AES_KEY in Lovable Cloud Settings."
+                  message={loadError ? `Provider error: ${loadError}` : "No categories returned by provider."}
+                  hint={loadError ? "Likely cause: bridge IP (146.190.74.49) not yet whitelisted by provider, or BBPS_BRIDGE_HMAC_SECRET mismatch between Lovable secret and bridge .env. Open the browser console for the full response payload." : "Provider responded but with empty data."}
                 />
               ) : (
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
