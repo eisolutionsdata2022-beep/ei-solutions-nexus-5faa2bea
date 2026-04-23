@@ -80,7 +80,7 @@ function jwtExpiryMs(jwt: string): number | null {
   return null;
 }
 
-async function getAccessToken(baseUrl: string): Promise<string> {
+async function getAccessToken(_baseUrl: string): Promise<string> {
   // Use cached token if still valid for ≥60s.
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
     return tokenCache.accessToken;
@@ -93,26 +93,22 @@ async function getAccessToken(baseUrl: string): Promise<string> {
     );
   }
 
-  const res = await fetch(`${baseUrl}/getAccessToken`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apiKey: buildApiKeyHeader(clientId),
-    },
-    body: JSON.stringify({
-      clientId: encrypt(clientId),
-      clientSecret: encrypt(clientSecret),
-    }),
-  });
-
-  const json = (await res.json().catch(() => ({}))) as {
+  // Route through the bridge too — provider IP-checks the auth endpoint.
+  const json = await callBbps<{
     success?: boolean;
     accessToken?: string;
     message?: string;
-  };
+  }>(
+    "/getAccessToken",
+    {
+      clientId: encrypt(clientId),
+      clientSecret: encrypt(clientSecret),
+    },
+    { skipAuth: true },
+  );
 
-  if (!res.ok || !json.success || !json.accessToken) {
-    throw new Error(json.message ?? `Auth failed (HTTP ${res.status})`);
+  if (!json.success || !json.accessToken) {
+    throw new Error(json.message ?? "Auth failed");
   }
 
   const expiresAt = jwtExpiryMs(json.accessToken) ?? Date.now() + 30 * 60_000;
