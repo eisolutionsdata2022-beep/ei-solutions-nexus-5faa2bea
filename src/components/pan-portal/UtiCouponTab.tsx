@@ -139,6 +139,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         });
         await createUtiCoupon({
           couponId: batchOrderId,
+          orderId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
           vleId: psa.vleId,
@@ -148,6 +149,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           newBalance: oldBalance,
           status: "refunded",
           remark: res.error,
+          rawResponse: res.raw,
           createdAt: nowIso,
           updatedAt: nowIso,
         });
@@ -178,6 +180,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         runningBalance = runningBalance - fee;
         await createUtiCoupon({
           couponId: c.couponId,
+          orderId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
           vleId: psa.vleId,

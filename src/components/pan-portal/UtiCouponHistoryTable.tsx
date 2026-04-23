@@ -61,28 +61,38 @@ export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
       where("source", "==", "pan-portal"),
       orderBy("createdAt", "desc"),
     );
-    return onSnapshot(
+    const fallbackQ = query(
+      collection(db, "transactions"),
+      where("userId", "==", retailerId),
+      where("source", "==", "pan-portal"),
+    );
+    const mapTxn = (data: Record<string, unknown>, id: string) => ({
+      id,
+      amount: Number(data.amount || 0),
+      type: (data.type as "debit" | "credit") || "debit",
+      description: String(data.description || ""),
+      createdAt: String(data.createdAt || ""),
+      orderId: data.orderId ? String(data.orderId) : undefined,
+    });
+    let unsubscribe = onSnapshot(
       q,
       (snap) => {
         setWalletTxns(
-          snap.docs.map((d) => {
-            const data = d.data() as Record<string, unknown>;
-            return {
-              id: d.id,
-              amount: Number(data.amount || 0),
-              type: (data.type as "debit" | "credit") || "debit",
-              description: String(data.description || ""),
-              createdAt: String(data.createdAt || ""),
-              orderId: data.orderId ? String(data.orderId) : undefined,
-            };
-          }),
+          snap.docs.map((d) => mapTxn(d.data() as Record<string, unknown>, d.id)),
         );
       },
       // Fallback: if composite index missing, fetch unsorted client-side.
       (err) => {
         console.warn("[UtiCouponHistory] tx subscribe fallback:", err.message);
+        unsubscribe = onSnapshot(fallbackQ, (snap) => {
+          const txns = snap.docs
+            .map((d) => mapTxn(d.data() as Record<string, unknown>, d.id))
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          setWalletTxns(txns);
+        });
       },
     );
+    return () => unsubscribe();
   }, [retailerId]);
 
   const filtered = useMemo(() => {
@@ -118,7 +128,7 @@ export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
 
   function relatedTxns(coupon: PanUtiCoupon): WalletTxn[] {
     return walletTxns.filter(
-      (t) => t.orderId === coupon.couponId || t.description.includes(coupon.couponId),
+      (t) => t.orderId === coupon.orderId || t.orderId === coupon.couponId || t.description.includes(coupon.orderId || coupon.couponId),
     );
   }
 
