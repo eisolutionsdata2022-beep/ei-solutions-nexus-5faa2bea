@@ -38,6 +38,7 @@ function BillPaymentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<BbpsCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<BbpsCategory | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
 
   const [billers, setBillers] = useState<BbpsBiller[]>([]);
   const [billerQuery, setBillerQuery] = useState("");
@@ -56,6 +57,7 @@ function BillPaymentPage() {
     amount: number;
     fee: number;
     totalDebited: number;
+    mock?: boolean;
   } | null>(null);
 
   // Load categories on mount
