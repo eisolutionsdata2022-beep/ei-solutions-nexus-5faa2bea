@@ -563,7 +563,9 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         !providerMessageSuccess &&
         !providerHtmlSuccess &&
         (!!providerToken || !!providerPsaId || /"quantity"\s*:\s*"?\d+/i.test(text));
-      const providerAccepted = !providerExplicitFailure && (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending);
+      const providerAccepted =
+        !providerExplicitFailure &&
+        (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending || providerAmbiguous);
       const providerReference = providerOrderId || providerToken || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
       if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
         for (let i = coupons.length; i < purchasedQty; i++) {
@@ -581,19 +583,28 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       }));
 
       const successMessage =
-        providerMessageSuccess
-          ? "Coupon Request Submit Successfully"
+        providerAmbiguous
+          ? "Provider response unclear — order held for manual review (do NOT auto-refund). Please verify in PSA portal."
+          : providerMessageSuccess
+            ? "Coupon Request Submit Successfully"
           : providerLegacyPending
             ? "Coupon Request Submit Successfully"
           : providerHtmlSuccess && /^missing or invalid parameter$/i.test(message)
             ? "Coupon issued successfully"
             : message;
 
+      const resolvedProviderStatus: "success" | "pending" | "manual_review" =
+        providerAmbiguous
+          ? "manual_review"
+          : status === "pending" || providerMessageSuccess || providerLegacyPending
+            ? "pending"
+            : "success";
+
       if (res.ok && normalizedCoupons.length > 0 && providerAccepted) {
         return {
           success: true,
           orderId: providerReference,
-          providerStatus: status === "pending" || providerMessageSuccess ? "pending" : "success",
+          providerStatus: resolvedProviderStatus,
           coupons: normalizedCoupons,
           couponId: normalizedCoupons[0].couponId,
           ackNo: normalizedCoupons[0].ackNo,
