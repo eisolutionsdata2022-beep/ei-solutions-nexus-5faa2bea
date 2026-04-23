@@ -24,6 +24,13 @@ import {
   BookOpen,
   Award,
   Clock,
+  Receipt,
+  Coins,
+  ClipboardList,
+  Image as ImageIcon,
+  Users,
+  Gift,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
