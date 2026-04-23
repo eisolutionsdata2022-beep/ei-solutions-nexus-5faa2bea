@@ -537,10 +537,22 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       const providerPsaId = String(
         json.psa_id ?? json.psaId ?? json.vle_id ?? json.vleId ?? results.psa_id ?? results.psaId ?? results.vle_id ?? results.vleId ?? "",
       ).trim();
+      // STRICT failure list — ONLY these mean provider definitely did NOT debit.
+      // "missing or invalid parameter" is intentionally EXCLUDED here because
+      // the upstream provider has been observed returning that exact string
+      // AFTER successfully debiting the PSA wallet and issuing coupons (it is
+      // their generic fallback when the response template can't render). If we
+      // treat it as a hard failure we auto-refund the retailer while the
+      // provider keeps the money — the exact bug being fixed.
       const providerExplicitFailure =
         status === "failed" ||
         status === "0" ||
-        /missing or invalid parameter|invalid api key|insufficient balance|internal processing error|internal server error|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
+        /invalid api key|insufficient balance|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
+      // Soft / ambiguous failures — provider may or may not have debited.
+      // Hold the order for manual reconciliation rather than auto-refund.
+      const providerAmbiguous =
+        !providerExplicitFailure &&
+        /missing or invalid parameter|internal processing error|internal server error/i.test(normalizedMessage);
       const providerExplicitSuccess = status === "success" || status === "pending" || status === "approved" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
       const providerMessageSuccess = /coupon request submit successfully|coupon submitted successfully|coupon purchase request submitted|request submit successfully|request submitted successfully/i.test(normalizedMessage);
