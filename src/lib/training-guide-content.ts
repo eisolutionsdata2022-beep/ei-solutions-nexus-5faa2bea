@@ -24,6 +24,13 @@ import {
   BookOpen,
   Award,
   Clock,
+  Receipt,
+  Coins,
+  ClipboardList,
+  Image as ImageIcon,
+  Users,
+  Gift,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -662,34 +669,293 @@ export const GUIDE_CHAPTERS: GuideChapter[] = [
     charges: "Live: ₹100 – ₹500 / session · Virtual Trainer: ₹20 / session",
   },
 
-  // ─────────── Chapter 16 — Insurance / Loan / Banking (placeholder) ───────────
+  // ─────────── Chapter 16 — Bill Payment (BBPS) ───────────
   {
     number: 16,
-    titleMl: "Insurance / Loan / Banking",
-    titleEn: "Insurance / Loan / Banking",
-    subtitleMl: "Coming soon — future modules",
-    subtitleEn: "Coming soon — future modules",
-    themeColor: "gov-saffron",
-    icon: ShieldCheck,
-    comingSoon: true,
+    titleMl: "Bill Payment (BBPS)",
+    titleEn: "Bill Payment (BBPS)",
+    subtitleMl: "Bharat Connect — Electricity, Water, Gas, Insurance",
+    subtitleEn: "Bharat Connect — Electricity, Water, Gas, Insurance bills",
+    themeColor: "gov-blue",
+    icon: Receipt,
     steps: [
       {
-        icon: Clock,
-        ml: "Insurance Apply, Loan Eligibility Check, Banking Services — ഉടൻ launch ചെയ്യും",
-        en: "Insurance Apply, Loan Eligibility Check, Banking Services — launching soon",
-        note: "Update വരുമ്പോൾ guide-ൽ steps add ചെയ്യും.",
+        icon: Receipt,
+        ml: "Sidebar → \"Bill Payment\" തുറക്കുക. Category select ചെയ്യുക (Electricity / Gas / Water / Insurance / Loan EMI etc.)",
+        en: "Open Sidebar → \"Bill Payment\". Select category (Electricity / Gas / Water / Insurance / Loan EMI, etc.)",
       },
       {
-        icon: HelpCircle,
-        ml: "ഈ services-ന്റെ training ലഭിക്കാൻ Trainings → \"Upcoming\" check ചെയ്യുക",
-        en: "For training on these services, check Trainings → \"Upcoming\"",
+        icon: Building2,
+        ml: "Biller select ചെയ്യുക. Customer-ന്റെ consumer number / connection ID enter ചെയ്യുക.",
+        en: "Select the biller. Enter the customer's consumer number / connection ID.",
       },
+      {
+        icon: Sparkles,
+        ml: "\"Fetch Bill\" click ചെയ്യുക → bill amount, due date, customer name auto-display ആകും",
+        en: "Click \"Fetch Bill\" → bill amount, due date, customer name auto-populate",
+        tip: "Customer-ന്റെ details verify ചെയ്ത് അവർക്ക് കാണിച്ച് confirm വാങ്ങുക.",
+      },
+      {
+        icon: CreditCard,
+        ml: "\"Pay Now\" click ചെയ്യുക. Wallet-ൽ നിന്ന് amount + service fee deduct ആകും.",
+        en: "Click \"Pay Now\". Amount + service fee is deducted from wallet.",
+      },
+      {
+        icon: FileText,
+        ml: "Receipt download ചെയ്യുക — Bharat Connect logo-ഉം transaction reference-ഉം include ചെയ്തിരിക്കും.",
+        en: "Download the receipt — includes the Bharat Connect logo and transaction reference.",
+        note: "Receipt customer-ന് WhatsApp / print വഴി കൊടുക്കുക. Future complaint-നായി reference number save ചെയ്യുക.",
+      },
+    ],
+    charges: "Service fee: ₹5 – ₹15 (category അനുസരിച്ച്)",
+    approvalTime: "Instant (most billers)",
+    errors: [
+      { problem: "\"Bill not found\" error", solution: "Consumer number recheck ചെയ്യുക. Some billers-നു bill generate ആകാൻ കുറച്ച് സമയം എടുക്കും." },
+      { problem: "Payment processing-ൽ stuck", solution: "30 minutes wait ചെയ്യുക. Status \"Failed\" ആയാൽ refund auto credit ആകും." },
     ],
   },
 
-  // ─────────── Chapter 17 — Support ───────────
+  // ─────────── Chapter 17 — Finance Portal ───────────
   {
     number: 17,
+    titleMl: "Finance Portal",
+    titleEn: "Finance Portal",
+    subtitleMl: "Gold loans, deposits, branch operations",
+    subtitleEn: "Gold loans, deposits, and branch operations",
+    themeColor: "gov-saffron",
+    icon: Coins,
+    steps: [
+      {
+        icon: Coins,
+        ml: "Sidebar → \"Finance\" തുറക്കുക. Branch / Studio dashboard കാണാം.",
+        en: "Open Sidebar → \"Finance\". You'll see the Branch / Studio dashboard.",
+      },
+      {
+        icon: User,
+        ml: "Customer onboarding: Customers tab → \"Add Customer\" → KYC details + photo + signature capture",
+        en: "Customer onboarding: Customers tab → \"Add Customer\" → KYC details + photo + signature capture",
+        tip: "Studio camera ഉപയോഗിച്ച് live photo capture ചെയ്യാം — quality optimized ആകും.",
+      },
+      {
+        icon: Sparkles,
+        ml: "Quick Quote: gold weight + purity enter ചെയ്താൽ live gold rate അനുസരിച്ച് loan amount instant calculate ആകും",
+        en: "Quick Quote: enter gold weight + purity → loan amount auto-calculates with live gold rate",
+      },
+      {
+        icon: Banknote,
+        ml: "Loan create: Loans tab → ornaments details, photos, valuation enter ചെയ്ത് loan disburse ചെയ്യുക",
+        en: "Create loan: Loans tab → enter ornaments details, photos, valuation → disburse loan",
+      },
+      {
+        icon: Wallet,
+        ml: "Deposits: Customer-ന്റെ recurring / fixed deposit accept ചെയ്യാം. Receipt PDF auto-generate ആകും.",
+        en: "Deposits: accept recurring / fixed deposits from customers. Receipt PDF auto-generates.",
+      },
+      {
+        icon: ClipboardList,
+        ml: "Cash Book: ഓരോ ദിവസത്തേയും cash in/out auto record. End-of-day report download ചെയ്യാം.",
+        en: "Cash Book: every day's cash in/out is auto-recorded. Download end-of-day report.",
+      },
+      {
+        icon: ShieldCheck,
+        ml: "Risk Badge: customer-ന്റെ risk profile auto-assess ചെയ്യും (Low / Medium / High) — loan decision-ന് help ആകും",
+        en: "Risk Badge: customer's risk profile is auto-assessed (Low / Medium / High) — helps with loan decisions",
+      },
+    ],
+    documents: ["Customer Aadhaar", "PAN", "Address proof", "Passport-size photo", "Gold ornaments (for loan)"],
+    approvalTime: "Loan disburse: instant · Deposit: instant",
+  },
+
+  // ─────────── Chapter 18 — Custom Forms ───────────
+  {
+    number: 18,
+    titleMl: "Custom Forms",
+    titleEn: "Custom Forms",
+    subtitleMl: "Admin-defined service forms",
+    subtitleEn: "Admin-defined service forms",
+    themeColor: "gov-green",
+    icon: ClipboardList,
+    steps: [
+      {
+        icon: ClipboardList,
+        ml: "Sidebar → \"Forms\" തുറക്കുക. Available form list കാണാം.",
+        en: "Open Sidebar → \"Forms\". You'll see available forms.",
+      },
+      {
+        icon: FileText,
+        ml: "Form select ചെയ്ത് customer details fill ചെയ്യുക. Required documents upload ചെയ്യുക.",
+        en: "Select a form, fill customer details, and upload required documents.",
+      },
+      {
+        icon: CreditCard,
+        ml: "Service fee wallet-ൽ നിന്ന് deduct ആകും. Submit click ചെയ്യുക.",
+        en: "Service fee deducts from wallet. Click Submit.",
+      },
+      {
+        icon: Clock,
+        ml: "Status: staff team form review ചെയ്യും. Update notification വരും. Admin approve ചെയ്താൽ service complete.",
+        en: "Status: staff team reviews the form. You'll get an update notification. On admin approval, service is complete.",
+      },
+    ],
+    charges: "Form-അനുസരിച്ച് — admin set ചെയ്യും",
+  },
+
+  // ─────────── Chapter 19 — Page Tools (Marketing) ───────────
+  {
+    number: 19,
+    titleMl: "Page Tools",
+    titleEn: "Page Tools",
+    subtitleMl: "Posters, JPG-to-PDF, billing utilities",
+    subtitleEn: "Posters, JPG-to-PDF, billing utilities",
+    themeColor: "primary",
+    icon: ImageIcon,
+    steps: [
+      {
+        icon: ImageIcon,
+        ml: "Sidebar → \"Page Tools\" തുറക്കുക. Available tools കാണാം.",
+        en: "Open Sidebar → \"Page Tools\". Browse available utilities.",
+      },
+      {
+        icon: Sparkles,
+        ml: "Poster Generator: ready-made templates use ചെയ്ത് shop poster, festival greeting, service ad design ചെയ്യാം",
+        en: "Poster Generator: use ready templates to design shop posters, festival greetings, service ads",
+        tip: "Daily WhatsApp status / Facebook post-നായി use ചെയ്യാം — customer reach വർദ്ധിപ്പിക്കും.",
+      },
+      {
+        icon: FileText,
+        ml: "JPG to PDF: customer documents (Aadhaar / certificate / receipt) ഒന്നിച്ച് PDF ആക്കാം",
+        en: "JPG to PDF: combine customer documents (Aadhaar / certificate / receipt) into one PDF",
+      },
+      {
+        icon: Receipt,
+        ml: "Service Billing: customer-നുള്ള custom bill / receipt generate ചെയ്യാം — shop name + GST optional",
+        en: "Service Billing: generate a custom bill / receipt for customers — shop name + GST optional",
+      },
+    ],
+    charges: "എല്ലാ Page Tools-ഉം Free",
+    approvalTime: "Instant",
+  },
+
+  // ─────────── Chapter 20 — Referrals ───────────
+  {
+    number: 20,
+    titleMl: "Referral പ്രോഗ്രാം",
+    titleEn: "Referral Program",
+    subtitleMl: "Friends invite ചെയ്ത് commission നേടാം",
+    subtitleEn: "Invite friends and earn commission",
+    themeColor: "gov-saffron",
+    icon: Gift,
+    steps: [
+      {
+        icon: Gift,
+        ml: "Sidebar → \"Referrals\" തുറക്കുക. നിങ്ങളുടെ unique referral code + link കാണാം.",
+        en: "Open Sidebar → \"Referrals\". You'll see your unique referral code + link.",
+        tip: "Code copy ചെയ്ത് WhatsApp / Facebook-ൽ share ചെയ്യുക.",
+      },
+      {
+        icon: User,
+        ml: "Friend നിങ്ങളുടെ link ഉപയോഗിച്ച് signup ചെയ്യും → KYC complete → first activation pay (₹150) ചെയ്യും",
+        en: "Friend signs up using your link → completes KYC → pays the first activation (₹150)",
+      },
+      {
+        icon: Award,
+        ml: "Activation success ആകുമ്പോൾ — Friend-ന് ₹100 wallet credit, നിങ്ങൾക്ക് ₹50 commission instant credit",
+        en: "On activation success — friend gets ₹100 wallet credit, you get ₹50 commission instantly",
+      },
+      {
+        icon: ClipboardList,
+        ml: "Stats: Total referrals + earned commission live track ചെയ്യാം",
+        en: "Stats: track total referrals + earned commission in real time",
+      },
+    ],
+    charges: "₹50 per successful referral",
+    approvalTime: "Instant (atomic credit)",
+  },
+
+  // ─────────── Chapter 21 — Work Badge & Worker Profile ───────────
+  {
+    number: 21,
+    titleMl: "Work Badge & Worker Profile",
+    titleEn: "Work Badge & Worker Profile",
+    subtitleMl: "Public worker profile + verified badge",
+    subtitleEn: "Public worker profile + verified badge",
+    themeColor: "gov-blue",
+    icon: BadgeCheck,
+    steps: [
+      {
+        icon: BadgeCheck,
+        ml: "Sidebar → \"Work Badge\" തുറക്കുക. Worker registration form fill ചെയ്യുക.",
+        en: "Open Sidebar → \"Work Badge\". Fill the worker registration form.",
+      },
+      {
+        icon: User,
+        ml: "Profile details: skills, experience, services offered, photo, location enter ചെയ്യുക",
+        en: "Profile details: enter skills, experience, services offered, photo, location",
+      },
+      {
+        icon: ShieldCheck,
+        ml: "Verification: KYC docs + skill proof submit. Admin approve ചെയ്തിട്ട് badge issue ആകും.",
+        en: "Verification: submit KYC docs + skill proof. Admin approves and badge is issued.",
+      },
+      {
+        icon: Sparkles,
+        ml: "Public Profile Link: badge ലഭിച്ചാൽ shareable URL കിട്ടും — customers അവിടെ booking request submit ചെയ്യാം",
+        en: "Public Profile Link: once badged, get a shareable URL — customers can submit booking requests there",
+        tip: "Profile link WhatsApp BIO / Facebook page-ൽ paste ചെയ്ത് leads നേടാം.",
+      },
+      {
+        icon: Briefcase,
+        ml: "Job marketplace-ൽ verified badge auto-display ആകും — customer trust വർദ്ധിക്കും",
+        en: "Verified badge auto-displays in job marketplace — boosts customer trust",
+      },
+    ],
+    documents: ["Aadhaar", "Skill proof / certificate", "Recent photo", "Address proof"],
+    approvalTime: "24–48 hours",
+  },
+
+  // ─────────── Chapter 22 — Staff Management ───────────
+  {
+    number: 22,
+    titleMl: "Staff Management",
+    titleEn: "Staff Management",
+    subtitleMl: "Sub-accounts create + permissions",
+    subtitleEn: "Create sub-accounts + manage permissions",
+    themeColor: "gov-green",
+    icon: Users,
+    steps: [
+      {
+        icon: Users,
+        ml: "Sidebar → \"Staff\" തുറക്കുക. Existing staff list കാണാം.",
+        en: "Open Sidebar → \"Staff\". You'll see existing staff list.",
+      },
+      {
+        icon: User,
+        ml: "\"Add Staff\" click ചെയ്യുക → name, email, password set ചെയ്യുക",
+        en: "Click \"Add Staff\" → set name, email, and password",
+        note: "Staff-ന് separate login ലഭിക്കും — main account password share ചെയ്യേണ്ട ആവശ്യമില്ല.",
+      },
+      {
+        icon: ShieldCheck,
+        ml: "Permissions: ഓരോ service-നും access toggle ചെയ്യാം. Wallet limit set ചെയ്യാം.",
+        en: "Permissions: toggle access per service. Set a wallet limit.",
+      },
+      {
+        icon: ClipboardList,
+        ml: "Activity Log: ഓരോ staff-ന്റെ transactions + actions audit log-ൽ കാണാം",
+        en: "Activity Log: see each staff member's transactions + actions in the audit log",
+      },
+      {
+        icon: Sparkles,
+        ml: "Staff Wallet: main wallet-ൽ നിന്ന് staff wallet-ലേക്ക് amount transfer ചെയ്യാം — daily limit set ചെയ്യാം",
+        en: "Staff Wallet: transfer from main wallet to staff wallet — set a daily limit",
+      },
+    ],
+    charges: "Free — unlimited staff accounts",
+  },
+
+  // ─────────── Chapter 23 — Support ───────────
+  {
+    number: 23,
     titleMl: "Support & Help Desk",
     titleEn: "Support & Help Desk",
     subtitleMl: "ഞങ്ങൾ എപ്പോഴും കൂടെയുണ്ട്",
