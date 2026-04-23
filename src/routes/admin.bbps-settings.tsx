@@ -110,13 +110,16 @@ function AdminBbpsSettings() {
           <div className="rounded-lg border bg-muted/50 p-3">
             <div className="font-medium">Provider credentials</div>
             <div className="mt-1 text-xs text-muted-foreground">
-              Add these once UAT credentials arrive after IP whitelisting is approved:
+              Provider issues credentials in pre-encrypted form (long base64 strings with version prefix).
+              Send them as-is — no client-side AES key needed.
             </div>
             <ul className="mt-2 list-inside list-disc space-y-0.5 font-mono text-xs">
+              <li>BBPS_AGENT_ID</li>
               <li>BBPS_CLIENT_ID</li>
               <li>BBPS_CLIENT_SECRET</li>
-              <li>BBPS_AES_KEY</li>
-              <li>BBPS_AES_IV (optional)</li>
+              <li>BBPS_API_KEY</li>
+              <li>BBPS_BRIDGE_BASE_URL</li>
+              <li>BBPS_BRIDGE_HMAC_SECRET</li>
             </ul>
           </div>
         </CardContent>
