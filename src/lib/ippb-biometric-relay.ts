@@ -187,20 +187,22 @@ export function subscribeRetailerPendingCaptures(
   retailerId: string,
   cb: (rows: (CaptureRequest & { ippbRequestId: string })[]) => void
 ): Unsubscribe {
+  // Single-field where → no composite index required. Status filtered client-side.
   const q = query(
     collectionGroup(db, "captureRequests"),
-    where("retailerId", "==", retailerId),
-    where("status", "in", ["requested", "capturing"])
+    where("retailerId", "==", retailerId)
   );
   return onSnapshot(q, (snap) => {
-    const rows = snap.docs.map((d) => {
-      const data = d.data() as any;
-      return {
-        id: d.id,
-        ippbRequestId: d.ref.parent.parent!.id,
-        ...data,
-      } as CaptureRequest & { ippbRequestId: string };
-    });
+    const rows = snap.docs
+      .map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          ippbRequestId: d.ref.parent.parent!.id,
+          ...data,
+        } as CaptureRequest & { ippbRequestId: string };
+      })
+      .filter((r) => r.status === "requested" || r.status === "capturing");
     rows.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
     cb(rows);
   });
