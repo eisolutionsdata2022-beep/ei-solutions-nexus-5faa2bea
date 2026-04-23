@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, BookOpen, Home, Menu, X, Lightbulb, AlertTriangle, FileText, Clock, Wallet, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, Home, Menu, X, Lightbulb, AlertTriangle, FileText, Clock, Wallet, AlertCircle, Download, Sparkles, Loader2 } from "lucide-react";
 import { GUIDE_CHAPTERS, type GuideChapter, type GuideStep } from "@/lib/training-guide-content";
+import { downloadTrainingGuidePdf } from "@/lib/training-guide-pdf";
+import { toast } from "sonner";
 
 /**
  * Internal page model — every chapter expands into:
