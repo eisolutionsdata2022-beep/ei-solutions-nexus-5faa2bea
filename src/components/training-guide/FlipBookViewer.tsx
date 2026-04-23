@@ -38,7 +38,24 @@ export function FlipBookViewer() {
   const [index, setIndex] = useState(0);
   const [flipping, setFlipping] = useState<"next" | "prev" | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      // tiny defer so spinner paints before the (synchronous) jsPDF work begins
+      await new Promise((r) => setTimeout(r, 30));
+      downloadTrainingGuidePdf();
+      toast.success("Training Guide PDF download started");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate PDF — please try again");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const goNext = () => {
     if (index >= total - 1 || flipping) return;
