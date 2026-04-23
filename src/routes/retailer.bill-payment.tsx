@@ -378,7 +378,14 @@ function BillPaymentPage() {
                 alt="B Assured — Bharat Connect"
                 className="mx-auto h-16 w-auto"
               />
-              <div className="text-sm font-medium text-emerald-700">Payment Successful</div>
+              <div className="text-sm font-medium text-emerald-700">
+                Payment Successful{receipt.mock ? " (DEMO)" : ""}
+              </div>
+              {receipt.mock && (
+                <div className="rounded border border-destructive/30 bg-destructive/5 p-2 text-xs text-muted-foreground">
+                  This was a simulated transaction — no wallet was debited and no real payment was made.
+                </div>
+              )}
               <div className="rounded-lg bg-card p-3 text-left text-sm">
                 <Row label="Receipt" value={String(receipt.receipt)} />
                 <Row label="Txn ID" value={receipt.txId.slice(0, 12)} />
