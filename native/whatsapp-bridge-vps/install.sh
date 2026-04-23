@@ -6,7 +6,13 @@ SERVICE_NAME="whatsapp-bridge"
 
 echo "[1/7] Installing system dependencies..."
 apt-get update
-apt-get install -y curl chromium chromium-driver libgbm1 libnss3 libxss1 libasound2 ca-certificates
+# Ubuntu 24.04 renamed libasound2 -> libasound2t64. Pick whichever is installable.
+ALSA_PKG="libasound2"
+if ! apt-cache show libasound2 >/dev/null 2>&1; then
+  ALSA_PKG="libasound2t64"
+fi
+apt-get install -y curl chromium-browser chromium-chromedriver libgbm1 libnss3 libxss1 "$ALSA_PKG" ca-certificates \
+  || apt-get install -y curl chromium chromium-driver libgbm1 libnss3 libxss1 "$ALSA_PKG" ca-certificates
 
 if ! command -v node >/dev/null 2>&1; then
   echo "[2/7] Installing Node.js 20..."
