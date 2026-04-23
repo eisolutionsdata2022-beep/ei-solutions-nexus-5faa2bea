@@ -363,6 +363,9 @@ function BillPaymentPage() {
               <div className="rounded-lg bg-card p-3 text-left text-sm">
                 <Row label="Receipt" value={String(receipt.receipt)} />
                 <Row label="Txn ID" value={receipt.txId.slice(0, 12)} />
+                <Row label="Amount" value={`₹${receipt.amount.toFixed(2)}`} />
+                <Row label="Service Fee" value={`₹${receipt.fee.toFixed(2)}`} />
+                <Row label="Total Debited" value={`₹${receipt.totalDebited.toFixed(2)}`} bold />
               </div>
               <div className="flex items-center justify-center gap-2 border-t pt-3">
                 <img
@@ -374,10 +377,38 @@ function BillPaymentPage() {
                   Powered by Bharat Connect • NPCI Bharat BillPay
                 </span>
               </div>
-              <Button onClick={reset} className="w-full">
-                <Receipt className="mr-2 h-4 w-4" />
-                New Payment
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!bill || !selectedBiller || !selectedCategory) return;
+                    downloadBbpsReceipt({
+                      transactionId: receipt.txId,
+                      receipt: receipt.receipt,
+                      retailerEmail: appUser?.email ?? "",
+                      categoryName: selectedCategory.name,
+                      billerName: selectedBiller.name,
+                      customerName: bill.custname,
+                      billNumber: bill.billNumber,
+                      billDate: bill.billDate,
+                      dueDate: bill.dueDate,
+                      mobileNo: mobileNo || undefined,
+                      params: paramValues,
+                      amount: receipt.amount,
+                      fee: receipt.fee,
+                      totalDebited: receipt.totalDebited,
+                      paidAt: new Date().toISOString(),
+                    });
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Receipt
+                </Button>
+                <Button onClick={reset}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  New Payment
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
