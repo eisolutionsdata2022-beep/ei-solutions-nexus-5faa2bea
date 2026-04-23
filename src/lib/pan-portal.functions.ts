@@ -323,7 +323,7 @@ export type PanUtiPurchaseResult =
       message: string;
       raw: string;
     }
-  | { success: false; error: string };
+  | { success: false; error: string; raw?: string };
 
 /**
  * Calls upstream UTI PSACoupon endpoint.
@@ -501,7 +501,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       const safeError = /^<!doctype html/i.test(text.trim())
         ? "Provider returned HTML without a readable coupon number"
         : message || `Upstream returned ${res.status}`;
-      return { success: false, error: safeError };
+      return { success: false, error: safeError, raw: text.slice(0, 4000) };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Provider unreachable";
       console.error("[PAN][UTI purchase] fetch error:", err);

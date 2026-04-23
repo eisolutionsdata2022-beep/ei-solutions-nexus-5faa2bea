@@ -149,7 +149,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           newBalance: oldBalance,
           status: "refunded",
           remark: res.error,
-          rawResponse: "provider_html_unparsed",
+          rawResponse: res.raw,
           createdAt: nowIso,
           updatedAt: nowIso,
         });
