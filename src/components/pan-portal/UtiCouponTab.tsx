@@ -84,10 +84,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     );
   }
 
-  async function handlePurchase(e: FormEvent) {
-    e.preventDefault();
-    if (!psa || !config.cipher) return;
-    setPurchasing(true);
+  async function purchaseSingle(): Promise<{ ok: boolean; couponId?: string; error?: string }> {
+    if (!psa || !config.cipher) return { ok: false, error: "Missing PSA/config" };
     const orderId = newCouponOrderId(user.uid);
     let oldBalance = 0;
     let newBalance = 0;
@@ -98,9 +96,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       });
       oldBalance = newBalance + fee;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Wallet debit failed");
-      setPurchasing(false);
-      return;
+      return { ok: false, error: err instanceof Error ? err.message : "Wallet debit failed" };
     }
     try {
       const cfg = await getPanConfig();
@@ -134,8 +130,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           createdAt: nowIso,
           updatedAt: nowIso,
         });
-        toast.error(`Purchase failed: ${res.error}. Wallet refunded.`);
-        return;
+        return { ok: false, error: res.error };
       }
       await createUtiCoupon({
         couponId: res.couponId,
@@ -153,7 +148,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         createdAt: nowIso,
         updatedAt: nowIso,
       });
-      toast.success(`Coupon ${res.couponId} purchased!`);
+      return { ok: true, couponId: res.couponId };
     } catch (err) {
       try {
         await atomicCredit(user.uid, fee, {
@@ -161,9 +156,36 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           description: `Refund — UTI coupon ${orderId}`,
         });
       } catch { /* ignore */ }
-      toast.error(err instanceof Error ? err.message : "Purchase failed — wallet refunded");
-    } finally {
-      setPurchasing(false);
+      return { ok: false, error: err instanceof Error ? err.message : "Purchase failed" };
+    }
+  }
+
+  async function handlePurchase(e: FormEvent) {
+    e.preventDefault();
+    if (!psa || !config.cipher) return;
+    const qty = Math.max(1, Math.min(MAX_QTY, quantity));
+    setPurchasing(true);
+    setProgress({ done: 0, total: qty });
+    let success = 0;
+    let failed = 0;
+    const failures: string[] = [];
+    for (let i = 0; i < qty; i++) {
+      const res = await purchaseSingle();
+      if (res.ok) success++;
+      else {
+        failed++;
+        if (res.error) failures.push(res.error);
+      }
+      setProgress({ done: i + 1, total: qty });
+    }
+    setPurchasing(false);
+    setProgress(null);
+    if (success > 0 && failed === 0) {
+      toast.success(`✅ ${success} coupon${success > 1 ? "s" : ""} purchased successfully!`);
+    } else if (success > 0 && failed > 0) {
+      toast.warning(`⚠️ ${success} succeeded, ${failed} failed (refunded). ${failures[0] || ""}`);
+    } else {
+      toast.error(`❌ All ${failed} purchases failed. ${failures[0] || "Wallet refunded."}`);
     }
   }
 
