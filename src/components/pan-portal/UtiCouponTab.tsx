@@ -303,40 +303,22 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 <span className="text-sm text-muted-foreground">Total amount</span>
                 <span className="text-xl font-bold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
               </div>
-              {quantity > 1 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {[1, 5, 10, 25].map((n) => (
-                    <Button
-                      key={n}
-                      type="button"
-                      size="sm"
-                      variant={quantity === n ? "default" : "outline"}
-                      className="h-7 text-xs"
-                      disabled={purchasing}
-                      onClick={() => setQuantity(n)}
-                    >
-                      {n}
-                    </Button>
-                  ))}
-                </div>
-              )}
-              {quantity === 1 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {[1, 5, 10, 25].map((n) => (
-                    <Button
-                      key={n}
-                      type="button"
-                      size="sm"
-                      variant={quantity === n ? "default" : "outline"}
-                      className="h-7 text-xs"
-                      disabled={purchasing}
-                      onClick={() => setQuantity(n)}
-                    >
-                      {n}
-                    </Button>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                <span className="text-xs text-muted-foreground self-center mr-1">Quick:</span>
+                {[1, 5, 10, 25].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    size="sm"
+                    variant={quantity === n ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    disabled={purchasing}
+                    onClick={() => setQuantity(n)}
+                  >
+                    {n}
+                  </Button>
+                ))}
+              </div>
             </div>
             <Button type="submit" disabled={purchasing} size="lg" className="w-full">
               {purchasing ? (
