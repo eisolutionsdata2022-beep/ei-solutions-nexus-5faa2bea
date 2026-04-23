@@ -17,9 +17,9 @@ export interface PanMasterConfig {
   ssoRedirectUrl?: string;       // https://sso-nsdl-ekyc-app.pages.dev/sso_nsdl_ekyc_redirect
   digipayDashboardUrl?: string;  // https://digipaydashboard.religaredigital.in/Login/Authenticate
 
-  /** UTI coupon endpoints (admin-editable). Same provider/api-key, different paths. */
-  utiCouponPurchaseUrl?: string; // {botapi_url}/Api/PSACoupon  (provider-specific path)
-  utiPanStatusUrl?: string;      // {botapi_url}/Api/PANStatus
+  /** UTI coupon endpoints (admin-editable). Based on documented mallika legacy API. */
+  utiCouponPurchaseUrl?: string; // {botapi_url}/api/coupon_buy
+  utiPanStatusUrl?: string;      // {botapi_url}/api/coupon_status
 
   /** UTI service master switch — controls visibility of UTI tab. */
   utiEnabled?: boolean;
@@ -125,8 +125,8 @@ export const PAN_DEFAULT_URLS = {
   psaPasswordUrl: "https://mallikacyberzone.com/api/psa_password",
   ssoRedirectUrl: "https://sso-nsdl-ekyc-app.pages.dev/sso_nsdl_ekyc_redirect",
   digipayDashboardUrl: "https://digipaydashboard.religaredigital.in/Login/Authenticate",
-  utiCouponPurchaseUrl: "https://mallikacyberzone.com/Api/PSACoupon",
-  utiPanStatusUrl: "https://mallikacyberzone.com/Api/PANStatus",
+  utiCouponPurchaseUrl: "https://mallikacyberzone.com/api/coupon_buy",
+  utiPanStatusUrl: "https://mallikacyberzone.com/api/coupon_status",
 } as const;
 
 export const PAN_DEFAULT_FEES = {
