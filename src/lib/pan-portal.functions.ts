@@ -391,7 +391,17 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         1,
         Math.min(
           data.qty,
-          Number(json.qty ?? json.Qty ?? results.qty ?? results.Qty ?? data.qty) || data.qty,
+          Number(
+            json.qty ??
+            json.Qty ??
+            json.quantity ??
+            json.Quantity ??
+            results.qty ??
+            results.Qty ??
+            results.quantity ??
+            results.Quantity ??
+            data.qty,
+          ) || data.qty,
         ),
       );
       const normalizedText = text
@@ -513,11 +523,36 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
         parseTextCoupons(text);
       }
 
-      const providerExplicitSuccess = status === "success" || status === "pending" || status === "1";
+      const providerToken = String(
+        json.token ??
+        json.Token ??
+        results.token ??
+        results.Token ??
+        results.txn_no ??
+        results.txnNo ??
+        results.utr_no ??
+        results.utrNo ??
+        "",
+      ).trim();
+      const providerPsaId = String(
+        json.psa_id ?? json.psaId ?? json.vle_id ?? json.vleId ?? results.psa_id ?? results.psaId ?? results.vle_id ?? results.vleId ?? "",
+      ).trim();
+      const providerExplicitFailure =
+        status === "failed" ||
+        status === "0" ||
+        /missing or invalid parameter|invalid api key|insufficient balance|internal processing error|internal server error|minimum 2 coupons allowed|vle data not exist|already coupon request submitted/i.test(normalizedMessage);
+      const providerExplicitSuccess = status === "success" || status === "pending" || status === "approved" || status === "1";
       const providerHtmlSuccess = coupons.length > 0 && (hasCouponDetailHtml || /UTIPAN/i.test(alnumCollapsedText));
       const providerMessageSuccess = /coupon request submit successfully|coupon submitted successfully|coupon purchase request submitted|request submit successfully|request submitted successfully/i.test(normalizedMessage);
-      const providerAccepted = providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess;
-      const providerReference = providerOrderId || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
+      const providerLegacyPending =
+        res.ok &&
+        !providerExplicitFailure &&
+        !providerExplicitSuccess &&
+        !providerMessageSuccess &&
+        !providerHtmlSuccess &&
+        (!!providerToken || !!providerPsaId || /"quantity"\s*:\s*"?\d+/i.test(text));
+      const providerAccepted = !providerExplicitFailure && (providerExplicitSuccess || providerHtmlSuccess || providerMessageSuccess || providerLegacyPending);
+      const providerReference = providerOrderId || providerToken || collapsedAckMatch?.[1] || htmlAckMatch?.[1] || htmlReferenceMatch?.[0] || data.orderId;
       if (providerExplicitSuccess && providerOrderId && coupons.length < purchasedQty) {
         for (let i = coupons.length; i < purchasedQty; i++) {
           addCoupon(`REF-${providerOrderId}-${String(i + 1).padStart(2, "0")}`, providerOrderId);
@@ -536,6 +571,8 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       const successMessage =
         providerMessageSuccess
           ? "Coupon Request Submit Successfully"
+          : providerLegacyPending
+            ? "Coupon Request Submit Successfully"
           : providerHtmlSuccess && /^missing or invalid parameter$/i.test(message)
             ? "Coupon issued successfully"
             : message;
