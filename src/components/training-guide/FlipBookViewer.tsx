@@ -125,51 +125,83 @@ export function FlipBookViewer() {
   }, [allPages]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-100 via-amber-50 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-3 sm:p-6">
-      {/* Top bar */}
-      <div className="max-w-6xl mx-auto mb-4 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" />
-          <h1 className="text-base sm:text-lg font-bold text-foreground">EI SOLUTIONS — Training Guide</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setTocOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border text-xs sm:text-sm hover:bg-muted transition-colors"
-          >
-            <Menu className="w-4 h-4" /> Chapters
-          </button>
-          <button
-            onClick={() => goTo(0)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border text-xs sm:text-sm hover:bg-muted transition-colors"
-          >
-            <Home className="w-4 h-4" /> Cover
-          </button>
-        </div>
+    <div className="min-h-[calc(100vh-4rem)] relative overflow-hidden">
+      {/* Premium aurora background */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-amber-50 to-rose-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950" />
+      <div className="absolute inset-0 -z-10 opacity-40 dark:opacity-25 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] rounded-full bg-gradient-to-br from-amber-300/40 via-orange-300/30 to-transparent blur-3xl" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[45rem] h-[45rem] rounded-full bg-gradient-to-tr from-indigo-400/40 via-violet-300/30 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-[20rem] h-[20rem] rounded-full bg-gradient-to-r from-emerald-300/30 to-cyan-300/20 blur-3xl" />
       </div>
+      <div className="absolute inset-0 -z-10 opacity-[0.03] pointer-events-none" style={{
+        backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+        backgroundSize: "32px 32px",
+      }} />
 
-      {/* Book stage */}
-      <div ref={containerRef} className="max-w-6xl mx-auto perspective-[2400px] select-none">
-        <div
-          className={`relative mx-auto bg-white dark:bg-slate-800 rounded-r-xl rounded-l-md shadow-2xl border border-amber-200/50 dark:border-slate-700 transition-transform duration-[450ms] ease-in-out ${
-            flipping === "next" ? "[transform:rotateY(-8deg)]" : flipping === "prev" ? "[transform:rotateY(8deg)]" : ""
-          }`}
-          style={{
-            width: "100%",
-            maxWidth: "1100px",
-            minHeight: "min(78vh, 760px)",
-            transformStyle: "preserve-3d",
-            backgroundImage:
-              "linear-gradient(to right, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0) 30px), linear-gradient(to left, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0) 30px)",
-          }}
-        >
-          {/* Spine shadow */}
-          <div className="hidden md:block absolute inset-y-0 left-1/2 -translate-x-1/2 w-1.5 bg-gradient-to-r from-transparent via-amber-900/20 to-transparent pointer-events-none rounded-full" />
-
-          <div className="p-4 sm:p-8 md:p-10 min-h-[inherit] flex flex-col">
-            <PageRenderer page={currentPage} pageNumber={index + 1} totalPages={total} />
+      <div className="relative p-3 sm:p-6">
+        {/* Top bar — premium glass */}
+        <div className="max-w-6xl mx-auto mb-5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-gov-blue via-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <BookOpen className="w-5 h-5 text-white" />
+              <Sparkles className="w-3 h-3 text-amber-300 absolute -top-0.5 -right-0.5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">EI SOLUTIONS</p>
+              <h1 className="text-base sm:text-lg font-black text-foreground leading-none">Training Guide</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="group relative flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100"
+            >
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+              )}
+              <span className="hidden sm:inline">{downloading ? "Generating…" : "Download PDF"}</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+            <button
+              onClick={() => setTocOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur border border-white/60 dark:border-slate-700 text-xs sm:text-sm font-semibold hover:bg-white dark:hover:bg-slate-800 transition-colors shadow-sm"
+            >
+              <Menu className="w-4 h-4" /> <span className="hidden sm:inline">Chapters</span>
+            </button>
+            <button
+              onClick={() => goTo(0)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur border border-white/60 dark:border-slate-700 text-xs sm:text-sm font-semibold hover:bg-white dark:hover:bg-slate-800 transition-colors shadow-sm"
+            >
+              <Home className="w-4 h-4" /> <span className="hidden sm:inline">Cover</span>
+            </button>
           </div>
         </div>
+
+        {/* Book stage */}
+        <div ref={containerRef} className="max-w-6xl mx-auto perspective-[2400px] select-none">
+          <div
+            className={`relative mx-auto bg-white dark:bg-slate-800 rounded-r-2xl rounded-l-md shadow-[0_30px_80px_-15px_rgba(15,23,42,0.35)] dark:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.6)] border border-amber-200/50 dark:border-slate-700 transition-transform duration-[450ms] ease-in-out ${
+              flipping === "next" ? "[transform:rotateY(-8deg)]" : flipping === "prev" ? "[transform:rotateY(8deg)]" : ""
+            }`}
+            style={{
+              width: "100%",
+              maxWidth: "1100px",
+              minHeight: "min(78vh, 760px)",
+              transformStyle: "preserve-3d",
+              backgroundImage:
+                "linear-gradient(to right, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0) 30px), linear-gradient(to left, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0) 30px)",
+            }}
+          >
+            {/* Spine shadow */}
+            <div className="hidden md:block absolute inset-y-0 left-1/2 -translate-x-1/2 w-1.5 bg-gradient-to-r from-transparent via-amber-900/20 to-transparent pointer-events-none rounded-full" />
+
+            <div className="p-4 sm:p-8 md:p-10 min-h-[inherit] flex flex-col">
+              <PageRenderer page={currentPage} pageNumber={index + 1} totalPages={total} />
+            </div>
+          </div>
 
         {/* Footer controls */}
         <div className="mt-5 flex items-center justify-center gap-4">
