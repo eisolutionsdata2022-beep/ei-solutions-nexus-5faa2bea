@@ -368,38 +368,100 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
 
       // Extract coupons. Provider may return:
       //   { results: [{coupon_no, ack_no}, ...] }
+      //   { results: {coupon_no, ack_no} }
       //   { coupons: [...] }
+      //   { data: {coupon_no, ack_no} }
       //   { coupon_no: "X,Y" } (comma-separated)
       //   { coupon_no: "X" } (single)
       const coupons: PanUtiPurchasedCoupon[] = [];
+      const seenCoupons = new Set<string>();
+      const addCoupon = (couponId: string, ackNo?: string) => {
+        const id = couponId.trim();
+        if (!id || seenCoupons.has(id)) return;
+        seenCoupons.add(id);
+        coupons.push({ couponId: id, ackNo: ackNo?.trim() || undefined });
+      };
+      const couponPattern = /UTIPAN[A-Z0-9]+/gi;
+      const ackPattern = /\b\d{15,20}\b/g;
+      const parseTextCoupons = (value: string) => {
+        const raw = value.trim();
+        if (!raw) return;
+
+        const couponMatches = raw.match(couponPattern) ?? [];
+        const ackMatches = raw.match(ackPattern) ?? [];
+        if (couponMatches.length > 0) {
+          couponMatches.forEach((match, index) => addCoupon(match, ackMatches[index] ?? match));
+          return;
+        }
+
+        raw
+          .split(/[,|\n;]+/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .forEach((part) => {
+            const nestedCoupon = part.match(couponPattern)?.[0];
+            if (nestedCoupon) addCoupon(nestedCoupon, part.match(ackPattern)?.[0] ?? nestedCoupon);
+          });
+      };
       const pushOne = (c: unknown) => {
         if (!c) return;
+        if (Array.isArray(c)) {
+          c.forEach(pushOne);
+          return;
+        }
         if (typeof c === "string" || typeof c === "number") {
-          const s = String(c).trim();
-          if (s) coupons.push({ couponId: s, ackNo: s });
+          parseTextCoupons(String(c));
           return;
         }
         if (typeof c === "object") {
           const obj = c as Record<string, unknown>;
           const couponId = String(
-            obj.coupon_no ?? obj.couponNo ?? obj.coupon_id ?? obj.couponId ?? obj.ack_no ?? obj.ackNo ?? "",
+            obj.coupon_no ??
+            obj.couponNo ??
+            obj.coupon_id ??
+            obj.couponId ??
+            obj.coupon ??
+            obj.Coupon ??
+            obj.CouponNo ??
+            obj.ack_no ??
+            obj.ackNo ??
+            "",
           ).trim();
-          const ackNo = String(obj.ack_no ?? obj.ackNo ?? couponId ?? "").trim();
-          if (couponId) coupons.push({ couponId, ackNo: ackNo || undefined });
+          const ackNo = String(
+            obj.ack_no ?? obj.ackNo ?? obj.ack ?? obj.AckNo ?? obj.acknowledgement_no ?? obj.acknowledgementNumber ?? "",
+          ).trim();
+          if (couponId) addCoupon(couponId, ackNo || couponId);
+
+          pushOne(obj.results ?? obj.result ?? obj.Results ?? obj.data ?? obj.Data ?? null);
+          if (!couponId) {
+            Object.values(obj).forEach((value) => {
+              if (typeof value === "string" || typeof value === "number" || Array.isArray(value)) pushOne(value);
+            });
+          }
         }
       };
-      const arr = json.results ?? json.coupons ?? json.data ?? null;
-      if (Array.isArray(arr)) arr.forEach(pushOne);
+
+      pushOne(json.results ?? null);
+      pushOne(json.coupons ?? null);
+      pushOne(json.data ?? null);
       if (coupons.length === 0) {
-        const flat = String(
-          json.coupon_no ?? json.couponNo ?? json.coupon_id ?? json.couponId ?? json.ack_no ?? json.ackNo ?? "",
-        ).trim();
-        if (flat) {
-          // Comma / pipe / newline separated batch.
-          flat.split(/[,|\n;]+/).map((s) => s.trim()).filter(Boolean).forEach((s) => {
-            coupons.push({ couponId: s, ackNo: s });
-          });
-        }
+        parseTextCoupons(
+          String(
+            json.coupon_no ??
+            json.couponNo ??
+            json.coupon_id ??
+            json.couponId ??
+            json.coupon ??
+            json.Coupon ??
+            json.ack_no ??
+            json.ackNo ??
+            message ??
+            text,
+          ),
+        );
+      }
+      if (coupons.length === 0) {
+        parseTextCoupons(text);
       }
 
       if (res.ok && (status === "success" || status === "1") && coupons.length > 0) {
@@ -411,6 +473,9 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
           message,
           raw: text.slice(0, 4000),
         };
+      }
+      if (res.ok && (status === "success" || status === "1") && coupons.length === 0) {
+        console.warn("[PAN][UTI purchase] success response without coupon number", text.slice(0, 1000));
       }
       return { success: false, error: message || `Upstream returned ${res.status}` };
     } catch (err) {
