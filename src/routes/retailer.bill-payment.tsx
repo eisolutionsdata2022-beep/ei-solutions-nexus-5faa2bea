@@ -70,6 +70,7 @@ function BillPaymentPage() {
           return;
         }
         setCategories(res.categories);
+        if (res.mock) setDemoMode(true);
       })
       .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Network error"))
       .finally(() => setLoading(false));
@@ -178,6 +179,7 @@ function BillPaymentPage() {
       amount: bill.amount,
       fee: res.fee ?? 0,
       totalDebited: res.totalDebited ?? bill.amount,
+      mock: res.mock,
     });
     setStep("success");
   }
@@ -210,8 +212,23 @@ function BillPaymentPage() {
             alt="Bharat Connect"
             className="h-9 w-auto"
           />
-          <Badge variant="secondary">UAT</Badge>
+          <Badge variant={demoMode ? "destructive" : "secondary"}>
+            {demoMode ? "DEMO MODE" : "UAT"}
+          </Badge>
         </div>
+
+        {demoMode && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+            <div className="font-semibold">⚠️ Bharat Connect Demo Mode</div>
+            <div className="mt-1">
+              Provider credentials not yet configured. All categories, billers, bills and
+              receipts shown are <strong>simulated test data</strong>. <strong>No wallet
+              will be debited</strong> and no real bills will be paid. Once the provider
+              whitelists our IP and shares credentials, this banner will disappear and
+              live BBPS will activate automatically.
+            </div>
+          </div>
+        )}
 
         {step === "category" && (
           <Card>
