@@ -48,12 +48,16 @@ interface Props {
 
 export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const [purchasing, setPurchasing] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackInput, setTrackInput] = useState("");
 
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
+  const MAX_QTY = 25;
+  const totalAmount = fee * quantity;
 
   if (!utiEnabled) {
     return (
