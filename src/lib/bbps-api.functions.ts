@@ -744,7 +744,7 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
         httpStatusText: wrappedJson.statusText,
         headersSent,
         bodySent,
-        response: wrappedJson.body,
+        response: typeof wrappedJson.body === "string" ? wrappedJson.body : JSON.stringify(wrappedJson.body ?? null, null, 2),
         rawText,
         error: wrappedJson.error,
         elapsedMs: Date.now() - startedAt,
