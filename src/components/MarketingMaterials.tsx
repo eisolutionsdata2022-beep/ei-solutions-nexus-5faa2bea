@@ -94,11 +94,17 @@ type PosterItem = {
 
 const BROCHURES: DocItem[] = [
   {
+    title: "Customer Brochure 2026 (Premium 12-page)",
+    description: "Full colour 12-page customer pitch — services, earnings (₹50K-₹1.2L/mo), reviews, certificates (MCA / Startup India / KSUM / STPI / GST / PAN). Share-ready PDF.",
+    path: "/marketing/EI-Solutions-Customer-Brochure.pdf",
+    type: "pdf",
+    badge: "NEW — Recommended",
+  },
+  {
     title: "Franchise Brochure (Premium)",
     description: "9-page navy + gold franchise pitch deck. Best for new partner conversations.",
     path: "/marketing/EI-Solutions-Franchise-Brochure.pdf",
     type: "pdf",
-    badge: "Recommended",
   },
   {
     title: "Franchise Brochure — Editable",
@@ -107,8 +113,8 @@ const BROCHURES: DocItem[] = [
     type: "pptx",
   },
   {
-    title: "Service Catalogue Brochure",
-    description: "Customer-facing brochure showing all platform services.",
+    title: "Service Catalogue Brochure (Legacy)",
+    description: "Older customer-facing brochure showing platform services.",
     path: "/marketing/EI-Solutions-Brochure.pdf",
     type: "pdf",
   },
@@ -119,6 +125,7 @@ const BROCHURES: DocItem[] = [
     type: "pptx",
   },
 ];
+
 
 const POSTERS: PosterItem[] = [
   {
