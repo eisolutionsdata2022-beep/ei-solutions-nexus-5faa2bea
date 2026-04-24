@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Banknote, Save, Stethoscope, Loader2, CheckCircle2, XCircle, Copy } from "lucide-react";
+import { Banknote, Save, Stethoscope, Loader2, CheckCircle2, XCircle, Copy, Radar, Square } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
