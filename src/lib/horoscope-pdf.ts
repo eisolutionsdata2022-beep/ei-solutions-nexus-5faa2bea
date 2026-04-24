@@ -1,194 +1,246 @@
+/**
+ * Bulletproof horoscope PDF download.
+ *
+ * Strategy:
+ *  1. Build a real DOM node with the report HTML and append it to <body>
+ *     (off-screen but actually rendered — Malayalam fonts load reliably).
+ *  2. Wait for one paint + fonts to be ready.
+ *  3. Capture with html2canvas at 2x scale.
+ *  4. Slice the canvas into A4-sized pages and add to a jsPDF document.
+ *  5. Force download via Blob + anchor click (works on every browser & mobile).
+ */
 import type { HoroscopeRequest } from "./horoscope-types";
-import { getRashiName, getPlanetName } from "./horoscope-engine";
-import { RASHIS } from "./horoscope-types";
+import { PRODUCT_LABELS } from "./horoscope-types";
 
-function getChartHTML(chart: HoroscopeRequest["chart"]): string {
-  if (!chart) return "";
+const A4_W = 210; // mm
+const A4_H = 297; // mm
 
-  // Build a South Indian style 4x4 grid chart
-  // Layout: [12,1,2,3] / [11,_,_,4] / [10,_,_,5] / [9,8,7,6]
-  const gridMap: Record<number, [number, number]> = {
-    12: [0, 0], 1: [0, 1], 2: [0, 2], 3: [0, 3],
-    11: [1, 0], 4: [1, 3],
-    10: [2, 0], 5: [2, 3],
-    9: [3, 0], 8: [3, 1], 7: [3, 2], 6: [3, 3],
-  };
-
-  const housePlanets: Record<number, string[]> = {};
-  for (let i = 1; i <= 12; i++) housePlanets[i] = [];
-  chart.planets.forEach((p) => {
-    const abbr = p.planetId.substring(0, 2).toUpperCase();
-    housePlanets[p.house].push(abbr);
-  });
-
-  let rows = "";
-  for (let r = 0; r < 4; r++) {
-    let cells = "";
-    for (let c = 0; c < 4; c++) {
-      const houseNum = Object.entries(gridMap).find(([, [gr, gc]]) => gr === r && gc === c);
-      if (houseNum) {
-        const h = parseInt(houseNum[0]);
-        const planets = housePlanets[h].join(", ");
-        const rashiName = getRashiName(((chart.lagna + h - 2) % 12) + 1, "ml");
-        cells += `<td class="chart-cell"><div class="house-num">${h}</div><div class="rashi-name">${rashiName}</div><div class="planet-names">${planets}</div></td>`;
-      } else {
-        if (r === 1 && c === 1) {
-          cells += `<td class="chart-center" colspan="2" rowspan="2"><div class="center-label">ജാതക ചക്രം</div><div class="lagna-label">ലഗ്നം: ${getRashiName(chart.lagna, "ml")}</div></td>`;
-        } else if ((r === 1 && c === 2) || (r === 2 && c === 1) || (r === 2 && c === 2)) {
-          continue;
-        } else {
-          cells += `<td class="chart-cell"></td>`;
-        }
-      }
-    }
-    rows += `<tr>${cells}</tr>`;
-  }
-
-  return `<table class="chart-table"><tbody>${rows}</tbody></table>`;
+function escapeHtml(s: string): string {
+  return (s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-export function generateHoroscopePDF(request: HoroscopeRequest & { godImage?: string }): string {
-  const lang = request.language || "Both";
-  const predictions = request.predictions || [];
+function fmtDate(d?: string) {
+  if (!d) return "—";
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return d;
+    return date.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  } catch {
+    return d;
+  }
+}
 
-  const positives = predictions.filter((p) => p.severity === "positive");
-  const negatives = predictions.filter((p) => p.severity === "negative");
-  const neutrals = predictions.filter((p) => p.severity === "neutral");
+/** Build the printable HTML body. */
+export function buildReportHtml(req: HoroscopeRequest): string {
+  const r = req.report;
+  const product = PRODUCT_LABELS[req.product];
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
-  const planetTable = request.chart?.planets.map((p) => `
-    <tr>
-      <td>${getPlanetName(p.planetId, "ml")} (${getPlanetName(p.planetId, "en")})</td>
-      <td>${p.house}</td>
-      <td>${getRashiName(p.rashi, "ml")} (${getRashiName(p.rashi, "en")})</td>
-      <td>${p.isExalted ? "ഉച്ചം ✅" : p.isDebilitated ? "നീചം ⚠️" : "സാധാരണം"}</td>
-    </tr>
-  `).join("") || "";
-
-  const predictionHTML = (preds: typeof predictions, title: string, color: string) => {
-    if (!preds.length) return "";
+  const section = (title: string, body: string | undefined) => {
+    if (!body) return "";
     return `
-      <div class="prediction-section">
-        <h3 style="color:${color};border-bottom:2px solid ${color};padding-bottom:4px;">${title}</h3>
-        ${preds.map((p) => `
-          <div class="prediction-item" style="border-left:3px solid ${color};">
-            <div class="pred-category">${p.category}</div>
-            ${lang !== "English" ? `<p class="pred-ml">${p.malayalam}</p>` : ""}
-            ${lang !== "Malayalam" ? `<p class="pred-en">${p.english}</p>` : ""}
-          </div>
-        `).join("")}
-      </div>
-    `;
+      <div class="sec">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(body)}</p>
+      </div>`;
   };
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { size: A4; margin: 15mm; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Noto Sans Malayalam', 'Segoe UI', sans-serif; color: #1a1a2e; background: #fff; }
-  .page { max-width: 210mm; margin: 0 auto; padding: 20px; }
+  return `
+    <div class="report">
+      <div class="hdr">
+        <div class="om">🕉️</div>
+        <div>
+          <h1>ജാതക പ്രവചനം</h1>
+          <div class="subtitle">${escapeHtml(product?.ml || "Horoscope")} &nbsp;·&nbsp; ${today}</div>
+        </div>
+      </div>
 
-  .header { text-align: center; background: linear-gradient(135deg, #0c2461, #1e3a8a); color: white; padding: 20px 20px 30px; border-radius: 8px; margin-bottom: 20px; }
-  .god-image { width: 80px; height: 80px; object-fit: contain; border-radius: 50%; border: 3px solid #d4a932; margin: 0 auto 10px; display: block; background: rgba(255,255,255,0.1); padding: 4px; }
-  .header h1 { font-size: 28px; margin-bottom: 4px; letter-spacing: 1px; }
-  .header h2 { font-size: 16px; font-weight: 400; opacity: 0.85; }
-  .header .subtitle { font-size: 13px; opacity: 0.7; margin-top: 8px; }
+      <div class="info">
+        <div><span>പേര്</span><b>${escapeHtml(req.customerName)}</b></div>
+        <div><span>ലിംഗം</span><b>${escapeHtml(req.gender)}</b></div>
+        <div><span>ജനന തീയതി</span><b>${escapeHtml(fmtDate(req.dateOfBirth))}</b></div>
+        <div><span>ജനന സമയം</span><b>${escapeHtml(req.timeOfBirth || "—")}</b></div>
+        <div><span>ജനന സ്ഥലം</span><b>${escapeHtml(req.placeOfBirth || "—")}</b></div>
+        <div><span>നക്ഷത്രം</span><b>${escapeHtml(req.nakshatram || "—")}</b></div>
+      </div>
 
-  .section { margin-bottom: 20px; page-break-inside: avoid; }
-  .section-title { font-size: 18px; font-weight: 700; color: #0c2461; border-bottom: 2px solid #d4a932; padding-bottom: 6px; margin-bottom: 12px; }
+      ${r ? `
+        <div class="summary">
+          <div class="lbl">സംക്ഷിപ്ത പ്രവചനം</div>
+          <div class="val">${escapeHtml(r.summary)}</div>
+        </div>
 
-  .customer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
-  .customer-item { display: flex; gap: 8px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #eee; }
-  .customer-label { font-weight: 600; min-width: 120px; color: #555; }
+        ${section("വ്യക്തിത്വ വിശകലനം", r.personality)}
+        ${section("കരിയർ / ജോലി", r.career)}
+        ${section("സാമ്പത്തിക സ്ഥിതി", r.finance)}
+        ${section("വിവാഹം / പങ്കാളി ജീവിതം", r.marriage)}
+        ${section("ആരോഗ്യം", r.health)}
+        ${section("വിദ്യാഭ്യാസം", r.education)}
+        ${section("ഭാഗ്യ കാലങ്ങൾ", r.luckyPeriods)}
+        ${section("പരിഹാരങ്ങൾ", r.remedies)}
+        ${section("ഭാവി പ്രവചനം", r.futureOutlook)}
+        ${section("വിംശോത്തരി ദശ", r.dasha)}
+        ${section("അടുത്ത 5 വർഷം", r.yearlyForecast)}
+      ` : `<p class="empty">പ്രവചനം ലഭ്യമല്ല.</p>`}
 
-  .chart-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-  .chart-cell { border: 2px solid #0c2461; width: 25%; height: 80px; text-align: center; vertical-align: middle; padding: 4px; font-size: 11px; background: #f8f9ff; }
-  .chart-center { border: 2px solid #0c2461; text-align: center; vertical-align: middle; background: linear-gradient(135deg, #f0f4ff, #e8ecff); }
-  .center-label { font-size: 16px; font-weight: 700; color: #0c2461; }
-  .lagna-label { font-size: 12px; color: #d4a932; font-weight: 600; margin-top: 4px; }
-  .house-num { font-weight: 700; color: #0c2461; font-size: 13px; }
-  .rashi-name { font-size: 10px; color: #666; }
-  .planet-names { font-size: 11px; color: #c0392b; font-weight: 600; margin-top: 2px; }
-
-  table.planet-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.planet-table th { background: #0c2461; color: white; padding: 8px; text-align: left; }
-  table.planet-table td { padding: 8px; border-bottom: 1px solid #eee; }
-  table.planet-table tr:nth-child(even) { background: #f8f9ff; }
-
-  .prediction-section { margin-bottom: 16px; }
-  .prediction-item { padding: 8px 12px; margin: 6px 0; background: #fafbff; border-radius: 4px; }
-  .pred-category { font-weight: 700; font-size: 13px; color: #0c2461; margin-bottom: 2px; }
-  .pred-ml { font-size: 14px; color: #333; margin: 2px 0; }
-  .pred-en { font-size: 12px; color: #666; font-style: italic; }
-
-  .footer { text-align: center; padding: 20px; border-top: 2px solid #d4a932; margin-top: 30px; font-size: 11px; color: #888; }
-  .footer .brand { font-size: 14px; font-weight: 700; color: #0c2461; }
-
-  .gold-divider { height: 3px; background: linear-gradient(90deg, transparent, #d4a932, transparent); margin: 15px 0; }
-</style>
-</head>
-<body>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    ${request.godImage ? `<img src="${request.godImage}" class="god-image" alt="God Image" />` : ""}
-    <h1>☉ ജ്യോതിഷ ഫലം ☉</h1>
-    <h2>Horoscope Report</h2>
-    <div class="subtitle">EI Solutions — Premium Astrology Service</div>
-  </div>
-
-  <!-- Customer Details -->
-  <div class="section">
-    <div class="section-title">👤 വിവരങ്ങൾ / Customer Details</div>
-    <div class="customer-grid">
-      <div class="customer-item"><span class="customer-label">പേര് / Name:</span> ${request.customerName}</div>
-      <div class="customer-item"><span class="customer-label">ലിംഗം / Gender:</span> ${request.gender}</div>
-      <div class="customer-item"><span class="customer-label">ജനന തീയതി / DOB:</span> ${request.dateOfBirth}</div>
-      <div class="customer-item"><span class="customer-label">ജനന സമയം / Time:</span> ${request.timeOfBirth}</div>
-      <div class="customer-item"><span class="customer-label">ജനന സ്ഥലം / Place:</span> ${request.placeOfBirth}</div>
-      ${request.birthStar ? `<div class="customer-item"><span class="customer-label">ജന്മ നക്ഷത്രം / Star:</span> ${request.birthStar}</div>` : ""}
-      <div class="customer-item"><span class="customer-label">ലഗ്നം / Lagna:</span> ${request.chart ? getRashiName(request.chart.lagna, "ml") + " (" + getRashiName(request.chart.lagna, "en") + ")" : "N/A"}</div>
+      <div class="footer">
+        <div>EI Solutions Janasevana Platform</div>
+        <div>Generated: ${today}</div>
+      </div>
     </div>
-  </div>
+  `;
+}
 
-  <div class="gold-divider"></div>
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;700&display=swap');
+  .report {
+    width: 794px; padding: 48px 56px;
+    font-family: 'Noto Sans Malayalam', system-ui, sans-serif;
+    color: #1a1a2e; background: #fff; line-height: 1.55;
+  }
+  .hdr { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 3px double #b45309; }
+  .om { font-size: 44px; line-height: 1; }
+  .hdr h1 { font-size: 28px; font-weight: 700; color: #7c2d12; margin: 0; }
+  .hdr .subtitle { font-size: 13px; color: #57534e; margin-top: 4px; }
+  .info {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px;
+    background: #fef3c7; border: 1px solid #fde68a; border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0 24px;
+    font-size: 13px;
+  }
+  .info > div { display: flex; gap: 8px; }
+  .info span { color: #78716c; min-width: 92px; }
+  .info b { color: #1c1917; font-weight: 600; }
+  .summary {
+    background: linear-gradient(135deg, #fef3c7, #fed7aa);
+    border-left: 4px solid #b45309;
+    padding: 14px 18px; border-radius: 8px; margin-bottom: 18px;
+  }
+  .summary .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #92400e; font-weight: 700; }
+  .summary .val { font-size: 14px; color: #1c1917; margin-top: 4px; font-weight: 500; }
+  .sec { margin-bottom: 14px; page-break-inside: avoid; }
+  .sec h3 {
+    font-size: 14px; font-weight: 700; color: #7c2d12;
+    margin: 0 0 4px; padding-bottom: 3px; border-bottom: 1px solid #fde68a;
+  }
+  .sec p { font-size: 12.5px; margin: 0; color: #292524; white-space: pre-wrap; }
+  .empty { text-align: center; color: #9ca3af; padding: 30px; font-style: italic; }
+  .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e5e7eb;
+    display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; }
+`;
 
-  <!-- Chart -->
-  <div class="section">
-    <div class="section-title">🔮 ജാതക ചക്രം / Birth Chart</div>
-    ${getChartHTML(request.chart)}
-  </div>
+/** Render the report HTML into a hidden (but real) DOM node, capture, then PDF. */
+export async function downloadHoroscopePdf(req: HoroscopeRequest): Promise<void> {
+  if (typeof window === "undefined") throw new Error("PDF download only works in the browser.");
 
-  <div class="gold-divider"></div>
+  // Lazy load heavy libs
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
 
-  <!-- Planet Table -->
-  <div class="section">
-    <div class="section-title">🪐 ഗ്രഹ സ്ഥിതി / Planetary Positions</div>
-    <table class="planet-table">
-      <thead><tr><th>ഗ്രഹം / Planet</th><th>ഭാവം / House</th><th>രാശി / Rashi</th><th>സ്ഥിതി / Status</th></tr></thead>
-      <tbody>${planetTable}</tbody>
-    </table>
-  </div>
+  // 1. Style sheet (idempotent)
+  if (!document.getElementById("horoscope-pdf-style")) {
+    const style = document.createElement("style");
+    style.id = "horoscope-pdf-style";
+    style.textContent = STYLES;
+    document.head.appendChild(style);
+  }
 
-  <div class="gold-divider"></div>
+  // 2. Off-screen container — real DOM (not iframe) so fonts apply.
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;";
+  wrap.innerHTML = buildReportHtml(req);
+  document.body.appendChild(wrap);
 
-  <!-- Predictions -->
-  <div class="section">
-    <div class="section-title">📜 ഫലങ്ങൾ / Predictions</div>
-    ${predictionHTML(positives, "✅ അനുകൂല ഫലങ്ങൾ / Positive Predictions", "#27ae60")}
-    ${predictionHTML(neutrals, "⚖️ സാധാരണ ഫലങ്ങൾ / Neutral Predictions", "#f39c12")}
-    ${predictionHTML(negatives, "⚠️ പ്രതികൂല ഫലങ്ങൾ / Caution Areas", "#e74c3c")}
-  </div>
+  try {
+    // 3. Wait for fonts + a paint
+    if ((document as any).fonts?.ready) {
+      try { await (document as any).fonts.ready; } catch { /* ignore */ }
+    }
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // small delay for Google Fonts to actually swap
+    await new Promise((r) => setTimeout(r, 350));
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="brand">EI SOLUTIONS — Premium Astrology Services</div>
-    <p style="margin-top:6px;">ഈ റിപ്പോർട്ട് ഡിജിറ്റലായി സൃഷ്ടിച്ചതാണ്. / This report is digitally generated.</p>
-    <p>Generated on: ${new Date().toLocaleDateString("en-IN")}</p>
-  </div>
-</div>
-</body>
-</html>`;
+    // 4. Capture
+    const node = wrap.firstElementChild as HTMLElement;
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      windowWidth: 794,
+    });
+
+    // 5. Slice into A4 pages
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const imgWidth = A4_W;
+    const pageHeight = A4_H;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+    pdf.addImage(dataUrl, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight; // negative offset to scroll
+      pdf.addPage();
+      pdf.addImage(dataUrl, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+      heightLeft -= pageHeight;
+    }
+
+    // 6. Force download via Blob + anchor — works on every browser, mobile too.
+    const safeName = (req.customerName || "Horoscope").replace(/[^a-zA-Z0-9_\-]+/g, "_");
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Horoscope_${safeName}_${(req.id || "").slice(0, 6)}.pdf`;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
+  } finally {
+    wrap.remove();
+  }
+}
+
+/**
+ * Open the report in a new tab as a printable HTML page.
+ * This is the ultimate fallback — the user can just press Ctrl/Cmd-P
+ * and "Save as PDF" if download somehow fails.
+ */
+export function openPrintableReport(req: HoroscopeRequest): void {
+  if (typeof window === "undefined") return;
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("Pop-up blocked. Please allow pop-ups and try again.");
+    return;
+  }
+  w.document.write(`<!doctype html><html lang="ml"><head>
+    <meta charset="utf-8"/>
+    <title>Horoscope — ${escapeHtml(req.customerName)}</title>
+    <style>${STYLES}
+      body{margin:0;background:#f5f5f5}
+      @media print { body{background:#fff} .actions{display:none!important} }
+      .actions{position:sticky;top:0;background:#fff;padding:10px;border-bottom:1px solid #ddd;text-align:center;z-index:10}
+      .actions button{background:#7c2d12;color:#fff;border:0;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600}
+    </style>
+  </head><body>
+    <div class="actions">
+      <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+    ${buildReportHtml(req)}
+  </body></html>`);
+  w.document.close();
 }
