@@ -9,7 +9,6 @@
  *   4. Redirect user back to /retailer/wallet?paytm=success|failed
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { verifyCheckoutCallback } from "@/lib/paytm-checksum.server";
 import { runPaytmStatusCheck } from "@/lib/paytm.functions";
 
 export const Route = createFileRoute("/api/public/paytm-callback")({
@@ -31,7 +30,8 @@ export const Route = createFileRoute("/api/public/paytm-callback")({
         const orderId = data["ORDERID"] || data["ORDER_ID"] || "";
         if (!orderId) return redirectToWallet("failed", "Missing order");
 
-        // 1. Verify checksum (signature)
+        // 1. Verify checksum (signature) — dynamic import keeps server-only code out of client bundle
+        const { verifyCheckoutCallback } = await import("@/lib/paytm-checksum.server");
         const valid = verifyCheckoutCallback(data, merchantKey);
         if (!valid) {
           console.error("[paytm-callback] Invalid checksum for order", orderId);

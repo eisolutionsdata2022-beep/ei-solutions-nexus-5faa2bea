@@ -25,7 +25,11 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { firebaseAuthMiddleware } from "@/lib/firebase-auth.middleware";
-import { generatePaytmSignature } from "@/lib/paytm-checksum.server";
+// Server-only checksum helpers — lazy-loaded inside handlers so the
+// `.server.ts` module never appears as a top-level import in client bundles.
+async function loadChecksum() {
+  return import("@/lib/paytm-checksum.server");
+}
 import { DEFAULT_PAYTM_CONFIG, type PaytmMasterConfig, type PaytmTopupRequest } from "@/lib/paytm-types";
 
 interface PaytmCreds {
@@ -112,6 +116,7 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
       IS_USER_VERIFIED: "YES",
     };
 
+    const { generatePaytmSignature } = await loadChecksum();
     const checksum = generatePaytmSignature(params, creds.key);
 
     await addDoc(collection(db, "wallet_topup_requests"), {
@@ -167,6 +172,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
       businessType: "UPI_QR_CODE",
       posId: "S12_123",
     };
+    const { generatePaytmSignature } = await loadChecksum();
     const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
     const post = {
       head: { clientId: "C11", version: "v1", signature },
@@ -260,6 +266,7 @@ export async function runPaytmStatusCheck(
     gatewayName?: string;
   } = {};
 
+  const { generatePaytmSignature } = await loadChecksum();
   if (isProd) {
     const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
     const checksum = generatePaytmSignature(statusParams, creds.key);
