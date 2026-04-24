@@ -177,7 +177,38 @@ function RetailerHoroscope() {
     }
   };
 
+  const validateForDownload = (req: HoroscopeRequest | null | undefined): string | null => {
+    if (!req) return "Report data is missing.";
+    if (!req.customerName?.trim()) return "Customer name is missing.";
+    if (!req.product) return "Product type is missing.";
+
+    const template = req.pdfTemplate ?? (req.product === "standard" ? "classic" : "premium");
+    if (template !== "classic" && template !== "premium") {
+      return "Invalid PDF template.";
+    }
+
+    if (req.product === "palmistry") {
+      if (!req.palmistry) return "Palmistry reading has not been generated yet.";
+    } else {
+      if (!req.chart) return "Birth chart has not been generated yet.";
+      if (!req.predictions || req.predictions.length === 0) {
+        return "Predictions have not been generated yet.";
+      }
+      if (req.product === "premium" && !req.premiumExtras) {
+        return "Premium report content is missing.";
+      }
+    }
+    return null;
+  };
+
   const handleDownloadPDF = async (req: HoroscopeRequest) => {
+    const validationError = validateForDownload(req);
+    if (validationError) {
+      console.warn("Horoscope download blocked:", validationError, req);
+      toast.error(validationError);
+      return;
+    }
+
     try {
       const fileName = await downloadHoroscopePdf(req);
       toast.success(`📥 ${fileName} downloaded successfully.`);
