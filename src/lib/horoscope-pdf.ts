@@ -805,6 +805,45 @@ function waitForImages(root: HTMLElement, timeoutMs = 6000): Promise<void> {
   });
 }
 
+function trimCanvasHorizontalWhitespace(source: HTMLCanvasElement): HTMLCanvasElement {
+  const ctx = source.getContext("2d");
+  if (!ctx) return source;
+
+  const { width, height } = source;
+  const { data } = ctx.getImageData(0, 0, width, height);
+
+  const columnHasContent = (x: number) => {
+    for (let y = 0; y < height; y += 3) {
+      const idx = (y * width + x) * 4;
+      const alpha = data[idx + 3];
+      if (alpha <= 8) continue;
+
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      if (r < 248 || g < 248 || b < 248) return true;
+    }
+    return false;
+  };
+
+  let left = 0;
+  while (left < width - 1 && !columnHasContent(left)) left += 1;
+
+  let right = width - 1;
+  while (right > left && !columnHasContent(right)) right -= 1;
+
+  if (left === 0 && right === width - 1) return source;
+
+  const trimmed = document.createElement("canvas");
+  trimmed.width = right - left + 1;
+  trimmed.height = height;
+  const trimmedCtx = trimmed.getContext("2d");
+  if (!trimmedCtx) return source;
+
+  trimmedCtx.drawImage(source, left, 0, trimmed.width, height, 0, 0, trimmed.width, height);
+  return trimmed;
+}
+
 export async function downloadHoroscopePdf(req: HoroscopeRequest): Promise<void> {
   if (typeof window === "undefined") throw new Error("PDF download only works in the browser.");
 
@@ -821,7 +860,8 @@ export async function downloadHoroscopePdf(req: HoroscopeRequest): Promise<void>
   }
 
   const wrap = document.createElement("div");
-  wrap.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;";
+  wrap.setAttribute("aria-hidden", "true");
+  wrap.style.cssText = "position:fixed;left:0;top:0;width:794px;background:#fff;pointer-events:none;z-index:-2147483647;overflow:hidden;";
   wrap.innerHTML = buildReportHtml(req);
   document.body.appendChild(wrap);
 
@@ -831,35 +871,41 @@ export async function downloadHoroscopePdf(req: HoroscopeRequest): Promise<void>
     }
     await waitForImages(wrap);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 120));
 
     const node = wrap.firstElementChild as HTMLElement;
     const canvas = await html2canvas(node, {
-      scale: 2,
+      scale: Math.min(Math.max(window.devicePixelRatio || 1, 1.35), 1.6),
       useCORS: true,
-      allowTaint: true,
       backgroundColor: "#ffffff",
       logging: false,
+      x: 0,
+      y: 0,
+      scrollX: 0,
+      scrollY: 0,
+      width: Math.ceil(node.scrollWidth),
+      height: Math.ceil(node.scrollHeight),
       windowWidth: 794,
       imageTimeout: 8000,
     });
 
-    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const trimmedCanvas = trimCanvasHorizontalWhitespace(canvas);
+
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
     const imgWidth = A4_W;
     const pageHeight = A4_H;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const imgHeight = (trimmedCanvas.height * imgWidth) / trimmedCanvas.width;
 
     let heightLeft = imgHeight;
     let position = 0;
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.94);
 
-    pdf.addImage(dataUrl, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+    pdf.addImage(trimmedCanvas, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
     heightLeft -= pageHeight;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(dataUrl, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+      pdf.addImage(trimmedCanvas, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
       heightLeft -= pageHeight;
     }
 
