@@ -235,3 +235,12 @@ function AdminBbpsSettings() {
     </div>
   );
 }
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <span className="text-[11px] font-medium text-muted-foreground">{k}</span>
+      <span className="text-right font-mono text-[11px] break-all">{v}</span>
+    </div>
+  );
+}
