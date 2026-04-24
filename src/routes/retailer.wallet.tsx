@@ -42,6 +42,7 @@ import {
 import { toast } from "sonner";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { FloatingInput } from "@/components/ui/floating-input";
+import { PaytmAddMoneyCard } from "@/components/wallet/PaytmAddMoneyCard";
 
 export const Route = createFileRoute("/retailer/wallet")({
   ssr: false,
@@ -533,6 +534,9 @@ function RetailerWallet() {
           </div>
         </div>
       </div>
+
+      {/* Instant Add Money — Paytm Gateway (auto-credit) */}
+      <PaytmAddMoneyCard />
 
       {/* Wallet Requests — card list with status timeline */}
       <WalletRequestsList loading={loading} requests={walletRequests} />
