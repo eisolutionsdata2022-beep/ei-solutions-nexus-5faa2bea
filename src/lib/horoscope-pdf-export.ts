@@ -67,23 +67,39 @@ export async function downloadHoroscopePdf(html: string, fileName: string) {
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
+    let renderedPages = 0;
     for (let index = 0; index < targets.length; index++) {
       const page = targets[index];
+      const width = Math.max(page.scrollWidth, page.offsetWidth, 794);
+      const height = Math.max(page.scrollHeight, page.offsetHeight, 1);
+
+      if (height < 50 || width < 50) {
+        // Skip blank/zero-size pages — they crash html2canvas
+        continue;
+      }
+
       const canvas = await html2canvas(page, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
         logging: false,
         imageTimeout: 0,
-        windowWidth: Math.max(page.scrollWidth, page.offsetWidth, 794),
-        windowHeight: Math.max(page.scrollHeight, page.offsetHeight, 1123),
+        windowWidth: width,
+        windowHeight: height,
       });
+
+      if (!canvas.width || !canvas.height) continue;
 
       const image = canvas.toDataURL("image/jpeg", 0.95);
       const imageHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      if (index > 0) pdf.addPage();
+      if (renderedPages > 0) pdf.addPage();
       pdf.addImage(image, "JPEG", 0, 0, pdfWidth, Math.min(imageHeight, pdfHeight));
+      renderedPages++;
+    }
+
+    if (renderedPages === 0) {
+      throw new Error("No renderable content found in horoscope HTML");
     }
 
     pdf.save(fileName);

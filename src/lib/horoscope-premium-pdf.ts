@@ -5,8 +5,8 @@ import { RASHIS } from "./horoscope-types";
 const COSMIC_CSS = `
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
-  body { font-family: 'Noto Sans Malayalam','Manjari','Anek Malayalam',Arial,sans-serif; color:#1a1330; margin:0; background:#fffaf0; }
-  .page { page-break-after: always; padding: 16px 4px; position:relative; }
+  body { font-family: 'Noto Sans Malayalam','Manjari','Anek Malayalam','Segoe UI',Arial,sans-serif; color:#1a1330; margin:0; background:#fffaf0; }
+  .page { page-break-after: always; padding: 16px 4px; position:relative; width: 210mm; min-height: 270mm; background:#fffaf0; }
   .page:last-child { page-break-after: auto; }
   .gold-border { border: 6px double #b8860b; border-radius: 14px; padding: 18px; background: linear-gradient(180deg,#fffdf3,#fff5d8); }
   h1.cover-title { font-size: 38px; text-align:center; color:#7a3e0d; margin: 12px 0 4px; letter-spacing: 1px; }
@@ -118,7 +118,6 @@ export function generatePremiumHoroscopePDF(req: HoroscopeRequest): string {
     </tr>`).join("") || "";
 
   return `<!DOCTYPE html><html lang="ml"><head><meta charset="UTF-8"><title>${req.product === "palmistry" ? "Palm Reading" : "സമ്പൂർണ ജാതകം"} — ${req.customerName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@400;600;700&family=Manjari:wght@400;700&display=swap" rel="stylesheet">
   <style>${COSMIC_CSS}</style></head><body>
 
   <!-- Cover -->
