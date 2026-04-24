@@ -70,6 +70,7 @@ import {
   Server,
   Undo2,
   Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
