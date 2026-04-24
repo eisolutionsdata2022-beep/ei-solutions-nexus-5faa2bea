@@ -87,6 +87,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Portal Settings", to: "/admin/pan-portal-settings", icon: IdCard as any },
+    { label: "PAN Legacy Wallet", to: "/admin/pan-legacy-balances", icon: Wallet, tag: "new" },
     { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
     { label: "Finance Branches", to: "/admin/finance-branches", icon: ShieldCheck },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },

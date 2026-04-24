@@ -17,6 +17,15 @@ import {
   upsertPsaRecord,
   subscribeRetailerUtiCoupons,
 } from "@/lib/pan-portal-firebase";
+import {
+  createLegacyTransferRequest,
+  getLegacyBalance,
+  subscribeRetailerTransferRequests,
+} from "@/lib/pan-legacy-balance";
+import type {
+  PanLegacyBalance,
+  PanLegacyTransferRequest,
+} from "@/lib/pan-legacy-balance-types";
 import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
 import {
   panNsdlGetAuthorization,
@@ -60,6 +69,7 @@ import {
   ShieldAlert,
   Server,
   Undo2,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -171,7 +181,8 @@ function PanPortalPage() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="container mx-auto px-6 max-w-6xl py-8">
+      <div className="container mx-auto px-6 max-w-6xl py-8 space-y-6">
+        <LegacyTransferStatusCard retailerId={appUser.uid} />
         <Tabs defaultValue="psa">
           <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl flex-wrap">
             <TabsTrigger value="psa" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
@@ -288,6 +299,16 @@ function PsaTab({
     uidNo: "",
   });
 
+  /* ---- Legacy balance lookup state ---- */
+  const [lookingUp, setLookingUp] = useState(false);
+  const [legacyBalance, setLegacyBalance] = useState<PanLegacyBalance | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [transferRequests, setTransferRequests] = useState<PanLegacyTransferRequest[]>([]);
+
+  useEffect(() => {
+    return subscribeRetailerTransferRequests(user.uid, setTransferRequests);
+  }, [user.uid]);
+
   if (!config.hasCredentials) {
     return (
       <Card><CardContent className="p-6 text-center text-muted-foreground">
@@ -375,6 +396,46 @@ function PsaTab({
     }
   }
 
+  /**
+   * Look up the legacy PAN portal balance for the entered PSA ID + mobile.
+   * Match rules: PSA ID must equal the legacy username (`RMPMCST-<mobile>`)
+   * AND the registered mobile must match the one on file. This prevents a
+   * retailer from claiming somebody else's balance just by guessing the ID.
+   */
+  async function handleLookupLegacy() {
+    setLookupError(null);
+    setLegacyBalance(null);
+    if (!linkForm.vleId.trim()) {
+      setLookupError("Enter your PSA / VLE ID first.");
+      return;
+    }
+    if (!/^\d{10}$/.test(linkForm.mobile)) {
+      setLookupError("Enter a valid 10-digit registered mobile.");
+      return;
+    }
+    setLookingUp(true);
+    try {
+      const rec = await getLegacyBalance(linkForm.vleId.trim());
+      if (!rec) {
+        setLookupError("No legacy account found for this PSA ID. You can still link without a balance transfer.");
+        return;
+      }
+      if (rec.mobile !== linkForm.mobile) {
+        setLookupError(`PSA ID exists but the registered mobile does not match (expected ${rec.mobile.slice(0,2)}******${rec.mobile.slice(-2)}). Contact admin if this is your account.`);
+        return;
+      }
+      if (rec.claimed || (rec.remaining ?? rec.balance) <= 0) {
+        setLookupError("This legacy balance has already been transferred.");
+        return;
+      }
+      setLegacyBalance(rec);
+    } catch (err) {
+      setLookupError(err instanceof Error ? err.message : "Lookup failed");
+    } finally {
+      setLookingUp(false);
+    }
+  }
+
   async function handleLinkExisting(e: FormEvent) {
     e.preventDefault();
     if (!linkForm.vleId.trim()) {
@@ -385,8 +446,17 @@ function PsaTab({
       toast.error("Registered mobile must be 10 digits");
       return;
     }
+
+    // Guard: prevent claiming the same legacy id from two different retailers.
+    const alreadyRequested = transferRequests.some(
+      (r) =>
+        r.legacyUsername === linkForm.vleId.trim().toUpperCase() &&
+        (r.status === "pending" || r.status === "approved"),
+    );
+
     setLinking(true);
     try {
+      // 1. PSA link goes through immediately — no admin wait, as requested.
       await upsertPsaRecord({
         retailerId: user.uid,
         vleId: linkForm.vleId.trim(),
@@ -402,14 +472,39 @@ function PsaTab({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      toast.success("PSA ID linked. You can now purchase coupons.");
+
+      // 2. If a legacy balance was found AND not already requested, raise a
+      //    transfer request. The request alone needs admin approval — the
+      //    PSA ID itself is already active.
+      if (legacyBalance && !alreadyRequested) {
+        const amt = legacyBalance.remaining ?? legacyBalance.balance;
+        await createLegacyTransferRequest({
+          retailerId: user.uid,
+          retailerEmail: user.email,
+          retailerName: user.name,
+          legacyUsername: legacyBalance.username,
+          legacyMobile: legacyBalance.mobile,
+          legacyName: legacyBalance.name,
+          amount: amt,
+        });
+        toast.success(
+          `PSA linked. Wallet transfer request for ₹${amt} sent to admin for approval.`,
+        );
+      } else if (alreadyRequested) {
+        toast.success("PSA ID linked. A transfer request for this account is already in progress.");
+      } else {
+        toast.success("PSA ID linked. You can now purchase coupons.");
+      }
+
       setShowLinkForm(false);
+      setLegacyBalance(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Link failed");
     } finally {
       setLinking(false);
     }
   }
+
 
   if (psa?.status === "approved") {
     return (
@@ -543,8 +638,12 @@ function PsaTab({
                   <Label>PSA / VLE ID *</Label>
                   <Input
                     value={linkForm.vleId}
-                    onChange={(e) => setLinkForm({ ...linkForm, vleId: e.target.value })}
-                    placeholder="Your existing UTI / PSA ID"
+                    onChange={(e) => {
+                      setLinkForm({ ...linkForm, vleId: e.target.value.toUpperCase() });
+                      setLegacyBalance(null);
+                      setLookupError(null);
+                    }}
+                    placeholder="e.g. RMPMCST-9447175704"
                     required
                   />
                 </div>
@@ -553,7 +652,11 @@ function PsaTab({
                   <Input
                     value={linkForm.mobile}
                     maxLength={10}
-                    onChange={(e) => setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => {
+                      setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") });
+                      setLegacyBalance(null);
+                      setLookupError(null);
+                    }}
                     placeholder="10-digit mobile"
                     required
                   />
@@ -567,12 +670,71 @@ function PsaTab({
                   />
                 </div>
               </div>
+
+              {/* Legacy balance lookup */}
+              <div className="rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-slate-900 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-start gap-2">
+                    <Wallet className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                        Old Portal Wallet Balance
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Check if your old mallikarecharge wallet balance can be transferred.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleLookupLegacy}
+                    disabled={lookingUp || !linkForm.vleId || linkForm.mobile.length !== 10}
+                    className="border-emerald-400 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                    Check Balance
+                  </Button>
+                </div>
+
+                {lookupError && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200/60">
+                    {lookupError}
+                  </p>
+                )}
+
+                {legacyBalance && (
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 p-3 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                          Found: <strong>{legacyBalance.name}</strong>
+                        </p>
+                        <p className="text-[11px] text-muted-foreground font-mono">
+                          {legacyBalance.username}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] text-muted-foreground">Transferable</p>
+                        <p className="text-2xl font-bold text-emerald-600">
+                          ₹{(legacyBalance.remaining ?? legacyBalance.balance).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-900/30 p-2 rounded">
+                      ✓ Click <strong>Confirm & Link</strong> below — your PSA ID is linked instantly and a wallet transfer request goes to admin for approval.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" disabled={linking} className="bg-amber-500 hover:bg-amber-600 text-white">
                   {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                  Confirm & Link
+                  {legacyBalance ? `Confirm & Request ₹${legacyBalance.remaining ?? legacyBalance.balance}` : "Confirm & Link"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setShowLinkForm(false)}>
+                <Button type="button" variant="ghost" onClick={() => { setShowLinkForm(false); setLegacyBalance(null); setLookupError(null); }}>
                   Cancel
                 </Button>
               </div>
@@ -1226,5 +1388,99 @@ function OrderTimeline({ order }: { order: PanOrder }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- *
+ * Legacy wallet transfer — separate visibility card.
+ *
+ * Shows a dedicated "Transfer Amount" card above the tabs whenever the
+ * retailer has at least one legacy wallet transfer request on file. This
+ * keeps the legacy ₹ amount visually separate from the regular wallet
+ * balance (per user requirement) so retailers always know what is pending
+ * vs. already credited.
+ * ----------------------------------------------------------------------- */
+function LegacyTransferStatusCard({ retailerId }: { retailerId: string }) {
+  const [requests, setRequests] = useState<PanLegacyTransferRequest[]>([]);
+
+  useEffect(() => {
+    return subscribeRetailerTransferRequests(retailerId, setRequests);
+  }, [retailerId]);
+
+  if (requests.length === 0) return null;
+
+  const pending = requests.filter((r) => r.status === "pending");
+  const approved = requests.filter((r) => r.status === "approved");
+  const rejected = requests.filter((r) => r.status === "rejected");
+
+  const pendingAmount = pending.reduce((s, r) => s + r.amount, 0);
+  const approvedAmount = approved.reduce((s, r) => s + r.amount, 0);
+
+  return (
+    <Card className="border-emerald-200 dark:border-emerald-900/50 shadow-md overflow-hidden">
+      <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-1" />
+      <CardHeader className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wallet className="h-5 w-5 text-emerald-600" />
+          Old Portal Wallet Transfer
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 space-y-3">
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/20 p-3">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-wider font-semibold">
+              <Clock className="h-3.5 w-3.5" /> Pending Transfer
+            </div>
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+              ₹{pendingAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {pending.length} request{pending.length === 1 ? "" : "s"} awaiting admin
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-[11px] uppercase tracking-wider font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Credited
+            </div>
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+              ₹{approvedAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Already in your wallet
+            </p>
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="flex items-center gap-2 text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
+              <XCircle className="h-3.5 w-3.5" /> Rejected
+            </div>
+            <p className="text-2xl font-bold mt-1">{rejected.length}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Contact admin if disputed
+            </p>
+          </div>
+        </div>
+
+        {requests.slice(0, 4).map((r) => (
+          <div
+            key={r.id}
+            className="flex items-center justify-between gap-2 text-xs border-t pt-2"
+          >
+            <div className="min-w-0 flex-1">
+              <span className="font-mono text-foreground">{r.legacyUsername}</span>
+              <span className="text-muted-foreground"> · {new Date(r.createdAt).toLocaleDateString()}</span>
+            </div>
+            <span className="font-semibold">₹{r.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+            <Badge
+              variant={
+                r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"
+              }
+              className="capitalize"
+            >
+              {r.status}
+            </Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
