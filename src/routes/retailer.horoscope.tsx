@@ -23,8 +23,8 @@ import { Sparkles, Download, Loader2, FileText, Eye, Star, Printer } from "lucid
 import { toast } from "sonner";
 
 import {
-  PRODUCT_LABELS, STATUS_COLORS, NAKSHATRAS, DEFAULT_SETTINGS,
-  type HoroscopeRequest, type HoroscopeProduct, type Gender, type HoroscopeSettings,
+  PRODUCT_LABELS, STATUS_COLORS, NAKSHATRAS, DEFAULT_SETTINGS, RELIGION_LABELS,
+  type HoroscopeRequest, type HoroscopeProduct, type Gender, type HoroscopeSettings, type Religion,
 } from "@/lib/horoscope-types";
 import {
   subscribeHoroscopeSettings, subscribeHoroscopeRequests,
@@ -42,6 +42,7 @@ export const Route = createFileRoute("/retailer/horoscope")({
 const EMPTY_FORM = {
   customerName: "",
   gender: "Male" as Gender,
+  religion: "Hindu" as Religion,
   dateOfBirth: "",
   timeOfBirth: "",
   placeOfBirth: "",
@@ -111,6 +112,7 @@ function RetailerHoroscope() {
         userName: appUser.name || appUser.email || "",
         customerName: form.customerName.trim(),
         gender: form.gender,
+        religion: form.religion,
         dateOfBirth: form.dateOfBirth,
         timeOfBirth: form.timeOfBirth,
         placeOfBirth: form.placeOfBirth.trim(),
@@ -127,6 +129,7 @@ function RetailerHoroscope() {
       const result = await generate({ data: {
         customerName: baseReq.customerName,
         gender: baseReq.gender,
+        religion: baseReq.religion,
         dateOfBirth: baseReq.dateOfBirth,
         timeOfBirth: baseReq.timeOfBirth,
         placeOfBirth: baseReq.placeOfBirth,
@@ -261,6 +264,35 @@ function RetailerHoroscope() {
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>മതം (Religion) *</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["Hindu", "Muslim", "Christian"] as Religion[]).map((rel) => {
+                      const active = form.religion === rel;
+                      const r = RELIGION_LABELS[rel];
+                      return (
+                        <button
+                          key={rel}
+                          type="button"
+                          onClick={() => setForm({ ...form, religion: rel })}
+                          className={`rounded-xl border p-2.5 text-center transition ${
+                            active
+                              ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-300"
+                              : "border-border hover:border-amber-300"
+                          }`}
+                        >
+                          <div className="text-2xl leading-none mb-1">{r.emoji}</div>
+                          <div className="font-bold text-xs">{r.ml}</div>
+                          <div className="text-[10px] text-muted-foreground">{r.en}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    PDF-ൽ തിരഞ്ഞെടുത്ത മതത്തിന്റെ ദൈവ ചിത്രവും അനുയോജ്യമായ പ്രവചന രീതിയും വരും.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">

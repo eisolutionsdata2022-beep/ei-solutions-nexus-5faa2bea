@@ -11,6 +11,7 @@ import type { HoroscopeReport } from "./horoscope-types";
 const InputSchema = z.object({
   customerName: z.string().min(1).max(120),
   gender: z.enum(["Male", "Female", "Other"]),
+  religion: z.enum(["Hindu", "Muslim", "Christian"]),
   dateOfBirth: z.string().min(1).max(20),
   timeOfBirth: z.string().min(1).max(20),
   placeOfBirth: z.string().min(1).max(160),
@@ -62,22 +63,33 @@ export const generateHoroscopeReport = createServerFn({ method: "POST" })
     if (!apiKey) return { ok: false, error: "AI horoscope is not configured. Please contact admin." };
 
     const isPremium = data.product === "premium";
-    const systemPrompt = `You are an experienced Kerala Hindu Vedic astrologer (ജ്യോതിഷ പണ്ഡിതൻ).
-Produce a thorough horoscope reading entirely in Malayalam (മലയാളം).
-Each field MUST contain 3–6 specific, encouraging-but-honest sentences. NO disclaimers.
+
+    const religionGuide: Record<typeof data.religion, string> = {
+      Hindu: `The customer is HINDU. Use Vedic astrology framework (ജ്യോതിഷം), Vimshottari Dasha, Nakshatra-based predictions. Recommend Hindu remedies — temple visits (ക്ഷേത്ര ദർശനം), specific Vedic mantras (ഗണപതി മന്ത്രം, വിഷ്ണു സഹസ്രനാമം), pujas, donations (ദാനം), gemstones, fasting on specific days. Reference Hindu deities (ഗണപതി, വിഷ്ണു, ശിവൻ, ദുർഗ്ഗ) where appropriate.`,
+      Muslim: `The customer is MUSLIM. Frame predictions respectfully within Islamic worldview — speak of Allah's will (അല്ലാഹുവിന്റെ ഇച്ഛ), barakah (ബറകത്ത്), and rizq (രിസ്ഖ്). Use Ilm-ul-Nujoom style observations of stars/planets as natural signs. For remedies recommend ONLY Islamic practices — regular Salah (നമസ്കാരം), Quranic recitation (ഖുർആൻ പാരായണം — Surah Al-Fatiha, Ayat al-Kursi, Surah Yaseen), dua, sadaqah (ദാനധർമ്മം), fasting on Mondays/Thursdays, dhikr. NEVER suggest temple visits, idols, mantras, or Hindu rituals.`,
+      Christian: `The customer is CHRISTIAN. Frame predictions within Christian worldview — God's plan (ദൈവത്തിന്റെ പദ്ധതി), divine grace (ദൈവകൃപ), and providence. Use star/planetary observations as God's signs in nature (Matthew 2 — star of Bethlehem). For remedies recommend ONLY Christian practices — daily prayer (പ്രാർത്ഥന), Bible reading (ബൈബിൾ വായന — specific Psalms 23, 91, 121), Holy Mass (വിശുദ്ധ കുർബാന), Rosary (ജപമാല), confession, charity, novenas. Reference Jesus Christ (യേശുക്രിസ്തു), Mother Mary (മാതാവ്), saints. NEVER suggest temples, mantras, pujas, or non-Christian rituals.`,
+    };
+
+    const systemPrompt = `You are a wise, experienced Kerala astrologer producing horoscope readings entirely in Malayalam (മലയാളം).
+${religionGuide[data.religion]}
+
+Each field MUST contain 4–7 specific, encouraging-but-honest sentences. Mention concrete years/ages/months where possible. NO disclaimers. NO English. NO mixing other religions' practices.
+
 ${isPremium
-      ? "This is a PREMIUM report — also fill `dasha` (Vimshottari Dasha timeline) and `yearlyForecast` (next 5 years, year-by-year)."
+      ? "This is a PREMIUM (സമ്പൂർണ) report — also fill `dasha` (detailed timeline of major periods/phases the person will go through, with ages and themes) and `yearlyForecast` (next 5 years, year-by-year with month-level highlights)."
       : "This is a STANDARD report — leave `dasha` and `yearlyForecast` empty."}
+
 Always call the horoscope_report tool — never plain text.`;
 
     const userPrompt = `വ്യക്തി: ${data.customerName}
 ലിംഗം: ${data.gender}
+മതം: ${data.religion}
 ജനന തീയതി: ${data.dateOfBirth}
 ജനന സമയം: ${data.timeOfBirth}
 ജനന സ്ഥലം: ${data.placeOfBirth}
-നക്ഷത്രം: ${data.nakshatram || "(provided as needed)"}
+നക്ഷത്രം: ${data.nakshatram || "(derive as needed)"}
 
-Generate a complete ${isPremium ? "PREMIUM (Sampoorna)" : "STANDARD"} Malayalam horoscope reading.`;
+Generate a complete ${isPremium ? "PREMIUM (Sampoorna)" : "STANDARD"} Malayalam horoscope reading appropriate for a ${data.religion} family.`;
 
     try {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
