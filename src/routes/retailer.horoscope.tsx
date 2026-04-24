@@ -221,7 +221,12 @@ function RetailerHoroscope() {
       setTimeout(() => URL.revokeObjectURL(url), 1500);
       toast.success("ഡൗൺലോഡ് ആരംഭിച്ചു — ഫയൽ തുറന്ന് Print → Save as PDF ചെയ്യുക");
     } catch (err: any) {
-      toast.error(err?.message || "Download failed");
+      const msg = err?.message || String(err) || "Unknown error";
+      console.error("[horoscope] download failed", { id: req.id, error: err });
+      toast.error(`Download failed · Report ${req.id}\n${msg}`, {
+        duration: 12000,
+        description: "ഈ error message admin-ന് അയക്കുക (Report ID ഉൾപ്പെടെ).",
+      });
     }
   };
 
@@ -240,7 +245,12 @@ function RetailerHoroscope() {
       }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err: any) {
-      toast.error(err?.message || "Preview failed");
+      const msg = err?.message || String(err) || "Unknown error";
+      console.error("[horoscope] preview failed", { id: req.id, error: err });
+      toast.error(`Preview failed · Report ${req.id}\n${msg}`, {
+        duration: 12000,
+        description: "ഈ error message admin-ന് അയക്കുക (Report ID ഉൾപ്പെടെ).",
+      });
     }
   };
 
