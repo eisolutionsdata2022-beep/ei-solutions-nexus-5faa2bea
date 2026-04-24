@@ -25,7 +25,11 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { firebaseAuthMiddleware } from "@/lib/firebase-auth.middleware";
-import { generatePaytmSignature } from "@/lib/paytm-checksum.server";
+// Server-only checksum helpers — lazy-loaded inside handlers so the
+// `.server.ts` module never appears as a top-level import in client bundles.
+async function loadChecksum() {
+  return import("@/lib/paytm-checksum.server");
+}
 import { DEFAULT_PAYTM_CONFIG, type PaytmMasterConfig, type PaytmTopupRequest } from "@/lib/paytm-types";
 
 interface PaytmCreds {
