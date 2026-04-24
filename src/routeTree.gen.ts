@@ -41,7 +41,6 @@ import { Route as StaffPerformanceRouteImport } from './routes/staff.performance
 import { Route as StaffMarketingRouteImport } from './routes/staff.marketing'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
-import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
@@ -65,7 +64,6 @@ import { Route as RetailerMatrimonyRouteImport } from './routes/retailer.matrimo
 import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
-import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
 import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
@@ -104,7 +102,6 @@ import { Route as AdminJobEarningsRouteImport } from './routes/admin.job-earning
 import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-disputes'
 import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
-import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminFinanceBranchesRouteImport } from './routes/admin.finance-branches'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
@@ -284,11 +281,6 @@ const StaffIppbRoute = StaffIppbRouteImport.update({
   path: '/ippb',
   getParentRoute: () => StaffRoute,
 } as any)
-const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
-  id: '/horoscope-requests',
-  path: '/horoscope-requests',
-  getParentRoute: () => StaffRoute,
-} as any)
 const StaffFormsRoute = StaffFormsRouteImport.update({
   id: '/forms',
   path: '/forms',
@@ -402,11 +394,6 @@ const RetailerJobsRoute = RetailerJobsRouteImport.update({
 const RetailerIppbRoute = RetailerIppbRouteImport.update({
   id: '/ippb',
   path: '/ippb',
-  getParentRoute: () => RetailerRoute,
-} as any)
-const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
-  id: '/horoscope',
-  path: '/horoscope',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerFormsRoute = RetailerFormsRouteImport.update({
@@ -600,11 +587,6 @@ const AdminIppbBadgesRoute = AdminIppbBadgesRouteImport.update({
   path: '/ippb-badges',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
-  id: '/horoscope-settings',
-  path: '/horoscope-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
   id: '/form-analytics',
   path: '/form-analytics',
@@ -727,7 +709,6 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
@@ -766,7 +747,6 @@ export interface FileRoutesByFullPath {
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
-  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -790,7 +770,6 @@ export interface FileRoutesByFullPath {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
-  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -836,7 +815,6 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
@@ -875,7 +853,6 @@ export interface FileRoutesByTo {
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
-  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -899,7 +876,6 @@ export interface FileRoutesByTo {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
-  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -953,7 +929,6 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
-  '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
   '/admin/job-disputes': typeof AdminJobDisputesRoute
@@ -992,7 +967,6 @@ export interface FileRoutesById {
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
   '/retailer/forms': typeof RetailerFormsRoute
-  '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
   '/retailer/kyc': typeof RetailerKycRoute
@@ -1016,7 +990,6 @@ export interface FileRoutesById {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
-  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -1071,7 +1044,6 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
-    | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
@@ -1110,7 +1082,6 @@ export interface FileRouteTypes {
     | '/retailer/ei-pay'
     | '/retailer/finance'
     | '/retailer/forms'
-    | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -1134,7 +1105,6 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
-    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1180,7 +1150,6 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
-    | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
@@ -1219,7 +1188,6 @@ export interface FileRouteTypes {
     | '/retailer/ei-pay'
     | '/retailer/finance'
     | '/retailer/forms'
-    | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -1243,7 +1211,6 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
-    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1296,7 +1263,6 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
-    | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
     | '/admin/job-disputes'
@@ -1335,7 +1301,6 @@ export interface FileRouteTypes {
     | '/retailer/ei-pay'
     | '/retailer/finance'
     | '/retailer/forms'
-    | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
     | '/retailer/kyc'
@@ -1359,7 +1324,6 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
-    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1633,13 +1597,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffIppbRouteImport
       parentRoute: typeof StaffRoute
     }
-    '/staff/horoscope-requests': {
-      id: '/staff/horoscope-requests'
-      path: '/horoscope-requests'
-      fullPath: '/staff/horoscope-requests'
-      preLoaderRoute: typeof StaffHoroscopeRequestsRouteImport
-      parentRoute: typeof StaffRoute
-    }
     '/staff/forms': {
       id: '/staff/forms'
       path: '/forms'
@@ -1799,13 +1756,6 @@ declare module '@tanstack/react-router' {
       path: '/ippb'
       fullPath: '/retailer/ippb'
       preLoaderRoute: typeof RetailerIppbRouteImport
-      parentRoute: typeof RetailerRoute
-    }
-    '/retailer/horoscope': {
-      id: '/retailer/horoscope'
-      path: '/horoscope'
-      fullPath: '/retailer/horoscope'
-      preLoaderRoute: typeof RetailerHoroscopeRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/forms': {
@@ -2074,13 +2024,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIppbBadgesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/horoscope-settings': {
-      id: '/admin/horoscope-settings'
-      path: '/horoscope-settings'
-      fullPath: '/admin/horoscope-settings'
-      preLoaderRoute: typeof AdminHoroscopeSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/form-analytics': {
       id: '/admin/form-analytics'
       path: '/form-analytics'
@@ -2224,7 +2167,6 @@ interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFinanceBranchesRoute: typeof AdminFinanceBranchesRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
-  AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
   AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
   AdminJobDisputesRoute: typeof AdminJobDisputesRoute
@@ -2271,7 +2213,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFinanceBranchesRoute: AdminFinanceBranchesRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
-  AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
   AdminIppbSettingsRoute: AdminIppbSettingsRoute,
   AdminJobDisputesRoute: AdminJobDisputesRoute,
@@ -2367,7 +2308,6 @@ interface RetailerRouteChildren {
   RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFinanceRoute: typeof RetailerFinanceRoute
   RetailerFormsRoute: typeof RetailerFormsRoute
-  RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
   RetailerKycRoute: typeof RetailerKycRoute
@@ -2398,7 +2338,6 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFinanceRoute: RetailerFinanceRoute,
   RetailerFormsRoute: RetailerFormsRoute,
-  RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
   RetailerKycRoute: RetailerKycRoute,
@@ -2430,7 +2369,6 @@ interface StaffRouteChildren {
   StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
-  StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffMarketingRoute: typeof StaffMarketingRoute
@@ -2445,7 +2383,6 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
-  StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffMarketingRoute: StaffMarketingRoute,
