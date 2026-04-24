@@ -209,10 +209,58 @@ function AdminBbpsSettings() {
             Sends a real <code>POST /getAccessToken</code> via the VPS bridge from your whitelisted IP.
             Use this to share exact request/response with the provider for debugging.
           </p>
-          <Button onClick={runTest} disabled={testing} className="w-full">
+          <Button onClick={() => runTest(false)} disabled={testing || autoOn} className="w-full">
             {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Stethoscope className="mr-2 h-4 w-4" />}
             {testing ? "Testing…" : "Run Test Now"}
           </Button>
+
+          {/* Auto re-test (whitelist watcher) */}
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Radar className="h-4 w-4" />
+                  Auto re-test (whitelist watcher)
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Polls the provider on a timer. Stops automatically when the response changes
+                  (success, or HTTP status moves off 403 — meaning whitelist is active).
+                </p>
+              </div>
+              <Switch checked={autoOn} onCheckedChange={setAutoOn} disabled={testing && !autoOn} />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label className="text-xs whitespace-nowrap">Every</Label>
+              <Input
+                type="number"
+                min={10}
+                max={300}
+                value={autoIntervalSec}
+                onChange={(e) => setAutoIntervalSec(Math.max(10, Math.min(300, Number(e.target.value) || 30)))}
+                disabled={autoOn}
+                className="h-8 w-20"
+              />
+              <span className="text-xs text-muted-foreground">seconds (10–300)</span>
+            </div>
+
+            {autoOn && (
+              <div className="flex items-center justify-between gap-2 rounded border border-dashed bg-background/50 p-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>
+                    Watching · attempt <strong>#{autoAttempts}</strong>
+                    {!testing && autoNextInSec > 0 && <> · next in {autoNextInSec}s</>}
+                    {testing && <> · testing now…</>}
+                  </span>
+                </div>
+                <Button size="sm" variant="outline" onClick={stopAuto}>
+                  <Square className="mr-1 h-3 w-3" /> Stop
+                </Button>
+              </div>
+            )}
+          </div>
+
 
           {testResult && (
             <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-xs">
