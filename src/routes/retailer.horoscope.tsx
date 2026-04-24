@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun } from "lucide-react";
+import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun, Eye } from "lucide-react";
 import { ServicePageShell } from "@/components/ServicePageShell";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
@@ -169,15 +169,54 @@ function RetailerHoroscope() {
     }
   };
 
-  const handleDownloadPDF = (req: HoroscopeRequest) => {
-    const html = (req.pdfTemplate === "premium" || req.product !== "standard")
+  const buildHoroscopeHtml = (req: HoroscopeRequest): string => {
+    return (req.pdfTemplate === "premium" || req.product !== "standard")
       ? generatePremiumHoroscopePDF(req)
       : generateHoroscopePDF(req);
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => win.print(), 600);
+  };
+
+  const safeFileName = (req: HoroscopeRequest) => {
+    const name = (req.customerName || "horoscope").replace(/[^a-zA-Z0-9-_]+/g, "_");
+    const date = new Date(req.createdAt).toISOString().slice(0, 10);
+    return `Horoscope_${name}_${date}.html`;
+  };
+
+  // Forced download via Blob + anchor click — works on mobile too.
+  const handleDownloadPDF = (req: HoroscopeRequest) => {
+    try {
+      const html = buildHoroscopeHtml(req);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = safeFileName(req);
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast.success("ഡൗൺലോഡ് ആരംഭിച്ചു — ഫയൽ തുറന്ന് Print → Save as PDF ചെയ്യുക");
+    } catch (err: any) {
+      toast.error(err?.message || "Download failed");
+    }
+  };
+
+  // Eye button: open printable HTML in a new tab as ultimate fallback.
+  const handlePreviewPDF = (req: HoroscopeRequest) => {
+    try {
+      const html = buildHoroscopeHtml(req);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        // Popup blocked — fallback to direct download
+        toast.info("Popup blocked — downloading instead");
+        handleDownloadPDF(req);
+        return;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err: any) {
+      toast.error(err?.message || "Preview failed");
     }
   };
 
@@ -358,9 +397,14 @@ function RetailerHoroscope() {
                         <TableCell>₹{r.amount}</TableCell>
                         <TableCell>
                           {(r.status === "Generated" || r.status === "Delivered") && (
-                            <Button size="sm" variant="outline" onClick={() => handleDownloadPDF(r)}>
-                              <Download className="w-4 h-4 mr-1" /> PDF
-                            </Button>
+                            <div className="flex gap-1.5 flex-wrap">
+                              <Button size="sm" variant="outline" onClick={() => handlePreviewPDF(r)} title="Preview / Print → Save as PDF">
+                                <Eye className="w-4 h-4 mr-1" /> View
+                              </Button>
+                              <Button size="sm" onClick={() => handleDownloadPDF(r)} title="Download HTML → Open → Save as PDF" className="bg-amber-600 hover:bg-amber-700 text-white">
+                                <Download className="w-4 h-4 mr-1" /> PDF
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
