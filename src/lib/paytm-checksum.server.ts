@@ -14,6 +14,19 @@ const IV = "@@@@&&&&####$$$$";
 const SALT_CHARSET =
   "AbcDE123IJKLMN67QRSTUVWXYZaBCdefghijklmn123opq45rs67tuv89wxyz0FGH45OP89";
 
+function getLegacyAesKey(key: string): Buffer {
+  const decoded = key
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+  const source = Buffer.from(decoded, "utf8");
+  const aesKey = Buffer.alloc(16);
+  source.copy(aesKey, 0, 0, Math.min(source.length, 16));
+  return aesKey;
+}
+
 function generateSalt(length = 4): string {
   let out = "";
   for (let i = 0; i < length; i++) {
@@ -23,12 +36,12 @@ function generateSalt(length = 4): string {
 }
 
 function encryptAes128(plain: string, key: string): string {
-  const cipher = crypto.createCipheriv("aes-128-cbc", Buffer.from(key, "utf8"), Buffer.from(IV, "utf8"));
+  const cipher = crypto.createCipheriv("aes-128-cbc", getLegacyAesKey(key), Buffer.from(IV, "utf8"));
   return Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]).toString("base64");
 }
 
 function decryptAes128(encrypted: string, key: string): string {
-  const decipher = crypto.createDecipheriv("aes-128-cbc", Buffer.from(key, "utf8"), Buffer.from(IV, "utf8"));
+  const decipher = crypto.createDecipheriv("aes-128-cbc", getLegacyAesKey(key), Buffer.from(IV, "utf8"));
   return Buffer.concat([decipher.update(Buffer.from(encrypted, "base64")), decipher.final()]).toString("utf8");
 }
 
