@@ -636,8 +636,12 @@ function PsaTab({
                   <Label>PSA / VLE ID *</Label>
                   <Input
                     value={linkForm.vleId}
-                    onChange={(e) => setLinkForm({ ...linkForm, vleId: e.target.value })}
-                    placeholder="Your existing UTI / PSA ID"
+                    onChange={(e) => {
+                      setLinkForm({ ...linkForm, vleId: e.target.value.toUpperCase() });
+                      setLegacyBalance(null);
+                      setLookupError(null);
+                    }}
+                    placeholder="e.g. RMPMCST-9447175704"
                     required
                   />
                 </div>
@@ -646,7 +650,11 @@ function PsaTab({
                   <Input
                     value={linkForm.mobile}
                     maxLength={10}
-                    onChange={(e) => setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => {
+                      setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") });
+                      setLegacyBalance(null);
+                      setLookupError(null);
+                    }}
                     placeholder="10-digit mobile"
                     required
                   />
@@ -660,12 +668,71 @@ function PsaTab({
                   />
                 </div>
               </div>
+
+              {/* Legacy balance lookup */}
+              <div className="rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-slate-900 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-start gap-2">
+                    <Wallet className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                        Old Portal Wallet Balance
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Check if your old mallikarecharge wallet balance can be transferred.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleLookupLegacy}
+                    disabled={lookingUp || !linkForm.vleId || linkForm.mobile.length !== 10}
+                    className="border-emerald-400 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                    Check Balance
+                  </Button>
+                </div>
+
+                {lookupError && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200/60">
+                    {lookupError}
+                  </p>
+                )}
+
+                {legacyBalance && (
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 p-3 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                          Found: <strong>{legacyBalance.name}</strong>
+                        </p>
+                        <p className="text-[11px] text-muted-foreground font-mono">
+                          {legacyBalance.username}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] text-muted-foreground">Transferable</p>
+                        <p className="text-2xl font-bold text-emerald-600">
+                          ₹{(legacyBalance.remaining ?? legacyBalance.balance).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-900/30 p-2 rounded">
+                      ✓ Click <strong>Confirm & Link</strong> below — your PSA ID is linked instantly and a wallet transfer request goes to admin for approval.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" disabled={linking} className="bg-amber-500 hover:bg-amber-600 text-white">
                   {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                  Confirm & Link
+                  {legacyBalance ? `Confirm & Request ₹${legacyBalance.remaining ?? legacyBalance.balance}` : "Confirm & Link"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setShowLinkForm(false)}>
+                <Button type="button" variant="ghost" onClick={() => { setShowLinkForm(false); setLegacyBalance(null); setLookupError(null); }}>
                   Cancel
                 </Button>
               </div>
