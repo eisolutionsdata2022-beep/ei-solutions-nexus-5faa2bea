@@ -94,6 +94,7 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
     const host = getRequestHost();
     const callbackUrl = `https://${host}/api/public/paytm-callback`;
 
+    // Param set copied verbatim from legacy paytm_v2/index.php
     const params: Record<string, string> = {
       MID: creds.mid,
       ORDER_ID: orderId,
@@ -101,10 +102,14 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
       INDUSTRY_TYPE_ID: "Retail",
       CHANNEL_ID: "WEB",
       TXN_AMOUNT: data.amount.toFixed(2),
-      WEBSITE: creds.envBase.includes("stage") ? "WEBSTAGING" : "DEFAULT",
+      WEBSITE: "DEFAULT",
+      PAYMENT_MODE_ONLY: "YES",
+      PAYMENT_TYPE_ID: "UPI",
       CALLBACK_URL: callbackUrl,
       MSISDN: data.mobile ?? "",
       EMAIL: data.email ?? authUser.email ?? "",
+      VERIFIED_BY: "EMAIL",
+      IS_USER_VERIFIED: "YES",
     };
 
     const checksum = generatePaytmSignature(params, creds.key);
@@ -152,6 +157,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
     const orderId = makeOrderId("EIQR", authUser.uid);
     const { charges, credit } = calcCharges(data.amount, creds.pgChargesPercent);
 
+    // QR body copied verbatim from legacy paytm_v2/QRCode.php
     const body = {
       mid: creds.mid,
       orderId,
@@ -159,7 +165,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
       contactPhoneNo: data.mobile ?? "",
       displayName: "EI SOLUTIONS",
       businessType: "UPI_QR_CODE",
-      posId: "EI_WEB_01",
+      posId: "S12_123",
     };
     const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
     const post = {
@@ -241,26 +247,53 @@ export async function runPaytmStatusCheck(
     return { status: "success", creditAmount: req.creditAmount, message: "Already credited" };
   }
 
-  const body = { mid: creds.mid, orderId };
-  const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
-  const post = { head: { signature }, body };
+  // Status query — copied from legacy paytm_v2/config_paytm.php:
+  //   PROD  → https://securegw.paytm.in/merchant-status/getTxnStatus  (form POST + CHECKSUMHASH)
+  //   STAGE → https://securegw-stage.paytm.in/order/status            (JSON v3 + head.signature)
+  const isProd = creds.envBase.startsWith("https://securegw.paytm.in");
+  let r: {
+    resultInfo?: { resultStatus?: string; resultMsg?: string };
+    txnId?: string;
+    bankTxnId?: string;
+    txnAmount?: string | number;
+    paymentMode?: string;
+    gatewayName?: string;
+  } = {};
 
-  const res = await fetch(`${creds.envBase}/v3/order/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(post),
-  });
-  const json = (await res.json()) as {
-    body?: {
-      resultInfo?: { resultStatus?: string; resultMsg?: string };
-      txnId?: string;
-      bankTxnId?: string;
-      txnAmount?: string | number;
-      paymentMode?: string;
-      gatewayName?: string;
+  if (isProd) {
+    const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
+    const checksum = generatePaytmSignature(statusParams, creds.key);
+    const form = new URLSearchParams({ ...statusParams, CHECKSUMHASH: checksum });
+    const res = await fetch(`${creds.envBase}/merchant-status/getTxnStatus`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+    const json = (await res.json()) as Record<string, unknown>;
+    r = {
+      resultInfo: {
+        resultStatus: (json.STATUS as string) === "TXN_SUCCESS" ? "TXN_SUCCESS" : (json.STATUS as string),
+        resultMsg: json.RESPMSG as string,
+      },
+      txnId: json.TXNID as string,
+      bankTxnId: json.BANKTXNID as string,
+      txnAmount: json.TXNAMOUNT as string,
+      paymentMode: json.PAYMENTMODE as string,
+      gatewayName: json.GATEWAYNAME as string,
     };
-  };
-  const r = json.body ?? {};
+  } else {
+    const body = { mid: creds.mid, orderId };
+    const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
+    const post = { head: { signature }, body };
+    const res = await fetch(`${creds.envBase}/v3/order/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(post),
+    });
+    const json = (await res.json()) as { body?: typeof r };
+    r = json.body ?? {};
+  }
+
   const status = r.resultInfo?.resultStatus;
   const txnAmount = Number(r.txnAmount ?? 0);
 
