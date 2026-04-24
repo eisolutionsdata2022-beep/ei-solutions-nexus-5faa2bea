@@ -94,6 +94,7 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
     const host = getRequestHost();
     const callbackUrl = `https://${host}/api/public/paytm-callback`;
 
+    // Param set copied verbatim from legacy paytm_v2/index.php
     const params: Record<string, string> = {
       MID: creds.mid,
       ORDER_ID: orderId,
@@ -101,10 +102,14 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
       INDUSTRY_TYPE_ID: "Retail",
       CHANNEL_ID: "WEB",
       TXN_AMOUNT: data.amount.toFixed(2),
-      WEBSITE: creds.envBase.includes("stage") ? "WEBSTAGING" : "DEFAULT",
+      WEBSITE: "DEFAULT",
+      PAYMENT_MODE_ONLY: "YES",
+      PAYMENT_TYPE_ID: "UPI",
       CALLBACK_URL: callbackUrl,
       MSISDN: data.mobile ?? "",
       EMAIL: data.email ?? authUser.email ?? "",
+      VERIFIED_BY: "EMAIL",
+      IS_USER_VERIFIED: "YES",
     };
 
     const checksum = generatePaytmSignature(params, creds.key);
@@ -152,6 +157,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
     const orderId = makeOrderId("EIQR", authUser.uid);
     const { charges, credit } = calcCharges(data.amount, creds.pgChargesPercent);
 
+    // QR body copied verbatim from legacy paytm_v2/QRCode.php
     const body = {
       mid: creds.mid,
       orderId,
@@ -159,7 +165,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
       contactPhoneNo: data.mobile ?? "",
       displayName: "EI SOLUTIONS",
       businessType: "UPI_QR_CODE",
-      posId: "EI_WEB_01",
+      posId: "S12_123",
     };
     const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
     const post = {
