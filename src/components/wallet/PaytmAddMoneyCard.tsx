@@ -55,7 +55,7 @@ export function PaytmAddMoneyCard() {
 
   return (
     <Card className="border-2 border-primary/20 shadow-md overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-5 py-3 text-white">
+      <div className="bg-premium-gradient px-5 py-3 text-primary-foreground">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
