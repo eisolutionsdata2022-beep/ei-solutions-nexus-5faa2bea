@@ -116,6 +116,8 @@ function RetailerHoroscope() {
         updatedAt: new Date().toISOString(),
       };
 
+      let deliveredRequest: HoroscopeRequest | null = null;
+
       if (product === "palmistry") {
         toast.info("AI palm reading running... (15-30s)");
         const result = await generatePalmistryReading({
@@ -126,27 +128,34 @@ function RetailerHoroscope() {
           },
         });
         if (!result.ok) throw new Error(result.error);
-        await addHoroscopeRequest({
+        const payload: Omit<HoroscopeRequest, "id"> = {
           ...base,
           status: "Delivered",
           palmImages: { left: leftPalm || undefined, right: rightPalm || undefined },
           palmistry: { ...result.reading, language },
           deliveredAt: new Date().toISOString(),
-        });
+        };
+        const ref = await addHoroscopeRequest(payload);
+        deliveredRequest = { id: ref.id, ...payload };
       } else {
         const { chart, predictions } = generateHoroscope(dob, timeOfBirth);
         const premiumExtras = product === "premium" ? generatePremiumExtras(chart, dob) : undefined;
-        await addHoroscopeRequest({
+        const payload: Omit<HoroscopeRequest, "id"> = {
           ...base,
           status: "Delivered",
           dateOfBirth: dob, timeOfBirth, placeOfBirth,
           birthStar: birthStar || undefined,
           chart, predictions, premiumExtras,
           deliveredAt: new Date().toISOString(),
-        });
+        };
+        const ref = await addHoroscopeRequest(payload);
+        deliveredRequest = { id: ref.id, ...payload };
       }
 
-      toast.success("✨ Report generated! Check 'My Reports' tab.");
+      toast.success("✨ Report generated! Download starting...");
+      if (deliveredRequest) {
+        handleDownloadPDF(deliveredRequest);
+      }
       resetForm();
     } catch (err: any) {
       // Refund wallet if we debited but failed to deliver the report.
