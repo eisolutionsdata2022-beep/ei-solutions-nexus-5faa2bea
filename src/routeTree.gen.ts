@@ -118,6 +118,7 @@ import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.cer
 import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-transactions'
 import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
+import { Route as ApiPublicPaytmCallbackRouteImport } from './routes/api.public.paytm-callback'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
 import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
@@ -669,6 +670,11 @@ const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => RetailerJobsRoute,
 } as any)
+const ApiPublicPaytmCallbackRoute = ApiPublicPaytmCallbackRouteImport.update({
+  id: '/api/public/paytm-callback',
+  path: '/api/public/paytm-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
@@ -797,6 +803,7 @@ export interface FileRoutesByFullPath {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -904,6 +911,7 @@ export interface FileRoutesByTo {
   '/trainer': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -1019,6 +1027,7 @@ export interface FileRoutesById {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -1135,6 +1144,7 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -1242,6 +1252,7 @@ export interface FileRouteTypes {
     | '/trainer'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   id:
@@ -1356,6 +1367,7 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesById: FileRoutesById
@@ -1379,6 +1391,7 @@ export interface RootRouteChildren {
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
+  ApiPublicPaytmCallbackRoute: typeof ApiPublicPaytmCallbackRoute
   ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 
@@ -2147,6 +2160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerJobsJobIdRouteImport
       parentRoute: typeof RetailerJobsRoute
     }
+    '/api/public/paytm-callback': {
+      id: '/api/public/paytm-callback'
+      path: '/api/public/paytm-callback'
+      fullPath: '/api/public/paytm-callback'
+      preLoaderRoute: typeof ApiPublicPaytmCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email/unsubscribe': {
       id: '/api/email/unsubscribe'
       path: '/api/email/unsubscribe'
@@ -2451,6 +2471,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
+  ApiPublicPaytmCallbackRoute: ApiPublicPaytmCallbackRoute,
   ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
 export const routeTree = rootRouteImport
