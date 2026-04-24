@@ -92,6 +92,7 @@ import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admi
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
+import { Route as AdminPanLegacyBalancesRouteImport } from './routes/admin.pan-legacy-balances'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -537,6 +538,11 @@ const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   path: '/pan-portal-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPanLegacyBalancesRoute = AdminPanLegacyBalancesRouteImport.update({
+  id: '/pan-legacy-balances',
+  path: '/pan-legacy-balances',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -720,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -826,6 +833,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -940,6 +948,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -1055,6 +1064,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1161,6 +1171,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1274,6 +1285,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1953,6 +1965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pan-legacy-balances': {
+      id: '/admin/pan-legacy-balances'
+      path: '/pan-legacy-balances'
+      fullPath: '/admin/pan-legacy-balances'
+      preLoaderRoute: typeof AdminPanLegacyBalancesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/notices': {
       id: '/admin/notices'
       path: '/notices'
@@ -2177,6 +2196,7 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
+  AdminPanLegacyBalancesRoute: typeof AdminPanLegacyBalancesRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
@@ -2222,6 +2242,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
+  AdminPanLegacyBalancesRoute: AdminPanLegacyBalancesRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
