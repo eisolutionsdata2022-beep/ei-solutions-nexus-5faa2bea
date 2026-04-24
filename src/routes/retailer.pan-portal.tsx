@@ -394,6 +394,46 @@ function PsaTab({
     }
   }
 
+  /**
+   * Look up the legacy PAN portal balance for the entered PSA ID + mobile.
+   * Match rules: PSA ID must equal the legacy username (`RMPMCST-<mobile>`)
+   * AND the registered mobile must match the one on file. This prevents a
+   * retailer from claiming somebody else's balance just by guessing the ID.
+   */
+  async function handleLookupLegacy() {
+    setLookupError(null);
+    setLegacyBalance(null);
+    if (!linkForm.vleId.trim()) {
+      setLookupError("Enter your PSA / VLE ID first.");
+      return;
+    }
+    if (!/^\d{10}$/.test(linkForm.mobile)) {
+      setLookupError("Enter a valid 10-digit registered mobile.");
+      return;
+    }
+    setLookingUp(true);
+    try {
+      const rec = await getLegacyBalance(linkForm.vleId.trim());
+      if (!rec) {
+        setLookupError("No legacy account found for this PSA ID. You can still link without a balance transfer.");
+        return;
+      }
+      if (rec.mobile !== linkForm.mobile) {
+        setLookupError(`PSA ID exists but the registered mobile does not match (expected ${rec.mobile.slice(0,2)}******${rec.mobile.slice(-2)}). Contact admin if this is your account.`);
+        return;
+      }
+      if (rec.claimed || (rec.remaining ?? rec.balance) <= 0) {
+        setLookupError("This legacy balance has already been transferred.");
+        return;
+      }
+      setLegacyBalance(rec);
+    } catch (err) {
+      setLookupError(err instanceof Error ? err.message : "Lookup failed");
+    } finally {
+      setLookingUp(false);
+    }
+  }
+
   async function handleLinkExisting(e: FormEvent) {
     e.preventDefault();
     if (!linkForm.vleId.trim()) {
@@ -404,8 +444,17 @@ function PsaTab({
       toast.error("Registered mobile must be 10 digits");
       return;
     }
+
+    // Guard: prevent claiming the same legacy id from two different retailers.
+    const alreadyRequested = transferRequests.some(
+      (r) =>
+        r.legacyUsername === linkForm.vleId.trim().toUpperCase() &&
+        (r.status === "pending" || r.status === "approved"),
+    );
+
     setLinking(true);
     try {
+      // 1. PSA link goes through immediately — no admin wait, as requested.
       await upsertPsaRecord({
         retailerId: user.uid,
         vleId: linkForm.vleId.trim(),
@@ -421,14 +470,39 @@ function PsaTab({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      toast.success("PSA ID linked. You can now purchase coupons.");
+
+      // 2. If a legacy balance was found AND not already requested, raise a
+      //    transfer request. The request alone needs admin approval — the
+      //    PSA ID itself is already active.
+      if (legacyBalance && !alreadyRequested) {
+        const amt = legacyBalance.remaining ?? legacyBalance.balance;
+        await createLegacyTransferRequest({
+          retailerId: user.uid,
+          retailerEmail: user.email,
+          retailerName: user.name,
+          legacyUsername: legacyBalance.username,
+          legacyMobile: legacyBalance.mobile,
+          legacyName: legacyBalance.name,
+          amount: amt,
+        });
+        toast.success(
+          `PSA linked. Wallet transfer request for ₹${amt} sent to admin for approval.`,
+        );
+      } else if (alreadyRequested) {
+        toast.success("PSA ID linked. A transfer request for this account is already in progress.");
+      } else {
+        toast.success("PSA ID linked. You can now purchase coupons.");
+      }
+
       setShowLinkForm(false);
+      setLegacyBalance(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Link failed");
     } finally {
       setLinking(false);
     }
   }
+
 
   if (psa?.status === "approved") {
     return (
