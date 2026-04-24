@@ -27,24 +27,101 @@ function AdminBbpsSettings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
 
+  // Auto re-test (whitelist watcher)
+  const [autoOn, setAutoOn] = useState(false);
+  const [autoIntervalSec, setAutoIntervalSec] = useState(30);
+  const [autoAttempts, setAutoAttempts] = useState(0);
+  const [autoNextInSec, setAutoNextInSec] = useState(0);
+  const autoStopRef = useRef(false);
+  const MAX_ATTEMPTS = 240; // safety cap (e.g. 30s × 240 = 2 hrs)
+
   useEffect(() => {
     getBbpsConfig().then(setCfg);
   }, []);
 
-  async function runTest() {
+  async function runTest(silent = false): Promise<TestResult | null> {
     setTesting(true);
-    setTestResult(null);
+    if (!silent) setTestResult(null);
     try {
       const res = await bbpsTestConnection();
       setTestResult(res);
-      if (res.ok) toast.success("✅ Provider responded successfully");
-      else toast.error(res.error || `Test failed at: ${res.stage}`);
+      if (!silent) {
+        if (res.ok) toast.success("✅ Provider responded successfully");
+        else toast.error(res.error || `Test failed at: ${res.stage}`);
+      }
+      return res;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Test failed");
+      if (!silent) toast.error(err instanceof Error ? err.message : "Test failed");
+      return null;
     } finally {
       setTesting(false);
     }
   }
+
+  // Auto re-test loop — polls until success OR provider stops returning 403
+  useEffect(() => {
+    if (!autoOn) return;
+    autoStopRef.current = false;
+    let cancelled = false;
+    let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+    (async () => {
+      let attempts = 0;
+      let lastHttp: number | undefined;
+
+      while (!cancelled && !autoStopRef.current && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        setAutoAttempts(attempts);
+        const res = await runTest(true);
+        if (cancelled || autoStopRef.current) break;
+
+        // Stop conditions
+        if (res?.ok) {
+          toast.success(`🎉 Provider whitelisted! Success on attempt #${attempts}`);
+          setAutoOn(false);
+          break;
+        }
+        // If status changed away from 403, surface it (probably auth/payload error now)
+        if (res && typeof res.httpStatus === "number" && res.httpStatus !== 403 && lastHttp === 403) {
+          toast.info(`Status changed: 403 → ${res.httpStatus}. Whitelist likely active — check response.`);
+          setAutoOn(false);
+          break;
+        }
+        lastHttp = res?.httpStatus;
+
+        // Countdown to next poll
+        let remaining = autoIntervalSec;
+        setAutoNextInSec(remaining);
+        countdownTimer && clearInterval(countdownTimer);
+        countdownTimer = setInterval(() => {
+          remaining -= 1;
+          setAutoNextInSec(Math.max(0, remaining));
+        }, 1000);
+
+        await new Promise((r) => setTimeout(r, autoIntervalSec * 1000));
+        countdownTimer && clearInterval(countdownTimer);
+      }
+
+      if (attempts >= MAX_ATTEMPTS && !autoStopRef.current) {
+        toast.warning(`Auto re-test stopped after ${MAX_ATTEMPTS} attempts. Restart manually if needed.`);
+        setAutoOn(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      autoStopRef.current = true;
+      if (countdownTimer) clearInterval(countdownTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOn]);
+
+  function stopAuto() {
+    autoStopRef.current = true;
+    setAutoOn(false);
+    toast.info("Auto re-test stopped");
+  }
+
 
   function copyResult() {
     if (!testResult) return;
