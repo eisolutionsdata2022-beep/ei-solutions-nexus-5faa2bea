@@ -23,8 +23,8 @@ import { Sparkles, Download, Loader2, FileText, Eye, Star, Printer } from "lucid
 import { toast } from "sonner";
 
 import {
-  PRODUCT_LABELS, STATUS_COLORS, NAKSHATRAS, DEFAULT_SETTINGS,
-  type HoroscopeRequest, type HoroscopeProduct, type Gender, type HoroscopeSettings,
+  PRODUCT_LABELS, STATUS_COLORS, NAKSHATRAS, DEFAULT_SETTINGS, RELIGION_LABELS,
+  type HoroscopeRequest, type HoroscopeProduct, type Gender, type HoroscopeSettings, type Religion,
 } from "@/lib/horoscope-types";
 import {
   subscribeHoroscopeSettings, subscribeHoroscopeRequests,
@@ -42,6 +42,7 @@ export const Route = createFileRoute("/retailer/horoscope")({
 const EMPTY_FORM = {
   customerName: "",
   gender: "Male" as Gender,
+  religion: "Hindu" as Religion,
   dateOfBirth: "",
   timeOfBirth: "",
   placeOfBirth: "",
@@ -111,6 +112,7 @@ function RetailerHoroscope() {
         userName: appUser.name || appUser.email || "",
         customerName: form.customerName.trim(),
         gender: form.gender,
+        religion: form.religion,
         dateOfBirth: form.dateOfBirth,
         timeOfBirth: form.timeOfBirth,
         placeOfBirth: form.placeOfBirth.trim(),
@@ -127,6 +129,7 @@ function RetailerHoroscope() {
       const result = await generate({ data: {
         customerName: baseReq.customerName,
         gender: baseReq.gender,
+        religion: baseReq.religion,
         dateOfBirth: baseReq.dateOfBirth,
         timeOfBirth: baseReq.timeOfBirth,
         placeOfBirth: baseReq.placeOfBirth,
