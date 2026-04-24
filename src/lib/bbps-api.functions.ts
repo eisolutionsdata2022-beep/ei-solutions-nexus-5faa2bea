@@ -642,8 +642,8 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
     httpStatus?: number;
     httpStatusText?: string;
     headersSent?: Record<string, string>;
-    bodySent?: unknown;
-    response?: unknown;
+    bodySent?: Record<string, string>;
+    response?: string;
     rawText?: string;
     error?: string;
     elapsedMs?: number;
