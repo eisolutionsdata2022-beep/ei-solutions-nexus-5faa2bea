@@ -247,25 +247,52 @@ export async function runPaytmStatusCheck(
     return { status: "success", creditAmount: req.creditAmount, message: "Already credited" };
   }
 
-  const body = { mid: creds.mid, orderId };
-  const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
-  const post = { head: { signature }, body };
+  // Status query — copied from legacy paytm_v2/config_paytm.php:
+  //   PROD  → https://securegw.paytm.in/merchant-status/getTxnStatus  (form POST + CHECKSUMHASH)
+  //   STAGE → https://securegw-stage.paytm.in/order/status            (JSON v3 + head.signature)
+  const isProd = creds.envBase.startsWith("https://securegw.paytm.in");
+  let r: {
+    resultInfo?: { resultStatus?: string; resultMsg?: string };
+    txnId?: string;
+    bankTxnId?: string;
+    txnAmount?: string | number;
+    paymentMode?: string;
+    gatewayName?: string;
+  } = {};
 
-  const res = await fetch(`${creds.envBase}/v3/order/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(post),
-  });
-  const json = (await res.json()) as {
-    body?: {
-      resultInfo?: { resultStatus?: string; resultMsg?: string };
-      txnId?: string;
-      bankTxnId?: string;
-      txnAmount?: string | number;
-      paymentMode?: string;
-      gatewayName?: string;
+  if (isProd) {
+    const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
+    const checksum = generatePaytmSignature(statusParams, creds.key);
+    const form = new URLSearchParams({ ...statusParams, CHECKSUMHASH: checksum });
+    const res = await fetch(`${creds.envBase}/merchant-status/getTxnStatus`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+    const json = (await res.json()) as Record<string, unknown>;
+    r = {
+      resultInfo: {
+        resultStatus: (json.STATUS as string) === "TXN_SUCCESS" ? "TXN_SUCCESS" : (json.STATUS as string),
+        resultMsg: json.RESPMSG as string,
+      },
+      txnId: json.TXNID as string,
+      bankTxnId: json.BANKTXNID as string,
+      txnAmount: json.TXNAMOUNT as string,
+      paymentMode: json.PAYMENTMODE as string,
+      gatewayName: json.GATEWAYNAME as string,
     };
-  };
+  } else {
+    const body = { mid: creds.mid, orderId };
+    const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
+    const post = { head: { signature }, body };
+    const res = await fetch(`${creds.envBase}/v3/order/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(post),
+    });
+    const json = (await res.json()) as { body?: typeof r };
+    r = json.body ?? {};
+  }
   const r = json.body ?? {};
   const status = r.resultInfo?.resultStatus;
   const txnAmount = Number(r.txnAmount ?? 0);
