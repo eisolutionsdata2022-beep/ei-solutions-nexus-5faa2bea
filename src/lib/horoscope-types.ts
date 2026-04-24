@@ -6,8 +6,15 @@
 export type HoroscopeStatus = "Pending" | "Generated" | "Delivered";
 export type Gender = "Male" | "Female" | "Other";
 export type HoroscopeProduct = "standard" | "premium";
+export type Religion = "Hindu" | "Muslim" | "Christian";
 
 export const HOROSCOPE_STATUSES: HoroscopeStatus[] = ["Pending", "Generated", "Delivered"];
+
+export const RELIGION_LABELS: Record<Religion, { ml: string; en: string; emoji: string }> = {
+  Hindu:     { ml: "ഹിന്ദു",     en: "Hindu",     emoji: "🕉️" },
+  Muslim:    { ml: "മുസ്ലിം",   en: "Muslim",    emoji: "☪️" },
+  Christian: { ml: "ക്രിസ്ത്യൻ", en: "Christian", emoji: "✝️" },
+};
 
 export const STATUS_COLORS: Record<HoroscopeStatus, string> = {
   Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -53,6 +60,7 @@ export interface HoroscopeRequest {
   userName?: string;
   customerName: string;
   gender: Gender;
+  religion: Religion;
   dateOfBirth: string;     // YYYY-MM-DD
   timeOfBirth: string;     // HH:MM
   placeOfBirth: string;
