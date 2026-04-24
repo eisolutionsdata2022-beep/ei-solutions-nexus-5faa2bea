@@ -293,7 +293,7 @@ export async function runPaytmStatusCheck(
     const json = (await res.json()) as { body?: typeof r };
     r = json.body ?? {};
   }
-  const r = json.body ?? {};
+
   const status = r.resultInfo?.resultStatus;
   const txnAmount = Number(r.txnAmount ?? 0);
 
