@@ -266,6 +266,7 @@ export async function runPaytmStatusCheck(
     gatewayName?: string;
   } = {};
 
+  const { generatePaytmSignature } = await loadChecksum();
   if (isProd) {
     const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
     const checksum = generatePaytmSignature(statusParams, creds.key);
