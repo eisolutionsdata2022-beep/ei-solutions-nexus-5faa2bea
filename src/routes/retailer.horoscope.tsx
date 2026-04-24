@@ -14,9 +14,8 @@ import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, L
 import { ServicePageShell } from "@/components/ServicePageShell";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
-import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
-import { generatePremiumHoroscopePDF } from "@/lib/horoscope-premium-pdf";
 import { generatePalmistryReading } from "@/lib/palmistry.functions";
+import { downloadHoroscopePdf } from "@/lib/horoscope-download";
 import {
   addHoroscopeRequest, subscribeHoroscopeRequests,
   subscribeHoroscopeSettings,
@@ -154,7 +153,7 @@ function RetailerHoroscope() {
 
       toast.success("✨ Report generated! Download starting...");
       if (deliveredRequest) {
-        handleDownloadPDF(deliveredRequest);
+        void handleDownloadPDF(deliveredRequest);
       }
       resetForm();
     } catch (err: any) {
@@ -178,50 +177,10 @@ function RetailerHoroscope() {
     }
   };
 
-  const handleDownloadPDF = (req: HoroscopeRequest) => {
+  const handleDownloadPDF = async (req: HoroscopeRequest) => {
     try {
-      const rawHtml = (req.pdfTemplate === "premium" || req.product !== "standard")
-        ? generatePremiumHoroscopePDF(req)
-        : generateHoroscopePDF(req);
-
-      // Inject auto-print script so opening the file pops the browser's
-      // "Save as PDF" dialog immediately — gives retailer a real PDF.
-      const html = rawHtml.includes("</body>")
-        ? rawHtml.replace(
-            "</body>",
-            `<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body>`,
-          )
-        : rawHtml +
-          `<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>`;
-
-      const safeName = (req.customerName || "horoscope")
-        .replace(/[^\p{L}\p{N}_-]+/gu, "_")
-        .slice(0, 40);
-      const fileName = `Horoscope_${safeName}_${(req.product || "standard")}.html`;
-
-      // 1) DIRECT DOWNLOAD — guaranteed for every retailer, no popup blocker.
-      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-
-      // 2) ALSO try opening a print-ready preview (best-effort, may be blocked).
-      try {
-        const win = window.open("", "_blank");
-        if (win) {
-          win.document.write(html);
-          win.document.close();
-        }
-      } catch {
-        /* popup blocked — download already succeeded */
-      }
-
-      toast.success("📥 Report downloaded! Open file → Print → Save as PDF.");
+      const fileName = await downloadHoroscopePdf(req);
+      toast.success(`📥 ${fileName} downloaded successfully.`);
     } catch (err: any) {
       console.error("Horoscope download failed:", err);
       toast.error(err?.message || "Download failed");
@@ -405,7 +364,7 @@ function RetailerHoroscope() {
                         <TableCell>₹{r.amount}</TableCell>
                         <TableCell>
                           {(r.status === "Generated" || r.status === "Delivered") && (
-                            <Button size="sm" variant="outline" onClick={() => handleDownloadPDF(r)}>
+                            <Button size="sm" variant="outline" onClick={() => void handleDownloadPDF(r)}>
                               <Download className="w-4 h-4 mr-1" /> PDF
                             </Button>
                           )}
