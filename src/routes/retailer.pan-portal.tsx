@@ -181,7 +181,8 @@ function PanPortalPage() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="container mx-auto px-6 max-w-6xl py-8">
+      <div className="container mx-auto px-6 max-w-6xl py-8 space-y-6">
+        <LegacyTransferStatusCard retailerId={appUser.uid} />
         <Tabs defaultValue="psa">
           <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl flex-wrap">
             <TabsTrigger value="psa" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
