@@ -397,9 +397,14 @@ function RetailerHoroscope() {
                         <TableCell>₹{r.amount}</TableCell>
                         <TableCell>
                           {(r.status === "Generated" || r.status === "Delivered") && (
-                            <Button size="sm" variant="outline" onClick={() => handleDownloadPDF(r)}>
-                              <Download className="w-4 h-4 mr-1" /> PDF
-                            </Button>
+                            <div className="flex gap-1.5 flex-wrap">
+                              <Button size="sm" variant="outline" onClick={() => handlePreviewPDF(r)} title="Preview / Print → Save as PDF">
+                                <Eye className="w-4 h-4 mr-1" /> View
+                              </Button>
+                              <Button size="sm" onClick={() => handleDownloadPDF(r)} title="Download HTML → Open → Save as PDF" className="bg-amber-600 hover:bg-amber-700 text-white">
+                                <Download className="w-4 h-4 mr-1" /> PDF
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
