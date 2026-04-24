@@ -66,9 +66,6 @@ async function loadPaytmCreds(): Promise<{ creds: PaytmCreds; cfg: PaytmMasterCo
   if (!mid || !key) {
     throw new Error("Paytm credentials not configured. Add PAYTM_MERCHANT_MID and PAYTM_MERCHANT_KEY in Lovable secrets.");
   }
-  if (Buffer.byteLength(key, "utf8") !== 16) {
-    throw new Error("Paytm Merchant Key must be exactly 16 characters.");
-  }
   let cfg: PaytmMasterConfig = DEFAULT_PAYTM_CONFIG;
   try {
     const snap = await getDoc(doc(db, "paytm_config/master"));
