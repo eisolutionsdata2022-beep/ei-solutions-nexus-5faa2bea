@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun } from "lucide-react";
+import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun, Eye } from "lucide-react";
 import { ServicePageShell } from "@/components/ServicePageShell";
 import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
