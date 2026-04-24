@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Banknote, Save, Stethoscope, Loader2, CheckCircle2, XCircle, Copy } from "lucide-react";
+import { Banknote, Save, Stethoscope, Loader2, CheckCircle2, XCircle, Copy, Radar, Square } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,24 +27,101 @@ function AdminBbpsSettings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
 
+  // Auto re-test (whitelist watcher)
+  const [autoOn, setAutoOn] = useState(false);
+  const [autoIntervalSec, setAutoIntervalSec] = useState(30);
+  const [autoAttempts, setAutoAttempts] = useState(0);
+  const [autoNextInSec, setAutoNextInSec] = useState(0);
+  const autoStopRef = useRef(false);
+  const MAX_ATTEMPTS = 240; // safety cap (e.g. 30s × 240 = 2 hrs)
+
   useEffect(() => {
     getBbpsConfig().then(setCfg);
   }, []);
 
-  async function runTest() {
+  async function runTest(silent = false): Promise<TestResult | null> {
     setTesting(true);
-    setTestResult(null);
+    if (!silent) setTestResult(null);
     try {
       const res = await bbpsTestConnection();
       setTestResult(res);
-      if (res.ok) toast.success("✅ Provider responded successfully");
-      else toast.error(res.error || `Test failed at: ${res.stage}`);
+      if (!silent) {
+        if (res.ok) toast.success("✅ Provider responded successfully");
+        else toast.error(res.error || `Test failed at: ${res.stage}`);
+      }
+      return res;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Test failed");
+      if (!silent) toast.error(err instanceof Error ? err.message : "Test failed");
+      return null;
     } finally {
       setTesting(false);
     }
   }
+
+  // Auto re-test loop — polls until success OR provider stops returning 403
+  useEffect(() => {
+    if (!autoOn) return;
+    autoStopRef.current = false;
+    let cancelled = false;
+    let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+    (async () => {
+      let attempts = 0;
+      let lastHttp: number | undefined;
+
+      while (!cancelled && !autoStopRef.current && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        setAutoAttempts(attempts);
+        const res = await runTest(true);
+        if (cancelled || autoStopRef.current) break;
+
+        // Stop conditions
+        if (res?.ok) {
+          toast.success(`🎉 Provider whitelisted! Success on attempt #${attempts}`);
+          setAutoOn(false);
+          break;
+        }
+        // If status changed away from 403, surface it (probably auth/payload error now)
+        if (res && typeof res.httpStatus === "number" && res.httpStatus !== 403 && lastHttp === 403) {
+          toast.info(`Status changed: 403 → ${res.httpStatus}. Whitelist likely active — check response.`);
+          setAutoOn(false);
+          break;
+        }
+        lastHttp = res?.httpStatus;
+
+        // Countdown to next poll
+        let remaining = autoIntervalSec;
+        setAutoNextInSec(remaining);
+        countdownTimer && clearInterval(countdownTimer);
+        countdownTimer = setInterval(() => {
+          remaining -= 1;
+          setAutoNextInSec(Math.max(0, remaining));
+        }, 1000);
+
+        await new Promise((r) => setTimeout(r, autoIntervalSec * 1000));
+        countdownTimer && clearInterval(countdownTimer);
+      }
+
+      if (attempts >= MAX_ATTEMPTS && !autoStopRef.current) {
+        toast.warning(`Auto re-test stopped after ${MAX_ATTEMPTS} attempts. Restart manually if needed.`);
+        setAutoOn(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      autoStopRef.current = true;
+      if (countdownTimer) clearInterval(countdownTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOn]);
+
+  function stopAuto() {
+    autoStopRef.current = true;
+    setAutoOn(false);
+    toast.info("Auto re-test stopped");
+  }
+
 
   function copyResult() {
     if (!testResult) return;
@@ -132,10 +209,58 @@ function AdminBbpsSettings() {
             Sends a real <code>POST /getAccessToken</code> via the VPS bridge from your whitelisted IP.
             Use this to share exact request/response with the provider for debugging.
           </p>
-          <Button onClick={runTest} disabled={testing} className="w-full">
+          <Button onClick={() => runTest(false)} disabled={testing || autoOn} className="w-full">
             {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Stethoscope className="mr-2 h-4 w-4" />}
             {testing ? "Testing…" : "Run Test Now"}
           </Button>
+
+          {/* Auto re-test (whitelist watcher) */}
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Radar className="h-4 w-4" />
+                  Auto re-test (whitelist watcher)
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Polls the provider on a timer. Stops automatically when the response changes
+                  (success, or HTTP status moves off 403 — meaning whitelist is active).
+                </p>
+              </div>
+              <Switch checked={autoOn} onCheckedChange={setAutoOn} disabled={testing && !autoOn} />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label className="text-xs whitespace-nowrap">Every</Label>
+              <Input
+                type="number"
+                min={10}
+                max={300}
+                value={autoIntervalSec}
+                onChange={(e) => setAutoIntervalSec(Math.max(10, Math.min(300, Number(e.target.value) || 30)))}
+                disabled={autoOn}
+                className="h-8 w-20"
+              />
+              <span className="text-xs text-muted-foreground">seconds (10–300)</span>
+            </div>
+
+            {autoOn && (
+              <div className="flex items-center justify-between gap-2 rounded border border-dashed bg-background/50 p-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>
+                    Watching · attempt <strong>#{autoAttempts}</strong>
+                    {!testing && autoNextInSec > 0 && <> · next in {autoNextInSec}s</>}
+                    {testing && <> · testing now…</>}
+                  </span>
+                </div>
+                <Button size="sm" variant="outline" onClick={stopAuto}>
+                  <Square className="mr-1 h-3 w-3" /> Stop
+                </Button>
+              </div>
+            )}
+          </div>
+
 
           {testResult && (
             <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-xs">
