@@ -253,10 +253,12 @@ export async function runPaytmStatusCheck(
     return { status: "success", creditAmount: req.creditAmount, message: "Already credited" };
   }
 
-  // Status query — copied from legacy paytm_v2/config_paytm.php:
-  //   PROD  → https://securegw.paytm.in/merchant-status/getTxnStatus  (form POST + CHECKSUMHASH)
-  //   STAGE → https://securegw-stage.paytm.in/order/status            (JSON v3 + head.signature)
+  // Status query — copied verbatim from legacy:
+  //   QR flow      → cron_check_status.php → /v3/order/status (JSON)  for BOTH prod & stage
+  //   Checkout PROD → config_paytm.php     → /merchant-status/getTxnStatus (form + CHECKSUMHASH)
+  //   Checkout STAGE→ config_paytm.php     → /order/status (JSON v3)
   const isProd = creds.envBase.startsWith("https://securegw.paytm.in");
+  const useFormApi = isProd && req.flow === "checkout";
   let r: {
     resultInfo?: { resultStatus?: string; resultMsg?: string };
     txnId?: string;
@@ -267,7 +269,7 @@ export async function runPaytmStatusCheck(
   } = {};
 
   const { generatePaytmSignature } = await loadChecksum();
-  if (isProd) {
+  if (useFormApi) {
     const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
     const checksum = generatePaytmSignature(statusParams, creds.key);
     const form = new URLSearchParams({ ...statusParams, CHECKSUMHASH: checksum });
@@ -279,7 +281,7 @@ export async function runPaytmStatusCheck(
     const json = (await res.json()) as Record<string, unknown>;
     r = {
       resultInfo: {
-        resultStatus: (json.STATUS as string) === "TXN_SUCCESS" ? "TXN_SUCCESS" : (json.STATUS as string),
+        resultStatus: json.STATUS as string,
         resultMsg: json.RESPMSG as string,
       },
       txnId: json.TXNID as string,
@@ -305,16 +307,25 @@ export async function runPaytmStatusCheck(
   const txnAmount = Number(r.txnAmount ?? 0);
 
   if (status === "TXN_SUCCESS" && txnAmount === req.amount && req.status === "pending") {
+    // Legacy cron_check_status.php lines 68-76:
+    //   - Default: deduct PG% from amount
+    //   - UPI    : NO deduction — full amount credited
+    const isUpi = (r.paymentMode ?? "").toUpperCase() === "UPI";
+    const finalCredit = isUpi ? req.amount : req.creditAmount;
+    const finalCharges = isUpi ? 0 : req.pgChargesAmount;
+
     const walletRef = doc(db, "wallets", req.retailerId);
     await runTransaction(db, async (tx: Transaction) => {
       const w = await tx.get(walletRef);
       const current = (w.exists() ? (w.data()?.balance as number) : 0) || 0;
-      const updated = current + req.creditAmount;
+      const updated = current + finalCredit;
       if (w.exists()) tx.update(walletRef, { balance: updated });
       else tx.set(walletRef, { balance: updated, userId: req.retailerId });
 
       tx.update(reqDoc.ref, {
         status: "success",
+        creditAmount: finalCredit,
+        pgChargesAmount: finalCharges,
         paytmTxnId: r.txnId ?? "",
         bankTxnId: r.bankTxnId ?? "",
         paymentMode: r.paymentMode ?? "",
@@ -326,19 +337,19 @@ export async function runPaytmStatusCheck(
 
     await addDoc(collection(db, "transactions"), {
       userId: req.retailerId,
-      amount: req.creditAmount,
+      amount: finalCredit,
       type: "credit",
       source: "Paytm Gateway",
       description: `Add Money via Paytm (${r.paymentMode ?? "—"}) — ${orderId}`,
       orderId,
       paytmTxnId: r.txnId ?? "",
       bankTxnId: r.bankTxnId ?? "",
-      pgChargesAmount: req.pgChargesAmount,
+      pgChargesAmount: finalCharges,
       grossAmount: req.amount,
       createdAt: new Date().toISOString(),
     });
 
-    return { status: "success", creditAmount: req.creditAmount, message: r.resultInfo?.resultMsg };
+    return { status: "success", creditAmount: finalCredit, message: r.resultInfo?.resultMsg };
   }
 
   if (status === "TXN_FAILURE" || status === "PENDING_FAILURE") {
