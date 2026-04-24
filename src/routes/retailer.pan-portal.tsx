@@ -1390,3 +1390,97 @@ function OrderTimeline({ order }: { order: PanOrder }) {
     </div>
   );
 }
+
+/* ----------------------------------------------------------------------- *
+ * Legacy wallet transfer — separate visibility card.
+ *
+ * Shows a dedicated "Transfer Amount" card above the tabs whenever the
+ * retailer has at least one legacy wallet transfer request on file. This
+ * keeps the legacy ₹ amount visually separate from the regular wallet
+ * balance (per user requirement) so retailers always know what is pending
+ * vs. already credited.
+ * ----------------------------------------------------------------------- */
+function LegacyTransferStatusCard({ retailerId }: { retailerId: string }) {
+  const [requests, setRequests] = useState<PanLegacyTransferRequest[]>([]);
+
+  useEffect(() => {
+    return subscribeRetailerTransferRequests(retailerId, setRequests);
+  }, [retailerId]);
+
+  if (requests.length === 0) return null;
+
+  const pending = requests.filter((r) => r.status === "pending");
+  const approved = requests.filter((r) => r.status === "approved");
+  const rejected = requests.filter((r) => r.status === "rejected");
+
+  const pendingAmount = pending.reduce((s, r) => s + r.amount, 0);
+  const approvedAmount = approved.reduce((s, r) => s + r.amount, 0);
+
+  return (
+    <Card className="border-emerald-200 dark:border-emerald-900/50 shadow-md overflow-hidden">
+      <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-1" />
+      <CardHeader className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wallet className="h-5 w-5 text-emerald-600" />
+          Old Portal Wallet Transfer
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 space-y-3">
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/20 p-3">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-wider font-semibold">
+              <Clock className="h-3.5 w-3.5" /> Pending Transfer
+            </div>
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+              ₹{pendingAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {pending.length} request{pending.length === 1 ? "" : "s"} awaiting admin
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-[11px] uppercase tracking-wider font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Credited
+            </div>
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+              ₹{approvedAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Already in your wallet
+            </p>
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="flex items-center gap-2 text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
+              <XCircle className="h-3.5 w-3.5" /> Rejected
+            </div>
+            <p className="text-2xl font-bold mt-1">{rejected.length}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Contact admin if disputed
+            </p>
+          </div>
+        </div>
+
+        {requests.slice(0, 4).map((r) => (
+          <div
+            key={r.id}
+            className="flex items-center justify-between gap-2 text-xs border-t pt-2"
+          >
+            <div className="min-w-0 flex-1">
+              <span className="font-mono text-foreground">{r.legacyUsername}</span>
+              <span className="text-muted-foreground"> · {new Date(r.createdAt).toLocaleDateString()}</span>
+            </div>
+            <span className="font-semibold">₹{r.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+            <Badge
+              variant={
+                r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"
+              }
+              className="capitalize"
+            >
+              {r.status}
+            </Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
