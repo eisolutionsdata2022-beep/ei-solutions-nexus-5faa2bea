@@ -24,10 +24,34 @@ function AdminBbpsSettings() {
   const { appUser } = useAuth();
   const [cfg, setCfg] = useState<BbpsMasterConfig>(DEFAULT_BBPS_CONFIG);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   useEffect(() => {
     getBbpsConfig().then(setCfg);
   }, []);
+
+  async function runTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await bbpsTestConnection();
+      setTestResult(res);
+      if (res.ok) toast.success("✅ Provider responded successfully");
+      else toast.error(res.error || `Test failed at: ${res.stage}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Test failed");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  function copyResult() {
+    if (!testResult) return;
+    const text = JSON.stringify(testResult, null, 2);
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard — paste in WhatsApp");
+  }
 
   async function save() {
     if (!appUser) return;
