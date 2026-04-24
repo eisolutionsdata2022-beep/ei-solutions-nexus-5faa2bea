@@ -99,25 +99,30 @@ function AdminWallets() {
       </div>
 
       <Dialog open={!!selected} onOpenChange={(v) => { if (!v) setSelected(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Adjust Wallet: {selected?.email}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Current balance: <span className="font-bold text-foreground">₹{selected?.balance.toFixed(2)}</span></p>
-            <div className="space-y-2">
-              <Label>Type</Label>
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto p-4 sm:p-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-base truncate">Adjust Wallet</DialogTitle>
+            <p className="text-xs text-muted-foreground truncate">{selected?.email}</p>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Current balance: <span className="font-bold text-foreground">₹{selected?.balance.toFixed(2)}</span>
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Type</Label>
               <Select value={txType} onValueChange={setTxType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="credit">Credit (Add)</SelectItem>
                   <SelectItem value="debit">Debit (Deduct)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Amount (₹)</Label>
-              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min="1" />
+            <div className="space-y-1.5">
+              <Label className="text-xs">Amount (₹)</Label>
+              <Input type="number" className="h-9" value={amount} onChange={(e) => setAmount(e.target.value)} min="1" />
             </div>
-            <Button className="w-full" onClick={handleTransaction} disabled={processing}>
+            <Button className="w-full h-9" onClick={handleTransaction} disabled={processing}>
               {processing ? "Processing..." : "Apply"}
             </Button>
           </div>
