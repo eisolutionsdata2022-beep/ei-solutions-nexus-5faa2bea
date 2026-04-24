@@ -69,7 +69,7 @@ import {
   ShieldAlert,
   Server,
   Undo2,
-} from "lucide-react";
+  Search,
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
