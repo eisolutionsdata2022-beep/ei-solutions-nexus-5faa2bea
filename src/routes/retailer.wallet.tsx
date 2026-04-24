@@ -42,6 +42,7 @@ import {
 import { toast } from "sonner";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { FloatingInput } from "@/components/ui/floating-input";
+import { PaytmAddMoneyCard } from "@/components/wallet/PaytmAddMoneyCard";
 
 export const Route = createFileRoute("/retailer/wallet")({
   ssr: false,
@@ -213,6 +214,22 @@ function RetailerWallet() {
     transactionId?: string;
     upiId?: string;
   }>({});
+
+  // Paytm callback toast (from /api/public/paytm-callback redirect)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paytm = params.get("paytm");
+    const msg = params.get("msg") ?? "";
+    if (!paytm) return;
+    if (paytm === "success") toast.success(`✅ Paytm payment successful — ${msg}`);
+    else if (paytm === "pending") toast.info(`⏳ Paytm payment ${msg || "is processing"}`);
+    else toast.error(`❌ Paytm payment failed — ${msg || "please try again"}`);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("paytm");
+    url.searchParams.delete("msg");
+    window.history.replaceState({}, "", url.pathname + (url.search || ""));
+  }, []);
 
   useEffect(() => {
     if (!appUser) return;
@@ -533,6 +550,9 @@ function RetailerWallet() {
           </div>
         </div>
       </div>
+
+      {/* Instant Add Money — Paytm Gateway (auto-credit) */}
+      <PaytmAddMoneyCard />
 
       {/* Wallet Requests — card list with status timeline */}
       <WalletRequestsList loading={loading} requests={walletRequests} />

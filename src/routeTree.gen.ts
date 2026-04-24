@@ -91,6 +91,7 @@ import { Route as AdminServiceButtonsRouteImport } from './routes/admin.service-
 import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admin.service-activations-config'
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
+import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
 import { Route as AdminPanLegacyBalancesRouteImport } from './routes/admin.pan-legacy-balances'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
@@ -118,6 +119,7 @@ import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.cer
 import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-transactions'
 import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
+import { Route as ApiPublicPaytmCallbackRouteImport } from './routes/api.public.paytm-callback'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
 import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
@@ -533,6 +535,11 @@ const AdminReferralsRoute = AdminReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPaytmSettingsRoute = AdminPaytmSettingsRouteImport.update({
+  id: '/paytm-settings',
+  path: '/paytm-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   id: '/pan-portal-settings',
   path: '/pan-portal-settings',
@@ -669,6 +676,11 @@ const RetailerJobsJobIdRoute = RetailerJobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => RetailerJobsRoute,
 } as any)
+const ApiPublicPaytmCallbackRoute = ApiPublicPaytmCallbackRouteImport.update({
+  id: '/api/public/paytm-callback',
+  path: '/api/public/paytm-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
@@ -728,6 +740,7 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -797,6 +810,7 @@ export interface FileRoutesByFullPath {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -835,6 +849,7 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -904,6 +919,7 @@ export interface FileRoutesByTo {
   '/trainer': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -950,6 +966,7 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
   '/admin/service-activations-config': typeof AdminServiceActivationsConfigRoute
@@ -1019,6 +1036,7 @@ export interface FileRoutesById {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -1066,6 +1084,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1135,6 +1154,7 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -1173,6 +1193,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1242,6 +1263,7 @@ export interface FileRouteTypes {
     | '/trainer'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   id:
@@ -1287,6 +1309,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
     | '/admin/service-activations-config'
@@ -1356,6 +1379,7 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
+    | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesById: FileRoutesById
@@ -1379,6 +1403,7 @@ export interface RootRouteChildren {
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
+  ApiPublicPaytmCallbackRoute: typeof ApiPublicPaytmCallbackRoute
   ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 
@@ -1958,6 +1983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReferralsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/paytm-settings': {
+      id: '/admin/paytm-settings'
+      path: '/paytm-settings'
+      fullPath: '/admin/paytm-settings'
+      preLoaderRoute: typeof AdminPaytmSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pan-portal-settings': {
       id: '/admin/pan-portal-settings'
       path: '/pan-portal-settings'
@@ -2147,6 +2179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RetailerJobsJobIdRouteImport
       parentRoute: typeof RetailerJobsRoute
     }
+    '/api/public/paytm-callback': {
+      id: '/api/public/paytm-callback'
+      path: '/api/public/paytm-callback'
+      fullPath: '/api/public/paytm-callback'
+      preLoaderRoute: typeof ApiPublicPaytmCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email/unsubscribe': {
       id: '/api/email/unsubscribe'
       path: '/api/email/unsubscribe'
@@ -2198,6 +2237,7 @@ interface AdminRouteChildren {
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanLegacyBalancesRoute: typeof AdminPanLegacyBalancesRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
+  AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
   AdminServiceActivationsConfigRoute: typeof AdminServiceActivationsConfigRoute
@@ -2244,6 +2284,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanLegacyBalancesRoute: AdminPanLegacyBalancesRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
+  AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
   AdminServiceActivationsConfigRoute: AdminServiceActivationsConfigRoute,
@@ -2451,6 +2492,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
+  ApiPublicPaytmCallbackRoute: ApiPublicPaytmCallbackRoute,
   ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
 export const routeTree = rootRouteImport
