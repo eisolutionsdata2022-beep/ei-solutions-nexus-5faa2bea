@@ -266,6 +266,35 @@ function RetailerHoroscope() {
                   </Select>
                 </div>
 
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>മതം (Religion) *</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["Hindu", "Muslim", "Christian"] as Religion[]).map((rel) => {
+                      const active = form.religion === rel;
+                      const r = RELIGION_LABELS[rel];
+                      return (
+                        <button
+                          key={rel}
+                          type="button"
+                          onClick={() => setForm({ ...form, religion: rel })}
+                          className={`rounded-xl border p-2.5 text-center transition ${
+                            active
+                              ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-300"
+                              : "border-border hover:border-amber-300"
+                          }`}
+                        >
+                          <div className="text-2xl leading-none mb-1">{r.emoji}</div>
+                          <div className="font-bold text-xs">{r.ml}</div>
+                          <div className="text-[10px] text-muted-foreground">{r.en}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    PDF-ൽ തിരഞ്ഞെടുത്ത മതത്തിന്റെ ദൈവ ചിത്രവും അനുയോജ്യമായ പ്രവചന രീതിയും വരും.
+                  </p>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label>ജനന തീയതി *</Label>
                   <Input
