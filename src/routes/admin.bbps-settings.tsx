@@ -119,6 +119,86 @@ function AdminBbpsSettings() {
         </CardContent>
       </Card>
 
+      {/* Test Connection — fires real getAccessToken via VPS bridge */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5" />
+            Test Connection
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sends a real <code>POST /getAccessToken</code> via the VPS bridge from your whitelisted IP.
+            Use this to share exact request/response with the provider for debugging.
+          </p>
+          <Button onClick={runTest} disabled={testing} className="w-full">
+            {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Stethoscope className="mr-2 h-4 w-4" />}
+            {testing ? "Testing…" : "Run Test Now"}
+          </Button>
+
+          {testResult && (
+            <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {testResult.ok ? (
+                    <Badge className="bg-emerald-600"><CheckCircle2 className="mr-1 h-3 w-3" /> Success</Badge>
+                  ) : (
+                    <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Failed</Badge>
+                  )}
+                  <span className="font-mono text-[11px] text-muted-foreground">stage: {testResult.stage}</span>
+                  {typeof testResult.elapsedMs === "number" && (
+                    <span className="text-[11px] text-muted-foreground">· {testResult.elapsedMs}ms</span>
+                  )}
+                </div>
+                <Button size="sm" variant="outline" onClick={copyResult}>
+                  <Copy className="mr-1 h-3 w-3" /> Copy
+                </Button>
+              </div>
+
+              {testResult.bridgeUrl && (
+                <Row k="Bridge" v={`${testResult.bridgeUrl} ${testResult.bridgeReachable ? "✅" : "❌"}`} />
+              )}
+              {testResult.providerUrl && <Row k="Provider URL" v={testResult.providerUrl} />}
+              {typeof testResult.httpStatus === "number" && (
+                <Row k="HTTP" v={`${testResult.httpStatus} ${testResult.httpStatusText ?? ""}`} />
+              )}
+              <Row k="Timestamp" v={testResult.timestamp} />
+
+              {testResult.headersSent && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-[11px] font-medium">Headers sent</summary>
+                  <pre className="mt-1 overflow-auto rounded bg-background p-2 font-mono text-[11px]">
+                    {JSON.stringify(testResult.headersSent, null, 2)}
+                  </pre>
+                </details>
+              )}
+              {testResult.bodySent && (
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-[11px] font-medium">Body sent (masked)</summary>
+                  <pre className="mt-1 overflow-auto rounded bg-background p-2 font-mono text-[11px]">
+                    {JSON.stringify(testResult.bodySent, null, 2)}
+                  </pre>
+                </details>
+              )}
+              {testResult.response && (
+                <details className="mt-1" open>
+                  <summary className="cursor-pointer text-[11px] font-medium">Provider response</summary>
+                  <pre className="mt-1 max-h-64 overflow-auto rounded bg-background p-2 font-mono text-[11px] whitespace-pre-wrap break-all">
+                    {testResult.response}
+                  </pre>
+                </details>
+              )}
+              {testResult.error && (
+                <div className="mt-2 rounded border border-destructive/50 bg-destructive/10 p-2 text-[11px] text-destructive">
+                  {testResult.error}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Required Secrets</CardTitle>
