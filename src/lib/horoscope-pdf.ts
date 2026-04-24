@@ -861,7 +861,19 @@ export async function downloadHoroscopePdf(req: HoroscopeRequest): Promise<void>
 
   const wrap = document.createElement("div");
   wrap.setAttribute("aria-hidden", "true");
-  wrap.style.cssText = "position:fixed;left:0;top:0;width:794px;background:#fff;pointer-events:none;z-index:-2147483647;overflow:hidden;";
+  // Render fully off-screen so it never visually covers the live UI
+  // (sidebar / header) while html2canvas takes its snapshot.
+  wrap.style.cssText = [
+    "position:absolute",
+    "left:-100000px",
+    "top:0",
+    "width:794px",
+    "background:#fff",
+    "pointer-events:none",
+    "opacity:1",
+    "overflow:hidden",
+    "contain:layout paint",
+  ].join(";") + ";";
   wrap.innerHTML = buildReportHtml(req);
   document.body.appendChild(wrap);
 
