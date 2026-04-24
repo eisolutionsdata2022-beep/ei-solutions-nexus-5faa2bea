@@ -297,6 +297,16 @@ function PsaTab({
     uidNo: "",
   });
 
+  /* ---- Legacy balance lookup state ---- */
+  const [lookingUp, setLookingUp] = useState(false);
+  const [legacyBalance, setLegacyBalance] = useState<PanLegacyBalance | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [transferRequests, setTransferRequests] = useState<PanLegacyTransferRequest[]>([]);
+
+  useEffect(() => {
+    return subscribeRetailerTransferRequests(user.uid, setTransferRequests);
+  }, [user.uid]);
+
   if (!config.hasCredentials) {
     return (
       <Card><CardContent className="p-6 text-center text-muted-foreground">
