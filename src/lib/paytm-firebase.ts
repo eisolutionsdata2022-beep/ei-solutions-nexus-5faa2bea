@@ -9,7 +9,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   limit,
   getDocs,
   onSnapshot,
@@ -65,9 +64,10 @@ export async function listMyTopupRequests(
   const q = query(
     collection(db, TOPUP_COLLECTION),
     where("retailerId", "==", retailerId),
-    orderBy("createdAt", "desc"),
     limit(max),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as PaytmTopupRequest) }));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as PaytmTopupRequest) }))
+    .sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || ""));
 }
