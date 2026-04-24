@@ -22,10 +22,7 @@ import {
   getLegacyBalance,
   subscribeRetailerTransferRequests,
 } from "@/lib/pan-legacy-balance";
-import type {
-  PanLegacyBalance,
-  PanLegacyTransferRequest,
-} from "@/lib/pan-legacy-balance-types";
+import type { PanLegacyBalance, PanLegacyTransferRequest } from "@/lib/pan-legacy-balance-types";
 import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
 import {
   panNsdlGetAuthorization,
@@ -47,30 +44,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Loader2,
-  IdCard,
-  FileText,
-  RefreshCw,
-  ShieldCheck,
-  Sparkles,
-  Wallet,
-  Link2,
-  CheckCircle2,
-  ArrowRight,
-  Clock,
-  XCircle,
-  TrendingUp,
-  CreditCard,
-  Zap,
-  ChevronDown,
-  ChevronUp,
-  Send,
-  ShieldAlert,
-  Server,
-  Undo2,
-  Search,
-} from "lucide-react";
+import { Loader2, IdCard, FileText, RefreshCw, ShieldCheck, Sparkles, Wallet, Link2, CheckCircle2, ArrowRight, Clock, XCircle, TrendingUp, CreditCard, Zap, ChevronDown, ChevronUp, Send, ShieldAlert, Server, Undo2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
