@@ -439,9 +439,9 @@ const STYLES = `
   }
   .report * { box-sizing: border-box; }
 
-  .report[data-religion="Hindu"]     { --c1:#7c2d12; --c2:#b45309; --acc:#fef3c7; --bg:linear-gradient(135deg,#fff7ed,#fef3c7); }
-  .report[data-religion="Muslim"]    { --c1:#065f46; --c2:#047857; --acc:#d1fae5; --bg:linear-gradient(135deg,#ecfdf5,#d1fae5); }
-  .report[data-religion="Christian"] { --c1:#1e3a8a; --c2:#1d4ed8; --acc:#dbeafe; --bg:linear-gradient(135deg,#eff6ff,#dbeafe); }
+  .report[data-religion="Hindu"]     { --c1:#7c2d12; --c2:#b45309; --acc:#fef3c7; --bg:linear-gradient(135deg,#fff7ed,#fef3c7); --soft:#fdf4e3; --soft-2:#fefaf2; --soft-3:#fbedd2; --line:#d9b178; }
+  .report[data-religion="Muslim"]    { --c1:#065f46; --c2:#047857; --acc:#d1fae5; --bg:linear-gradient(135deg,#ecfdf5,#d1fae5); --soft:#e7f8f0; --soft-2:#f6fdf9; --soft-3:#dcf7ea; --line:#7cc9ac; }
+  .report[data-religion="Christian"] { --c1:#1e3a8a; --c2:#1d4ed8; --acc:#dbeafe; --bg:linear-gradient(135deg,#eff6ff,#dbeafe); --soft:#eef4ff; --soft-2:#f8fbff; --soft-3:#e1edff; --line:#9ab7ef; }
 
   .ornate-frame {
     position: relative;
@@ -466,7 +466,7 @@ const STYLES = `
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .page + .page { border-top: 1px dashed color-mix(in oklab, var(--c2) 35%, white); padding-top: 18px; }
+  .page + .page { border-top: 1px dashed var(--line); padding-top: 18px; }
 
   /* Cover */
   .page-cover { text-align: center; padding-bottom: 8px; }
@@ -495,7 +495,7 @@ const STYLES = `
   }
   .cover-table td { padding: 8px 14px; border: 1px solid var(--acc); font-size: 12.5px; text-align: left; }
   .cover-table .lbl {
-    background: color-mix(in oklab, var(--acc) 70%, white);
+    background: var(--soft);
     font-size: 11px; color: var(--c1); font-weight: 700; width: 40%;
   }
   .cover-table .val { font-weight: 600; color: #1c1917; }
@@ -504,7 +504,7 @@ const STYLES = `
 
   .summary-card {
     margin: 18px auto 0; max-width: 620px;
-    background: linear-gradient(135deg, color-mix(in oklab, var(--acc) 80%, white), white);
+    background: linear-gradient(135deg, var(--soft), var(--soft-2));
     border: 2px solid var(--c2); border-radius: 8px;
     padding: 14px 18px 16px; text-align: left;
   }
@@ -518,7 +518,7 @@ const STYLES = `
   /* Page head */
   .page-head {
     display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(90deg, color-mix(in oklab, var(--acc) 70%, white), white);
+    background: linear-gradient(90deg, var(--soft), var(--soft-2));
     border-left: 4px solid var(--c1);
     padding: 10px 14px; margin: 0 0 14px;
     border-radius: 0 6px 6px 0;
@@ -567,11 +567,11 @@ const STYLES = `
     font-size: 13px; font-weight: 800;
     color: #b91c1c;
     letter-spacing: 0.04em;
-    background: color-mix(in oklab, var(--acc) 60%, white);
+    background: var(--soft);
     padding: 2px 4px; border-radius: 3px;
     align-self: flex-start;
   }
-  .ch-lagnam { background: color-mix(in oklab, var(--acc) 50%, white); }
+  .ch-lagnam { background: var(--soft); }
   .ch-lag-tag {
     position: absolute; top: 4px; right: 4px;
     font-size: 8.5px; font-weight: 800;
@@ -580,7 +580,7 @@ const STYLES = `
     letter-spacing: 0.08em;
   }
   .ch-center {
-    background: color-mix(in oklab, var(--acc) 30%, white);
+    background: var(--soft-3);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     text-align: center; padding: 14px;
@@ -619,7 +619,7 @@ const STYLES = `
     padding: 7px 10px;
     border-top: 1px solid var(--acc);
   }
-  .g-table tr:nth-child(even) td { background: color-mix(in oklab, var(--acc) 30%, white); }
+  .g-table tr:nth-child(even) td { background: var(--soft-3); }
   .g-table .num { text-align: center; font-family: 'Playfair Display', serif; font-weight: 800; color: var(--c1); }
 
   /* ── Predictions grid ── */
@@ -629,7 +629,7 @@ const STYLES = `
     grid-template-columns: 36px 1fr;
     gap: 10px;
     padding: 12px 14px;
-    border: 1px solid color-mix(in oklab, var(--c2) 35%, white);
+    border: 1px solid var(--line);
     border-left: 4px solid var(--c1);
     border-radius: 6px; background: #fff;
   }
@@ -670,11 +670,11 @@ const STYLES = `
     padding: 8px 12px; border-top: 1px solid var(--acc);
     line-height: 1.6;
   }
-  .stage-table tr:nth-child(even) td { background: color-mix(in oklab, var(--acc) 30%, white); }
+  .stage-table tr:nth-child(even) td { background: var(--soft-3); }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .col-card {
-    border: 1px solid color-mix(in oklab, var(--c2) 35%, white);
+    border: 1px solid var(--line);
     border-top: 3px solid var(--c1);
     border-radius: 6px; padding: 10px 12px;
     background: #fff;
@@ -684,7 +684,7 @@ const STYLES = `
 
   /* ── Generic block ── */
   .block {
-    border: 1px solid color-mix(in oklab, var(--c2) 35%, white);
+    border: 1px solid var(--line);
     border-left: 4px solid var(--c1);
     border-radius: 6px;
     padding: 10px 14px 12px;
@@ -695,7 +695,7 @@ const STYLES = `
     font-size: 13px; font-weight: 700;
     color: var(--c1);
     margin-bottom: 4px;
-    border-bottom: 1px dashed color-mix(in oklab, var(--c2) 30%, white);
+    border-bottom: 1px dashed var(--line);
     padding-bottom: 4px;
   }
   .block-body { font-size: 12.5px; color: #292524; line-height: 1.7; white-space: pre-wrap; }
@@ -715,13 +715,13 @@ const STYLES = `
     padding: 8px 10px; text-align: left; font-size: 11.5px;
   }
   .dasha-table td { padding: 7px 10px; border-top: 1px solid var(--acc); }
-  .dasha-table tr:nth-child(even) td { background: color-mix(in oklab, var(--acc) 30%, white); }
+  .dasha-table tr:nth-child(even) td { background: var(--soft-3); }
   .dasha-table .num { text-align: center; font-family: 'Playfair Display', serif; font-weight: 700; color: var(--c1); }
 
   /* ── Remedies grid ── */
   .rem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .rem-card {
-    border: 1px solid color-mix(in oklab, var(--c2) 35%, white);
+    border: 1px solid var(--line);
     border-top: 3px solid var(--c1);
     border-radius: 6px; padding: 10px 12px;
     background: #fff;
@@ -730,7 +730,7 @@ const STYLES = `
     font-size: 12.5px; font-weight: 700;
     color: var(--c1);
     margin-bottom: 4px;
-    border-bottom: 1px dashed color-mix(in oklab, var(--c2) 30%, white);
+    border-bottom: 1px dashed var(--line);
     padding-bottom: 4px;
   }
   .rem-card.good { border-top-color: #16a34a; }
@@ -761,7 +761,7 @@ const STYLES = `
     flex: 0 0 88px; width: 88px; height: 88px;
     border: 3px double var(--c1); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    background: color-mix(in oklab, var(--acc) 60%, white);
+    background: var(--soft);
     transform: rotate(-8deg);
   }
   .seal-inner { text-align: center; color: var(--c1); }
