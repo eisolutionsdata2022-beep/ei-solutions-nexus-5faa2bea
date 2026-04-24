@@ -116,6 +116,7 @@ export const initiatePaytmCheckout = createServerFn({ method: "POST" })
       IS_USER_VERIFIED: "YES",
     };
 
+    const { generatePaytmSignature } = await loadChecksum();
     const checksum = generatePaytmSignature(params, creds.key);
 
     await addDoc(collection(db, "wallet_topup_requests"), {
