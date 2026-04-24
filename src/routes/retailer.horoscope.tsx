@@ -169,15 +169,54 @@ function RetailerHoroscope() {
     }
   };
 
-  const handleDownloadPDF = (req: HoroscopeRequest) => {
-    const html = (req.pdfTemplate === "premium" || req.product !== "standard")
+  const buildHoroscopeHtml = (req: HoroscopeRequest): string => {
+    return (req.pdfTemplate === "premium" || req.product !== "standard")
       ? generatePremiumHoroscopePDF(req)
       : generateHoroscopePDF(req);
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => win.print(), 600);
+  };
+
+  const safeFileName = (req: HoroscopeRequest) => {
+    const name = (req.customerName || "horoscope").replace(/[^a-zA-Z0-9-_]+/g, "_");
+    const date = new Date(req.createdAt).toISOString().slice(0, 10);
+    return `Horoscope_${name}_${date}.html`;
+  };
+
+  // Forced download via Blob + anchor click — works on mobile too.
+  const handleDownloadPDF = (req: HoroscopeRequest) => {
+    try {
+      const html = buildHoroscopeHtml(req);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = safeFileName(req);
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast.success("ഡൗൺലോഡ് ആരംഭിച്ചു — ഫയൽ തുറന്ന് Print → Save as PDF ചെയ്യുക");
+    } catch (err: any) {
+      toast.error(err?.message || "Download failed");
+    }
+  };
+
+  // Eye button: open printable HTML in a new tab as ultimate fallback.
+  const handlePreviewPDF = (req: HoroscopeRequest) => {
+    try {
+      const html = buildHoroscopeHtml(req);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        // Popup blocked — fallback to direct download
+        toast.info("Popup blocked — downloading instead");
+        handleDownloadPDF(req);
+        return;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err: any) {
+      toast.error(err?.message || "Preview failed");
     }
   };
 
