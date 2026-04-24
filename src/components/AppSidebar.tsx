@@ -65,6 +65,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Buttons", to: "/admin/service-buttons", icon: ShoppingBag },
     { label: "Bill Payment Txns", to: "/admin/bbps-transactions", icon: ArrowLeftRight },
     { label: "Bill Payment Settings", to: "/admin/bbps-settings", icon: Banknote },
+    { label: "Paytm Settings", to: "/admin/paytm-settings", icon: CreditCard, tag: "new" },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
     { label: "Wallet Requests", to: "/admin/wallet-requests", icon: Banknote, tag: "pending" },
     { label: "Horoscope", to: "/admin/horoscope-settings", icon: Sparkles },
