@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Banknote, Save } from "lucide-react";
+import { Banknote, Save, Stethoscope, Loader2, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { getBbpsConfig, saveBbpsConfig } from "@/lib/bbps-firebase";
 import { DEFAULT_BBPS_CONFIG, type BbpsMasterConfig } from "@/lib/bbps-types";
+import { bbpsTestConnection } from "@/lib/bbps-api.functions";
+
+type TestResult = Awaited<ReturnType<typeof bbpsTestConnection>>;
 
 export const Route = createFileRoute("/admin/bbps-settings")({
   ssr: false,
