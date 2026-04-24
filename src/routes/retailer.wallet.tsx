@@ -215,6 +215,22 @@ function RetailerWallet() {
     upiId?: string;
   }>({});
 
+  // Paytm callback toast (from /api/public/paytm-callback redirect)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paytm = params.get("paytm");
+    const msg = params.get("msg") ?? "";
+    if (!paytm) return;
+    if (paytm === "success") toast.success(`✅ Paytm payment successful — ${msg}`);
+    else if (paytm === "pending") toast.info(`⏳ Paytm payment ${msg || "is processing"}`);
+    else toast.error(`❌ Paytm payment failed — ${msg || "please try again"}`);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("paytm");
+    url.searchParams.delete("msg");
+    window.history.replaceState({}, "", url.pathname + (url.search || ""));
+  }, []);
+
   useEffect(() => {
     if (!appUser) return;
     const unsub1 = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
