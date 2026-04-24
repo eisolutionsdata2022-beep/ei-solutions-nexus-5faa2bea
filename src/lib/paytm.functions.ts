@@ -207,14 +207,13 @@ export const createPaytmQr = createServerFn({ method: "POST" })
       body,
     };
 
-    const res = await fetch(`${creds.envBase}/paymentservices/qr/create`, {
+    const json = await fetchPaytmJson<{
+      body?: { qrData?: string; resultInfo?: { resultStatus?: string; resultMsg?: string } };
+    }>(`${creds.envBase}/paymentservices/qr/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(post),
-    });
-    const json = (await res.json()) as {
-      body?: { qrData?: string; resultInfo?: { resultStatus?: string; resultMsg?: string } };
-    };
+    }, "QR create");
 
     const status = json.body?.resultInfo?.resultStatus;
     const qrData = json.body?.qrData;
@@ -301,12 +300,11 @@ export async function runPaytmStatusCheck(
     const statusParams: Record<string, string> = { MID: creds.mid, ORDERID: orderId };
     const checksum = generatePaytmSignature(statusParams, creds.key);
     const form = new URLSearchParams({ ...statusParams, CHECKSUMHASH: checksum });
-    const res = await fetch(`${creds.envBase}/merchant-status/getTxnStatus`, {
+    const json = await fetchPaytmJson<Record<string, unknown>>(`${creds.envBase}/merchant-status/getTxnStatus`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form.toString(),
-    });
-    const json = (await res.json()) as Record<string, unknown>;
+    }, "status check");
     r = {
       resultInfo: {
         resultStatus: json.STATUS as string,
@@ -322,12 +320,11 @@ export async function runPaytmStatusCheck(
     const body = { mid: creds.mid, orderId };
     const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
     const post = { head: { signature }, body };
-    const res = await fetch(`${creds.envBase}/v3/order/status`, {
+    const json = await fetchPaytmJson<{ body?: typeof r }>(`${creds.envBase}/v3/order/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(post),
-    });
-    const json = (await res.json()) as { body?: typeof r };
+    }, "status check");
     r = json.body ?? {};
   }
 
