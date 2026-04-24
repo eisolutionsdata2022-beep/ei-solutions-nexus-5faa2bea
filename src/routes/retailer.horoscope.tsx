@@ -175,9 +175,33 @@ function RetailerHoroscope() {
       : generateHoroscopePDF(req);
   };
 
+  const normalizeRequestDate = (value: unknown) => {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    if (typeof value === "string" || typeof value === "number") {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    if (value && typeof value === "object") {
+      const maybeTimestamp = value as {
+        toDate?: () => Date;
+        seconds?: number;
+        nanoseconds?: number;
+      };
+      if (typeof maybeTimestamp.toDate === "function") {
+        const parsed = maybeTimestamp.toDate();
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+      if (typeof maybeTimestamp.seconds === "number") {
+        const parsed = new Date(maybeTimestamp.seconds * 1000);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+    }
+    return new Date();
+  };
+
   const safeFileName = (req: HoroscopeRequest) => {
     const name = (req.customerName || "horoscope").replace(/[^a-zA-Z0-9-_]+/g, "_");
-    const date = new Date(req.createdAt).toISOString().slice(0, 10);
+    const date = normalizeRequestDate(req.createdAt).toISOString().slice(0, 10);
     return `Horoscope_${name}_${date}.html`;
   };
 
@@ -392,7 +416,7 @@ function RetailerHoroscope() {
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">{r.customerName}</TableCell>
                         <TableCell><Badge variant="outline">{PRODUCT_LABELS[r.product || "standard"].emoji} {PRODUCT_LABELS[r.product || "standard"].ml}</Badge></TableCell>
-                        <TableCell className="text-xs">{new Date(r.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-xs">{normalizeRequestDate(r.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell><Badge className={STATUS_COLORS[r.status]}>{r.status}</Badge></TableCell>
                         <TableCell>₹{r.amount}</TableCell>
                         <TableCell>
