@@ -170,14 +170,52 @@ function RetailerHoroscope() {
   };
 
   const handleDownloadPDF = (req: HoroscopeRequest) => {
-    const html = (req.pdfTemplate === "premium" || req.product !== "standard")
-      ? generatePremiumHoroscopePDF(req)
-      : generateHoroscopePDF(req);
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => win.print(), 600);
+    try {
+      const rawHtml = (req.pdfTemplate === "premium" || req.product !== "standard")
+        ? generatePremiumHoroscopePDF(req)
+        : generateHoroscopePDF(req);
+
+      // Inject auto-print script so opening the file pops the browser's
+      // "Save as PDF" dialog immediately — gives retailer a real PDF.
+      const html = rawHtml.includes("</body>")
+        ? rawHtml.replace(
+            "</body>",
+            `<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body>`,
+          )
+        : rawHtml +
+          `<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>`;
+
+      const safeName = (req.customerName || "horoscope")
+        .replace(/[^\p{L}\p{N}_-]+/gu, "_")
+        .slice(0, 40);
+      const fileName = `Horoscope_${safeName}_${(req.product || "standard")}.html`;
+
+      // 1) DIRECT DOWNLOAD — guaranteed for every retailer, no popup blocker.
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+      // 2) ALSO try opening a print-ready preview (best-effort, may be blocked).
+      try {
+        const win = window.open("", "_blank");
+        if (win) {
+          win.document.write(html);
+          win.document.close();
+        }
+      } catch {
+        /* popup blocked — download already succeeded */
+      }
+
+      toast.success("📥 Report downloaded! Open file → Print → Save as PDF.");
+    } catch (err: any) {
+      console.error("Horoscope download failed:", err);
+      toast.error(err?.message || "Download failed");
     }
   };
 
