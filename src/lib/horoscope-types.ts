@@ -1,202 +1,225 @@
-/**
- * Horoscope feature — minimal type definitions.
- * Rebuilt from scratch (Apr 2026) for reliable server-generated reports.
- */
-
-export type HoroscopeStatus = "Pending" | "Generated" | "Delivered";
+export type HoroscopeStatus = "Pending" | "Processing" | "Generated" | "Delivered";
 export type Gender = "Male" | "Female" | "Other";
-export type HoroscopeProduct = "standard" | "premium";
-export type Religion = "Hindu" | "Muslim" | "Christian";
+export type HoroscopeProduct = "standard" | "premium" | "palmistry";
+export type PdfTemplate = "classic" | "premium";
+export type HoroscopeLanguage = "Malayalam" | "English" | "Hindi" | "Both";
+export type Hand = "left" | "right";
 
-export const HOROSCOPE_STATUSES: HoroscopeStatus[] = ["Pending", "Generated", "Delivered"];
+export const HOROSCOPE_STATUSES: HoroscopeStatus[] = ["Pending", "Processing", "Generated", "Delivered"];
 
-export const RELIGION_LABELS: Record<Religion, { ml: string; en: string; emoji: string }> = {
-  Hindu:     { ml: "ഹിന്ദു",     en: "Hindu",     emoji: "🕉️" },
-  Muslim:    { ml: "മുസ്ലിം",   en: "Muslim",    emoji: "☪️" },
-  Christian: { ml: "ക്രിസ്ത്യൻ", en: "Christian", emoji: "✝️" },
+export const PRODUCT_LABELS: Record<HoroscopeProduct, { ml: string; en: string; emoji: string }> = {
+  standard: { ml: "ജാതകം", en: "Standard Horoscope", emoji: "🪔" },
+  premium: { ml: "സമ്പൂർണ ജാതകം", en: "Premium Complete Horoscope", emoji: "🕉️" },
+  palmistry: { ml: "കൈരേഖ ശാസ്ത്രം", en: "Palmistry / Palm Reading", emoji: "🤲" },
 };
 
 export const STATUS_COLORS: Record<HoroscopeStatus, string> = {
-  Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  Generated: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  Delivered: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  Pending: "bg-yellow-100 text-yellow-800",
+  Processing: "bg-blue-100 text-blue-800",
+  Generated: "bg-green-100 text-green-800",
+  Delivered: "bg-indigo-100 text-indigo-800",
 };
 
-export const PRODUCT_LABELS: Record<HoroscopeProduct, { ml: string; en: string; emoji: string }> = {
-  standard: { ml: "ജാതകം (സാധാരണ)", en: "Standard Horoscope", emoji: "🪔" },
-  premium: { ml: "സമ്പൂർണ ജാതകം (പ്രീമിയം)", en: "Premium Complete Horoscope", emoji: "🕉️" },
-};
+export const NAKSHATRAS = [
+  { id: 1, en: "Ashwini", ml: "അശ്വതി" },
+  { id: 2, en: "Bharani", ml: "ഭരണി" },
+  { id: 3, en: "Krittika", ml: "കാർത്തിക" },
+  { id: 4, en: "Rohini", ml: "രോഹിണി" },
+  { id: 5, en: "Mrigashira", ml: "മകയിരം" },
+  { id: 6, en: "Ardra", ml: "തിരുവാതിര" },
+  { id: 7, en: "Punarvasu", ml: "പുണർതം" },
+  { id: 8, en: "Pushya", ml: "പൂയം" },
+  { id: 9, en: "Ashlesha", ml: "ആയില്യം" },
+  { id: 10, en: "Magha", ml: "മകം" },
+  { id: 11, en: "Purva Phalguni", ml: "പൂരം" },
+  { id: 12, en: "Uttara Phalguni", ml: "ഉത്രം" },
+  { id: 13, en: "Hasta", ml: "അത്തം" },
+  { id: 14, en: "Chitra", ml: "ചിത്തിര" },
+  { id: 15, en: "Swati", ml: "ചോതി" },
+  { id: 16, en: "Vishakha", ml: "വിശാഖം" },
+  { id: 17, en: "Anuradha", ml: "അനിഴം" },
+  { id: 18, en: "Jyeshtha", ml: "തൃക്കേട്ട" },
+  { id: 19, en: "Mula", ml: "മൂലം" },
+  { id: 20, en: "Purva Ashadha", ml: "പൂരാടം" },
+  { id: 21, en: "Uttara Ashadha", ml: "ഉത്രാടം" },
+  { id: 22, en: "Shravana", ml: "തിരുവോണം" },
+  { id: 23, en: "Dhanishta", ml: "അവിട്ടം" },
+  { id: 24, en: "Shatabhisha", ml: "ചതയം" },
+  { id: 25, en: "Purva Bhadrapada", ml: "പൂരുരുട്ടാതി" },
+  { id: 26, en: "Uttara Bhadrapada", ml: "ഉത്രട്ടാതി" },
+  { id: 27, en: "Revati", ml: "രേവതി" },
+] as const;
 
-/** A planet's position in the chart. */
-export interface GrahaPosition {
-  /** Planet name in Malayalam, e.g. "സൂര്യൻ (Sun)" */
-  planet: string;
-  /** House number 1-12 */
-  house: number;
-  /** Rashi (zodiac) in Malayalam, e.g. "ഇടവം" */
-  rashi: string;
-  /** Status text, e.g. "സാധാരണം", "ഉച്ചം", "നീചം" */
-  condition: string;
-  /** Optional 2-3 letter planet code for the chart cell, e.g. "SU", "MO" */
-  code?: string;
+export const RASHIS = [
+  { id: 1, en: "Aries", ml: "മേടം" },
+  { id: 2, en: "Taurus", ml: "ഇടവം" },
+  { id: 3, en: "Gemini", ml: "മിഥുനം" },
+  { id: 4, en: "Cancer", ml: "കർക്കടകം" },
+  { id: 5, en: "Leo", ml: "ചിങ്ങം" },
+  { id: 6, en: "Virgo", ml: "കന്നി" },
+  { id: 7, en: "Libra", ml: "തുലാം" },
+  { id: 8, en: "Scorpio", ml: "വൃശ്ചികം" },
+  { id: 9, en: "Sagittarius", ml: "ധനു" },
+  { id: 10, en: "Capricorn", ml: "മകരം" },
+  { id: 11, en: "Aquarius", ml: "കുംഭം" },
+  { id: 12, en: "Pisces", ml: "മീനം" },
+] as const;
+
+export const PLANETS = [
+  { id: "sun", en: "Sun", ml: "സൂര്യൻ" },
+  { id: "moon", en: "Moon", ml: "ചന്ദ്രൻ" },
+  { id: "mars", en: "Mars", ml: "ചൊവ്വ" },
+  { id: "mercury", en: "Mercury", ml: "ബുധൻ" },
+  { id: "jupiter", en: "Jupiter", ml: "വ്യാഴം" },
+  { id: "venus", en: "Venus", ml: "ശുക്രൻ" },
+  { id: "saturn", en: "Saturn", ml: "ശനി" },
+  { id: "rahu", en: "Rahu", ml: "രാഹു" },
+  { id: "ketu", en: "Ketu", ml: "കേതു" },
+] as const;
+
+export interface PlanetPosition {
+  planetId: string;
+  house: number; // 1-12
+  rashi: number; // 1-12
+  isExalted?: boolean;
+  isDebilitated?: boolean;
 }
 
-/** A single 4x4 chart cell — one of the 12 houses. */
-export interface ChakramCell {
-  /** House number 1-12 */
-  house: number;
-  /** Rashi name in Malayalam */
-  rashi: string;
-  /** Short planet codes occupying this house, e.g. ["SU","JU","KE"] */
-  planets: string[];
+export interface HoroscopeChart {
+  lagna: number; // 1-12 rashi id
+  planets: PlanetPosition[];
 }
 
-/** Vimshottari mahadasha row. */
+export interface HoroscopePrediction {
+  category: string;
+  malayalam: string;
+  english: string;
+  severity?: "positive" | "neutral" | "negative";
+}
+
 export interface DashaPeriod {
-  planet: string;   // "ബുധൻ (Mercury)"
+  planet: string;        // e.g. "Jupiter"
+  planetMl: string;
   startYear: number;
   endYear: number;
   years: number;
 }
 
-/** Year-wise prediction. */
-export interface YearForecast {
-  year: number;
-  prediction: string;
+export interface PremiumExtras {
+  lifeStages?: string[];
+  marriagePeriod?: string;
+  childrenLuck?: string;
+  educationOutlook?: string;
+  careerGrowth?: string;
+  foreignTravel?: string;
+  wealthPeriods?: string[];
+  healthWarnings?: string[];
+  enemyObstacles?: string[];
+  turningPoints?: string[];
+  yearlyOutlook?: string[];
+  dashaTimeline?: DashaPeriod[];
+  gocharaSummary?: string;
+  remedies?: {
+    poojas?: string[];
+    temples?: string[];
+    shanti?: string[];
+    daanam?: string[];
+    mantras?: string[];
+    vrathas?: string[];
+    goodDays?: string[];
+    badDays?: string[];
+  };
 }
 
-/** Life stage prediction (age range). */
-export interface LifeStage {
-  ageRange: string;     // "0–7 വയസ്സ്"
-  prediction: string;
-}
-
-/** Section with bilingual heading + bullet/paragraph body. */
-export interface AnalysisSection {
-  /** Heading in Malayalam */
-  titleMl: string;
-  /** Optional English subtitle */
-  titleEn?: string;
-  /** Body — supports newlines */
-  body: string;
-}
-
-export interface HoroscopeReport {
-  /** ഒറ്റവരി പൊതുപ്രവചനം */
-  summary: string;
-
-  // ── Birth chart ────────────────────────────────────────────────
-  /** ലഗ്നം — Ascendant rashi in Malayalam, e.g. "ഇടവം" */
-  lagnam: string;
-  /** രാശി — Moon sign in Malayalam */
-  rashi: string;
-  /** 12 cells of the South-Indian style chakram (must be exactly 12) */
-  chakram: ChakramCell[];
-  /** Planet positions table */
-  grahaNilakal: GrahaPosition[];
-
-  // ── Predictions ────────────────────────────────────────────────
-  /** പൊതുവായ പ്രവചനങ്ങൾ — 4-8 themed micro-sections */
-  generalPredictions: AnalysisSection[];
-  /** ജീവിത ഘട്ടങ്ങൾ — age-band predictions */
-  lifeStages: LifeStage[];
-  /** വിവാഹ യോഗം */
-  marriageYoga: string;
-  /** സന്താന ഭാഗ്യം */
-  childrenFortune: string;
-  /** വിദ്യാഭ്യാസം */
-  education: string;
-  /** തൊഴിൽ / ബിസിനസ്സ് */
-  career: string;
-  /** വിദേശ യാത്ര */
-  foreignTravel: string;
-  /** സാമ്പത്തിക വളർച്ച കാലങ്ങൾ — multi-line, "YYYY-YYYY: ..." per line */
-  financialGrowthPeriods: string;
-  /** ആരോഗ്യ മുന്നറിയിപ്പുകൾ */
-  health: string;
-  /** ശത്രു / തടസ്സങ്ങൾ */
-  obstacles: string;
-  /** ജീവിതത്തിലെ Turning Points */
-  turningPoints: string;
-
-  // ── Remedies ───────────────────────────────────────────────────
-  /** പൂജകൾ — list of pujas */
-  poojas: string[];
-  /** ക്ഷേത്രങ്ങൾ / Holy places */
-  temples: string[];
-  /** ശാന്തി കർമ്മങ്ങൾ */
-  shantiKarmas: string[];
-  /** ദാനം — donations */
-  daanam: string[];
-  /** മന്ത്രങ്ങൾ — chants/prayers */
-  mantras: string[];
-  /** വ്രതങ്ങൾ — fasts/observances */
-  vratas: string[];
-  /** നല്ല ദിവസങ്ങൾ */
-  goodDays: string[];
-  /** ജാഗ്രത വേണ്ട ദിവസങ്ങൾ */
-  cautionDays: string[];
-
-  // ── Premium only ───────────────────────────────────────────────
-  /** Premium only — Vimshottari mahadasha rows */
-  dashaBhukti?: DashaPeriod[];
-  /** Premium only — next 5 years */
-  yearlyForecasts?: YearForecast[];
-  /** Premium only — current ഗോചര ഫലം */
-  gocharaPhalam?: string;
-
-  // ── Backward-compat (older saved reports may still reference these) ──
-  /** @deprecated Use generalPredictions[] */
-  personality?: string;
-  /** @deprecated Use financialGrowthPeriods */
-  finance?: string;
-  /** @deprecated Use marriageYoga + childrenFortune */
-  marriage?: string;
-  /** @deprecated Use poojas/temples/mantras/etc. arrays */
-  remedies?: string;
-  /** @deprecated Use turningPoints + financialGrowthPeriods */
-  futureOutlook?: string;
-  /** @deprecated Use luckyPeriods text — kept for legacy display */
-  luckyPeriods?: string;
-  /** @deprecated Use dashaBhukti */
-  dasha?: string;
-  /** @deprecated Use yearlyForecasts */
-  yearlyForecast?: string;
+export interface PalmistryReading {
+  lifeLine: string;
+  headLine: string;
+  heartLine: string;
+  fateLine: string;
+  marriageLine: string;
+  wealthLine: string;
+  careerOutlook: string;
+  healthIndicators: string;
+  personality: string;
+  futureGrowth: string;
+  marks?: string;
+  comparison?: string; // when both hands provided
+  language: HoroscopeLanguage;
 }
 
 export interface HoroscopeRequest {
-  id?: string;
+  id: string;
   userId: string;
-  userName?: string;
+  userName: string;
+  product: HoroscopeProduct;
+  pdfTemplate?: PdfTemplate;
   customerName: string;
   gender: Gender;
-  religion: Religion;
-  dateOfBirth: string;     // YYYY-MM-DD
-  timeOfBirth: string;     // HH:MM
-  placeOfBirth: string;
-  nakshatram?: string;
-  product: HoroscopeProduct;
-  amount: number;
+  // birth details (not required for palmistry)
+  dateOfBirth?: string;
+  timeOfBirth?: string;
+  placeOfBirth?: string;
+  birthStar?: string;
+  language: HoroscopeLanguage;
   status: HoroscopeStatus;
-  report?: HoroscopeReport;
+  chart?: HoroscopeChart;
+  predictions?: HoroscopePrediction[];
+  premiumExtras?: PremiumExtras;
+  // palmistry
+  palmImages?: { left?: string; right?: string }; // data URLs
+  palmistry?: PalmistryReading;
+  pdfUrl?: string;
+  amount: number;
+  transactionId?: string;
   createdAt: string;
-  updatedAt?: string;
-  generatedAt?: string;
+  updatedAt: string;
+  processedBy?: string;
+  processedByName?: string;
+  deliveredAt?: string;
+  godImage?: string; // base64 data URL
+}
+
+export interface HoroscopeProductPricing {
+  enabled: boolean;
+  price: number;
+  commissionPercentage: number;
 }
 
 export interface HoroscopeSettings {
-  enabled: boolean;
-  standardFee: number;
-  premiumFee: number;
-  notice?: string;
+  // ── Legacy (kept for backwards compatibility — mirror of standard) ──
+  pricePerHoroscope: number;
+  commissionPercentage: number;
+  serviceEnabled: boolean;
+  // ── New per-product pricing ──
+  products?: Record<HoroscopeProduct, HoroscopeProductPricing>;
 }
 
-export const DEFAULT_SETTINGS: HoroscopeSettings = {
-  enabled: true,
-  standardFee: 5,
-  premiumFee: 25,
-  notice: "",
+export const DEFAULT_PRODUCT_PRICING: Record<HoroscopeProduct, HoroscopeProductPricing> = {
+  standard: { enabled: true, price: 99, commissionPercentage: 20 },
+  premium: { enabled: true, price: 499, commissionPercentage: 25 },
+  palmistry: { enabled: true, price: 199, commissionPercentage: 25 },
 };
 
-/** Re-exported for the form dropdown (matrimony-types is the source of truth now). */
-export { NAKSHATRAS } from "./matrimony-types";
+export const DEFAULT_SETTINGS: HoroscopeSettings = {
+  pricePerHoroscope: 99,
+  commissionPercentage: 20,
+  serviceEnabled: true,
+  products: DEFAULT_PRODUCT_PRICING,
+};
+
+/** Helper — read a product's effective pricing, falling back to defaults / legacy. */
+export function getProductPricing(
+  s: HoroscopeSettings | null | undefined,
+  product: HoroscopeProduct
+): HoroscopeProductPricing {
+  const fromSettings = s?.products?.[product];
+  if (fromSettings) return fromSettings;
+  if (product === "standard" && s) {
+    return {
+      enabled: s.serviceEnabled,
+      price: s.pricePerHoroscope,
+      commissionPercentage: s.commissionPercentage,
+    };
+  }
+  return DEFAULT_PRODUCT_PRICING[product];
+}

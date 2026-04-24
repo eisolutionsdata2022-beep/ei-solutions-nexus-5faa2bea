@@ -1,436 +1,375 @@
-/**
- * Retailer Horoscope — generate Malayalam Vedic horoscope reports.
- * Flow: form → wallet debit → AI generate → save to Firestore → auto-download PDF.
- */
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { ServicePageShell, ServiceSectionCard } from "@/components/ServicePageShell";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import { Sparkles, Download, Loader2, FileText, Eye, Star, Printer } from "lucide-react";
 import { toast } from "sonner";
-
+import { FileText, Download, Star, Sparkles, Hand, Camera, Image as ImageIcon, Loader2, Sun } from "lucide-react";
+import { ServicePageShell } from "@/components/ServicePageShell";
+import { generateHoroscope } from "@/lib/horoscope-engine";
+import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
+import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
+import { generatePremiumHoroscopePDF } from "@/lib/horoscope-premium-pdf";
+import { generatePalmistryReading } from "@/lib/palmistry.functions";
 import {
-  PRODUCT_LABELS, STATUS_COLORS, NAKSHATRAS, DEFAULT_SETTINGS, RELIGION_LABELS,
-  type HoroscopeRequest, type HoroscopeProduct, type Gender, type HoroscopeSettings, type Religion,
-} from "@/lib/horoscope-types";
-import {
-  subscribeHoroscopeSettings, subscribeHoroscopeRequests,
-  addHoroscopeRequest, updateHoroscopeRequest, getHoroscopeRequest,
+  addHoroscopeRequest, subscribeHoroscopeRequests,
+  subscribeHoroscopeSettings,
 } from "@/lib/horoscope-firebase";
-import { atomicDebit } from "@/lib/firebase-transactions";
-import { generateHoroscopeReport } from "@/lib/horoscope.functions";
-import { downloadHoroscopePdf, openPrintableReport } from "@/lib/horoscope-pdf";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
+import type { HoroscopeRequest, HoroscopeSettings, Gender, HoroscopeProduct, PdfTemplate, HoroscopeLanguage } from "@/lib/horoscope-types";
+import { STATUS_COLORS, NAKSHATRAS, PRODUCT_LABELS, getProductPricing } from "@/lib/horoscope-types";
 
 export const Route = createFileRoute("/retailer/horoscope")({
   ssr: false,
   component: RetailerHoroscope,
 });
 
-const EMPTY_FORM = {
-  customerName: "",
-  gender: "Male" as Gender,
-  religion: "Hindu" as Religion,
-  dateOfBirth: "",
-  timeOfBirth: "",
-  placeOfBirth: "",
-  nakshatram: "",
-};
-
 function RetailerHoroscope() {
   const { appUser } = useAuth();
-  const generate = useServerFn(generateHoroscopeReport);
-
-  const [settings, setSettings] = useState<HoroscopeSettings>(DEFAULT_SETTINGS);
-  const [history, setHistory] = useState<HoroscopeRequest[]>([]);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [requests, setRequests] = useState<HoroscopeRequest[]>([]);
+  const [settings, setSettings] = useState<HoroscopeSettings | null>(null);
   const [product, setProduct] = useState<HoroscopeProduct>("standard");
-  const [busy, setBusy] = useState(false);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [pdfTemplate, setPdfTemplate] = useState<PdfTemplate>("classic");
+  const [loading, setLoading] = useState(false);
 
-  // ── live data ──
-  useEffect(() => subscribeHoroscopeSettings(setSettings), []);
+  // Common form state
+  const [customerName, setCustomerName] = useState("");
+  const [gender, setGender] = useState<Gender>("Male");
+  const [dob, setDob] = useState("");
+  const [timeOfBirth, setTimeOfBirth] = useState("");
+  const [placeOfBirth, setPlaceOfBirth] = useState("");
+  const [language, setLanguage] = useState<HoroscopeLanguage>("Malayalam");
+  const [birthStar, setBirthStar] = useState("");
+  const [godImage, setGodImage] = useState<string>("");
+
+  // Palmistry state
+  const [leftPalm, setLeftPalm] = useState<string>("");
+  const [rightPalm, setRightPalm] = useState<string>("");
+  const cameraInputLeft = useRef<HTMLInputElement>(null);
+  const cameraInputRight = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    if (!appUser?.uid) return;
-    return subscribeHoroscopeRequests(setHistory, appUser.uid);
-  }, [appUser?.uid]);
+    if (!appUser) return;
+    const u1 = subscribeHoroscopeRequests((r) => setRequests(r), appUser.uid);
+    const u2 = subscribeHoroscopeSettings((s) => setSettings(s));
+    return () => { u1(); u2(); };
+  }, [appUser]);
 
-  const fee = product === "premium" ? settings.premiumFee : settings.standardFee;
+  // Auto-pick template
+  useEffect(() => {
+    setPdfTemplate(product === "standard" ? "classic" : "premium");
+  }, [product]);
 
-  const stats = useMemo(() => ([
-    { icon: FileText, label: "Total", value: history.length, accent: "from-amber-400 to-orange-400" },
-    { icon: Star, label: "This month", value: history.filter(r => {
-        const d = new Date(r.createdAt); const now = new Date();
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      }).length, accent: "from-emerald-400 to-teal-400" },
-    { icon: Sparkles, label: "Premium", value: history.filter(r => r.product === "premium").length, accent: "from-violet-400 to-fuchsia-400" },
-  ]), [history]);
+  const pricing = getProductPricing(settings, product);
 
-  // ── generate ──
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!appUser?.uid) { toast.error("Please sign in."); return; }
-    if (!settings.enabled) { toast.error("Horoscope service is currently disabled."); return; }
+  const fileToDataUrl = (file: File, max = 4): Promise<string> => new Promise((res, rej) => {
+    if (file.size > max * 1024 * 1024) return rej(new Error(`File must be under ${max}MB`));
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = () => rej(new Error("Failed to read file"));
+    r.readAsDataURL(file);
+  });
 
-    if (!form.customerName.trim()) { toast.error("Customer name is required."); return; }
-    if (!form.dateOfBirth) { toast.error("Date of birth is required."); return; }
-    if (!form.timeOfBirth) { toast.error("Time of birth is required."); return; }
-    if (!form.placeOfBirth.trim()) { toast.error("Place of birth is required."); return; }
+  const resetForm = () => {
+    setCustomerName(""); setDob(""); setTimeOfBirth(""); setPlaceOfBirth("");
+    setBirthStar(""); setGodImage(""); setLeftPalm(""); setRightPalm("");
+  };
 
-    setBusy(true);
-    let requestId: string | null = null;
+  const handleSubmit = async () => {
+    if (!appUser || !settings) return;
+    if (!pricing.enabled) return toast.error(`${PRODUCT_LABELS[product].ml} നിലവിൽ ലഭ്യമല്ല`);
+    if (!customerName.trim()) return toast.error("Customer name required");
 
+    if (product !== "palmistry") {
+      if (!dob || !timeOfBirth || !placeOfBirth) return toast.error("ജനന വിവരങ്ങൾ പൂരിപ്പിക്കുക");
+    } else {
+      if (!leftPalm && !rightPalm) return toast.error("കുറഞ്ഞത് ഒരു palm photo upload ചെയ്യുക");
+    }
+
+    setLoading(true);
+    let debited = false;
     try {
-      // 1. Wallet debit (atomic, throws on insufficient balance)
-      try {
-        await atomicDebit(appUser.uid, fee, {
-          source: "horoscope",
-          description: `Horoscope (${product}) — ${form.customerName}`,
-        });
-      } catch (err: any) {
-        toast.error(err?.message || "Wallet debit failed.");
-        setBusy(false);
-        return;
-      }
-
-      // 2. Save pending request
-      const now = new Date().toISOString();
-      const baseReq: Omit<HoroscopeRequest, "id"> = {
-        userId: appUser.uid,
-        userName: appUser.name || appUser.email || "",
-        customerName: form.customerName.trim(),
-        gender: form.gender,
-        religion: form.religion,
-        dateOfBirth: form.dateOfBirth,
-        timeOfBirth: form.timeOfBirth,
-        placeOfBirth: form.placeOfBirth.trim(),
-        nakshatram: form.nakshatram || "",
-        product,
-        amount: fee,
-        status: "Pending",
-        createdAt: now,
-      };
-      requestId = await addHoroscopeRequest(baseReq);
-
-      // 3. Generate AI report
-      toast.message("✨ AI പ്രവചനം തയ്യാറാക്കുന്നു...", { description: "Please wait — generating Malayalam horoscope report." });
-      const result = await generate({ data: {
-        customerName: baseReq.customerName,
-        gender: baseReq.gender,
-        religion: baseReq.religion,
-        dateOfBirth: baseReq.dateOfBirth,
-        timeOfBirth: baseReq.timeOfBirth,
-        placeOfBirth: baseReq.placeOfBirth,
-        nakshatram: baseReq.nakshatram,
-        product,
-      }});
-
-      if (!result.ok) {
-        toast.error(result.error || "AI generation failed. Wallet has been debited — please contact support.");
-        return;
-      }
-
-      // 4. Save report
-      await updateHoroscopeRequest(requestId, {
-        status: "Generated",
-        report: result.report,
-        generatedAt: new Date().toISOString(),
+      await atomicDebit(appUser.uid, pricing.price, {
+        source: "horoscope",
+        description: `${PRODUCT_LABELS[product].en} for ${customerName}`,
       });
+      debited = true;
 
-      const final = await getHoroscopeRequest(requestId);
-      if (!final) { toast.error("Saved, but could not reload — please use History."); return; }
+      const base: Omit<HoroscopeRequest, "id"> = {
+        userId: appUser.uid,
+        userName: appUser.name || appUser.email || "Unknown",
+        product,
+        pdfTemplate,
+        customerName,
+        gender,
+        language,
+        status: "Processing",
+        amount: pricing.price,
+        godImage: godImage || undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      toast.success("✅ Report generated! Downloading...");
-
-      // 5. Auto download
-      try {
-        await downloadHoroscopePdf(final);
-        await updateHoroscopeRequest(requestId, { status: "Delivered" });
-      } catch (err: any) {
-        console.error("PDF download failed:", err);
-        toast.error("Download failed — opening printable view instead.");
-        openPrintableReport(final);
+      if (product === "palmistry") {
+        toast.info("AI palm reading running... (15-30s)");
+        const result = await generatePalmistryReading({
+          data: {
+            leftPalm: leftPalm || undefined,
+            rightPalm: rightPalm || undefined,
+            customerName, gender, language,
+          },
+        });
+        if (!result.ok) throw new Error(result.error);
+        await addHoroscopeRequest({
+          ...base,
+          status: "Delivered",
+          palmImages: { left: leftPalm || undefined, right: rightPalm || undefined },
+          palmistry: { ...result.reading, language },
+          deliveredAt: new Date().toISOString(),
+        });
+      } else {
+        const { chart, predictions } = generateHoroscope(dob, timeOfBirth);
+        const premiumExtras = product === "premium" ? generatePremiumExtras(chart, dob) : undefined;
+        await addHoroscopeRequest({
+          ...base,
+          status: "Delivered",
+          dateOfBirth: dob, timeOfBirth, placeOfBirth,
+          birthStar: birthStar || undefined,
+          chart, predictions, premiumExtras,
+          deliveredAt: new Date().toISOString(),
+        });
       }
 
-      setForm(EMPTY_FORM);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleRedownload(req: HoroscopeRequest) {
-    if (!req.report) {
-      toast.error("No report available for this request.");
-      return;
-    }
-    setDownloadingId(req.id || "");
-    try {
-      await downloadHoroscopePdf(req);
-      toast.success("Downloaded.");
+      toast.success("✨ Report generated! Check 'My Reports' tab.");
+      resetForm();
     } catch (err: any) {
-      console.error("Re-download failed:", err);
-      toast.error("Download failed — opening printable view.");
-      openPrintableReport(req);
+      // Refund wallet if we debited but failed to deliver the report.
+      if (debited) {
+        try {
+          await atomicCredit(appUser.uid, pricing.price, {
+            source: "horoscope-refund",
+            description: `Refund: ${PRODUCT_LABELS[product].en} for ${customerName} (failed)`,
+          });
+          toast.error(`${err?.message || "Failed"} — ₹${pricing.price} refunded to wallet.`);
+        } catch (refundErr: any) {
+          console.error("Horoscope refund failed:", refundErr);
+          toast.error(`${err?.message || "Failed"} — REFUND FAILED, contact admin.`);
+        }
+      } else {
+        toast.error(err?.message || "Failed");
+      }
     } finally {
-      setDownloadingId(null);
+      setLoading(false);
     }
-  }
+  };
+
+  const handleDownloadPDF = (req: HoroscopeRequest) => {
+    const html = (req.pdfTemplate === "premium" || req.product !== "standard")
+      ? generatePremiumHoroscopePDF(req)
+      : generateHoroscopePDF(req);
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 600);
+    }
+  };
 
   return (
     <ServicePageShell
-      icon={Sparkles}
-      title="ജാതക സേവനം"
-      subtitle="AI-powered Malayalam horoscope reports — direct PDF download."
-      eyebrow="Horoscope"
-      gradient="from-amber-600 via-orange-500 to-rose-500"
-      stats={stats}
+      icon={Sun}
+      title="ജ്യോതിഷ കേന്ദ്രം · Astrology"
+      subtitle="Premium Indian astrology — Standard, Premium & Palmistry reports."
+      eyebrow="Horoscope Studio"
+      gradient="from-amber-600 via-orange-600 to-red-600"
+      headerAction={
+        <Badge className="bg-white text-amber-700 hover:bg-white/90 px-3 py-1.5 text-xs font-bold shadow-lg">
+          ₹{pricing.price} · {PRODUCT_LABELS[product].ml}
+        </Badge>
+      }
+      stats={[
+        { icon: FileText, label: "Reports", value: requests.length, accent: "from-amber-400 to-orange-400" },
+        { icon: Star, label: "Active Product", value: PRODUCT_LABELS[product].en, accent: "from-pink-400 to-rose-400" },
+      ]}
     >
-      {settings.notice && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-2 text-sm text-amber-900 mb-4">
-          {settings.notice}
-        </div>
-      )}
 
-      <Tabs defaultValue="new" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="new">പുതിയ ജാതകം</TabsTrigger>
-          <TabsTrigger value="history">എന്റെ Reports ({history.length})</TabsTrigger>
+      <Tabs defaultValue="new">
+        <TabsList>
+          <TabsTrigger value="new"><Sparkles className="w-4 h-4 mr-1" /> New Report</TabsTrigger>
+          <TabsTrigger value="reports"><FileText className="w-4 h-4 mr-1" /> My Reports ({requests.length})</TabsTrigger>
         </TabsList>
 
-        {/* ─── New ─── */}
-        <TabsContent value="new" className="mt-4">
-          <ServiceSectionCard title="വിശദാംശങ്ങൾ നൽകുക" icon={Sparkles}>
-            <form onSubmit={handleGenerate} className="space-y-4">
-              {/* product chooser */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(["standard", "premium"] as HoroscopeProduct[]).map((p) => {
-                  const f = p === "premium" ? settings.premiumFee : settings.standardFee;
-                  const active = product === p;
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setProduct(p)}
-                      className={`text-left rounded-xl border p-3 transition ${
-                        active
-                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-300"
-                          : "border-border hover:border-amber-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{PRODUCT_LABELS[p].emoji}</span>
-                          <div>
-                            <div className="font-bold text-sm">{PRODUCT_LABELS[p].ml}</div>
-                            <div className="text-[11px] text-muted-foreground">{PRODUCT_LABELS[p].en}</div>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="font-bold">₹{f}</Badge>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        <TabsContent value="new" className="space-y-4">
+          {/* product picker */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(["standard", "premium", "palmistry"] as HoroscopeProduct[]).map((p) => {
+              const pp = getProductPricing(settings, p);
+              const active = product === p;
+              return (
+                <button key={p} onClick={() => setProduct(p)} disabled={!pp.enabled}
+                  className={`text-left p-4 rounded-xl border-2 transition-all ${active ? "border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-amber-300"} disabled:opacity-50`}>
+                  <div className="text-2xl mb-1">{PRODUCT_LABELS[p].emoji}</div>
+                  <div className="font-bold text-foreground">{PRODUCT_LABELS[p].ml}</div>
+                  <div className="text-xs text-muted-foreground">{PRODUCT_LABELS[p].en}</div>
+                  <div className="mt-2 text-amber-700 font-bold">₹{pp.price}</div>
+                  {!pp.enabled && <div className="text-xs text-destructive mt-1">Disabled</div>}
+                </button>
+              );
+            })}
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>വ്യക്തിയുടെ പേര് *</Label>
-                  <Input
-                    value={form.customerName}
-                    onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                    placeholder="Full name"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>ലിംഗം *</Label>
-                  <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as Gender })}>
+          <Card className="border-amber-200">
+            <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50">
+              <CardTitle className="flex items-center gap-2">
+                {PRODUCT_LABELS[product].emoji} {PRODUCT_LABELS[product].ml} — {PRODUCT_LABELS[product].en}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2"><Label>പേര് / Name *</Label><Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+                <div className="space-y-2"><Label>ലിംഗം *</Label>
+                  <Select value={gender} onValueChange={(v) => setGender(v as Gender)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Male">Male / പുരുഷൻ</SelectItem>
-                      <SelectItem value="Female">Female / സ്ത്രീ</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem><SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>മതം (Religion) *</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["Hindu", "Muslim", "Christian"] as Religion[]).map((rel) => {
-                      const active = form.religion === rel;
-                      const r = RELIGION_LABELS[rel];
-                      return (
-                        <button
-                          key={rel}
-                          type="button"
-                          onClick={() => setForm({ ...form, religion: rel })}
-                          className={`rounded-xl border p-2.5 text-center transition ${
-                            active
-                              ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-300"
-                              : "border-border hover:border-amber-300"
-                          }`}
-                        >
-                          <div className="text-2xl leading-none mb-1">{r.emoji}</div>
-                          <div className="font-bold text-xs">{r.ml}</div>
-                          <div className="text-[10px] text-muted-foreground">{r.en}</div>
-                        </button>
-                      );
-                    })}
+                <div className="space-y-2"><Label>ഭാഷ / Language</Label>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as HoroscopeLanguage)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Malayalam">മലയാളം</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Hindi">हिन्दी</SelectItem>
+                      <SelectItem value="Both">Both ML + EN</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {product !== "standard" && (
+                  <div className="space-y-2"><Label>PDF Template</Label>
+                    <Select value={pdfTemplate} onValueChange={(v) => setPdfTemplate(v as PdfTemplate)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="classic">Classic (6-8 pages)</SelectItem>
+                        <SelectItem value="premium">Premium Cosmic (12+ pages)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    PDF-ൽ തിരഞ്ഞെടുത്ത മതത്തിന്റെ ദൈവ ചിത്രവും അനുയോജ്യമായ പ്രവചന രീതിയും വരും.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>ജനന തീയതി *</Label>
-                  <Input
-                    type="date"
-                    value={form.dateOfBirth}
-                    onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>ജനന സമയം *</Label>
-                  <Input
-                    type="time"
-                    value={form.timeOfBirth}
-                    onChange={(e) => setForm({ ...form, timeOfBirth: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>ജനന സ്ഥലം *</Label>
-                  <Input
-                    value={form.placeOfBirth}
-                    onChange={(e) => setForm({ ...form, placeOfBirth: e.target.value })}
-                    placeholder="e.g. Thiruvananthapuram, Kerala"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>ജന്മ നക്ഷത്രം (Optional)</Label>
-                  <Select value={form.nakshatram} onValueChange={(v) => setForm({ ...form, nakshatram: v })}>
-                    <SelectTrigger><SelectValue placeholder="നക്ഷത്രം തിരഞ്ഞെടുക്കുക" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {NAKSHATRAS.map((n) => (
-                        <SelectItem key={n.id} value={n.ml}>{n.ml} ({n.en})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                )}
               </div>
 
-              <div className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 p-3 text-white text-sm flex items-center justify-between">
-                <div>
-                  <div className="font-bold">{PRODUCT_LABELS[product].ml}</div>
-                  <div className="text-xs opacity-90">PDF report — auto download</div>
+              {product !== "palmistry" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>ജനന തീയതി *</Label><Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>ജനന സമയം *</Label><Input type="time" value={timeOfBirth} onChange={(e) => setTimeOfBirth(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>ജനന സ്ഥലം *</Label><Input value={placeOfBirth} onChange={(e) => setPlaceOfBirth(e.target.value)} placeholder="e.g., Thrissur, Kerala" /></div>
+                  <div className="space-y-2"><Label>ജന്മ നക്ഷത്രം</Label>
+                    <Select value={birthStar} onValueChange={setBirthStar}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{NAKSHATRAS.map((n) => <SelectItem key={n.id} value={n.ml}>{n.ml} ({n.en})</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs opacity-90">Total</div>
-                  <div className="text-2xl font-bold">₹{fee}</div>
+              )}
+
+              {product === "palmistry" && (
+                <div className="space-y-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                    <Hand className="w-4 h-4 inline mr-1 text-amber-700" />
+                    <strong>Tip:</strong> Spread fingers, good lighting, palm fully visible. AI works best with clear close-up photos.
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {([["left", leftPalm, setLeftPalm, cameraInputLeft], ["right", rightPalm, setRightPalm, cameraInputRight]] as const).map(([side, val, setter, ref]) => (
+                      <div key={side} className="space-y-2 border-2 border-dashed border-amber-300 rounded-lg p-3">
+                        <Label className="capitalize font-bold">{side === "left" ? "🖐️ Left Palm" : "✋ Right Palm"}</Label>
+                        {val ? (
+                          <div className="relative">
+                            <img src={val} alt={side} className="w-full h-40 object-cover rounded" />
+                            <button onClick={() => setter("")} className="absolute top-1 right-1 bg-destructive text-white w-6 h-6 rounded-full text-sm">×</button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <label className="flex-1 cursor-pointer bg-card border rounded px-3 py-2 text-sm flex items-center justify-center gap-1 hover:bg-accent">
+                              <ImageIcon className="w-4 h-4" /> Upload
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                const f = e.target.files?.[0]; if (!f) return;
+                                try { setter(await fileToDataUrl(f)); } catch (err: any) { toast.error(err.message); }
+                              }} />
+                            </label>
+                            <button type="button" onClick={() => ref.current?.click()} className="flex-1 bg-card border rounded px-3 py-2 text-sm flex items-center justify-center gap-1 hover:bg-accent">
+                              <Camera className="w-4 h-4" /> Camera
+                            </button>
+                            <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={async (e) => {
+                              const f = e.target.files?.[0]; if (!f) return;
+                              try { setter(await fileToDataUrl(f)); } catch (err: any) { toast.error(err.message); }
+                            }} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              <div className="space-y-2">
+                <Label><ImageIcon className="w-4 h-4 inline mr-1" /> ദൈവ ചിത്രം (Optional)</Label>
+                <Input type="file" accept="image/*" onChange={async (e) => {
+                  const f = e.target.files?.[0]; if (!f) return;
+                  try { setGodImage(await fileToDataUrl(f, 2)); } catch (err: any) { toast.error(err.message); }
+                }} />
+                {godImage && <img src={godImage} className="w-16 h-16 rounded-full object-cover border-2 border-amber-500" />}
               </div>
 
-              <Button
-                type="submit"
-                disabled={busy || !settings.enabled}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold h-12"
-              >
-                {busy
-                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
-                  : <><Sparkles className="w-4 h-4 mr-2" /> Generate &amp; Download (₹{fee})</>}
+              <Button onClick={handleSubmit} disabled={loading || !pricing.enabled}
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-6 text-base shadow-lg">
+                {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> :
+                  <><Star className="w-5 h-5 mr-2" /> Generate {PRODUCT_LABELS[product].en} (₹{pricing.price})</>}
               </Button>
-            </form>
-          </ServiceSectionCard>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* ─── History ─── */}
-        <TabsContent value="history" className="mt-4">
-          <ServiceSectionCard title="My Generated Reports" icon={FileText}>
-            {history.length === 0 ? (
-              <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">
-                ഇതുവരെ ജാതകം ഒന്നും ഉണ്ടാക്കിയിട്ടില്ല.
-              </CardContent></Card>
-            ) : (
-              <div className="overflow-auto">
+        <TabsContent value="reports">
+          <Card>
+            <CardHeader><CardTitle>📋 My Reports</CardTitle></CardHeader>
+            <CardContent>
+              {requests.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">ഇതുവരെ റിപ്പോർട്ടുകൾ ഇല്ല</p>
+              ) : (
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Customer</TableHead><TableHead>Product</TableHead><TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead><TableHead>Amount</TableHead><TableHead>Action</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
-                    {history.map((r) => (
+                    {requests.map((r) => (
                       <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.customerName}</TableCell>
+                        <TableCell><Badge variant="outline">{PRODUCT_LABELS[r.product || "standard"].emoji} {PRODUCT_LABELS[r.product || "standard"].ml}</Badge></TableCell>
+                        <TableCell className="text-xs">{new Date(r.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell><Badge className={STATUS_COLORS[r.status]}>{r.status}</Badge></TableCell>
+                        <TableCell>₹{r.amount}</TableCell>
                         <TableCell>
-                          <div className="font-medium">{r.customerName}</div>
-                          <div className="text-[11px] text-muted-foreground">{r.placeOfBirth}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {PRODUCT_LABELS[r.product]?.emoji} {r.product}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {new Date(r.createdAt).toLocaleDateString("en-IN")}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`text-xs ${STATUS_COLORS[r.status]}`} variant="outline">
-                            {r.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="sm" variant="outline"
-                              onClick={() => openPrintableReport(r)}
-                              disabled={!r.report}
-                              title="Open printable view"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
+                          {(r.status === "Generated" || r.status === "Delivered") && (
+                            <Button size="sm" variant="outline" onClick={() => handleDownloadPDF(r)}>
+                              <Download className="w-4 h-4 mr-1" /> PDF
                             </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleRedownload(r)}
-                              disabled={!r.report || downloadingId === r.id}
-                              className="bg-amber-600 hover:bg-amber-700 text-white"
-                            >
-                              {downloadingId === r.id
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <Download className="w-3.5 h-3.5" />}
-                            </Button>
-                          </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-            <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1">
-              <Printer className="w-3 h-3" /> Tip: If download is blocked on your browser, the eye button opens a printable view — press Print → Save as PDF.
-            </p>
-          </ServiceSectionCard>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </ServicePageShell>
