@@ -16,6 +16,7 @@ import { generateHoroscope } from "@/lib/horoscope-engine";
 import { generatePremiumExtras } from "@/lib/horoscope-premium-engine";
 import { generateHoroscopePDF } from "@/lib/horoscope-pdf";
 import { generatePremiumHoroscopePDF } from "@/lib/horoscope-premium-pdf";
+import { downloadHoroscopePdf } from "@/lib/horoscope-pdf-export";
 import { generatePalmistryReading } from "@/lib/palmistry.functions";
 import {
   addHoroscopeRequest, subscribeHoroscopeRequests,
@@ -202,28 +203,20 @@ function RetailerHoroscope() {
   const safeFileName = (req: HoroscopeRequest) => {
     const name = (req.customerName || "horoscope").replace(/[^a-zA-Z0-9-_]+/g, "_");
     const date = normalizeRequestDate(req.createdAt).toISOString().slice(0, 10);
-    return `Horoscope_${name}_${date}.html`;
+    return `Horoscope_${name}_${date}.pdf`;
   };
 
-  // Forced download via Blob + anchor click — works on mobile too.
-  const handleDownloadPDF = (req: HoroscopeRequest) => {
+  const handleDownloadPDF = async (req: HoroscopeRequest) => {
     try {
+      toast.loading("Generating PDF...", { id: `horoscope-download-${req.id}` });
       const html = buildHoroscopeHtml(req);
-      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = safeFileName(req);
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-      toast.success("ഡൗൺലോഡ് ആരംഭിച്ചു — ഫയൽ തുറന്ന് Print → Save as PDF ചെയ്യുക");
+      await downloadHoroscopePdf(html, safeFileName(req));
+      toast.success("PDF ഡൗൺലോഡ് തുടങ്ങി", { id: `horoscope-download-${req.id}` });
     } catch (err: any) {
       const msg = err?.message || String(err) || "Unknown error";
       console.error("[horoscope] download failed", { id: req.id, error: err });
       toast.error(`Download failed · Report ${req.id}\n${msg}`, {
+        id: `horoscope-download-${req.id}`,
         duration: 12000,
         description: "ഈ error message admin-ന് അയക്കുക (Report ID ഉൾപ്പെടെ).",
       });
