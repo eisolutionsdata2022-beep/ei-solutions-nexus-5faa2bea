@@ -622,6 +622,150 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     }
   });
 
+// ──────────────── Test Connection (admin diagnostic) ────────────────
+
+/**
+ * Triggers a real `getAccessToken` call through the VPS bridge and returns the
+ * full provider response (status + body + headers used) so the admin can share
+ * it verbatim with the provider for debugging.
+ *
+ * SECURITY: protected by Firebase auth — admin UI is the only caller.
+ */
+export const bbpsTestConnection = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .handler(async (): Promise<{
+    ok: boolean;
+    stage: string;
+    bridgeReachable?: boolean;
+    bridgeUrl?: string;
+    providerUrl?: string;
+    httpStatus?: number;
+    httpStatusText?: string;
+    headersSent?: Record<string, string>;
+    bodySent?: Record<string, string>;
+    response?: string;
+    rawText?: string;
+    error?: string;
+    elapsedMs?: number;
+    timestamp: string;
+  }> => {
+    const startedAt = Date.now();
+    const timestamp = new Date().toISOString();
+    const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
+    const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET;
+    const clientId = process.env.BBPS_CLIENT_ID;
+    const clientSecret = process.env.BBPS_CLIENT_SECRET;
+    const apiKey = process.env.BBPS_API_KEY;
+
+    // Mask secrets when echoing back to UI
+    const mask = (s: string | undefined) =>
+      !s ? "(missing)" : s.length <= 12 ? "***" : `${s.slice(0, 6)}…${s.slice(-4)} (${s.length} chars)`;
+
+    if (!clientId || !clientSecret || !apiKey) {
+      return {
+        ok: false,
+        stage: "config",
+        error: `Missing secrets — clientId: ${mask(clientId)}, clientSecret: ${mask(clientSecret)}, apiKey: ${mask(apiKey)}`,
+        timestamp,
+      };
+    }
+    if (!bridgeBase || !bridgeSecret) {
+      return {
+        ok: false,
+        stage: "config",
+        error: "BBPS_BRIDGE_BASE_URL or BBPS_BRIDGE_HMAC_SECRET not configured",
+        timestamp,
+      };
+    }
+
+    const cfg = await getProviderConfig();
+    const headersSent = {
+      "Content-Type": "application/json",
+      apiKey: mask(apiKey),
+    };
+    const bodySent = { clientId: mask(clientId), clientSecret: mask(clientSecret) };
+
+    // Stage 1: bridge /health
+    let bridgeReachable = false;
+    try {
+      const h = await fetch(`${bridgeBase.replace(/\/+$/, "")}/health`, {
+        signal: AbortSignal.timeout(10_000),
+      });
+      bridgeReachable = h.ok;
+    } catch (e) {
+      return {
+        ok: false,
+        stage: "bridge_health",
+        bridgeReachable: false,
+        bridgeUrl: bridgeBase,
+        error: `Bridge unreachable: ${e instanceof Error ? e.message : String(e)}`,
+        elapsedMs: Date.now() - startedAt,
+        timestamp,
+      };
+    }
+
+    // Stage 2: real provider call via bridge
+    try {
+      const wrapped = JSON.stringify({
+        __headers: { "Content-Type": "application/json", apiKey },
+        __payload: { clientId, clientSecret },
+      });
+      const ts = Date.now();
+      const signature = await hmacHex(bridgeSecret, wrapped);
+      const url = `${bridgeBase.replace(/\/+$/, "")}/provider/getAccessToken`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Signature": signature,
+          "X-Timestamp": String(ts),
+        },
+        body: wrapped,
+        signal: AbortSignal.timeout(30_000),
+      });
+      const wrappedJson = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        status?: number;
+        statusText?: string;
+        body?: unknown;
+        error?: string;
+      };
+      const rawText =
+        typeof wrappedJson.body === "string"
+          ? wrappedJson.body
+          : JSON.stringify(wrappedJson.body ?? null);
+      return {
+        ok: !!wrappedJson.success,
+        stage: "provider_call",
+        bridgeReachable: true,
+        bridgeUrl: bridgeBase,
+        providerUrl: `${cfg.baseUrl}/getAccessToken`,
+        httpStatus: wrappedJson.status,
+        httpStatusText: wrappedJson.statusText,
+        headersSent,
+        bodySent,
+        response: typeof wrappedJson.body === "string" ? wrappedJson.body : JSON.stringify(wrappedJson.body ?? null, null, 2),
+        rawText,
+        error: wrappedJson.error,
+        elapsedMs: Date.now() - startedAt,
+        timestamp,
+      };
+    } catch (e) {
+      return {
+        ok: false,
+        stage: "provider_call",
+        bridgeReachable: true,
+        bridgeUrl: bridgeBase,
+        providerUrl: `${cfg.baseUrl}/getAccessToken`,
+        headersSent,
+        bodySent,
+        error: e instanceof Error ? e.message : String(e),
+        elapsedMs: Date.now() - startedAt,
+        timestamp,
+      };
+    }
+  });
+
 async function refund(
   walletRef: ReturnType<typeof doc>,
   amount: number,
