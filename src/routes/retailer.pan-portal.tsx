@@ -17,6 +17,15 @@ import {
   upsertPsaRecord,
   subscribeRetailerUtiCoupons,
 } from "@/lib/pan-portal-firebase";
+import {
+  createLegacyTransferRequest,
+  getLegacyBalance,
+  subscribeRetailerTransferRequests,
+} from "@/lib/pan-legacy-balance";
+import type {
+  PanLegacyBalance,
+  PanLegacyTransferRequest,
+} from "@/lib/pan-legacy-balance-types";
 import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
 import {
   panNsdlGetAuthorization,
