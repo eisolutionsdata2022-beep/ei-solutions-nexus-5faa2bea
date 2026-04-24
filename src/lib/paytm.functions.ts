@@ -172,6 +172,7 @@ export const createPaytmQr = createServerFn({ method: "POST" })
       businessType: "UPI_QR_CODE",
       posId: "S12_123",
     };
+    const { generatePaytmSignature } = await loadChecksum();
     const signature = generatePaytmSignature(JSON.stringify(body), creds.key);
     const post = {
       head: { clientId: "C11", version: "v1", signature },
