@@ -41,6 +41,7 @@ import { Route as StaffPerformanceRouteImport } from './routes/staff.performance
 import { Route as StaffMarketingRouteImport } from './routes/staff.marketing'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
+import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
@@ -281,6 +282,11 @@ const StaffLeadsRoute = StaffLeadsRouteImport.update({
 const StaffIppbRoute = StaffIppbRouteImport.update({
   id: '/ippb',
   path: '/ippb',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
+  id: '/horoscope-requests',
+  path: '/horoscope-requests',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffFormsRoute = StaffFormsRouteImport.update({
@@ -784,6 +790,7 @@ export interface FileRoutesByFullPath {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -892,6 +899,7 @@ export interface FileRoutesByTo {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -1008,6 +1016,7 @@ export interface FileRoutesById {
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
+  '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
   '/staff/marketing': typeof StaffMarketingRoute
@@ -1125,6 +1134,7 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
+    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1233,6 +1243,7 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
+    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1348,6 +1359,7 @@ export interface FileRouteTypes {
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
+    | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
     | '/staff/marketing'
@@ -1619,6 +1631,13 @@ declare module '@tanstack/react-router' {
       path: '/ippb'
       fullPath: '/staff/ippb'
       preLoaderRoute: typeof StaffIppbRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/horoscope-requests': {
+      id: '/staff/horoscope-requests'
+      path: '/horoscope-requests'
+      fullPath: '/staff/horoscope-requests'
+      preLoaderRoute: typeof StaffHoroscopeRequestsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/staff/forms': {
@@ -2411,6 +2430,7 @@ interface StaffRouteChildren {
   StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
+  StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffMarketingRoute: typeof StaffMarketingRoute
@@ -2425,6 +2445,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
+  StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffMarketingRoute: StaffMarketingRoute,
