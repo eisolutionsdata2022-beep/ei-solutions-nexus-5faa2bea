@@ -108,7 +108,7 @@ function RetailerHoroscope() {
       const now = new Date().toISOString();
       const baseReq: Omit<HoroscopeRequest, "id"> = {
         userId: appUser.uid,
-        userName: appUser.displayName || appUser.email || "",
+        userName: appUser.name || appUser.email || "",
         customerName: form.customerName.trim(),
         gender: form.gender,
         dateOfBirth: form.dateOfBirth,
