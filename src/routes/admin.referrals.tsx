@@ -23,6 +23,7 @@ import {
   type TransferRequestDoc,
 } from "@/lib/rewards-wallet";
 import { CheckCircle2, XCircle, Clock, ArrowRightLeft, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/referrals")({
