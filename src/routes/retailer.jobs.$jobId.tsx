@@ -355,7 +355,7 @@ function JobDetail() {
         )}
         {isUploader && job.status === "submitted" && (
           <>
-            <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+            <Button onClick={handleComplete} disabled={busy}>Approve Work (Submit for Admin Payout)</Button>
             <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
               <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
             </Button>
