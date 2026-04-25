@@ -138,6 +138,142 @@ function AdminReferralPage() {
         </CardContent></Card>
       </div>
 
+      <Card className="border-amber-300 dark:border-amber-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-amber-600" />
+                Rewards → Main Wallet Transfer Requests
+              </CardTitle>
+              <CardDescription>
+                Retailers request transfers of their referral & game earnings to the main wallet.
+                Approve to atomically debit rewards and credit main wallet.
+              </CardDescription>
+            </div>
+            {pendingTransfers.length > 0 && (
+              <Badge variant="destructive" className="text-base px-3 py-1">
+                <Clock className="h-3.5 w-3.5 mr-1" /> {pendingTransfers.length} Pending
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pendingTransfers.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No pending transfer requests.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 px-2">Requested</th>
+                    <th className="text-left py-2 px-2">User</th>
+                    <th className="text-right py-2 px-2">Amount</th>
+                    <th className="text-left py-2 px-2">Note</th>
+                    <th className="text-right py-2 px-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingTransfers.map((t) => (
+                    <tr key={t.id} className="border-b last:border-0">
+                      <td className="py-2 px-2 whitespace-nowrap text-xs">
+                        {new Date(t.requestedAt).toLocaleString()}
+                      </td>
+                      <td className="py-2 px-2">
+                        <div className="font-medium">{t.userName || "—"}</div>
+                        <div className="text-xs text-muted-foreground">{t.userEmail || t.uid.slice(0, 10) + "…"}</div>
+                      </td>
+                      <td className="py-2 px-2 text-right font-bold text-primary">₹{t.amount.toFixed(2)}</td>
+                      <td className="py-2 px-2 text-xs text-muted-foreground max-w-[200px] truncate">
+                        {t.userNote || "—"}
+                      </td>
+                      <td className="py-2 px-2 text-right space-x-2 whitespace-nowrap">
+                        <Button size="sm" onClick={() => approve(t.id)} disabled={processingId === t.id}>
+                          {processingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (<><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve</>)}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setRejectId(t.id); setRejectNote(""); }} disabled={processingId === t.id}>
+                          <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {processedTransfers.length > 0 && (
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                Show processed history ({processedTransfers.length})
+              </summary>
+              <div className="overflow-x-auto mt-3">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b">
+                    <tr>
+                      <th className="text-left py-2 px-2">Processed</th>
+                      <th className="text-left py-2 px-2">User</th>
+                      <th className="text-right py-2 px-2">Amount</th>
+                      <th className="text-left py-2 px-2">Status</th>
+                      <th className="text-left py-2 px-2">Admin Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {processedTransfers.map((t) => (
+                      <tr key={t.id} className="border-b last:border-0">
+                        <td className="py-2 px-2 whitespace-nowrap text-xs">
+                          {t.processedAt ? new Date(t.processedAt).toLocaleString() : "—"}
+                        </td>
+                        <td className="py-2 px-2">
+                          <div className="font-medium">{t.userName || "—"}</div>
+                          <div className="text-xs text-muted-foreground">{t.userEmail || t.uid.slice(0, 10) + "…"}</div>
+                        </td>
+                        <td className="py-2 px-2 text-right font-medium">₹{t.amount.toFixed(2)}</td>
+                        <td className="py-2 px-2">
+                          {t.status === "approved" ? (
+                            <Badge className="bg-green-600 hover:bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Approved</Badge>
+                          ) : (
+                            <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Rejected</Badge>
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-xs text-muted-foreground max-w-[240px] truncate">
+                          {t.adminNote || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!rejectId} onOpenChange={(o) => !o && setRejectId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Transfer Request</DialogTitle>
+            <DialogDescription>
+              Provide a reason that will be visible to the retailer.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectNote}
+            onChange={(e) => setRejectNote(e.target.value)}
+            placeholder="Reason for rejection…"
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={reject} disabled={!!processingId}>
+              {processingId ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Reject"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle>Configuration</CardTitle>
