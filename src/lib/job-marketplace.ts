@@ -681,7 +681,6 @@ export async function resolveDispute(
 
 /* -------------------- Admin-posted job approval -------------------- */
 
-import { creditWorkerEarnings } from "./worker-earnings";
 
 /**
  * Admin verifies a worker's submission on an admin-posted job and credits
