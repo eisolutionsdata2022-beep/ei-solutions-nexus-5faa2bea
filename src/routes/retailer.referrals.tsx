@@ -296,25 +296,7 @@ function ReferralPanel() {
             </CardContent>
           </Card>
 
-          {/* Withdrawal hint */}
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-primary/10 p-3 text-primary"><Wallet className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold">Rewards land in your wallet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Convert to cash anytime via the wallet withdrawal flow.
-                  </p>
-                </div>
-              </div>
-              <a href="/retailer/wallet">
-                <Button variant="outline" className="gap-2">
-                  Open Wallet <ArrowRight className="h-4 w-4" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
+          {/* Withdrawal hint removed — Rewards Wallet card above handles transfers */}
         </TabsContent>
 
         {/* REFERRALS */}
