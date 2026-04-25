@@ -356,6 +356,47 @@ function ReferralPanel() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Transfer to main wallet dialog */}
+      <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" /> Request Transfer to Main Wallet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm">
+              <p>Available rewards balance: <strong>₹{rewardsBalance.toFixed(2)}</strong></p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Admin will review and approve your request. Once approved, the amount moves to your main wallet.
+              </p>
+            </div>
+            <div>
+              <Label className="text-xs">Amount (₹) — minimum ₹{REWARDS_MIN_TRANSFER}</Label>
+              <Input
+                type="number"
+                min={REWARDS_MIN_TRANSFER}
+                max={Math.floor(rewardsBalance)}
+                value={transferAmount}
+                onChange={(e) => setTransferAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Note for admin (optional)</Label>
+              <Textarea
+                rows={2}
+                value={transferNote}
+                onChange={(e) => setTransferNote(e.target.value)}
+                placeholder="e.g. Withdrawing for monthly utilities"
+              />
+            </div>
+            <Button onClick={handleSubmitTransfer} disabled={transferring} className="w-full">
+              {transferring ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
