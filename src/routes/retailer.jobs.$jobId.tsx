@@ -19,7 +19,7 @@ import {
 } from "@/lib/job-marketplace-types";
 import {
   acceptBid,
-  completeJobAndRelease,
+  uploaderApproveSubmission,
   placeBid,
   raiseDispute,
   rejectJob,
@@ -226,12 +226,12 @@ function JobDetail() {
   };
 
   const handleComplete = async () => {
-    if (!job || busy) return;
-    if (!confirm("Mark complete and release payment?")) return;
+    if (!job || !appUser || busy) return;
+    if (!confirm("Approve this work and submit for admin payout? Funds will be released to the worker after admin review.")) return;
     setBusy(true);
     try {
-      await completeJobAndRelease(job.id);
-      toast.success("Payment released! Please rate your worker.");
+      await uploaderApproveSubmission(job.id, appUser.uid);
+      toast.success("Approved! Admin will release the payout shortly.");
       setTimeout(() => setRatingOpen(true), 500);
     } catch (err: any) { toast.error(err.message); }
     finally { setBusy(false); }
@@ -314,6 +314,17 @@ function JobDetail() {
               )}
             </div>
           )}
+          {job.status === "pending_admin_approval" && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm space-y-1">
+              <p className="font-semibold text-blue-900">⏳ Awaiting Admin Approval</p>
+              <p className="text-xs text-blue-800">
+                Uploader has approved the work. Admin will review and release the payout to the worker.
+              </p>
+              {job.uploaderApprovedAt && (
+                <p className="text-xs text-blue-700">Approved on: {new Date(job.uploaderApprovedAt).toLocaleString()}</p>
+              )}
+            </div>
+          )}
           {job.status === "disputed" && (
             <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm space-y-1">
               <p className="font-semibold flex items-center gap-1 text-amber-900">
@@ -344,7 +355,7 @@ function JobDetail() {
         )}
         {isUploader && job.status === "submitted" && (
           <>
-            <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
+            <Button onClick={handleComplete} disabled={busy}>Approve Work (Submit for Admin Payout)</Button>
             <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
               <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
             </Button>
@@ -358,7 +369,7 @@ function JobDetail() {
         {isUploader && job.status === "completed" && hasRated && (
           <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
         )}
-        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && (
+        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && job.status !== "pending_admin_approval" && (
           <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
         )}
       </div>

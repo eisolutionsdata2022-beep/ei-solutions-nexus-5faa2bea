@@ -379,14 +379,58 @@ export async function ensureAdminWallet() {
   }
 }
 
-export async function completeJobAndRelease(jobId: string) {
+/**
+ * Step 1 — Uploader approves the submitted work.
+ * NO money moves yet; job goes into `pending_admin_approval` and admin must release.
+ */
+export async function uploaderApproveSubmission(
+  jobId: string,
+  uploaderId: string,
+  note?: string
+) {
+  const jobRef = doc(db, "jobs", jobId);
+  const snap = await getDoc(jobRef);
+  if (!snap.exists()) throw new Error("Job not found");
+  const job = snap.data() as JobDoc;
+  if (job.uploaderId !== uploaderId) throw new Error("Only the uploader can approve");
+  if (job.status !== "submitted")
+    throw new Error("You can only approve work that has been submitted");
+
+  await updateDoc(jobRef, {
+    status: "pending_admin_approval",
+    uploaderApprovedAt: new Date().toISOString(),
+    uploaderApprovalNote: (note || "").trim(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Notify worker — payment is queued, awaiting admin
+  if (job.assignedWorkerId) {
+    await notifyUser({
+      userId: job.assignedWorkerId,
+      type: "pending_admin_approval",
+      jobId,
+      jobTitle: job.title,
+      message: `Uploader approved your work. Payment queued — admin will release shortly.`,
+    });
+  }
+}
+
+/**
+ * Step 2 — Admin reviews & releases funds.
+ * This is the ONLY function that actually credits worker / admin / refunds uploader.
+ */
+export async function adminApproveAndPayout(
+  jobId: string,
+  adminId: string,
+  adminNote?: string
+) {
   await ensureAdminWallet();
   const jobRef = doc(db, "jobs", jobId);
   const snap = await getDoc(jobRef);
   if (!snap.exists()) throw new Error("Job not found");
   const job = { id: snap.id, ...(snap.data() as any) } as JobDoc;
-  if (job.status !== "submitted")
-    throw new Error("Worker has not submitted the work yet");
+  if (job.status !== "pending_admin_approval")
+    throw new Error("Job is not awaiting admin approval");
   if (!job.assignedWorkerId || !job.finalBidAmount)
     throw new Error("Job missing worker/bid info");
 
@@ -421,6 +465,9 @@ export async function completeJobAndRelease(jobId: string) {
     adminCommission: commission,
     workerNet,
     uploaderRefund,
+    adminApprovedAt: new Date().toISOString(),
+    adminApprovedBy: adminId,
+    adminApprovalNote: (adminNote || "").trim(),
     updatedAt: new Date().toISOString(),
   });
 
@@ -429,8 +476,29 @@ export async function completeJobAndRelease(jobId: string) {
     type: "payment_completed",
     jobId,
     jobTitle: job.title,
-    message: `₹${workerNet} credited (commission ₹${commission} deducted)`,
+    message: `₹${workerNet} credited (commission ₹${commission} deducted) — admin released payout`,
   });
+  await notifyUser({
+    userId: job.uploaderId,
+    type: "payment_completed",
+    jobId,
+    jobTitle: job.title,
+    message: uploaderRefund > 0
+      ? `Job closed. ₹${uploaderRefund} refunded to your wallet.`
+      : `Job closed. Worker has been paid by admin.`,
+  });
+}
+
+/**
+ * @deprecated kept for back-compat — now routes through the admin approval flow.
+ * Calling this from the uploader UI just queues admin approval (no money moves).
+ */
+export async function completeJobAndRelease(jobId: string) {
+  const jobRef = doc(db, "jobs", jobId);
+  const snap = await getDoc(jobRef);
+  if (!snap.exists()) throw new Error("Job not found");
+  const job = snap.data() as JobDoc;
+  await uploaderApproveSubmission(jobId, job.uploaderId);
 }
 
 export async function rejectJob(jobId: string) {
@@ -440,6 +508,7 @@ export async function rejectJob(jobId: string) {
   const job = snap.data() as JobDoc;
   if (job.status === "completed") throw new Error("Job already completed");
   if (job.status === "disputed") throw new Error("Job is under dispute — admin must resolve");
+  if (job.status === "pending_admin_approval") throw new Error("Job is awaiting admin payout — cannot cancel");
   // Refund uploader the full budget
   await atomicCredit(job.uploaderId, job.budget, {
     source: "job-refund",
