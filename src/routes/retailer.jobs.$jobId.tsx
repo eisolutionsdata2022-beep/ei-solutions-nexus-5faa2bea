@@ -302,6 +302,13 @@ function JobDetail() {
             <div><p className="text-xs text-muted-foreground">Deadline</p><p className="font-semibold">{job.deadline}</p></div>
             {job.pages ? <div><p className="text-xs text-muted-foreground">Pages</p><p className="font-semibold">{job.pages}</p></div> : null}
             {job.finalBidAmount ? <div><p className="text-xs text-muted-foreground">Accepted Bid</p><p className="font-bold text-primary">₹{job.finalBidAmount}</p></div> : null}
+            {job.postedByAdmin && job.adminPayoutAmount ? (
+              <div className="col-span-2 sm:col-span-4 rounded-lg border border-emerald-300 bg-emerald-50 p-2">
+                <p className="text-[11px] text-emerald-700 font-semibold uppercase tracking-wide">Fixed Worker Payout</p>
+                <p className="text-lg font-extrabold text-emerald-900">₹{job.adminPayoutAmount}</p>
+                <p className="text-[10px] text-emerald-700">Credited to your earnings balance after admin approves your submission.</p>
+              </div>
+            ) : null}
           </div>
           {job.requiredDocs && (
             <div className="bg-muted/50 p-2 rounded text-xs"><strong>Required docs:</strong> {job.requiredDocs}</div>
