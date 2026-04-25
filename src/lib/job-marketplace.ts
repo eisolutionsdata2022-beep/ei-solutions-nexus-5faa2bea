@@ -213,6 +213,7 @@ export async function createJobWithEscrow(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
+  await broadcastNewJobToBadgeHolders(jobRef.id, data.title, uploaderId);
   return jobRef.id;
 }
 
