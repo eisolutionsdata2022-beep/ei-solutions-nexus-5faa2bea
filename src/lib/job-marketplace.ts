@@ -508,6 +508,7 @@ export async function rejectJob(jobId: string) {
   const job = snap.data() as JobDoc;
   if (job.status === "completed") throw new Error("Job already completed");
   if (job.status === "disputed") throw new Error("Job is under dispute — admin must resolve");
+  if (job.status === "pending_admin_approval") throw new Error("Job is awaiting admin payout — cannot cancel");
   // Refund uploader the full budget
   await atomicCredit(job.uploaderId, job.budget, {
     source: "job-refund",
