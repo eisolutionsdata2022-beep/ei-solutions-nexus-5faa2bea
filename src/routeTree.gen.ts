@@ -108,6 +108,7 @@ import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horos
 import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
 import { Route as AdminFinanceBranchesRouteImport } from './routes/admin.finance-branches'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
+import { Route as AdminEarningsTransfersRouteImport } from './routes/admin.earnings-transfers'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -620,6 +621,11 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEarningsTransfersRoute = AdminEarningsTransfersRouteImport.update({
+  id: '/earnings-transfers',
+  path: '/earnings-transfers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -724,6 +730,7 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/earnings-transfers': typeof AdminEarningsTransfersRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -833,6 +840,7 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/earnings-transfers': typeof AdminEarningsTransfersRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -950,6 +958,7 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
+  '/admin/earnings-transfers': typeof AdminEarningsTransfersRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/finance-branches': typeof AdminFinanceBranchesRoute
   '/admin/form-analytics': typeof AdminFormAnalyticsRoute
@@ -1068,6 +1077,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/earnings-transfers'
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
@@ -1177,6 +1187,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/earnings-transfers'
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
@@ -1293,6 +1304,7 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
+    | '/admin/earnings-transfers'
     | '/admin/finance'
     | '/admin/finance-branches'
     | '/admin/form-analytics'
@@ -2102,6 +2114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/earnings-transfers': {
+      id: '/admin/earnings-transfers'
+      path: '/earnings-transfers'
+      fullPath: '/admin/earnings-transfers'
+      preLoaderRoute: typeof AdminEarningsTransfersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -2221,6 +2240,7 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
+  AdminEarningsTransfersRoute: typeof AdminEarningsTransfersRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminFinanceBranchesRoute: typeof AdminFinanceBranchesRoute
   AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
@@ -2268,6 +2288,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
+  AdminEarningsTransfersRoute: AdminEarningsTransfersRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminFinanceBranchesRoute: AdminFinanceBranchesRoute,
   AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
