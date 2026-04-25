@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { atomicCredit, atomicDebit } from "./firebase-transactions";
+import { creditWorkerEarnings } from "./worker-earnings";
 import {
   DEFAULT_COMMISSION_PERCENT,
   DEFAULT_WORKER_SECURITY_PERCENT,
