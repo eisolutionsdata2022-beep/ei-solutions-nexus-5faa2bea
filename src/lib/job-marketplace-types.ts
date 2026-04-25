@@ -40,6 +40,12 @@ export interface JobDoc {
   uploaderName: string;
   /** True when posted by an admin on behalf of the platform — uploader identity is hidden from bidders/workers. */
   postedByAdmin?: boolean;
+  /** Admin-fixed payout amount the worker will earn on this job (admin-posted jobs only). Bypasses bidding. */
+  adminPayoutAmount?: number;
+  /** True once admin has verified the submitted work and credited worker earnings. */
+  adminApproved?: boolean;
+  adminApprovedAt?: string;
+  adminApprovedBy?: string;
   title: string;
   description: string;
   category: JobCategory;
