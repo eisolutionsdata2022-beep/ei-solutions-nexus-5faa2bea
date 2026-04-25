@@ -156,15 +156,19 @@ function ReferralPanel() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <StatTile icon={<Users className="h-5 w-5" />} label="Referrals" value={refs.length} tint="blue" />
         <StatTile icon={<Gift className="h-5 w-5" />} label="Activated" value={activatedCount} tint="green" />
         <StatTile icon={<IndianRupee className="h-5 w-5" />} label="Referral ₹" value={`₹${totalReferralEarnings.toFixed(0)}`} tint="gold" />
         <StatTile icon={<Coins className="h-5 w-5" />} label="Game ₹" value={`₹${gameStats.totalRewards.toFixed(0)}`} tint="violet" />
+        <StatTile icon={<Briefcase className="h-5 w-5" />} label="Job Earnings" value={`₹${earningsBalance.toFixed(0)}`} tint="emerald" />
       </div>
 
-      <Tabs defaultValue="games" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60">
+      <Tabs defaultValue="earnings" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/60">
+          <TabsTrigger value="earnings" className="gap-2 text-base">
+            <Briefcase className="h-4 w-4" /> Job Earnings
+          </TabsTrigger>
           <TabsTrigger value="games" className="gap-2 text-base">
             <Gamepad2 className="h-4 w-4" /> Daily Games
           </TabsTrigger>
@@ -172,6 +176,141 @@ function ReferralPanel() {
             <Users className="h-4 w-4" /> Refer & Earn
           </TabsTrigger>
         </TabsList>
+
+        {/* JOB EARNINGS */}
+        <TabsContent value="earnings" className="space-y-6 mt-6">
+          <Card className="overflow-hidden border-2 border-emerald-300/40">
+            <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
+                    <Briefcase className="h-3.5 w-3.5" /> Approved Job Payouts
+                  </div>
+                  <p className="mt-3 text-sm opacity-90">Available to transfer</p>
+                  <p className="text-4xl font-extrabold tracking-tight">₹{earningsBalance.toFixed(2)}</p>
+                  <p className="mt-1 text-xs opacity-80">
+                    Lifetime earned: ₹{lifetimeEarned.toFixed(2)}
+                    {pendingTransfer > 0 && <> • In review: ₹{pendingTransfer.toFixed(2)}</>}
+                  </p>
+                </div>
+                <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      className="bg-white text-emerald-700 hover:bg-white/90 font-semibold"
+                      disabled={earningsBalance <= 0}
+                    >
+                      <ArrowUpRight className="h-4 w-4 mr-1" /> Transfer to Wallet
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Request Transfer to Main Wallet</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={submitTransferRequest} className="space-y-3">
+                      <div>
+                        <Label>Amount (₹)</Label>
+                        <Input
+                          type="number"
+                          required
+                          min={1}
+                          max={earningsBalance}
+                          value={transferAmount}
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                          placeholder={`Up to ₹${earningsBalance}`}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Available balance: <strong>₹{earningsBalance.toFixed(2)}</strong>
+                        </p>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
+                        ℹ️ Admin will review and approve. Once approved, the amount moves to your main wallet and becomes spendable.
+                      </div>
+                      <Button type="submit" disabled={submittingTransfer} className="w-full">
+                        {submittingTransfer ? "Submitting..." : "Send Request"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </Card>
+
+          {/* Transfer requests history */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> Transfer Requests ({transferReqs.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {transferReqs.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No transfer requests yet.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {transferReqs.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between py-3 text-sm">
+                      <div>
+                        <p className="font-semibold">₹{r.amount.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(r.createdAt).toLocaleString()}
+                          {r.remarks && <> • {r.remarks}</>}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}
+                      >
+                        {r.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Earnings ledger */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Trophy className="h-4 w-4 text-amber-500" /> Earnings History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ledger.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No job earnings yet. Complete admin-posted jobs to start earning.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {ledger.map((l) => (
+                    <div key={l.id} className="flex items-center justify-between py-3 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{l.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {l.jobTitle && <>{l.jobTitle} • </>}
+                          {new Date(l.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge
+                        className={
+                          l.type === "credit"
+                            ? "bg-green-600 hover:bg-green-600"
+                            : "bg-slate-500 hover:bg-slate-500"
+                        }
+                      >
+                        {l.type === "credit" ? "+" : "−"}₹{l.amount.toFixed(0)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* GAMES */}
         <TabsContent value="games" className="space-y-6 mt-6">
