@@ -51,6 +51,7 @@ function AdminJobDisputes() {
   const [pCategory, setPCategory] = useState<typeof JOB_CATEGORIES[number]>(JOB_CATEGORIES[0]);
   const [pPages, setPPages] = useState("");
   const [pBudget, setPBudget] = useState("");
+  const [pPayout, setPPayout] = useState("");
   const [pDeadline, setPDeadline] = useState("");
   const [pReqDocs, setPReqDocs] = useState("");
   const [pFiles, setPFiles] = useState<File[]>([]);
@@ -76,6 +77,7 @@ function AdminJobDisputes() {
         category: pCategory,
         pages: pPages ? Number(pPages) : undefined,
         budget: Number(pBudget),
+        adminPayoutAmount: Number(pPayout),
         deadline: pDeadline,
         requiredDocs: pReqDocs,
         referenceFiles: uploaded.map((u) => ({
@@ -84,7 +86,7 @@ function AdminJobDisputes() {
       });
       toast.success("Job posted! All Work-Badge holders have been notified.");
       setPostOpen(false);
-      setPTitle(""); setPDesc(""); setPPages(""); setPBudget(""); setPDeadline("");
+      setPTitle(""); setPDesc(""); setPPages(""); setPBudget(""); setPPayout(""); setPDeadline("");
       setPReqDocs(""); setPFiles([]);
     } catch (err: any) {
       toast.error(err.message || "Failed to post job");
