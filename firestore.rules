@@ -38,6 +38,28 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Rewards Wallet — owner read, admin-only write (server/admin actions only).
+    // Retailers can READ their own balance & ledger; only admin can credit/debit
+    // (referral/game credits go through admin SDK or server functions, transfer
+    //  approvals run from admin UI signed in as admin).
+    match /rewardsWallets/{uid} {
+      allow read:  if isAuthed() && (uid == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+    match /rewardsLedger/{entryId} {
+      allow read:   if isAuthed() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow list:   if isAuthed();
+      allow write:  if isAdmin();
+    }
+    match /rewardsTransferRequests/{reqId} {
+      // Owner can create their own request and read it; admin can do everything.
+      allow read, list: if isAuthed() && (resource == null || resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthed()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == "pending";
+      allow update, delete: if isAdmin();
+    }
+
     // ---------------------------------------------------------------
     // Default — any authenticated user can read/write everything else.
     // (Migrate individual collections to stricter rules over time.)
