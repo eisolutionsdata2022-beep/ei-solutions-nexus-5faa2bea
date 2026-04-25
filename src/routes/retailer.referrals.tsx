@@ -449,13 +449,14 @@ function StatTile({
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  tint: "blue" | "green" | "gold" | "violet";
+  tint: "blue" | "green" | "gold" | "violet" | "emerald";
 }) {
   const tints: Record<string, string> = {
     blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     green: "bg-green-500/10 text-green-600 dark:text-green-400",
     gold: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     violet: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   };
   return (
     <Card>
