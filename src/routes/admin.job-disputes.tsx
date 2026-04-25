@@ -20,10 +20,13 @@ import {
   RadioGroupItem,
 } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { AlertTriangle, Gavel, Loader2 } from "lucide-react";
-import { FilePreviewList } from "@/components/JobFileUploadField";
+import { AlertTriangle, Gavel, Loader2, Plus, Briefcase } from "lucide-react";
+import { FilePreviewList, JobFileUploadField } from "@/components/JobFileUploadField";
 import type { JobDoc, JobMessageDoc, DisputeResolution } from "@/lib/job-marketplace-types";
-import { resolveDispute } from "@/lib/job-marketplace";
+import { JOB_CATEGORIES } from "@/lib/job-marketplace-types";
+import { resolveDispute, createAdminJob } from "@/lib/job-marketplace";
+import { uploadJobFiles } from "@/lib/job-file-upload";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/job-disputes")({
   ssr: false,
