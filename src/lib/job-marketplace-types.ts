@@ -12,13 +12,14 @@ export const JOB_CATEGORIES = [
 export type JobCategory = (typeof JOB_CATEGORIES)[number];
 
 export type JobStatus =
-  | "open"          // accepting bids
-  | "assigned"      // worker selected, in progress
-  | "doc_requested" // worker asked for documents
-  | "submitted"     // worker submitted work, awaiting review
-  | "disputed"      // uploader rejected submission, awaiting admin review
-  | "completed"     // payment released
-  | "rejected"      // closed by uploader
+  | "open"                    // accepting bids
+  | "assigned"                // worker selected, in progress
+  | "doc_requested"           // worker asked for documents
+  | "submitted"               // worker submitted work, awaiting uploader review
+  | "pending_admin_approval"  // uploader approved → waiting for admin to release funds
+  | "disputed"                // uploader rejected submission, awaiting admin review
+  | "completed"               // payment released by admin
+  | "rejected"                // closed by uploader
   | "cancelled";
 
 export type DisputeResolution =
