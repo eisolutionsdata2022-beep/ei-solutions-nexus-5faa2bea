@@ -288,6 +288,49 @@ function AdminJobDisputes() {
         </DialogContent>
       </Dialog>
 
+      {/* Pending admin-job approvals */}
+      {pendingApprovals.length > 0 && (
+        <Card className="border-emerald-300 bg-emerald-50/40">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-emerald-900">
+              ✅ Pending Worker Approvals
+              <Badge variant="secondary">{pendingApprovals.length}</Badge>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Worker has submitted the work. Verify and approve to credit their earnings balance.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {pendingApprovals.map((j) => (
+              <div key={j.id} className="border rounded p-3 bg-background flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm">{j.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {j.category} • Worker:{" "}
+                    <Link to="/worker/$workerId" params={{ workerId: j.assignedWorkerId || "" }} className="text-primary underline">
+                      {j.assignedWorkerName}
+                    </Link>
+                    {" "}• Payout <strong className="text-foreground">₹{j.adminPayoutAmount}</strong>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/retailer/jobs/$jobId" params={{ jobId: j.id }}>Review</Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprovePayout(j)}
+                    disabled={approving === j.id}
+                  >
+                    {approving === j.id ? <Loader2 className="w-4 h-4 animate-spin" /> : `Approve ₹${j.adminPayoutAmount}`}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {jobs.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
