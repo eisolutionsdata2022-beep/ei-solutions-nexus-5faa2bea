@@ -168,6 +168,75 @@ function ReferralPanel() {
         <StatTile icon={<Coins className="h-5 w-5" />} label="Game ₹" value={`₹${gameStats.totalRewards.toFixed(0)}`} tint="violet" />
       </div>
 
+      {/* Rewards Wallet — separate balance, transferable to main wallet via admin approval */}
+      <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-500/15 p-3 text-amber-600">
+                <Coins className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-amber-700/80 font-semibold">
+                  Rewards Wallet (referral + games)
+                </p>
+                <p className="text-3xl font-extrabold text-amber-900">₹{rewardsBalance.toFixed(2)}</p>
+                <p className="text-xs text-amber-800/70 mt-0.5">
+                  Held separately. Move it to your main wallet by requesting an admin transfer.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:items-end gap-2">
+              <Button
+                size="lg"
+                className="gap-2"
+                disabled={rewardsBalance < REWARDS_MIN_TRANSFER || !!pendingRequest}
+                onClick={() => {
+                  setTransferAmount(String(Math.floor(rewardsBalance)));
+                  setTransferOpen(true);
+                }}
+              >
+                <ArrowRightLeft className="h-4 w-4" /> Request Transfer to Main Wallet
+              </Button>
+              {pendingRequest && (
+                <Badge variant="secondary" className="gap-1">
+                  <Clock className="h-3 w-3" /> Pending: ₹{pendingRequest.amount} — admin reviewing
+                </Badge>
+              )}
+              {!pendingRequest && rewardsBalance < REWARDS_MIN_TRANSFER && (
+                <p className="text-xs text-amber-800/70">Minimum transfer ₹{REWARDS_MIN_TRANSFER}</p>
+              )}
+            </div>
+          </div>
+
+          {transferRequests.length > 0 && (
+            <div className="border-t border-amber-200 pt-3">
+              <p className="text-xs font-semibold text-amber-800 mb-2">Recent transfer requests</p>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {transferRequests.slice(0, 5).map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs bg-white/60 rounded px-2 py-1.5">
+                    <div>
+                      <span className="font-semibold">₹{r.amount}</span>
+                      <span className="text-muted-foreground"> · {new Date(r.requestedAt).toLocaleString()}</span>
+                      {r.adminNote && <p className="text-[11px] text-muted-foreground italic">"{r.adminNote}"</p>}
+                    </div>
+                    <Badge variant={
+                      r.status === "approved" ? "default" :
+                      r.status === "rejected" ? "destructive" : "secondary"
+                    } className="capitalize gap-1">
+                      {r.status === "approved" && <CheckCircle2 className="h-3 w-3" />}
+                      {r.status === "pending" && <Clock className="h-3 w-3" />}
+                      {r.status === "rejected" && <XCircle className="h-3 w-3" />}
+                      {r.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="games" className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60">
           <TabsTrigger value="games" className="gap-2 text-base">
