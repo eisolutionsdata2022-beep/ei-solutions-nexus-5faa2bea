@@ -19,7 +19,7 @@ import {
 } from "@/lib/job-marketplace-types";
 import {
   acceptBid,
-  completeJobAndRelease,
+  uploaderApproveSubmission,
   placeBid,
   raiseDispute,
   rejectJob,
