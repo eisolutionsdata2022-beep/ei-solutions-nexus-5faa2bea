@@ -16,6 +16,7 @@ import {
   onSnapshot, orderBy, addDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { creditRewards } from "./rewards-wallet";
 
 export interface ReferralConfig {
   enabled: boolean;
