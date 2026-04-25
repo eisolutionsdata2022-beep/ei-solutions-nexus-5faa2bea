@@ -76,7 +76,7 @@ function OperatorDashboard() {
       <Card>
         <CardHeader><CardTitle className="text-base">Quick Actions</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <ActionLink to="/retailer/recharge" icon={Banknote} label="Recharge" />
+          <ActionLink to="/retailer/bill-payment" icon={Banknote} label="Bill Payment" />
           <ActionLink to="/retailer/services" icon={ShoppingBag} label="E-dis" />
           <ActionLink to="/retailer/transactions" icon={ArrowLeftRight} label="Transactions" />
           <ActionLink to="/retailer/profile" icon={User} label="Profile" />

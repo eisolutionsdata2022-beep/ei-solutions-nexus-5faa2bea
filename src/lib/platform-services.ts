@@ -18,7 +18,7 @@ export interface PlatformService {
 
 export const PLATFORM_SERVICES: PlatformService[] = [
   // Core Services
-  { key: "recharge-bbps", name: "Recharge & BBPS", category: "Core Services", route: "/retailer/recharge", description: "Mobile, DTH recharge and bill payments", operatorBased: true },
+  { key: "recharge-bbps", name: "Recharge & BBPS", category: "Core Services", route: "/retailer/bill-payment", description: "Mobile, DTH recharge and bill payments (Bharat Connect)", operatorBased: true },
   { key: "e-dis", name: "E-dis (E-Governance)", category: "Core Services", route: "/retailer/services", description: "E-district certificate services" },
   { key: "money-transfer", name: "Money Transfer", category: "Core Services", route: "/retailer/money-transfer", description: "Fund transfer services", defaultFee: 10 },
   { key: "ippb", name: "IPPB Account Opening", category: "Core Services", route: "/retailer/ippb", description: "India Post Payments Bank account opening with biometric capture", defaultFee: 50 },
