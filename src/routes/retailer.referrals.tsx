@@ -55,6 +55,12 @@ function ReferralPanel() {
   const [payouts, setPayouts] = useState<ReferralPayout[]>([]);
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
+  const [earnings, setEarnings] = useState<WorkerEarningsDoc | null>(null);
+  const [ledger, setLedger] = useState<EarningsLedgerEntry[]>([]);
+  const [transferReqs, setTransferReqs] = useState<EarningsTransferRequest[]>([]);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [submittingTransfer, setSubmittingTransfer] = useState(false);
 
   useEffect(() => {
     if (!appUser?.uid) return;
@@ -68,13 +74,40 @@ function ReferralPanel() {
       // Refresh aggregate stats whenever new plays arrive
       getGameStats(appUser.uid).then(setGameStats);
     });
-    return () => { u1(); u2(); u3(); };
+    const u4 = subscribeWorkerEarnings(appUser.uid, setEarnings);
+    const u5 = subscribeEarningsLedger(appUser.uid, setLedger);
+    const u6 = subscribeMyTransferRequests(appUser.uid, setTransferReqs);
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
   }, [appUser?.uid]);
 
   const link = typeof window !== "undefined" && code ? `${window.location.origin}/register?ref=${code}` : "";
   const totalReferralEarnings = payouts.reduce((s, p) => s + (p.referrerReward || 0), 0);
   const activatedCount = refs.filter((r) => r.activated).length;
-  const totalEarnings = totalReferralEarnings + gameStats.totalRewards;
+  const earningsBalance = earnings?.balance || 0;
+  const lifetimeEarned = earnings?.lifetimeEarned || 0;
+  const pendingTransfer = transferReqs
+    .filter((r) => r.status === "pending")
+    .reduce((s, r) => s + r.amount, 0);
+  const totalEarnings = totalReferralEarnings + gameStats.totalRewards + lifetimeEarned;
+
+  const submitTransferRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!appUser || submittingTransfer) return;
+    const amt = Number(transferAmount);
+    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
+    setSubmittingTransfer(true);
+    try {
+      await requestEarningsTransfer(appUser.uid, appUser.email, appUser.name || appUser.email, amt);
+      toast.success("Transfer request sent! Admin will review.");
+      setTransferOpen(false);
+      setTransferAmount("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit request");
+    } finally {
+      setSubmittingTransfer(false);
+    }
+  };
+
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
