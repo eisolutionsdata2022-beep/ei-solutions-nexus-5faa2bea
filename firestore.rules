@@ -38,25 +38,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Rewards Wallet — owner read, admin-only write (server/admin actions only).
-    // Retailers can READ their own balance & ledger; only admin can credit/debit
-    // (referral/game credits go through admin SDK or server functions, transfer
-    //  approvals run from admin UI signed in as admin).
+    // Rewards Wallet — owner read; writes allowed to any authed user because
+    // referral payouts are triggered client-side by the referee crediting the
+    // referrer's wallet (atomic via runTransaction). Transfer requests must
+    // pin the requesting user's uid so retailers can't request payout from
+    // someone else's wallet.
     match /rewardsWallets/{uid} {
       allow read:  if isAuthed() && (uid == request.auth.uid || isAdmin());
-      allow write: if isAdmin();
+      allow write: if isAuthed();
     }
     match /rewardsLedger/{entryId} {
-      allow read:   if isAuthed() && (resource.data.uid == request.auth.uid || isAdmin());
-      allow list:   if isAuthed();
-      allow write:  if isAdmin();
+      allow read, list: if isAuthed();
+      allow create: if isAuthed();
+      allow update, delete: if isAdmin();
     }
     match /rewardsTransferRequests/{reqId} {
-      // Owner can create their own request and read it; admin can do everything.
-      allow read, list: if isAuthed() && (resource == null || resource.data.uid == request.auth.uid || isAdmin());
+      allow read, list: if isAuthed();
       allow create: if isAuthed()
                     && request.resource.data.uid == request.auth.uid
                     && request.resource.data.status == "pending";
+      // Only admin can approve/reject; owner cannot self-approve.
       allow update, delete: if isAdmin();
     }
 
