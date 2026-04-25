@@ -43,6 +43,56 @@ function AdminJobDisputes() {
   const [adminNote, setAdminNote] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Admin-post-job form
+  const [postOpen, setPostOpen] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [pTitle, setPTitle] = useState("");
+  const [pDesc, setPDesc] = useState("");
+  const [pCategory, setPCategory] = useState<typeof JOB_CATEGORIES[number]>(JOB_CATEGORIES[0]);
+  const [pPages, setPPages] = useState("");
+  const [pBudget, setPBudget] = useState("");
+  const [pDeadline, setPDeadline] = useState("");
+  const [pReqDocs, setPReqDocs] = useState("");
+  const [pFiles, setPFiles] = useState<File[]>([]);
+
+  const handleAdminPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!appUser || posting) return;
+    setPosting(true);
+    try {
+      const tempKey = `admin-pre-${Date.now()}`;
+      let uploaded: { url: string; name: string; contentType: string; size: number }[] = [];
+      if (pFiles.length > 0) {
+        uploaded = await uploadJobFiles({
+          jobId: tempKey,
+          userId: appUser.uid,
+          kind: "doc-upload",
+          files: pFiles,
+        });
+      }
+      await createAdminJob(appUser.uid, {
+        title: pTitle,
+        description: pDesc,
+        category: pCategory,
+        pages: pPages ? Number(pPages) : undefined,
+        budget: Number(pBudget),
+        deadline: pDeadline,
+        requiredDocs: pReqDocs,
+        referenceFiles: uploaded.map((u) => ({
+          url: u.url, name: u.name, contentType: u.contentType, size: u.size,
+        })),
+      });
+      toast.success("Job posted! All Work-Badge holders have been notified.");
+      setPostOpen(false);
+      setPTitle(""); setPDesc(""); setPPages(""); setPBudget(""); setPDeadline("");
+      setPReqDocs(""); setPFiles([]);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post job");
+    } finally {
+      setPosting(false);
+    }
+  };
+
   useEffect(() => {
     const unsub = onSnapshot(
       query(collection(db, "jobs"), where("status", "==", "disputed")),
