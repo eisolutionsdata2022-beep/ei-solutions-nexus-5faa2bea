@@ -64,6 +64,12 @@ export interface JobDoc {
   disputeResolvedAt?: string;
   disputeResolvedBy?: string; // admin uid
   disputeWorkerSplitPercent?: number; // for "split" resolution
+  // Admin payout-approval lineage
+  uploaderApprovedAt?: string;        // when uploader marked work as good
+  uploaderApprovalNote?: string;
+  adminApprovedAt?: string;           // when admin released funds
+  adminApprovedBy?: string;           // admin uid
+  adminApprovalNote?: string;
   createdAt: string;
   updatedAt: string;
 }
