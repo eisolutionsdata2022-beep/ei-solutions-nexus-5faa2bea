@@ -5,10 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Copy, Share2, Users, IndianRupee, Gift, Sparkles, Trophy,
-  Coins, Gamepad2, Wallet, ArrowRight,
+  Coins, Gamepad2, Wallet, ArrowRight, Loader2, ArrowRightLeft,
+  CheckCircle2, Clock, XCircle,
 } from "lucide-react";
 import {
   getOrCreateReferralCode,
@@ -24,6 +30,13 @@ import {
   type GamePlay,
   type GameStats,
 } from "@/lib/games-firebase";
+import {
+  subscribeRewardsBalance,
+  subscribeMyTransferRequests,
+  requestTransferToMainWallet,
+  REWARDS_MIN_TRANSFER,
+  type TransferRequestDoc,
+} from "@/lib/rewards-wallet";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TreasureBox } from "@/components/games/TreasureBox";
@@ -43,6 +56,14 @@ function ReferralPanel() {
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
 
+  // Rewards wallet (separate from main wallet)
+  const [rewardsBalance, setRewardsBalance] = useState(0);
+  const [transferRequests, setTransferRequests] = useState<TransferRequestDoc[]>([]);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferNote, setTransferNote] = useState("");
+  const [transferring, setTransferring] = useState(false);
+
   useEffect(() => {
     if (!appUser?.uid) return;
     getOrCreateReferralCode(appUser.uid).then(setCode);
@@ -52,10 +73,11 @@ function ReferralPanel() {
     const u2 = subscribeReferrerPayouts(appUser.uid, setPayouts);
     const u3 = subscribeRecentPlays(appUser.uid, (plays) => {
       setRecentPlays(plays);
-      // Refresh aggregate stats whenever new plays arrive
       getGameStats(appUser.uid).then(setGameStats);
     });
-    return () => { u1(); u2(); u3(); };
+    const u4 = subscribeRewardsBalance(appUser.uid, setRewardsBalance);
+    const u5 = subscribeMyTransferRequests(appUser.uid, setTransferRequests);
+    return () => { u1(); u2(); u3(); u4(); u5(); };
   }, [appUser?.uid]);
 
   const link = typeof window !== "undefined" && code ? `${window.location.origin}/register?ref=${code}` : "";
@@ -79,6 +101,35 @@ function ReferralPanel() {
       } catch {/* user cancelled */}
     } else {
       copy(link);
+    }
+  };
+
+  const pendingRequest = transferRequests.find((r) => r.status === "pending");
+
+  const handleSubmitTransfer = async () => {
+    if (!appUser || transferring) return;
+    const amt = Math.floor(Number(transferAmount));
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    setTransferring(true);
+    try {
+      await requestTransferToMainWallet({
+        uid: appUser.uid,
+        userName: appUser.name,
+        userEmail: appUser.email,
+        amount: amt,
+        userNote: transferNote.trim(),
+      });
+      toast.success("Transfer request sent — awaiting admin approval");
+      setTransferOpen(false);
+      setTransferAmount("");
+      setTransferNote("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send request");
+    } finally {
+      setTransferring(false);
     }
   };
 
@@ -116,6 +167,75 @@ function ReferralPanel() {
         <StatTile icon={<IndianRupee className="h-5 w-5" />} label="Referral ₹" value={`₹${totalReferralEarnings.toFixed(0)}`} tint="gold" />
         <StatTile icon={<Coins className="h-5 w-5" />} label="Game ₹" value={`₹${gameStats.totalRewards.toFixed(0)}`} tint="violet" />
       </div>
+
+      {/* Rewards Wallet — separate balance, transferable to main wallet via admin approval */}
+      <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-500/15 p-3 text-amber-600">
+                <Coins className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-amber-700/80 font-semibold">
+                  Rewards Wallet (referral + games)
+                </p>
+                <p className="text-3xl font-extrabold text-amber-900">₹{rewardsBalance.toFixed(2)}</p>
+                <p className="text-xs text-amber-800/70 mt-0.5">
+                  Held separately. Move it to your main wallet by requesting an admin transfer.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:items-end gap-2">
+              <Button
+                size="lg"
+                className="gap-2"
+                disabled={rewardsBalance < REWARDS_MIN_TRANSFER || !!pendingRequest}
+                onClick={() => {
+                  setTransferAmount(String(Math.floor(rewardsBalance)));
+                  setTransferOpen(true);
+                }}
+              >
+                <ArrowRightLeft className="h-4 w-4" /> Request Transfer to Main Wallet
+              </Button>
+              {pendingRequest && (
+                <Badge variant="secondary" className="gap-1">
+                  <Clock className="h-3 w-3" /> Pending: ₹{pendingRequest.amount} — admin reviewing
+                </Badge>
+              )}
+              {!pendingRequest && rewardsBalance < REWARDS_MIN_TRANSFER && (
+                <p className="text-xs text-amber-800/70">Minimum transfer ₹{REWARDS_MIN_TRANSFER}</p>
+              )}
+            </div>
+          </div>
+
+          {transferRequests.length > 0 && (
+            <div className="border-t border-amber-200 pt-3">
+              <p className="text-xs font-semibold text-amber-800 mb-2">Recent transfer requests</p>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {transferRequests.slice(0, 5).map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs bg-white/60 rounded px-2 py-1.5">
+                    <div>
+                      <span className="font-semibold">₹{r.amount}</span>
+                      <span className="text-muted-foreground"> · {new Date(r.requestedAt).toLocaleString()}</span>
+                      {r.adminNote && <p className="text-[11px] text-muted-foreground italic">"{r.adminNote}"</p>}
+                    </div>
+                    <Badge variant={
+                      r.status === "approved" ? "default" :
+                      r.status === "rejected" ? "destructive" : "secondary"
+                    } className="capitalize gap-1">
+                      {r.status === "approved" && <CheckCircle2 className="h-3 w-3" />}
+                      {r.status === "pending" && <Clock className="h-3 w-3" />}
+                      {r.status === "rejected" && <XCircle className="h-3 w-3" />}
+                      {r.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="games" className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60">
@@ -176,25 +296,7 @@ function ReferralPanel() {
             </CardContent>
           </Card>
 
-          {/* Withdrawal hint */}
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-primary/10 p-3 text-primary"><Wallet className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold">Rewards land in your wallet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Convert to cash anytime via the wallet withdrawal flow.
-                  </p>
-                </div>
-              </div>
-              <a href="/retailer/wallet">
-                <Button variant="outline" className="gap-2">
-                  Open Wallet <ArrowRight className="h-4 w-4" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
+          {/* Withdrawal hint removed — Rewards Wallet card above handles transfers */}
         </TabsContent>
 
         {/* REFERRALS */}
@@ -254,6 +356,47 @@ function ReferralPanel() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Transfer to main wallet dialog */}
+      <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" /> Request Transfer to Main Wallet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm">
+              <p>Available rewards balance: <strong>₹{rewardsBalance.toFixed(2)}</strong></p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Admin will review and approve your request. Once approved, the amount moves to your main wallet.
+              </p>
+            </div>
+            <div>
+              <Label className="text-xs">Amount (₹) — minimum ₹{REWARDS_MIN_TRANSFER}</Label>
+              <Input
+                type="number"
+                min={REWARDS_MIN_TRANSFER}
+                max={Math.floor(rewardsBalance)}
+                value={transferAmount}
+                onChange={(e) => setTransferAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Note for admin (optional)</Label>
+              <Textarea
+                rows={2}
+                value={transferNote}
+                onChange={(e) => setTransferNote(e.target.value)}
+                placeholder="e.g. Withdrawing for monthly utilities"
+              />
+            </div>
+            <Button onClick={handleSubmitTransfer} disabled={transferring} className="w-full">
+              {transferring ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

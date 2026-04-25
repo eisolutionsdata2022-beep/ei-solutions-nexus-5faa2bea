@@ -16,6 +16,7 @@ import {
   onSnapshot, orderBy, addDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { creditRewards } from "./rewards-wallet";
 
 export interface ReferralConfig {
   enabled: boolean;
@@ -126,6 +127,8 @@ export interface ActivationResult {
   alreadyActivated: boolean;
   newBalance: number;
   referrerPaid: boolean;
+  referrerUid?: string;
+  referrerReward?: number;
 }
 
 export async function atomicReferralActivation(args: {
@@ -162,19 +165,15 @@ export async function atomicReferralActivation(args: {
     const userData = userSnap.data();
     const referrerUid: string | undefined = userData.referredBy;
 
-    // Read referrer wallet up-front (transaction rule: all reads before writes)
-    let referrerWalletRef = null as any;
-    let referrerCurrent = 0;
+    // Look up referrer code (read-only) — referrer reward is credited OUTSIDE the
+    // txn into the rewards wallet so they must request a transfer to main.
+    let referrerExists = false;
     let referrerCode: string | undefined;
     if (referrerUid && refReward > 0) {
-      referrerWalletRef = doc(db, "wallets", referrerUid);
-      const refWalletSnap = await tx.get(referrerWalletRef);
-      if (refWalletSnap.exists()) {
-        referrerCurrent = (refWalletSnap.data() as any).balance || 0;
-        const refUserSnap = await tx.get(doc(db, "users", referrerUid));
-        referrerCode = refUserSnap.exists() ? (refUserSnap.data() as any).referralCode : undefined;
-      } else {
-        referrerWalletRef = null; // can't credit non-existent wallet
+      const refUserSnap = await tx.get(doc(db, "users", referrerUid));
+      if (refUserSnap.exists()) {
+        referrerExists = true;
+        referrerCode = (refUserSnap.data() as any).referralCode;
       }
     }
 
@@ -190,11 +189,6 @@ export async function atomicReferralActivation(args: {
       referralPending: false,
     });
 
-    // Credit referrer
-    if (referrerWalletRef) {
-      tx.update(referrerWalletRef, { balance: referrerCurrent + refReward });
-    }
-
     // Idempotency lock + audit
     tx.set(payoutRef, {
       id: newUserUid,
@@ -205,14 +199,16 @@ export async function atomicReferralActivation(args: {
       referrerCode: referrerCode ?? null,
       activationFee: fee,
       newUserReward: newReward,
-      referrerReward: referrerWalletRef ? refReward : 0,
+      referrerReward: referrerExists ? refReward : 0,
       paidAt: new Date().toISOString(),
     });
 
     return {
       alreadyActivated: false,
       newBalance: newBal,
-      referrerPaid: !!referrerWalletRef,
+      referrerPaid: referrerExists,
+      referrerUid: referrerExists ? referrerUid! : undefined,
+      referrerReward: referrerExists ? refReward : 0,
     };
   }).then(async (result) => {
     // Outside the transaction: log txn entries (best-effort)
@@ -235,6 +231,18 @@ export async function atomicReferralActivation(args: {
         description: `Welcome bonus on activation`,
         createdAt: now,
       });
+    }
+    // Credit the referrer's *rewards* wallet (held until they request transfer to main)
+    if (result.referrerUid && result.referrerReward > 0) {
+      try {
+        await creditRewards(result.referrerUid, result.referrerReward, {
+          source: "referral_bonus",
+          description: `Referral bonus — ${newUserName || newUserEmail || newUserUid}`,
+          refId: newUserUid,
+        });
+      } catch (err) {
+        console.error("Failed to credit referrer rewards wallet", err);
+      }
     }
     return result;
   });

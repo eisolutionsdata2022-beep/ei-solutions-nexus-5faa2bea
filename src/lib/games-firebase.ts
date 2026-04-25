@@ -3,7 +3,9 @@
  *
  * Three games: spin wheel, scratch card, treasure box.
  * Each user gets ONE free play per UTC-day per game.
- * Rewards (cash) are credited to the user's wallet via atomicCredit.
+ * Rewards (cash) are credited to the REWARDS wallet (not main wallet).
+ * Retailer must request an admin-approved transfer to move them to the
+ * main wallet — keeps free-money rewards behind a manual gate.
  *
  * Firestore layout:
  *   gamePlays/{uid}_{game}_{YYYY-MM-DD} → { uid, game, day, reward, label, createdAt }
@@ -14,7 +16,7 @@ import {
   onSnapshot, orderBy, limit, increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { atomicCredit } from "./firebase-transactions";
+import { creditRewards } from "./rewards-wallet";
 
 export type GameKey = "spin" | "scratch" | "box";
 
@@ -100,12 +102,12 @@ export async function recordGamePlay(args: {
 
   if (record.reward > 0) {
     try {
-      await atomicCredit(uid, record.reward, {
+      await creditRewards(uid, record.reward, {
         source: `game_${game}`,
         description: `${GAME_LABEL[game]} reward — ${label}`,
       });
     } catch (err) {
-      console.error("Failed to credit game reward", err);
+      console.error("Failed to credit game reward to rewards wallet", err);
     }
   }
 
