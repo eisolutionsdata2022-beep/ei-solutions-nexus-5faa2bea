@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Copy, Share2, Users, IndianRupee, Gift, Sparkles, Trophy,
-  Coins, Gamepad2, Wallet, ArrowRight,
+  Coins, Gamepad2, Wallet, ArrowRight, Briefcase, ArrowUpRight, Clock,
 } from "lucide-react";
 import {
   getOrCreateReferralCode,
@@ -24,6 +28,15 @@ import {
   type GamePlay,
   type GameStats,
 } from "@/lib/games-firebase";
+import {
+  subscribeWorkerEarnings,
+  subscribeEarningsLedger,
+  subscribeMyTransferRequests,
+  requestEarningsTransfer,
+  type WorkerEarningsDoc,
+  type EarningsLedgerEntry,
+  type EarningsTransferRequest,
+} from "@/lib/worker-earnings";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TreasureBox } from "@/components/games/TreasureBox";
