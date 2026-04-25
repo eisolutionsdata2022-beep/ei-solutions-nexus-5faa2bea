@@ -83,6 +83,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
     { label: "Job Earnings", to: "/admin/job-earnings", icon: BarChart3 },
     { label: "Job Disputes", to: "/admin/job-disputes", icon: Gavel },
+    { label: "Earnings Transfers", to: "/admin/earnings-transfers", icon: Wallet, tag: "pending", hint: "Worker job-earnings → main wallet requests" },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
     { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
