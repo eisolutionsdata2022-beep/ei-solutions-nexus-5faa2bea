@@ -278,7 +278,15 @@ function JobDetail() {
             <div>
               <CardTitle>{job.title}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {job.category} • Posted by {job.uploaderName}
+                {job.category}
+                {(() => {
+                  // Hide uploader identity from non-assigned workers / bidders.
+                  // Only the uploader, the assigned worker, or admin can see who posted it.
+                  const showUploader =
+                    !job.postedByAdmin && (isUploader || isWorker || isAdmin);
+                  if (showUploader) return <> • Posted by {job.uploaderName}</>;
+                  return <> • <span className="italic">Available Job</span></>;
+                })()}
                 {job.assignedWorkerId && (
                   <> • Worker: <Link to="/worker/$workerId" params={{ workerId: job.assignedWorkerId }} className="text-primary underline">{job.assignedWorkerName}</Link></>
                 )}

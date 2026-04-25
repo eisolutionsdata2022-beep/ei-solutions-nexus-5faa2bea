@@ -119,6 +119,70 @@ export async function notifyUser(
 
 /* -------------------- Job lifecycle (with escrow) -------------------- */
 
+/**
+ * Broadcasts a "new_job" notification to every user who currently holds a Work Badge.
+ * Skips the uploader themselves. Best-effort — failures are logged but do not throw.
+ */
+export async function broadcastNewJobToBadgeHolders(
+  jobId: string,
+  jobTitle: string,
+  excludeUserId?: string
+) {
+  try {
+    const snap = await getDocs(
+      query(collection(db, "users"), where("workBadge", "==", true))
+    );
+    const writes: Promise<unknown>[] = [];
+    snap.forEach((d) => {
+      if (excludeUserId && d.id === excludeUserId) return;
+      writes.push(
+        notifyUser({
+          userId: d.id,
+          type: "new_job",
+          jobId,
+          jobTitle,
+          message: `New available job: ${jobTitle}. Place your bid now!`,
+        })
+      );
+    });
+    await Promise.allSettled(writes);
+  } catch (e) {
+    console.error("broadcastNewJobToBadgeHolders failed", e);
+  }
+}
+
+/**
+ * Admin-posted job. No wallet escrow (admin acts as platform operator).
+ * Uploader identity is hidden from bidders — listed as "Available Job".
+ */
+export async function createAdminJob(
+  adminId: string,
+  data: {
+    title: string;
+    description: string;
+    category: JobCategory;
+    pages?: number;
+    budget: number;
+    deadline: string;
+    requiredDocs: string;
+    referenceFiles?: { url: string; name: string; contentType?: string; size?: number }[];
+  }
+): Promise<string> {
+  if (data.budget < 50) throw new Error("Minimum budget is ₹50");
+  const jobRef = await addDoc(collection(db, "jobs"), {
+    ...data,
+    referenceFiles: data.referenceFiles || [],
+    uploaderId: adminId,
+    uploaderName: "EI Solutions (Platform)",
+    postedByAdmin: true,
+    status: "open",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+  await broadcastNewJobToBadgeHolders(jobRef.id, data.title, adminId);
+  return jobRef.id;
+}
+
 export async function createJobWithEscrow(
   uploaderId: string,
   uploaderName: string,
@@ -149,6 +213,7 @@ export async function createJobWithEscrow(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
+  await broadcastNewJobToBadgeHolders(jobRef.id, data.title, uploaderId);
   return jobRef.id;
 }
 
