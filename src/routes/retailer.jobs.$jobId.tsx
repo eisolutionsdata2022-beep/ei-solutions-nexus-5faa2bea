@@ -314,6 +314,17 @@ function JobDetail() {
               )}
             </div>
           )}
+          {job.status === "pending_admin_approval" && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm space-y-1">
+              <p className="font-semibold text-blue-900">⏳ Awaiting Admin Approval</p>
+              <p className="text-xs text-blue-800">
+                Uploader has approved the work. Admin will review and release the payout to the worker.
+              </p>
+              {job.uploaderApprovedAt && (
+                <p className="text-xs text-blue-700">Approved on: {new Date(job.uploaderApprovedAt).toLocaleString()}</p>
+              )}
+            </div>
+          )}
           {job.status === "disputed" && (
             <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm space-y-1">
               <p className="font-semibold flex items-center gap-1 text-amber-900">
