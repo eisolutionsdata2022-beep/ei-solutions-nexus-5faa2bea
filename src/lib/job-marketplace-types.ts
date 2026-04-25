@@ -125,6 +125,7 @@ export interface JobNotificationDoc {
     | "doc_requested"
     | "doc_uploaded"
     | "work_submitted"
+    | "pending_admin_approval"
     | "payment_completed"
     | "dispute_raised"
     | "dispute_resolved";
