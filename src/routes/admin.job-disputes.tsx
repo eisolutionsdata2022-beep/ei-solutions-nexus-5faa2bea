@@ -24,7 +24,7 @@ import { AlertTriangle, Gavel, Loader2, Plus, Briefcase } from "lucide-react";
 import { FilePreviewList, JobFileUploadField } from "@/components/JobFileUploadField";
 import type { JobDoc, JobMessageDoc, DisputeResolution } from "@/lib/job-marketplace-types";
 import { JOB_CATEGORIES } from "@/lib/job-marketplace-types";
-import { resolveDispute, createAdminJob } from "@/lib/job-marketplace";
+import { resolveDispute, createAdminJob, adminApproveAdminJob } from "@/lib/job-marketplace";
 import { uploadJobFiles } from "@/lib/job-file-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -36,12 +36,14 @@ export const Route = createFileRoute("/admin/job-disputes")({
 function AdminJobDisputes() {
   const { appUser } = useAuth();
   const [jobs, setJobs] = useState<JobDoc[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<JobDoc[]>([]);
   const [selected, setSelected] = useState<JobDoc | null>(null);
   const [messages, setMessages] = useState<JobMessageDoc[]>([]);
   const [resolution, setResolution] = useState<DisputeResolution>("release_worker");
   const [splitPct, setSplitPct] = useState("50");
   const [adminNote, setAdminNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [approving, setApproving] = useState<string | null>(null);
 
   // Admin-post-job form
   const [postOpen, setPostOpen] = useState(false);
