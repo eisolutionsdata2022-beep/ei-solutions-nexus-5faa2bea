@@ -677,3 +677,49 @@ export async function resolveDispute(
       : `Dispute resolved by admin`,
   });
 }
+
+/* -------------------- Admin-posted job approval -------------------- */
+
+import { creditWorkerEarnings } from "./worker-earnings";
+
+/**
+ * Admin verifies a worker's submission on an admin-posted job and credits
+ * the fixed `adminPayoutAmount` into the worker's **earnings balance**
+ * (NOT the main wallet — worker must request a transfer to use it).
+ */
+export async function adminApproveAdminJob(jobId: string, adminId: string) {
+  const jobRef = doc(db, "jobs", jobId);
+  const snap = await getDoc(jobRef);
+  if (!snap.exists()) throw new Error("Job not found");
+  const job = { id: snap.id, ...(snap.data() as any) } as JobDoc;
+  if (!job.postedByAdmin) throw new Error("Only admin-posted jobs use this flow");
+  if (job.status !== "submitted") throw new Error("Worker has not submitted yet");
+  if (job.adminApproved) throw new Error("Already approved");
+  if (!job.assignedWorkerId) throw new Error("No worker assigned");
+  const payout = job.adminPayoutAmount || 0;
+  if (payout <= 0) throw new Error("Job is missing the admin payout amount");
+
+  await creditWorkerEarnings(job.assignedWorkerId, payout, {
+    source: "job-payout",
+    description: `Admin-approved payout: ${job.title}`,
+    jobId: job.id,
+    jobTitle: job.title,
+  });
+
+  await updateDoc(jobRef, {
+    status: "completed",
+    adminApproved: true,
+    adminApprovedAt: new Date().toISOString(),
+    adminApprovedBy: adminId,
+    workerNet: payout,
+    updatedAt: new Date().toISOString(),
+  });
+
+  await notifyUser({
+    userId: job.assignedWorkerId,
+    type: "payment_completed",
+    jobId: job.id,
+    jobTitle: job.title,
+    message: `Admin approved your work — ₹${payout} added to your earnings balance.`,
+  });
+}
