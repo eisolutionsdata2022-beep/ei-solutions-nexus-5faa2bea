@@ -154,6 +154,8 @@ export async function broadcastNewJobToBadgeHolders(
 /**
  * Admin-posted job. No wallet escrow (admin acts as platform operator).
  * Uploader identity is hidden from bidders — listed as "Available Job".
+ * `adminPayoutAmount` = the fixed amount the worker will earn (credited to their
+ * **earnings balance** after admin approves the submission).
  */
 export async function createAdminJob(
   adminId: string,
@@ -165,10 +167,13 @@ export async function createAdminJob(
     budget: number;
     deadline: string;
     requiredDocs: string;
+    adminPayoutAmount: number;
     referenceFiles?: { url: string; name: string; contentType?: string; size?: number }[];
   }
 ): Promise<string> {
   if (data.budget < 50) throw new Error("Minimum budget is ₹50");
+  if (!data.adminPayoutAmount || data.adminPayoutAmount <= 0)
+    throw new Error("Worker payout amount is required");
   const jobRef = await addDoc(collection(db, "jobs"), {
     ...data,
     referenceFiles: data.referenceFiles || [],
