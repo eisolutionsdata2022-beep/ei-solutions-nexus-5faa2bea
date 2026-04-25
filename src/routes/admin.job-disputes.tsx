@@ -154,11 +154,90 @@ function AdminJobDisputes() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Gavel className="w-5 h-5 text-primary" />
         <h1 className="text-2xl font-bold">Job Disputes</h1>
         <Badge variant="secondary">{jobs.length} pending</Badge>
+        <div className="ml-auto">
+          <Button onClick={() => setPostOpen(true)} className="gap-1">
+            <Plus className="w-4 h-4" /> Post New Job
+          </Button>
+        </div>
       </div>
+
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="py-3 text-xs text-muted-foreground flex items-start gap-2">
+          <Briefcase className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+          <span>
+            <strong className="text-foreground">Admin job posting:</strong> jobs you post here are listed as
+            <em> Available Job</em> — uploader identity is hidden. Every Work-Badge holder is auto-notified
+            and can place a bid. Contact details are revealed only to the worker whose bid you accept.
+          </span>
+        </CardContent>
+      </Card>
+
+      {/* Post Job Dialog */}
+      <Dialog open={postOpen} onOpenChange={setPostOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5" /> Post New Job (as Admin)
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAdminPost} className="space-y-3">
+            <div>
+              <Label>Title *</Label>
+              <Input required value={pTitle} onChange={(e) => setPTitle(e.target.value)} />
+            </div>
+            <div>
+              <Label>Description *</Label>
+              <Textarea required rows={4} value={pDesc} onChange={(e) => setPDesc(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Category *</Label>
+                <Select value={pCategory} onValueChange={(v) => setPCategory(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {JOB_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Number of Pages</Label>
+                <Input type="number" value={pPages} onChange={(e) => setPPages(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Budget (₹) *</Label>
+                <Input required type="number" min={50} value={pBudget} onChange={(e) => setPBudget(e.target.value)} />
+              </div>
+              <div>
+                <Label>Deadline *</Label>
+                <Input required type="date" value={pDeadline} onChange={(e) => setPDeadline(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Required Documents (text)</Label>
+              <Textarea rows={2} value={pReqDocs} onChange={(e) => setPReqDocs(e.target.value)} />
+            </div>
+            <div>
+              <Label>Reference Files (optional)</Label>
+              <p className="text-[11px] text-muted-foreground mb-1">
+                Sample files / briefs visible to bidders & assigned worker.
+              </p>
+              <JobFileUploadField files={pFiles} onChange={setPFiles} />
+            </div>
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs p-2 rounded">
+              ✅ No wallet escrow needed — admin-posted job. Notification will be broadcast to all Work-Badge holders.
+            </div>
+            <Button type="submit" className="w-full" disabled={posting}>
+              {posting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Posting...</> : "Post Job & Notify Workers"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {jobs.length === 0 ? (
         <Card>
