@@ -104,6 +104,35 @@ function ReferralPanel() {
     }
   };
 
+  const pendingRequest = transferRequests.find((r) => r.status === "pending");
+
+  const handleSubmitTransfer = async () => {
+    if (!appUser || transferring) return;
+    const amt = Math.floor(Number(transferAmount));
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    setTransferring(true);
+    try {
+      await requestTransferToMainWallet({
+        uid: appUser.uid,
+        userName: appUser.name,
+        userEmail: appUser.email,
+        amount: amt,
+        userNote: transferNote.trim(),
+      });
+      toast.success("Transfer request sent — awaiting admin approval");
+      setTransferOpen(false);
+      setTransferAmount("");
+      setTransferNote("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send request");
+    } finally {
+      setTransferring(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Hero */}
