@@ -127,6 +127,8 @@ export interface ActivationResult {
   alreadyActivated: boolean;
   newBalance: number;
   referrerPaid: boolean;
+  referrerUid?: string;
+  referrerReward?: number;
 }
 
 export async function atomicReferralActivation(args: {
