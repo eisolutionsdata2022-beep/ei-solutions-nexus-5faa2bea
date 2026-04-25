@@ -24,7 +24,7 @@ import { AlertTriangle, Gavel, Loader2, Plus, Briefcase } from "lucide-react";
 import { FilePreviewList, JobFileUploadField } from "@/components/JobFileUploadField";
 import type { JobDoc, JobMessageDoc, DisputeResolution } from "@/lib/job-marketplace-types";
 import { JOB_CATEGORIES } from "@/lib/job-marketplace-types";
-import { resolveDispute, createAdminJob } from "@/lib/job-marketplace";
+import { resolveDispute, createAdminJob, adminApproveAdminJob } from "@/lib/job-marketplace";
 import { uploadJobFiles } from "@/lib/job-file-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -36,12 +36,14 @@ export const Route = createFileRoute("/admin/job-disputes")({
 function AdminJobDisputes() {
   const { appUser } = useAuth();
   const [jobs, setJobs] = useState<JobDoc[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<JobDoc[]>([]);
   const [selected, setSelected] = useState<JobDoc | null>(null);
   const [messages, setMessages] = useState<JobMessageDoc[]>([]);
   const [resolution, setResolution] = useState<DisputeResolution>("release_worker");
   const [splitPct, setSplitPct] = useState("50");
   const [adminNote, setAdminNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [approving, setApproving] = useState<string | null>(null);
 
   // Admin-post-job form
   const [postOpen, setPostOpen] = useState(false);
@@ -51,6 +53,7 @@ function AdminJobDisputes() {
   const [pCategory, setPCategory] = useState<typeof JOB_CATEGORIES[number]>(JOB_CATEGORIES[0]);
   const [pPages, setPPages] = useState("");
   const [pBudget, setPBudget] = useState("");
+  const [pPayout, setPPayout] = useState("");
   const [pDeadline, setPDeadline] = useState("");
   const [pReqDocs, setPReqDocs] = useState("");
   const [pFiles, setPFiles] = useState<File[]>([]);
@@ -76,6 +79,7 @@ function AdminJobDisputes() {
         category: pCategory,
         pages: pPages ? Number(pPages) : undefined,
         budget: Number(pBudget),
+        adminPayoutAmount: Number(pPayout),
         deadline: pDeadline,
         requiredDocs: pReqDocs,
         referenceFiles: uploaded.map((u) => ({
@@ -84,7 +88,7 @@ function AdminJobDisputes() {
       });
       toast.success("Job posted! All Work-Badge holders have been notified.");
       setPostOpen(false);
-      setPTitle(""); setPDesc(""); setPPages(""); setPBudget(""); setPDeadline("");
+      setPTitle(""); setPDesc(""); setPPages(""); setPBudget(""); setPPayout(""); setPDeadline("");
       setPReqDocs(""); setPFiles([]);
     } catch (err: any) {
       toast.error(err.message || "Failed to post job");
@@ -107,6 +111,38 @@ function AdminJobDisputes() {
     );
     return unsub;
   }, []);
+
+  // Admin-posted jobs awaiting admin approval (status=submitted, postedByAdmin=true)
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(
+        collection(db, "jobs"),
+        where("postedByAdmin", "==", true),
+        where("status", "==", "submitted")
+      ),
+      (snap) => {
+        const list: JobDoc[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+        list.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+        setPendingApprovals(list);
+      }
+    );
+    return unsub;
+  }, []);
+
+  const handleApprovePayout = async (job: JobDoc) => {
+    if (!appUser) return;
+    if (!confirm(`Approve and credit ₹${job.adminPayoutAmount} to ${job.assignedWorkerName}'s earnings?`)) return;
+    setApproving(job.id);
+    try {
+      await adminApproveAdminJob(job.id, appUser.uid);
+      toast.success("Payout credited to worker's earnings balance");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve");
+    } finally {
+      setApproving(null);
+    }
+  };
 
   useEffect(() => {
     if (!selected) {
@@ -210,13 +246,26 @@ function AdminJobDisputes() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Budget (₹) *</Label>
-                <Input required type="number" min={50} value={pBudget} onChange={(e) => setPBudget(e.target.value)} />
+                <Label>Worker Payout (₹) *</Label>
+                <Input
+                  required type="number" min={1}
+                  value={pPayout}
+                  onChange={(e) => setPPayout(e.target.value)}
+                  placeholder="Amount worker earns"
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Credited to the worker's earnings balance after you approve their submission.
+                </p>
               </div>
               <div>
-                <Label>Deadline *</Label>
-                <Input required type="date" value={pDeadline} onChange={(e) => setPDeadline(e.target.value)} />
+                <Label>Total Budget (₹) *</Label>
+                <Input required type="number" min={50} value={pBudget} onChange={(e) => setPBudget(e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Internal reference only.</p>
               </div>
+            </div>
+            <div>
+              <Label>Deadline *</Label>
+              <Input required type="date" value={pDeadline} onChange={(e) => setPDeadline(e.target.value)} />
             </div>
             <div>
               <Label>Required Documents (text)</Label>
@@ -238,6 +287,49 @@ function AdminJobDisputes() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Pending admin-job approvals */}
+      {pendingApprovals.length > 0 && (
+        <Card className="border-emerald-300 bg-emerald-50/40">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-emerald-900">
+              ✅ Pending Worker Approvals
+              <Badge variant="secondary">{pendingApprovals.length}</Badge>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Worker has submitted the work. Verify and approve to credit their earnings balance.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {pendingApprovals.map((j) => (
+              <div key={j.id} className="border rounded p-3 bg-background flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm">{j.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {j.category} • Worker:{" "}
+                    <Link to="/worker/$workerId" params={{ workerId: j.assignedWorkerId || "" }} className="text-primary underline">
+                      {j.assignedWorkerName}
+                    </Link>
+                    {" "}• Payout <strong className="text-foreground">₹{j.adminPayoutAmount}</strong>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/retailer/jobs/$jobId" params={{ jobId: j.id }}>Review</Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprovePayout(j)}
+                    disabled={approving === j.id}
+                  >
+                    {approving === j.id ? <Loader2 className="w-4 h-4 animate-spin" /> : `Approve ₹${j.adminPayoutAmount}`}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {jobs.length === 0 ? (
         <Card>
