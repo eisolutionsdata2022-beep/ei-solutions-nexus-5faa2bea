@@ -278,15 +278,7 @@ function JobDetail() {
             <div>
               <CardTitle>{job.title}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {job.category}
-                {(() => {
-                  // Hide uploader identity from non-assigned workers / bidders.
-                  // Only the uploader, the assigned worker, or admin can see who posted it.
-                  const showUploader =
-                    !job.postedByAdmin && (isUploader || isWorker || isAdmin);
-                  if (showUploader) return <> • Posted by {job.uploaderName}</>;
-                  return <> • <span className="italic">Available Job</span></>;
-                })()}
+                {job.category} • Posted by {job.uploaderName}
                 {job.assignedWorkerId && (
                   <> • Worker: <Link to="/worker/$workerId" params={{ workerId: job.assignedWorkerId }} className="text-primary underline">{job.assignedWorkerName}</Link></>
                 )}
@@ -302,13 +294,6 @@ function JobDetail() {
             <div><p className="text-xs text-muted-foreground">Deadline</p><p className="font-semibold">{job.deadline}</p></div>
             {job.pages ? <div><p className="text-xs text-muted-foreground">Pages</p><p className="font-semibold">{job.pages}</p></div> : null}
             {job.finalBidAmount ? <div><p className="text-xs text-muted-foreground">Accepted Bid</p><p className="font-bold text-primary">₹{job.finalBidAmount}</p></div> : null}
-            {job.postedByAdmin && job.adminPayoutAmount ? (
-              <div className="col-span-2 sm:col-span-4 rounded-lg border border-emerald-300 bg-emerald-50 p-2">
-                <p className="text-[11px] text-emerald-700 font-semibold uppercase tracking-wide">Fixed Worker Payout</p>
-                <p className="text-lg font-extrabold text-emerald-900">₹{job.adminPayoutAmount}</p>
-                <p className="text-[10px] text-emerald-700">Credited to your earnings balance after admin approves your submission.</p>
-              </div>
-            ) : null}
           </div>
           {job.requiredDocs && (
             <div className="bg-muted/50 p-2 rounded text-xs"><strong>Required docs:</strong> {job.requiredDocs}</div>
@@ -357,18 +342,13 @@ function JobDetail() {
         {isUploader && job.status === "doc_requested" && (
           <Button onClick={() => setDocUploadOpen(true)}>Upload Documents</Button>
         )}
-        {isUploader && job.status === "submitted" && !job.postedByAdmin && (
+        {isUploader && job.status === "submitted" && (
           <>
             <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
             <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
               <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
             </Button>
           </>
-        )}
-        {isUploader && job.status === "submitted" && job.postedByAdmin && (
-          <Badge variant="secondary" className="px-3 py-1.5 text-sm">
-            ⏳ Awaiting admin verification — approve from Job Disputes page
-          </Badge>
         )}
         {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
           <Button onClick={() => setRatingOpen(true)} variant="default">

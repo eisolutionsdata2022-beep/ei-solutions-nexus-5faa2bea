@@ -7,12 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
   Copy, Share2, Users, IndianRupee, Gift, Sparkles, Trophy,
-  Coins, Gamepad2, Wallet, ArrowRight, Briefcase, ArrowUpRight, Clock,
+  Coins, Gamepad2, Wallet, ArrowRight,
 } from "lucide-react";
 import {
   getOrCreateReferralCode,
@@ -28,15 +24,6 @@ import {
   type GamePlay,
   type GameStats,
 } from "@/lib/games-firebase";
-import {
-  subscribeWorkerEarnings,
-  subscribeEarningsLedger,
-  subscribeMyTransferRequests,
-  requestEarningsTransfer,
-  type WorkerEarningsDoc,
-  type EarningsLedgerEntry,
-  type EarningsTransferRequest,
-} from "@/lib/worker-earnings";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TreasureBox } from "@/components/games/TreasureBox";
@@ -55,12 +42,6 @@ function ReferralPanel() {
   const [payouts, setPayouts] = useState<ReferralPayout[]>([]);
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
-  const [earnings, setEarnings] = useState<WorkerEarningsDoc | null>(null);
-  const [ledger, setLedger] = useState<EarningsLedgerEntry[]>([]);
-  const [transferReqs, setTransferReqs] = useState<EarningsTransferRequest[]>([]);
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [transferAmount, setTransferAmount] = useState("");
-  const [submittingTransfer, setSubmittingTransfer] = useState(false);
 
   useEffect(() => {
     if (!appUser?.uid) return;
@@ -74,40 +55,13 @@ function ReferralPanel() {
       // Refresh aggregate stats whenever new plays arrive
       getGameStats(appUser.uid).then(setGameStats);
     });
-    const u4 = subscribeWorkerEarnings(appUser.uid, setEarnings);
-    const u5 = subscribeEarningsLedger(appUser.uid, setLedger);
-    const u6 = subscribeMyTransferRequests(appUser.uid, setTransferReqs);
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
+    return () => { u1(); u2(); u3(); };
   }, [appUser?.uid]);
 
   const link = typeof window !== "undefined" && code ? `${window.location.origin}/register?ref=${code}` : "";
   const totalReferralEarnings = payouts.reduce((s, p) => s + (p.referrerReward || 0), 0);
   const activatedCount = refs.filter((r) => r.activated).length;
-  const earningsBalance = earnings?.balance || 0;
-  const lifetimeEarned = earnings?.lifetimeEarned || 0;
-  const pendingTransfer = transferReqs
-    .filter((r) => r.status === "pending")
-    .reduce((s, r) => s + r.amount, 0);
-  const totalEarnings = totalReferralEarnings + gameStats.totalRewards + lifetimeEarned;
-
-  const submitTransferRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!appUser || submittingTransfer) return;
-    const amt = Number(transferAmount);
-    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
-    setSubmittingTransfer(true);
-    try {
-      await requestEarningsTransfer(appUser.uid, appUser.email, appUser.name || appUser.email, amt);
-      toast.success("Transfer request sent! Admin will review.");
-      setTransferOpen(false);
-      setTransferAmount("");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit request");
-    } finally {
-      setSubmittingTransfer(false);
-    }
-  };
-
+  const totalEarnings = totalReferralEarnings + gameStats.totalRewards;
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -156,19 +110,15 @@ function ReferralPanel() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile icon={<Users className="h-5 w-5" />} label="Referrals" value={refs.length} tint="blue" />
         <StatTile icon={<Gift className="h-5 w-5" />} label="Activated" value={activatedCount} tint="green" />
         <StatTile icon={<IndianRupee className="h-5 w-5" />} label="Referral ₹" value={`₹${totalReferralEarnings.toFixed(0)}`} tint="gold" />
         <StatTile icon={<Coins className="h-5 w-5" />} label="Game ₹" value={`₹${gameStats.totalRewards.toFixed(0)}`} tint="violet" />
-        <StatTile icon={<Briefcase className="h-5 w-5" />} label="Job Earnings" value={`₹${earningsBalance.toFixed(0)}`} tint="emerald" />
       </div>
 
-      <Tabs defaultValue="earnings" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/60">
-          <TabsTrigger value="earnings" className="gap-2 text-base">
-            <Briefcase className="h-4 w-4" /> Job Earnings
-          </TabsTrigger>
+      <Tabs defaultValue="games" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60">
           <TabsTrigger value="games" className="gap-2 text-base">
             <Gamepad2 className="h-4 w-4" /> Daily Games
           </TabsTrigger>
@@ -176,141 +126,6 @@ function ReferralPanel() {
             <Users className="h-4 w-4" /> Refer & Earn
           </TabsTrigger>
         </TabsList>
-
-        {/* JOB EARNINGS */}
-        <TabsContent value="earnings" className="space-y-6 mt-6">
-          <Card className="overflow-hidden border-2 border-emerald-300/40">
-            <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
-                    <Briefcase className="h-3.5 w-3.5" /> Approved Job Payouts
-                  </div>
-                  <p className="mt-3 text-sm opacity-90">Available to transfer</p>
-                  <p className="text-4xl font-extrabold tracking-tight">₹{earningsBalance.toFixed(2)}</p>
-                  <p className="mt-1 text-xs opacity-80">
-                    Lifetime earned: ₹{lifetimeEarned.toFixed(2)}
-                    {pendingTransfer > 0 && <> • In review: ₹{pendingTransfer.toFixed(2)}</>}
-                  </p>
-                </div>
-                <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="lg"
-                      variant="secondary"
-                      className="bg-white text-emerald-700 hover:bg-white/90 font-semibold"
-                      disabled={earningsBalance <= 0}
-                    >
-                      <ArrowUpRight className="h-4 w-4 mr-1" /> Transfer to Wallet
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Request Transfer to Main Wallet</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={submitTransferRequest} className="space-y-3">
-                      <div>
-                        <Label>Amount (₹)</Label>
-                        <Input
-                          type="number"
-                          required
-                          min={1}
-                          max={earningsBalance}
-                          value={transferAmount}
-                          onChange={(e) => setTransferAmount(e.target.value)}
-                          placeholder={`Up to ₹${earningsBalance}`}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Available balance: <strong>₹{earningsBalance.toFixed(2)}</strong>
-                        </p>
-                      </div>
-                      <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 rounded">
-                        ℹ️ Admin will review and approve. Once approved, the amount moves to your main wallet and becomes spendable.
-                      </div>
-                      <Button type="submit" disabled={submittingTransfer} className="w-full">
-                        {submittingTransfer ? "Submitting..." : "Send Request"}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-          </Card>
-
-          {/* Transfer requests history */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-4 w-4" /> Transfer Requests ({transferReqs.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {transferReqs.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  No transfer requests yet.
-                </p>
-              ) : (
-                <div className="divide-y">
-                  {transferReqs.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between py-3 text-sm">
-                      <div>
-                        <p className="font-semibold">₹{r.amount.toFixed(2)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(r.createdAt).toLocaleString()}
-                          {r.remarks && <> • {r.remarks}</>}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}
-                      >
-                        {r.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Earnings ledger */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Trophy className="h-4 w-4 text-amber-500" /> Earnings History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ledger.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No job earnings yet. Complete admin-posted jobs to start earning.
-                </p>
-              ) : (
-                <div className="divide-y">
-                  {ledger.map((l) => (
-                    <div key={l.id} className="flex items-center justify-between py-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{l.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {l.jobTitle && <>{l.jobTitle} • </>}
-                          {new Date(l.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge
-                        className={
-                          l.type === "credit"
-                            ? "bg-green-600 hover:bg-green-600"
-                            : "bg-slate-500 hover:bg-slate-500"
-                        }
-                      >
-                        {l.type === "credit" ? "+" : "−"}₹{l.amount.toFixed(0)}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* GAMES */}
         <TabsContent value="games" className="space-y-6 mt-6">
@@ -449,14 +264,13 @@ function StatTile({
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  tint: "blue" | "green" | "gold" | "violet" | "emerald";
+  tint: "blue" | "green" | "gold" | "violet";
 }) {
   const tints: Record<string, string> = {
     blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     green: "bg-green-500/10 text-green-600 dark:text-green-400",
     gold: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     violet: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   };
   return (
     <Card>

@@ -16,7 +16,6 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { atomicCredit, atomicDebit } from "./firebase-transactions";
-import { creditWorkerEarnings } from "./worker-earnings";
 import {
   DEFAULT_COMMISSION_PERCENT,
   DEFAULT_WORKER_SECURITY_PERCENT,
@@ -120,75 +119,6 @@ export async function notifyUser(
 
 /* -------------------- Job lifecycle (with escrow) -------------------- */
 
-/**
- * Broadcasts a "new_job" notification to every user who currently holds a Work Badge.
- * Skips the uploader themselves. Best-effort — failures are logged but do not throw.
- */
-export async function broadcastNewJobToBadgeHolders(
-  jobId: string,
-  jobTitle: string,
-  excludeUserId?: string
-) {
-  try {
-    const snap = await getDocs(
-      query(collection(db, "users"), where("workBadge", "==", true))
-    );
-    const writes: Promise<unknown>[] = [];
-    snap.forEach((d) => {
-      if (excludeUserId && d.id === excludeUserId) return;
-      writes.push(
-        notifyUser({
-          userId: d.id,
-          type: "new_job",
-          jobId,
-          jobTitle,
-          message: `New available job: ${jobTitle}. Place your bid now!`,
-        })
-      );
-    });
-    await Promise.allSettled(writes);
-  } catch (e) {
-    console.error("broadcastNewJobToBadgeHolders failed", e);
-  }
-}
-
-/**
- * Admin-posted job. No wallet escrow (admin acts as platform operator).
- * Uploader identity is hidden from bidders — listed as "Available Job".
- * `adminPayoutAmount` = the fixed amount the worker will earn (credited to their
- * **earnings balance** after admin approves the submission).
- */
-export async function createAdminJob(
-  adminId: string,
-  data: {
-    title: string;
-    description: string;
-    category: JobCategory;
-    pages?: number;
-    budget: number;
-    deadline: string;
-    requiredDocs: string;
-    adminPayoutAmount: number;
-    referenceFiles?: { url: string; name: string; contentType?: string; size?: number }[];
-  }
-): Promise<string> {
-  if (data.budget < 50) throw new Error("Minimum budget is ₹50");
-  if (!data.adminPayoutAmount || data.adminPayoutAmount <= 0)
-    throw new Error("Worker payout amount is required");
-  const jobRef = await addDoc(collection(db, "jobs"), {
-    ...data,
-    referenceFiles: data.referenceFiles || [],
-    uploaderId: adminId,
-    uploaderName: "EI Solutions (Platform)",
-    postedByAdmin: true,
-    status: "open",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
-  await broadcastNewJobToBadgeHolders(jobRef.id, data.title, adminId);
-  return jobRef.id;
-}
-
 export async function createJobWithEscrow(
   uploaderId: string,
   uploaderName: string,
@@ -219,7 +149,6 @@ export async function createJobWithEscrow(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
-  await broadcastNewJobToBadgeHolders(jobRef.id, data.title, uploaderId);
   return jobRef.id;
 }
 
@@ -676,50 +605,5 @@ export async function resolveDispute(
     message: uploaderRefund > 0
       ? `Dispute resolved: ₹${uploaderRefund} refunded to your wallet`
       : `Dispute resolved by admin`,
-  });
-}
-
-/* -------------------- Admin-posted job approval -------------------- */
-
-
-/**
- * Admin verifies a worker's submission on an admin-posted job and credits
- * the fixed `adminPayoutAmount` into the worker's **earnings balance**
- * (NOT the main wallet — worker must request a transfer to use it).
- */
-export async function adminApproveAdminJob(jobId: string, adminId: string) {
-  const jobRef = doc(db, "jobs", jobId);
-  const snap = await getDoc(jobRef);
-  if (!snap.exists()) throw new Error("Job not found");
-  const job = { id: snap.id, ...(snap.data() as any) } as JobDoc;
-  if (!job.postedByAdmin) throw new Error("Only admin-posted jobs use this flow");
-  if (job.status !== "submitted") throw new Error("Worker has not submitted yet");
-  if (job.adminApproved) throw new Error("Already approved");
-  if (!job.assignedWorkerId) throw new Error("No worker assigned");
-  const payout = job.adminPayoutAmount || 0;
-  if (payout <= 0) throw new Error("Job is missing the admin payout amount");
-
-  await creditWorkerEarnings(job.assignedWorkerId, payout, {
-    source: "job-payout",
-    description: `Admin-approved payout: ${job.title}`,
-    jobId: job.id,
-    jobTitle: job.title,
-  });
-
-  await updateDoc(jobRef, {
-    status: "completed",
-    adminApproved: true,
-    adminApprovedAt: new Date().toISOString(),
-    adminApprovedBy: adminId,
-    workerNet: payout,
-    updatedAt: new Date().toISOString(),
-  });
-
-  await notifyUser({
-    userId: job.assignedWorkerId,
-    type: "payment_completed",
-    jobId: job.id,
-    jobTitle: job.title,
-    message: `Admin approved your work — ₹${payout} added to your earnings balance.`,
   });
 }
