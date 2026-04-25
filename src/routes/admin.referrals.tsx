@@ -35,11 +35,49 @@ function AdminReferralPage() {
   const [cfg, setCfg] = useState<ReferralConfig>(DEFAULT_REFERRAL_CONFIG);
   const [payouts, setPayouts] = useState<ReferralPayout[]>([]);
   const [saving, setSaving] = useState(false);
+  const [transfers, setTransfers] = useState<TransferRequestDoc[]>([]);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
 
   useEffect(() => {
     loadReferralConfig().then(setCfg);
-    return subscribeAllPayouts(setPayouts);
+    const unsubPayouts = subscribeAllPayouts(setPayouts);
+    const unsubTransfers = subscribeAllTransferRequests(setTransfers);
+    return () => { unsubPayouts(); unsubTransfers(); };
   }, []);
+
+  const approve = async (id: string) => {
+    if (!appUser) return;
+    setProcessingId(id);
+    try {
+      await adminApproveTransfer(id, appUser.uid);
+      toast.success("Transfer approved & credited to main wallet");
+    } catch (e: any) {
+      toast.error(e?.message || "Approval failed");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const reject = async () => {
+    if (!appUser || !rejectId) return;
+    if (!rejectNote.trim()) { toast.error("Please add a reason"); return; }
+    setProcessingId(rejectId);
+    try {
+      await adminRejectTransfer(rejectId, appUser.uid, rejectNote.trim());
+      toast.success("Transfer rejected");
+      setRejectId(null);
+      setRejectNote("");
+    } catch (e: any) {
+      toast.error(e?.message || "Reject failed");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const pendingTransfers = transfers.filter(t => t.status === "pending");
+  const processedTransfers = transfers.filter(t => t.status !== "pending");
 
   const save = async () => {
     if (!appUser) return;
