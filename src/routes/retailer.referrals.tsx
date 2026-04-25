@@ -5,10 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Copy, Share2, Users, IndianRupee, Gift, Sparkles, Trophy,
-  Coins, Gamepad2, Wallet, ArrowRight,
+  Coins, Gamepad2, Wallet, ArrowRight, Loader2, ArrowRightLeft,
+  CheckCircle2, Clock, XCircle,
 } from "lucide-react";
 import {
   getOrCreateReferralCode,
@@ -24,6 +30,13 @@ import {
   type GamePlay,
   type GameStats,
 } from "@/lib/games-firebase";
+import {
+  subscribeRewardsBalance,
+  subscribeMyTransferRequests,
+  requestTransferToMainWallet,
+  REWARDS_MIN_TRANSFER,
+  type TransferRequestDoc,
+} from "@/lib/rewards-wallet";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TreasureBox } from "@/components/games/TreasureBox";
