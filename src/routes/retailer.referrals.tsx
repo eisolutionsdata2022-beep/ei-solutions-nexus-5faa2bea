@@ -56,6 +56,14 @@ function ReferralPanel() {
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
 
+  // Rewards wallet (separate from main wallet)
+  const [rewardsBalance, setRewardsBalance] = useState(0);
+  const [transferRequests, setTransferRequests] = useState<TransferRequestDoc[]>([]);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferNote, setTransferNote] = useState("");
+  const [transferring, setTransferring] = useState(false);
+
   useEffect(() => {
     if (!appUser?.uid) return;
     getOrCreateReferralCode(appUser.uid).then(setCode);
@@ -65,10 +73,11 @@ function ReferralPanel() {
     const u2 = subscribeReferrerPayouts(appUser.uid, setPayouts);
     const u3 = subscribeRecentPlays(appUser.uid, (plays) => {
       setRecentPlays(plays);
-      // Refresh aggregate stats whenever new plays arrive
       getGameStats(appUser.uid).then(setGameStats);
     });
-    return () => { u1(); u2(); u3(); };
+    const u4 = subscribeRewardsBalance(appUser.uid, setRewardsBalance);
+    const u5 = subscribeMyTransferRequests(appUser.uid, setTransferRequests);
+    return () => { u1(); u2(); u3(); u4(); u5(); };
   }, [appUser?.uid]);
 
   const link = typeof window !== "undefined" && code ? `${window.location.origin}/register?ref=${code}` : "";
