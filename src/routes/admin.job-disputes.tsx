@@ -212,13 +212,26 @@ function AdminJobDisputes() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Budget (₹) *</Label>
-                <Input required type="number" min={50} value={pBudget} onChange={(e) => setPBudget(e.target.value)} />
+                <Label>Worker Payout (₹) *</Label>
+                <Input
+                  required type="number" min={1}
+                  value={pPayout}
+                  onChange={(e) => setPPayout(e.target.value)}
+                  placeholder="Amount worker earns"
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Credited to the worker's earnings balance after you approve their submission.
+                </p>
               </div>
               <div>
-                <Label>Deadline *</Label>
-                <Input required type="date" value={pDeadline} onChange={(e) => setPDeadline(e.target.value)} />
+                <Label>Total Budget (₹) *</Label>
+                <Input required type="number" min={50} value={pBudget} onChange={(e) => setPBudget(e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Internal reference only.</p>
               </div>
+            </div>
+            <div>
+              <Label>Deadline *</Label>
+              <Input required type="date" value={pDeadline} onChange={(e) => setPDeadline(e.target.value)} />
             </div>
             <div>
               <Label>Required Documents (text)</Label>
