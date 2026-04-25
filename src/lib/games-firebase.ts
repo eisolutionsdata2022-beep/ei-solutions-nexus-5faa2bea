@@ -102,12 +102,12 @@ export async function recordGamePlay(args: {
 
   if (record.reward > 0) {
     try {
-      await atomicCredit(uid, record.reward, {
+      await creditRewards(uid, record.reward, {
         source: `game_${game}`,
         description: `${GAME_LABEL[game]} reward — ${label}`,
       });
     } catch (err) {
-      console.error("Failed to credit game reward", err);
+      console.error("Failed to credit game reward to rewards wallet", err);
     }
   }
 
