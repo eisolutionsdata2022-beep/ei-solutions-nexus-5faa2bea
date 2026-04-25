@@ -112,6 +112,38 @@ function AdminJobDisputes() {
     return unsub;
   }, []);
 
+  // Admin-posted jobs awaiting admin approval (status=submitted, postedByAdmin=true)
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(
+        collection(db, "jobs"),
+        where("postedByAdmin", "==", true),
+        where("status", "==", "submitted")
+      ),
+      (snap) => {
+        const list: JobDoc[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+        list.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+        setPendingApprovals(list);
+      }
+    );
+    return unsub;
+  }, []);
+
+  const handleApprovePayout = async (job: JobDoc) => {
+    if (!appUser) return;
+    if (!confirm(`Approve and credit ₹${job.adminPayoutAmount} to ${job.assignedWorkerName}'s earnings?`)) return;
+    setApproving(job.id);
+    try {
+      await adminApproveAdminJob(job.id, appUser.uid);
+      toast.success("Payout credited to worker's earnings balance");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve");
+    } finally {
+      setApproving(null);
+    }
+  };
+
   useEffect(() => {
     if (!selected) {
       setMessages([]);
