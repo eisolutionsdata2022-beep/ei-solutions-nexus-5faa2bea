@@ -226,12 +226,12 @@ function JobDetail() {
   };
 
   const handleComplete = async () => {
-    if (!job || busy) return;
-    if (!confirm("Mark complete and release payment?")) return;
+    if (!job || !appUser || busy) return;
+    if (!confirm("Approve this work and submit for admin payout? Funds will be released to the worker after admin review.")) return;
     setBusy(true);
     try {
-      await completeJobAndRelease(job.id);
-      toast.success("Payment released! Please rate your worker.");
+      await uploaderApproveSubmission(job.id, appUser.uid);
+      toast.success("Approved! Admin will release the payout shortly.");
       setTimeout(() => setRatingOpen(true), 500);
     } catch (err: any) { toast.error(err.message); }
     finally { setBusy(false); }
