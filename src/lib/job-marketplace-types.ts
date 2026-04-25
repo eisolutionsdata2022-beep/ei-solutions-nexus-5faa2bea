@@ -38,6 +38,8 @@ export interface JobDoc {
   id: string;
   uploaderId: string;
   uploaderName: string;
+  /** True when posted by an admin on behalf of the platform — uploader identity is hidden from bidders/workers. */
+  postedByAdmin?: boolean;
   title: string;
   description: string;
   category: JobCategory;
