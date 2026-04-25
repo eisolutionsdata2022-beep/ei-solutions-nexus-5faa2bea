@@ -350,13 +350,18 @@ function JobDetail() {
         {isUploader && job.status === "doc_requested" && (
           <Button onClick={() => setDocUploadOpen(true)}>Upload Documents</Button>
         )}
-        {isUploader && job.status === "submitted" && (
+        {isUploader && job.status === "submitted" && !job.postedByAdmin && (
           <>
             <Button onClick={handleComplete} disabled={busy}>Mark Completed & Pay</Button>
             <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
               <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
             </Button>
           </>
+        )}
+        {isUploader && job.status === "submitted" && job.postedByAdmin && (
+          <Badge variant="secondary" className="px-3 py-1.5 text-sm">
+            ⏳ Awaiting admin verification — approve from Job Disputes page
+          </Badge>
         )}
         {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
           <Button onClick={() => setRatingOpen(true)} variant="default">
