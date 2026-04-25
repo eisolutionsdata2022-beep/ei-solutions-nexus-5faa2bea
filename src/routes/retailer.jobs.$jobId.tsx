@@ -369,7 +369,7 @@ function JobDetail() {
         {isUploader && job.status === "completed" && hasRated && (
           <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
         )}
-        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && (
+        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && job.status !== "pending_admin_approval" && (
           <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
         )}
       </div>
