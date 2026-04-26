@@ -140,36 +140,37 @@ function phoneToJid(phone) {
 // Storage bucket and serve from there to keep avatars stable in the inbox.
 const PROFILE_PIC_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+// Build a Firebase Storage download URL using a download token. This works
+// regardless of bucket-level public ACL / UBLA settings — only the token is
+// needed by `<img src>`, no auth headers, no signing, never expires.
+function firebaseDownloadUrl(objectPath, token) {
+  const encoded = encodeURIComponent(objectPath);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encoded}?alt=media&token=${token}`;
+}
+
 async function mirrorProfilePicToStorage(phone, sourceUrl) {
   if (!sourceUrl) return null;
   try {
     const resp = await fetch(sourceUrl);
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.warn('[wa] profilePic fetch', resp.status, 'for', phone);
+      return null;
+    }
     const buf = Buffer.from(await resp.arrayBuffer());
     const contentType = resp.headers.get('content-type') || 'image/jpeg';
     const ext = contentType.includes('png') ? 'png' : 'jpg';
     const objectPath = `whatsappAvatars/${phone}.${ext}`;
     const file = bucket.file(objectPath);
+    const token = crypto.randomUUID();
     await file.save(buf, {
       contentType,
       resumable: false,
-      metadata: { cacheControl: 'public, max-age=86400' },
+      metadata: {
+        cacheControl: 'public, max-age=86400',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
     });
-    // Make publicly readable (storage rules must allow this path or use signed URL)
-    try { await file.makePublic(); } catch (_) { /* bucket may forbid; fallback to signed URL below */ }
-    // Prefer the public URL; fall back to a long-lived signed URL when the
-    // bucket / rules forbid public ACLs.
-    try {
-      const [meta] = await file.getMetadata();
-      if (meta?.acl || meta?.metadata?.firebaseStorageDownloadTokens) {
-        return `https://storage.googleapis.com/${bucket.name}/${objectPath}`;
-      }
-    } catch (_) { /* fall through */ }
-    const [signed] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
-    });
-    return signed;
+    return firebaseDownloadUrl(objectPath, token);
   } catch (e) {
     console.warn('[wa] mirrorProfilePic failed for', phone, e?.message || e);
     return null;
