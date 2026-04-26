@@ -87,6 +87,16 @@ service firebase.storage {
       allow write:  if false;
     }
 
+    // ---------- WhatsApp contact profile pictures --------------------
+    // Path: whatsappAvatars/{phone}.{ext}
+    // Bridge (Admin SDK) mirrors WhatsApp profile pics here so the inbox
+    // can render them with stable URLs (WA's CDN URLs expire in ~24-48h).
+    // Read is public so <img src> works without auth headers.
+    match /whatsappAvatars/{file=**} {
+      allow read:   if true;
+      allow write:  if false;
+    }
+
     // ---------- Default deny -----------------------------------------
     match /{allPaths=**} {
       allow read, write: if false;
