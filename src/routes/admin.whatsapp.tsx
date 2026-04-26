@@ -34,12 +34,14 @@ function AdminWhatsAppPage() {
         <TabsList>
           <TabsTrigger value="connection"><QrCode className="h-4 w-4 mr-1.5" />Connection</TabsTrigger>
           <TabsTrigger value="inbox"><Inbox className="h-4 w-4 mr-1.5" />Inbox</TabsTrigger>
+          <TabsTrigger value="bulk"><Send className="h-4 w-4 mr-1.5" />Bulk Send</TabsTrigger>
           <TabsTrigger value="templates"><MessageSquareQuote className="h-4 w-4 mr-1.5" />Templates</TabsTrigger>
           <TabsTrigger value="drip"><Zap className="h-4 w-4 mr-1.5" />Drip</TabsTrigger>
         </TabsList>
 
         <TabsContent value="connection"><WhatsAppConnectionPanel /></TabsContent>
         <TabsContent value="inbox"><WhatsAppInbox scope="admin" /></TabsContent>
+        <TabsContent value="bulk"><BulkWhatsAppTab appUserUid={user?.uid || ""} /></TabsContent>
         <TabsContent value="templates"><WhatsAppTemplatesManager /></TabsContent>
         <TabsContent value="drip"><DripSequenceManager /></TabsContent>
       </Tabs>
