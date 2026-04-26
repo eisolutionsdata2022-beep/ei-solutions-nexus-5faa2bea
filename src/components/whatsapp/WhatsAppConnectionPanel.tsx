@@ -82,6 +82,21 @@ export function WhatsAppConnectionPanel() {
     } finally { setRestarting(false); }
   };
 
+  const refreshAvatars = async () => {
+    if (!confirm("Re-fetch profile pictures for ALL contacts from WhatsApp? This may take a few minutes.")) return;
+    setRefreshingAvatars(true);
+    try {
+      const res = await refreshWhatsAppAvatars() as any;
+      if (res?.ok) {
+        toast.success(`Avatars refreshed: ${res.updated} updated, ${res.cleared} private/none, ${res.errors} errors (of ${res.total})`);
+      } else {
+        toast.error(res?.error || "Refresh failed");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Refresh failed");
+    } finally { setRefreshingAvatars(false); }
+  };
+
   const ready = session?.ready === true;
   const qrUrl = session?.qrDataUrl;
 
