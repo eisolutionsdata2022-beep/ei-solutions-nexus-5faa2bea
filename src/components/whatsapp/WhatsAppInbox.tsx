@@ -482,3 +482,29 @@ function AckIcon({ ack }: { ack: number | null }) {
   if (ack === 3) return <CheckCheck className="h-3 w-3 text-sky-200" />;
   return null;
 }
+
+function ContactAvatar({ name, picUrl, size = 36 }: { name: string; picUrl?: string | null; size?: number }) {
+  const [errored, setErrored] = useState(false);
+  const initial = (name || "?").trim().charAt(0).toUpperCase();
+  const px = `${size}px`;
+  if (picUrl && !errored) {
+    return (
+      <img
+        src={picUrl}
+        alt={name}
+        onError={() => setErrored(true)}
+        style={{ width: px, height: px }}
+        className="rounded-full object-cover shrink-0 border border-border bg-muted"
+        loading="lazy"
+      />
+    );
+  }
+  return (
+    <div
+      style={{ width: px, height: px, fontSize: Math.round(size * 0.4) }}
+      className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0 font-semibold"
+    >
+      {initial}
+    </div>
+  );
+}
