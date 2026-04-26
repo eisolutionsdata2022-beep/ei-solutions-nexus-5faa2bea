@@ -189,6 +189,13 @@ export function WhatsAppInbox({ scope }: Props) {
               className="pl-7 h-8 text-xs"
             />
           </div>
+          <div className="mt-2 flex justify-end">
+            <NewChatDialog
+              scope={scope}
+              staffId={appUser?.uid}
+              onPick={handleNewChat}
+            />
+          </div>
         </CardHeader>
         <div className="flex-1 overflow-y-auto">
           {filteredContacts.length === 0 && (
