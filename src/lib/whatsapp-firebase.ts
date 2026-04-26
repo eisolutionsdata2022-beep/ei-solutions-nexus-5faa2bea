@@ -62,7 +62,7 @@ export function subscribeMessages(contactPhone: string, cb: (rows: WaMessage[]) 
 }
 
 export async function markContactRead(phone: string) {
-  await updateDoc(doc(db, "whatsappContacts", phone), { unreadCount: 0 });
+  await setDoc(doc(db, "whatsappContacts", phone), { unreadCount: 0 }, { merge: true });
 }
 
 export async function assignContact(
