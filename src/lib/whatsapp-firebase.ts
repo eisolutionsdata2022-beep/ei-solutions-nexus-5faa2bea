@@ -76,6 +76,47 @@ export async function assignContact(
   });
 }
 
+/**
+ * Ensure a contact document exists for a given phone (creates a draft if missing).
+ * Used when staff/admin starts a new chat from CRM/uploaded leads.
+ * Does NOT overwrite existing contact data — only fills in missing fields.
+ */
+export async function ensureContact(input: {
+  phone: string;
+  displayName?: string;
+  assignedTo?: string | null;
+  assignedToName?: string | null;
+}) {
+  const ref = doc(db, "whatsappContacts", input.phone);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const cur = snap.data() as any;
+    const patch: Record<string, any> = {};
+    if (input.assignedTo && !cur.assignedTo) {
+      patch.assignedTo = input.assignedTo;
+      patch.assignedToName = input.assignedToName || null;
+    }
+    if (input.displayName && !cur.displayName) {
+      patch.displayName = input.displayName;
+    }
+    if (Object.keys(patch).length > 0) {
+      await updateDoc(ref, patch);
+    }
+    return;
+  }
+  await setDoc(ref, {
+    phone: input.phone,
+    displayName: input.displayName || input.phone,
+    lastMessage: "",
+    lastMessageAt: Date.now(),
+    unreadCount: 0,
+    assignedTo: input.assignedTo || null,
+    assignedToName: input.assignedToName || null,
+    createdAt: serverTimestamp(),
+    isDraft: true,
+  });
+}
+
 // ── Campaigns ──────────────────────────────────────────────────────────
 export function subscribeCampaigns(cb: (rows: WaCampaign[]) => void) {
   const q = query(
