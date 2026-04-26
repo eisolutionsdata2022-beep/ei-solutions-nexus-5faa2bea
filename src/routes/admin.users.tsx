@@ -151,9 +151,19 @@ function AdminUsers() {
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex gap-1 justify-end">
+                      <div className="flex gap-1 justify-end flex-wrap">
                         <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDetail(u)}>
                           <Eye className="w-3 h-3" /> View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => openRoleChange(u)}
+                          disabled={u.role === "operator" || u.role === "staffSub"}
+                          title={u.role === "operator" || u.role === "staffSub" ? "Sub-accounts managed via parent retailer" : "Change user role"}
+                        >
+                          <UserCog className="w-3 h-3" /> Role
                         </Button>
                         <Button
                           size="sm"
