@@ -194,6 +194,58 @@ function AdminUsers() {
         />
       )}
 
+      <Dialog open={!!roleUser} onOpenChange={(o) => !o && setRoleUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5" /> Change Role
+            </DialogTitle>
+            <DialogDescription>
+              Upgrade or reassign <b>{roleUser?.name || roleUser?.email}</b> to a different role. The user will see the new dashboard on their next login (or page refresh).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="text-sm">
+              <p className="text-muted-foreground">Current role</p>
+              <Badge variant="secondary" className="capitalize mt-1">{roleUser?.role}</Badge>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New role</label>
+              <Select value={newRole} onValueChange={(v) => setNewRole(v as UserRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      <div className="flex flex-col py-0.5">
+                        <span className="font-medium">{r.label}</span>
+                        <span className="text-xs text-muted-foreground">{r.hint}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newRole === "admin" && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                ⚠️ Admin role grants full platform access including user management, payouts, and settings. Only assign to trusted personnel.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleUser(null)} disabled={savingRole}>
+              Cancel
+            </Button>
+            <Button onClick={saveRole} disabled={savingRole || newRole === roleUser?.role}>
+              {savingRole ? "Saving..." : "Update Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{detail?.name || detail?.email}</DialogTitle></DialogHeader>
