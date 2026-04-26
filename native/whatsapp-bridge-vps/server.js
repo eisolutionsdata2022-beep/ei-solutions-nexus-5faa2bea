@@ -644,6 +644,40 @@ app.post('/restart', verifyHmac, async (req, res) => {
   }
 });
 
+// Refresh ALL contact profile pictures + clear cached check timestamps so the
+// next inbound message also re-fetches. Useful after the URL-format fix to
+// rebuild stale signed URLs that no longer load in the inbox.
+app.post('/refresh-avatars', verifyHmac, async (_req, res) => {
+  if (!waReady || !waClient) {
+    return res.status(503).json({ ok: false, error: 'WA not ready' });
+  }
+  try {
+    const snap = await contactsCol.get();
+    let updated = 0, cleared = 0, errors = 0;
+    for (const doc of snap.docs) {
+      const phone = doc.id;
+      const jid = doc.data()?.jid || `${phone}@c.us`;
+      try {
+        const waUrl = await waClient.getProfilePicUrl(jid).catch(() => null);
+        const stableUrl = waUrl ? await mirrorProfilePicToStorage(phone, waUrl) : null;
+        await doc.ref.set({
+          profilePicUrl: stableUrl || null,
+          profilePicCheckedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        if (stableUrl) updated++; else cleared++;
+      } catch (e) {
+        errors++;
+        console.warn('[refresh-avatars]', phone, e.message);
+      }
+      // Throttle to avoid hammering WhatsApp's CDN
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    res.json({ ok: true, total: snap.size, updated, cleared, errors });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.post('/send', verifyHmac, async (req, res) => {
   if (!waReady) return res.status(503).json({ ok: false, error: 'WA not ready' });
   const { phone, body, mediaBase64, mediaMime, caption } = req.body || {};
