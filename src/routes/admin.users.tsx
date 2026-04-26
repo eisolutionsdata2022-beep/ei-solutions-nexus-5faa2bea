@@ -1,18 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { ShieldCheck, Eye, Search } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { ShieldCheck, Eye, Search, UserCog } from "lucide-react";
+import { toast } from "sonner";
 import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
 import { getEditHistory, getRecentLogins, type UserEditLog } from "@/lib/profile-edits";
 import { getStaffCounts } from "@/lib/retailer-staff";
+import type { UserRole } from "@/lib/auth-context";
+
+const ASSIGNABLE_ROLES: { value: UserRole; label: string; hint: string }[] = [
+  { value: "retailer", label: "Retailer", hint: "Franchise partner / shop owner" },
+  { value: "trainer", label: "Trainer", hint: "Conducts training sessions, earns per session" },
+  { value: "staff", label: "Staff", hint: "Internal staff — CRM, services, support" },
+  { value: "manager", label: "Manager", hint: "Internal manager — staff-level access + reports" },
+  { value: "distributor", label: "Distributor", hint: "Earns override commissions on retailers" },
+  { value: "admin", label: "Admin", hint: "⚠️ Full platform access — use with care" },
+];
 
 export const Route = createFileRoute("/admin/users")({
   ssr: false,
@@ -27,6 +41,9 @@ function AdminUsers() {
   const [logins, setLogins] = useState<{ id: string; timestamp: string }[]>([]);
   const [staffCounts, setStaffCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
+  const [roleUser, setRoleUser] = useState<any | null>(null);
+  const [newRole, setNewRole] = useState<UserRole>("retailer");
+  const [savingRole, setSavingRole] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -53,6 +70,37 @@ function AdminUsers() {
     setDetail(u);
     setHistory(await getEditHistory(u.id).catch(() => []));
     setLogins(await getRecentLogins(u.id, 20).catch(() => []));
+  };
+
+  const openRoleChange = (u: any) => {
+    setRoleUser(u);
+    setNewRole((u.role as UserRole) || "retailer");
+  };
+
+  const saveRole = async () => {
+    if (!roleUser) return;
+    if (newRole === roleUser.role) {
+      toast.info("Role unchanged");
+      return;
+    }
+    if (roleUser.role === "operator" || roleUser.role === "staffSub") {
+      toast.error("Sub-accounts (operator / staffSub) must be managed from the parent retailer's staff page.");
+      return;
+    }
+    setSavingRole(true);
+    try {
+      await updateDoc(doc(db, "users", roleUser.id), {
+        role: newRole,
+        roleUpdatedAt: new Date().toISOString(),
+      });
+      setUsers((prev) => prev.map((x) => (x.id === roleUser.id ? { ...x, role: newRole } : x)));
+      toast.success(`Role updated to ${newRole}`);
+      setRoleUser(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update role");
+    } finally {
+      setSavingRole(false);
+    }
   };
 
   return (
@@ -103,9 +151,19 @@ function AdminUsers() {
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex gap-1 justify-end">
+                      <div className="flex gap-1 justify-end flex-wrap">
                         <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openDetail(u)}>
                           <Eye className="w-3 h-3" /> View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => openRoleChange(u)}
+                          disabled={u.role === "operator" || u.role === "staffSub"}
+                          title={u.role === "operator" || u.role === "staffSub" ? "Sub-accounts managed via parent retailer" : "Change user role"}
+                        >
+                          <UserCog className="w-3 h-3" /> Role
                         </Button>
                         <Button
                           size="sm"
@@ -135,6 +193,58 @@ function AdminUsers() {
           user={permUser}
         />
       )}
+
+      <Dialog open={!!roleUser} onOpenChange={(o) => !o && setRoleUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5" /> Change Role
+            </DialogTitle>
+            <DialogDescription>
+              Upgrade or reassign <b>{roleUser?.name || roleUser?.email}</b> to a different role. The user will see the new dashboard on their next login (or page refresh).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="text-sm">
+              <p className="text-muted-foreground">Current role</p>
+              <Badge variant="secondary" className="capitalize mt-1">{roleUser?.role}</Badge>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New role</label>
+              <Select value={newRole} onValueChange={(v) => setNewRole(v as UserRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      <div className="flex flex-col py-0.5">
+                        <span className="font-medium">{r.label}</span>
+                        <span className="text-xs text-muted-foreground">{r.hint}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newRole === "admin" && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                ⚠️ Admin role grants full platform access including user management, payouts, and settings. Only assign to trusted personnel.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleUser(null)} disabled={savingRole}>
+              Cancel
+            </Button>
+            <Button onClick={saveRole} disabled={savingRole || newRole === roleUser?.role}>
+              {savingRole ? "Saving..." : "Update Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
