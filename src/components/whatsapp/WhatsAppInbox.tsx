@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Send, Search, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle,
-  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon,
+  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon, Phone, Copy, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -213,9 +213,11 @@ export function WhatsAppInbox({ scope }: Props) {
                 activePhone === c.phone ? "bg-emerald-50/60 dark:bg-emerald-950/20" : ""
               }`}
             >
-              <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0 text-sm font-semibold">
-                {(c.displayName || c.phone).charAt(0).toUpperCase()}
-              </div>
+              <ContactAvatar
+                name={c.displayName || c.phone}
+                picUrl={c.profilePicUrl}
+                size={36}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium truncate">{c.displayName || c.phone}</p>
@@ -223,7 +225,7 @@ export function WhatsAppInbox({ scope }: Props) {
                     <Badge className="bg-emerald-600 text-white text-[10px] h-4 px-1.5">{c.unreadCount}</Badge>
                   ) : null}
                 </div>
-                <p className="text-[11px] text-muted-foreground truncate">{c.lastMessage || c.phone}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{c.lastMessage || `+${c.phone}`}</p>
                 {c.assignedToName && (
                   <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
                     <UserCheck className="h-2.5 w-2.5" /> {c.assignedToName}
