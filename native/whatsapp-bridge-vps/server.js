@@ -135,8 +135,46 @@ function phoneToJid(phone) {
   return `${full}@c.us`;
 }
 
-// Refetch profile picture at most once every 24 h to keep WhatsApp API load low.
-const PROFILE_PIC_TTL_MS = 24 * 60 * 60 * 1000;
+// Refetch profile picture at most once every 7 days. WhatsApp's CDN URLs
+// expire fast (~24-48h), so we MUST mirror the bytes into our own Firebase
+// Storage bucket and serve from there to keep avatars stable in the inbox.
+const PROFILE_PIC_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function mirrorProfilePicToStorage(phone, sourceUrl) {
+  if (!sourceUrl) return null;
+  try {
+    const resp = await fetch(sourceUrl);
+    if (!resp.ok) return null;
+    const buf = Buffer.from(await resp.arrayBuffer());
+    const contentType = resp.headers.get('content-type') || 'image/jpeg';
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+    const objectPath = `whatsappAvatars/${phone}.${ext}`;
+    const file = bucket.file(objectPath);
+    await file.save(buf, {
+      contentType,
+      resumable: false,
+      metadata: { cacheControl: 'public, max-age=86400' },
+    });
+    // Make publicly readable (storage rules must allow this path or use signed URL)
+    try { await file.makePublic(); } catch (_) { /* bucket may forbid; fallback to signed URL below */ }
+    // Prefer the public URL; fall back to a long-lived signed URL when the
+    // bucket / rules forbid public ACLs.
+    try {
+      const [meta] = await file.getMetadata();
+      if (meta?.acl || meta?.metadata?.firebaseStorageDownloadTokens) {
+        return `https://storage.googleapis.com/${bucket.name}/${objectPath}`;
+      }
+    } catch (_) { /* fall through */ }
+    const [signed] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+    });
+    return signed;
+  } catch (e) {
+    console.warn('[wa] mirrorProfilePic failed for', phone, e?.message || e);
+    return null;
+  }
+}
 
 async function upsertContact(jid, name) {
   const phone = jidToPhone(jid);
@@ -153,13 +191,14 @@ async function upsertContact(jid, name) {
     lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  // Fetch profile pic if missing or stale (>24h). Best-effort, never throws.
+  // Fetch + mirror profile pic if missing or stale. Best-effort, never throws.
   const lastChecked = cur?.profilePicCheckedAt?.toMillis?.() || 0;
   const stale = !lastChecked || (Date.now() - lastChecked) > PROFILE_PIC_TTL_MS;
   if (waReady && waClient && (isNew || stale || !cur?.profilePicUrl)) {
     try {
-      const url = await waClient.getProfilePicUrl(jid).catch(() => null);
-      patch.profilePicUrl = url || null; // null when private / not set
+      const waUrl = await waClient.getProfilePicUrl(jid).catch(() => null);
+      const stableUrl = waUrl ? await mirrorProfilePicToStorage(phone, waUrl) : null;
+      patch.profilePicUrl = stableUrl || null; // null = private / not set
       patch.profilePicCheckedAt = admin.firestore.FieldValue.serverTimestamp();
     } catch (_) { /* ignore */ }
   }
