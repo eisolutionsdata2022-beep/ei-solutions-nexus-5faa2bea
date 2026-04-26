@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MessageCircle, QrCode, Inbox, MessageSquareQuote, Zap } from "lucide-react";
+import { MessageCircle, QrCode, Inbox, MessageSquareQuote, Zap, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppConnectionPanel } from "@/components/whatsapp/WhatsAppConnectionPanel";
 import { WhatsAppInbox } from "@/components/whatsapp/WhatsAppInbox";
 import { WhatsAppTemplatesManager } from "@/components/whatsapp/WhatsAppTemplatesManager";
 import { DripSequenceManager } from "@/components/whatsapp/DripSequenceManager";
+import { BulkWhatsAppTab } from "@/components/admin/BulkWhatsAppTab";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/admin/whatsapp")({
   ssr: false,
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/admin/whatsapp")({
 
 function AdminWhatsAppPage() {
   const [tab, setTab] = useState("connection");
+  const { user } = useAuth();
 
   return (
     <div className="space-y-4">
