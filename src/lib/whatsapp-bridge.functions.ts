@@ -250,6 +250,17 @@ export const restartWhatsApp = createServerFn({ method: "POST" })
     }
   });
 
+// ── Refresh all contact avatars (admin maintenance) ─────────────────────
+export const refreshWhatsAppAvatars = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .handler(async ({ context }) => {
+    if (!context.authUser) return { ok: false, error: "Unauthorized" };
+    try {
+      return await callBridge("/refresh-avatars", "POST", {});
+    } catch (e: any) {
+      return { ok: false, error: e?.message || "Bridge unreachable" };
+    }
+  });
 // ── Send single ─────────────────────────────────────────────────────────
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])

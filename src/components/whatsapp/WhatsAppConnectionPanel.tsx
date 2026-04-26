@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff, Stethoscope, ServerCrash } from "lucide-react";
+import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff, Stethoscope, ServerCrash, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { subscribeSession } from "@/lib/whatsapp-firebase";
 import type { WaSessionDoc } from "@/lib/whatsapp-types";
-import { getWhatsAppStatus, restartWhatsApp, diagnoseWhatsAppBridge } from "@/lib/whatsapp-bridge.functions";
+import { getWhatsAppStatus, restartWhatsApp, diagnoseWhatsAppBridge, refreshWhatsAppAvatars } from "@/lib/whatsapp-bridge.functions";
 
 type Diagnosis = {
   ok: boolean;
@@ -26,6 +26,7 @@ export function WhatsAppConnectionPanel() {
   const [polling, setPolling] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [refreshingAvatars, setRefreshingAvatars] = useState(false);
 
   useEffect(() => subscribeSession(setSession), []);
 
@@ -79,6 +80,21 @@ export function WhatsAppConnectionPanel() {
       if ((res as any).ok) toast.success(purge ? "Session purged — scan new QR" : "Bridge restarted");
       else toast.error((res as any).error || "Restart failed");
     } finally { setRestarting(false); }
+  };
+
+  const refreshAvatars = async () => {
+    if (!confirm("Re-fetch profile pictures for ALL contacts from WhatsApp? This may take a few minutes.")) return;
+    setRefreshingAvatars(true);
+    try {
+      const res = await refreshWhatsAppAvatars() as any;
+      if (res?.ok) {
+        toast.success(`Avatars refreshed: ${res.updated} updated, ${res.cleared} private/none, ${res.errors} errors (of ${res.total})`);
+      } else {
+        toast.error(res?.error || "Refresh failed");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Refresh failed");
+    } finally { setRefreshingAvatars(false); }
   };
 
   const ready = session?.ready === true;
@@ -163,6 +179,10 @@ export function WhatsAppConnectionPanel() {
               </Button>
               <Button size="sm" variant="outline" onClick={() => restart(false)} disabled={restarting}>
                 Restart bridge
+              </Button>
+              <Button size="sm" variant="outline" onClick={refreshAvatars} disabled={refreshingAvatars || !ready}>
+                {refreshingAvatars ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5 mr-1" />}
+                Refresh avatars
               </Button>
               <Button size="sm" variant="destructive" onClick={() => restart(true)} disabled={restarting}>
                 <Trash2 className="h-3.5 w-3.5 mr-1" /> Purge & re-scan QR

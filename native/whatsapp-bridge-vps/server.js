@@ -140,36 +140,37 @@ function phoneToJid(phone) {
 // Storage bucket and serve from there to keep avatars stable in the inbox.
 const PROFILE_PIC_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+// Build a Firebase Storage download URL using a download token. This works
+// regardless of bucket-level public ACL / UBLA settings — only the token is
+// needed by `<img src>`, no auth headers, no signing, never expires.
+function firebaseDownloadUrl(objectPath, token) {
+  const encoded = encodeURIComponent(objectPath);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encoded}?alt=media&token=${token}`;
+}
+
 async function mirrorProfilePicToStorage(phone, sourceUrl) {
   if (!sourceUrl) return null;
   try {
     const resp = await fetch(sourceUrl);
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.warn('[wa] profilePic fetch', resp.status, 'for', phone);
+      return null;
+    }
     const buf = Buffer.from(await resp.arrayBuffer());
     const contentType = resp.headers.get('content-type') || 'image/jpeg';
     const ext = contentType.includes('png') ? 'png' : 'jpg';
     const objectPath = `whatsappAvatars/${phone}.${ext}`;
     const file = bucket.file(objectPath);
+    const token = crypto.randomUUID();
     await file.save(buf, {
       contentType,
       resumable: false,
-      metadata: { cacheControl: 'public, max-age=86400' },
+      metadata: {
+        cacheControl: 'public, max-age=86400',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
     });
-    // Make publicly readable (storage rules must allow this path or use signed URL)
-    try { await file.makePublic(); } catch (_) { /* bucket may forbid; fallback to signed URL below */ }
-    // Prefer the public URL; fall back to a long-lived signed URL when the
-    // bucket / rules forbid public ACLs.
-    try {
-      const [meta] = await file.getMetadata();
-      if (meta?.acl || meta?.metadata?.firebaseStorageDownloadTokens) {
-        return `https://storage.googleapis.com/${bucket.name}/${objectPath}`;
-      }
-    } catch (_) { /* fall through */ }
-    const [signed] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
-    });
-    return signed;
+    return firebaseDownloadUrl(objectPath, token);
   } catch (e) {
     console.warn('[wa] mirrorProfilePic failed for', phone, e?.message || e);
     return null;
@@ -421,16 +422,19 @@ async function uploadMediaToStorage({ phone, messageId, base64, mime }) {
     const objectPath = `whatsappMedia/${phone}/${safeId}.${ext}`;
     const file = bucket.file(objectPath);
     const buf = Buffer.from(base64, 'base64');
+    const token = crypto.randomUUID();
     await file.save(buf, {
       contentType: mime,
       resumable: false,
-      metadata: { cacheControl: 'private, max-age=2592000' },
+      metadata: {
+        cacheControl: 'private, max-age=2592000',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
     });
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + MEDIA_URL_TTL_DAYS * 24 * 60 * 60 * 1000,
-    });
-    return { mediaUrl: url, mediaPath: objectPath };
+    // Use a Firebase Storage download URL (token-authed). Works cross-origin
+    // without auth headers and never expires — far more reliable than signed
+    // URLs which break when the service-account key rotates or after TTL.
+    return { mediaUrl: firebaseDownloadUrl(objectPath, token), mediaPath: objectPath };
   } catch (err) {
     console.error('[uploadMedia]', err.message);
     return { mediaUrl: null, mediaPath: null };
@@ -635,6 +639,40 @@ app.post('/restart', verifyHmac, async (req, res) => {
     }
     await startWaClient();
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Refresh ALL contact profile pictures + clear cached check timestamps so the
+// next inbound message also re-fetches. Useful after the URL-format fix to
+// rebuild stale signed URLs that no longer load in the inbox.
+app.post('/refresh-avatars', verifyHmac, async (_req, res) => {
+  if (!waReady || !waClient) {
+    return res.status(503).json({ ok: false, error: 'WA not ready' });
+  }
+  try {
+    const snap = await contactsCol.get();
+    let updated = 0, cleared = 0, errors = 0;
+    for (const doc of snap.docs) {
+      const phone = doc.id;
+      const jid = doc.data()?.jid || `${phone}@c.us`;
+      try {
+        const waUrl = await waClient.getProfilePicUrl(jid).catch(() => null);
+        const stableUrl = waUrl ? await mirrorProfilePicToStorage(phone, waUrl) : null;
+        await doc.ref.set({
+          profilePicUrl: stableUrl || null,
+          profilePicCheckedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        if (stableUrl) updated++; else cleared++;
+      } catch (e) {
+        errors++;
+        console.warn('[refresh-avatars]', phone, e.message);
+      }
+      // Throttle to avoid hammering WhatsApp's CDN
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    res.json({ ok: true, total: snap.size, updated, cleared, errors });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
