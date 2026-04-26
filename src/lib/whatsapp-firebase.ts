@@ -34,16 +34,31 @@ export function subscribeContacts(
 }
 
 // ── Messages for a single contact thread ───────────────────────────────
+// NOTE: We deliberately avoid orderBy() here so Firestore does not require a
+// composite index (contactPhone ASC + timestamp ASC). Sorting is done client-
+// side after the snapshot lands. Last 500 messages are loaded.
 export function subscribeMessages(contactPhone: string, cb: (rows: WaMessage[]) => void) {
   const q = query(
     collection(db, "whatsappMessages"),
     where("contactPhone", "==", contactPhone),
-    orderBy("timestamp", "asc"),
     limit(500)
   );
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as WaMessage)));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() } as WaMessage));
+      rows.sort((a, b) => {
+        const ta = typeof a.timestamp === "number" ? a.timestamp : Date.parse(String(a.timestamp || 0));
+        const tb = typeof b.timestamp === "number" ? b.timestamp : Date.parse(String(b.timestamp || 0));
+        return ta - tb;
+      });
+      cb(rows);
+    },
+    (err) => {
+      console.error("[whatsapp] subscribeMessages error:", err);
+      cb([]);
+    }
+  );
 }
 
 export async function markContactRead(phone: string) {
