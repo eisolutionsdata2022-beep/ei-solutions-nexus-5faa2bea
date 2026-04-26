@@ -422,16 +422,19 @@ async function uploadMediaToStorage({ phone, messageId, base64, mime }) {
     const objectPath = `whatsappMedia/${phone}/${safeId}.${ext}`;
     const file = bucket.file(objectPath);
     const buf = Buffer.from(base64, 'base64');
+    const token = crypto.randomUUID();
     await file.save(buf, {
       contentType: mime,
       resumable: false,
-      metadata: { cacheControl: 'private, max-age=2592000' },
+      metadata: {
+        cacheControl: 'private, max-age=2592000',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
     });
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + MEDIA_URL_TTL_DAYS * 24 * 60 * 60 * 1000,
-    });
-    return { mediaUrl: url, mediaPath: objectPath };
+    // Use a Firebase Storage download URL (token-authed). Works cross-origin
+    // without auth headers and never expires — far more reliable than signed
+    // URLs which break when the service-account key rotates or after TTL.
+    return { mediaUrl: firebaseDownloadUrl(objectPath, token), mediaPath: objectPath };
   } catch (err) {
     console.error('[uploadMedia]', err.message);
     return { mediaUrl: null, mediaPath: null };
