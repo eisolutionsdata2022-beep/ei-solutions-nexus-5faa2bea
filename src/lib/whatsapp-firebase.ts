@@ -1,7 +1,7 @@
 // ─── Client-side Firestore helpers for WhatsApp inbox ─────────────────
 import {
   collection, doc, onSnapshot, orderBy, query, where, limit,
-  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs,
+  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs, getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { WaContact, WaMessage, WaSessionDoc, WaCampaign, WaTemplate } from "./whatsapp-types";
