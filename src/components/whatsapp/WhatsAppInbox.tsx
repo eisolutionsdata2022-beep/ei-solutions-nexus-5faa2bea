@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth-context";
 import {
   subscribeContacts, subscribeMessages, markContactRead, assignContact,
-  listAssignableUsers, subscribeSession,
+  listAssignableUsers, subscribeSession, ensureContact,
 } from "@/lib/whatsapp-firebase";
 import type { WaContact, WaMessage, WaSessionDoc } from "@/lib/whatsapp-types";
 import { sendWhatsAppMessage } from "@/lib/whatsapp-bridge.functions";
 import { QuickReplyPicker } from "./QuickReplyPicker";
+import { NewChatDialog } from "./NewChatDialog";
 
 interface Props {
   /** "admin" sees ALL chats. "staff" sees only chats assigned to them. */
