@@ -26,6 +26,7 @@ export function WhatsAppConnectionPanel() {
   const [polling, setPolling] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [refreshingAvatars, setRefreshingAvatars] = useState(false);
 
   useEffect(() => subscribeSession(setSession), []);
 
