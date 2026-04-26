@@ -72,6 +72,37 @@ function AdminUsers() {
     setLogins(await getRecentLogins(u.id, 20).catch(() => []));
   };
 
+  const openRoleChange = (u: any) => {
+    setRoleUser(u);
+    setNewRole((u.role as UserRole) || "retailer");
+  };
+
+  const saveRole = async () => {
+    if (!roleUser) return;
+    if (newRole === roleUser.role) {
+      toast.info("Role unchanged");
+      return;
+    }
+    if (roleUser.role === "operator" || roleUser.role === "staffSub") {
+      toast.error("Sub-accounts (operator / staffSub) must be managed from the parent retailer's staff page.");
+      return;
+    }
+    setSavingRole(true);
+    try {
+      await updateDoc(doc(db, "users", roleUser.id), {
+        role: newRole,
+        roleUpdatedAt: new Date().toISOString(),
+      });
+      setUsers((prev) => prev.map((x) => (x.id === roleUser.id ? { ...x, role: newRole } : x)));
+      toast.success(`Role updated to ${newRole}`);
+      setRoleUser(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update role");
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
