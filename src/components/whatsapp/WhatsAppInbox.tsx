@@ -68,6 +68,21 @@ export function WhatsAppInbox({ scope }: Props) {
     if (scope === "admin") listAssignableUsers().then(setStaffList).catch(() => {});
   }, [scope]);
 
+  // Start new chat from CRM/uploaded leads picker
+  const handleNewChat = async (phone: string, name: string) => {
+    try {
+      await ensureContact({
+        phone,
+        displayName: name || phone,
+        assignedTo: scope === "staff" ? appUser?.uid || null : null,
+        assignedToName: scope === "staff" ? appUser?.name || appUser?.email || null : null,
+      });
+      setActivePhone(phone);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to start chat");
+    }
+  };
+
   const filteredContacts = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return contacts;
