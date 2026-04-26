@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff, Stethoscope, ServerCrash } from "lucide-react";
+import { Loader2, RefreshCw, QrCode, Trash2, AlertTriangle, ShieldCheck, Wifi, WifiOff, Stethoscope, ServerCrash, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { subscribeSession } from "@/lib/whatsapp-firebase";
 import type { WaSessionDoc } from "@/lib/whatsapp-types";
-import { getWhatsAppStatus, restartWhatsApp, diagnoseWhatsAppBridge } from "@/lib/whatsapp-bridge.functions";
+import { getWhatsAppStatus, restartWhatsApp, diagnoseWhatsAppBridge, refreshWhatsAppAvatars } from "@/lib/whatsapp-bridge.functions";
 
 type Diagnosis = {
   ok: boolean;
