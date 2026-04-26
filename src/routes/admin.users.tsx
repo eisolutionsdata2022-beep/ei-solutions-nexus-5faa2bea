@@ -41,6 +41,9 @@ function AdminUsers() {
   const [logins, setLogins] = useState<{ id: string; timestamp: string }[]>([]);
   const [staffCounts, setStaffCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
+  const [roleUser, setRoleUser] = useState<any | null>(null);
+  const [newRole, setNewRole] = useState<UserRole>("retailer");
+  const [savingRole, setSavingRole] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
