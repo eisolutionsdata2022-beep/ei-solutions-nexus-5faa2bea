@@ -255,12 +255,49 @@ export function WhatsAppInbox({ scope }: Props) {
           <>
             <div className="p-3 border-b flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 text-sm font-semibold shrink-0">
-                  {(activeContact.displayName || activeContact.phone).charAt(0).toUpperCase()}
-                </div>
+                <ContactAvatar
+                  name={activeContact.displayName || activeContact.phone}
+                  picUrl={activeContact.profilePicUrl}
+                  size={40}
+                />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{activeContact.displayName || activeContact.phone}</p>
-                  <p className="text-[11px] text-muted-foreground">+{activeContact.phone}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <a
+                      href={`tel:+${activeContact.phone}`}
+                      className="text-[12px] text-emerald-700 dark:text-emerald-400 hover:underline font-medium"
+                      title="Click to call"
+                    >
+                      +{activeContact.phone}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`+${activeContact.phone}`);
+                        toast.success("Number copied");
+                      }}
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                      title="Copy number"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <a
+                      href={`tel:+${activeContact.phone}`}
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-emerald-600"
+                      title="Phone call"
+                    >
+                      <Phone className="h-3 w-3" />
+                    </a>
+                    <a
+                      href={`https://wa.me/${activeContact.phone}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-emerald-600"
+                      title="Open in WhatsApp (for voice/video call)"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </div>
               </div>
               {scope === "admin" && (
