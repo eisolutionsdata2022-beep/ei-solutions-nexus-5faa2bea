@@ -1,18 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { ShieldCheck, Eye, Search } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { ShieldCheck, Eye, Search, UserCog } from "lucide-react";
+import { toast } from "sonner";
 import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
 import { getEditHistory, getRecentLogins, type UserEditLog } from "@/lib/profile-edits";
 import { getStaffCounts } from "@/lib/retailer-staff";
+import type { UserRole } from "@/lib/auth-context";
+
+const ASSIGNABLE_ROLES: { value: UserRole; label: string; hint: string }[] = [
+  { value: "retailer", label: "Retailer", hint: "Franchise partner / shop owner" },
+  { value: "trainer", label: "Trainer", hint: "Conducts training sessions, earns per session" },
+  { value: "staff", label: "Staff", hint: "Internal staff — CRM, services, support" },
+  { value: "manager", label: "Manager", hint: "Internal manager — staff-level access + reports" },
+  { value: "distributor", label: "Distributor", hint: "Earns override commissions on retailers" },
+  { value: "admin", label: "Admin", hint: "⚠️ Full platform access — use with care" },
+];
 
 export const Route = createFileRoute("/admin/users")({
   ssr: false,
