@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Send, Search, MessageCircle, Loader2, CheckCheck, Check, Clock, AlertCircle,
-  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon,
+  UserCheck, Paperclip, X, FileText, Download, Image as ImageIcon, Phone, Copy, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -213,9 +213,11 @@ export function WhatsAppInbox({ scope }: Props) {
                 activePhone === c.phone ? "bg-emerald-50/60 dark:bg-emerald-950/20" : ""
               }`}
             >
-              <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0 text-sm font-semibold">
-                {(c.displayName || c.phone).charAt(0).toUpperCase()}
-              </div>
+              <ContactAvatar
+                name={c.displayName || c.phone}
+                picUrl={c.profilePicUrl}
+                size={36}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium truncate">{c.displayName || c.phone}</p>
@@ -223,7 +225,7 @@ export function WhatsAppInbox({ scope }: Props) {
                     <Badge className="bg-emerald-600 text-white text-[10px] h-4 px-1.5">{c.unreadCount}</Badge>
                   ) : null}
                 </div>
-                <p className="text-[11px] text-muted-foreground truncate">{c.lastMessage || c.phone}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{c.lastMessage || `+${c.phone}`}</p>
                 {c.assignedToName && (
                   <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
                     <UserCheck className="h-2.5 w-2.5" /> {c.assignedToName}
@@ -253,12 +255,49 @@ export function WhatsAppInbox({ scope }: Props) {
           <>
             <div className="p-3 border-b flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 text-sm font-semibold shrink-0">
-                  {(activeContact.displayName || activeContact.phone).charAt(0).toUpperCase()}
-                </div>
+                <ContactAvatar
+                  name={activeContact.displayName || activeContact.phone}
+                  picUrl={activeContact.profilePicUrl}
+                  size={40}
+                />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{activeContact.displayName || activeContact.phone}</p>
-                  <p className="text-[11px] text-muted-foreground">+{activeContact.phone}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <a
+                      href={`tel:+${activeContact.phone}`}
+                      className="text-[12px] text-emerald-700 dark:text-emerald-400 hover:underline font-medium"
+                      title="Click to call"
+                    >
+                      +{activeContact.phone}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`+${activeContact.phone}`);
+                        toast.success("Number copied");
+                      }}
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                      title="Copy number"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <a
+                      href={`tel:+${activeContact.phone}`}
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-emerald-600"
+                      title="Phone call"
+                    >
+                      <Phone className="h-3 w-3" />
+                    </a>
+                    <a
+                      href={`https://wa.me/${activeContact.phone}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-emerald-600"
+                      title="Open in WhatsApp (for voice/video call)"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </div>
               </div>
               {scope === "admin" && (
@@ -442,4 +481,30 @@ function AckIcon({ ack }: { ack: number | null }) {
   if (ack === 2) return <CheckCheck className="h-3 w-3" />;
   if (ack === 3) return <CheckCheck className="h-3 w-3 text-sky-200" />;
   return null;
+}
+
+function ContactAvatar({ name, picUrl, size = 36 }: { name: string; picUrl?: string | null; size?: number }) {
+  const [errored, setErrored] = useState(false);
+  const initial = (name || "?").trim().charAt(0).toUpperCase();
+  const px = `${size}px`;
+  if (picUrl && !errored) {
+    return (
+      <img
+        src={picUrl}
+        alt={name}
+        onError={() => setErrored(true)}
+        style={{ width: px, height: px }}
+        className="rounded-full object-cover shrink-0 border border-border bg-muted"
+        loading="lazy"
+      />
+    );
+  }
+  return (
+    <div
+      style={{ width: px, height: px, fontSize: Math.round(size * 0.4) }}
+      className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0 font-semibold"
+    >
+      {initial}
+    </div>
+  );
 }

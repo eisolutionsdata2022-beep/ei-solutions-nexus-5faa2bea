@@ -135,18 +135,36 @@ function phoneToJid(phone) {
   return `${full}@c.us`;
 }
 
+// Refetch profile picture at most once every 24 h to keep WhatsApp API load low.
+const PROFILE_PIC_TTL_MS = 24 * 60 * 60 * 1000;
+
 async function upsertContact(jid, name) {
   const phone = jidToPhone(jid);
   if (!phone) return { phone: null, isNew: false };
   const ref = contactsCol.doc(phone);
   const snap = await ref.get();
   const isNew = !snap.exists;
-  await ref.set({
+  const cur = snap.exists ? snap.data() : {};
+
+  const patch = {
     phone,
     jid,
-    displayName: name || snap.data()?.displayName || phone,
+    displayName: name || cur?.displayName || phone,
     lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
+  };
+
+  // Fetch profile pic if missing or stale (>24h). Best-effort, never throws.
+  const lastChecked = cur?.profilePicCheckedAt?.toMillis?.() || 0;
+  const stale = !lastChecked || (Date.now() - lastChecked) > PROFILE_PIC_TTL_MS;
+  if (waReady && waClient && (isNew || stale || !cur?.profilePicUrl)) {
+    try {
+      const url = await waClient.getProfilePicUrl(jid).catch(() => null);
+      patch.profilePicUrl = url || null; // null when private / not set
+      patch.profilePicCheckedAt = admin.firestore.FieldValue.serverTimestamp();
+    } catch (_) { /* ignore */ }
+  }
+
+  await ref.set(patch, { merge: true });
   return { phone, isNew };
 }
 

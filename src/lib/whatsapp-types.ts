@@ -35,6 +35,8 @@ export interface WaContact {
   assignedTo?: string | null; // userId of staff/admin
   assignedToName?: string | null;
   tags?: string[];
+  profilePicUrl?: string | null;     // WhatsApp profile picture URL
+  profilePicCheckedAt?: any;          // last time bridge fetched profile pic
 }
 
 export interface WaMessage {
