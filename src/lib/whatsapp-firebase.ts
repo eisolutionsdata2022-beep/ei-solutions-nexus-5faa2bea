@@ -1,7 +1,7 @@
 // ─── Client-side Firestore helpers for WhatsApp inbox ─────────────────
 import {
   collection, doc, onSnapshot, orderBy, query, where, limit,
-  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs,
+  updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, getDocs, getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { WaContact, WaMessage, WaSessionDoc, WaCampaign, WaTemplate } from "./whatsapp-types";
@@ -62,7 +62,7 @@ export function subscribeMessages(contactPhone: string, cb: (rows: WaMessage[]) 
 }
 
 export async function markContactRead(phone: string) {
-  await updateDoc(doc(db, "whatsappContacts", phone), { unreadCount: 0 });
+  await setDoc(doc(db, "whatsappContacts", phone), { unreadCount: 0 }, { merge: true });
 }
 
 export async function assignContact(
@@ -73,6 +73,47 @@ export async function assignContact(
   await updateDoc(doc(db, "whatsappContacts", phone), {
     assignedTo: staffId,
     assignedToName: staffName,
+  });
+}
+
+/**
+ * Ensure a contact document exists for a given phone (creates a draft if missing).
+ * Used when staff/admin starts a new chat from CRM/uploaded leads.
+ * Does NOT overwrite existing contact data — only fills in missing fields.
+ */
+export async function ensureContact(input: {
+  phone: string;
+  displayName?: string;
+  assignedTo?: string | null;
+  assignedToName?: string | null;
+}) {
+  const ref = doc(db, "whatsappContacts", input.phone);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const cur = snap.data() as any;
+    const patch: Record<string, any> = {};
+    if (input.assignedTo && !cur.assignedTo) {
+      patch.assignedTo = input.assignedTo;
+      patch.assignedToName = input.assignedToName || null;
+    }
+    if (input.displayName && !cur.displayName) {
+      patch.displayName = input.displayName;
+    }
+    if (Object.keys(patch).length > 0) {
+      await updateDoc(ref, patch);
+    }
+    return;
+  }
+  await setDoc(ref, {
+    phone: input.phone,
+    displayName: input.displayName || input.phone,
+    lastMessage: "",
+    lastMessageAt: Date.now(),
+    unreadCount: 0,
+    assignedTo: input.assignedTo || null,
+    assignedToName: input.assignedToName || null,
+    createdAt: serverTimestamp(),
+    isDraft: true,
   });
 }
 

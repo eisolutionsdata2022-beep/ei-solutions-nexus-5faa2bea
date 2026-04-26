@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth-context";
 import {
   subscribeContacts, subscribeMessages, markContactRead, assignContact,
-  listAssignableUsers, subscribeSession,
+  listAssignableUsers, subscribeSession, ensureContact,
 } from "@/lib/whatsapp-firebase";
 import type { WaContact, WaMessage, WaSessionDoc } from "@/lib/whatsapp-types";
 import { sendWhatsAppMessage } from "@/lib/whatsapp-bridge.functions";
 import { QuickReplyPicker } from "./QuickReplyPicker";
+import { NewChatDialog } from "./NewChatDialog";
 
 interface Props {
   /** "admin" sees ALL chats. "staff" sees only chats assigned to them. */
@@ -66,6 +67,21 @@ export function WhatsAppInbox({ scope }: Props) {
   useEffect(() => {
     if (scope === "admin") listAssignableUsers().then(setStaffList).catch(() => {});
   }, [scope]);
+
+  // Start new chat from CRM/uploaded leads picker
+  const handleNewChat = async (phone: string, name: string) => {
+    try {
+      await ensureContact({
+        phone,
+        displayName: name || phone,
+        assignedTo: scope === "staff" ? appUser?.uid || null : null,
+        assignedToName: scope === "staff" ? appUser?.name || appUser?.email || null : null,
+      });
+      setActivePhone(phone);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to start chat");
+    }
+  };
 
   const filteredContacts = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -171,6 +187,13 @@ export function WhatsAppInbox({ scope }: Props) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name or phone…"
               className="pl-7 h-8 text-xs"
+            />
+          </div>
+          <div className="mt-2 flex justify-end">
+            <NewChatDialog
+              scope={scope}
+              staffId={appUser?.uid}
+              onPick={handleNewChat}
             />
           </div>
         </CardHeader>
