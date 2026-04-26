@@ -180,6 +180,10 @@ export function WhatsAppConnectionPanel() {
               <Button size="sm" variant="outline" onClick={() => restart(false)} disabled={restarting}>
                 Restart bridge
               </Button>
+              <Button size="sm" variant="outline" onClick={refreshAvatars} disabled={refreshingAvatars || !ready}>
+                {refreshingAvatars ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5 mr-1" />}
+                Refresh avatars
+              </Button>
               <Button size="sm" variant="destructive" onClick={() => restart(true)} disabled={restarting}>
                 <Trash2 className="h-3.5 w-3.5 mr-1" /> Purge & re-scan QR
               </Button>
