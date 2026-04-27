@@ -85,6 +85,7 @@ import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminTrainingReviewsRouteImport } from './routes/admin.training-reviews'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
+import { Route as AdminStaffCreatedUsersRouteImport } from './routes/admin.staff-created-users'
 import { Route as AdminSessionQualityRouteImport } from './routes/admin.session-quality'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
@@ -506,6 +507,11 @@ const AdminTrainingEarningsRoute = AdminTrainingEarningsRouteImport.update({
   path: '/training-earnings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStaffCreatedUsersRoute = AdminStaffCreatedUsersRouteImport.update({
+  id: '/staff-created-users',
+  path: '/staff-created-users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSessionQualityRoute = AdminSessionQualityRouteImport.update({
   id: '/session-quality',
   path: '/session-quality',
@@ -760,6 +766,7 @@ export interface FileRoutesByFullPath {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -871,6 +878,7 @@ export interface FileRoutesByTo {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -990,6 +998,7 @@ export interface FileRoutesById {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -1110,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1221,6 +1231,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1339,6 +1350,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1966,6 +1978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTrainingEarningsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/staff-created-users': {
+      id: '/admin/staff-created-users'
+      path: '/staff-created-users'
+      fullPath: '/admin/staff-created-users'
+      preLoaderRoute: typeof AdminStaffCreatedUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/session-quality': {
       id: '/admin/session-quality'
       path: '/session-quality'
@@ -2284,6 +2303,7 @@ interface AdminRouteChildren {
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSessionQualityRoute: typeof AdminSessionQualityRoute
+  AdminStaffCreatedUsersRoute: typeof AdminStaffCreatedUsersRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
   AdminTrainingReviewsRoute: typeof AdminTrainingReviewsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
@@ -2331,6 +2351,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSessionQualityRoute: AdminSessionQualityRoute,
+  AdminStaffCreatedUsersRoute: AdminStaffCreatedUsersRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
   AdminTrainingReviewsRoute: AdminTrainingReviewsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
