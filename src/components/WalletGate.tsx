@@ -13,8 +13,12 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-
-const MIN_BALANCE = 100;
+import {
+  subscribeMinBalanceConfig,
+  resolveMinBalance,
+  FALLBACK_MIN_BALANCE,
+  type MinBalanceConfig,
+} from "@/lib/min-balance-config";
 
 interface WalletGateProps {
   children: React.ReactNode;
