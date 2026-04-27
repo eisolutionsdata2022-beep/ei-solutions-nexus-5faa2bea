@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -11,10 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   subscribeLoginPopupConfig,
   saveLoginPopupConfig,
@@ -33,15 +29,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/admin/login-popup")({
-  ssr: false,
-  head: () => ({
-    meta: [{ title: "Retailer Login Popup — Admin" }],
-  }),
-  component: AdminLoginPopup,
-});
-
-function AdminLoginPopup() {
+export function LoginPopupAdmin() {
   const { appUser } = useAuth();
   const [cfg, setCfg] = useState<LoginPopupConfig>({ ...DEFAULT_LOGIN_POPUP });
   const [enabled, setEnabled] = useState(false);
@@ -58,7 +46,6 @@ function AdminLoginPopup() {
   >([]);
   const [search, setSearch] = useState("");
 
-  // Subscribe to current config
   useEffect(() => {
     const unsub = subscribeLoginPopupConfig((c) => {
       setCfg(c);
@@ -71,7 +58,6 @@ function AdminLoginPopup() {
     return unsub;
   }, []);
 
-  // Load retailers list
   useEffect(() => {
     const q = query(collection(db, "users"), where("role", "==", "retailer"));
     const unsub = onSnapshot(q, (snap) => {
@@ -153,20 +139,13 @@ function AdminLoginPopup() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Megaphone className="w-6 h-6 text-gov-blue" />
-          Retailer Login Popup
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Show a custom message to retailers right after they log in. Edit anytime.
-        </p>
-      </div>
-
+    <>
       <Card>
         <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-bold">Popup Settings</CardTitle>
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-gov-blue" />
+            Retailer Login Popup
+          </CardTitle>
           <div className="flex items-center gap-2">
             <Label htmlFor="popup-enabled" className="text-xs font-bold">
               {enabled ? "Enabled" : "Disabled"}
@@ -175,6 +154,10 @@ function AdminLoginPopup() {
           </div>
         </CardHeader>
         <CardContent className="p-4 space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Show a custom message to retailers right after they log in. Edit anytime.
+          </p>
+
           <div className="space-y-1">
             <Label className="text-xs font-bold">Popup Title</Label>
             <Input
@@ -314,7 +297,7 @@ function AdminLoginPopup() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 pt-2 border-t">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t flex-wrap">
             <Button
               variant="outline" size="sm" className="h-9 text-xs"
               onClick={() => setPreviewOpen(true)}
@@ -357,6 +340,6 @@ function AdminLoginPopup() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
