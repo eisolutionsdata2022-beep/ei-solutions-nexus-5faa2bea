@@ -22,6 +22,7 @@ import {
   subscribeUserActivations,
   type ActivationConfig,
 } from "@/lib/service-activation";
+import { RetailerLoginPopup } from "@/components/RetailerLoginPopup";
 
 export const Route = createFileRoute("/retailer")({
   ssr: false,
