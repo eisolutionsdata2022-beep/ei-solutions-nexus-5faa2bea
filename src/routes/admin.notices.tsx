@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, Plus, Trash2, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -18,6 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoginPopupAdmin } from "@/components/admin/LoginPopupAdmin";
 
 export const Route = createFileRoute("/admin/notices")({
   ssr: false,
