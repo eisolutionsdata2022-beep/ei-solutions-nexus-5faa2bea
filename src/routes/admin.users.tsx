@@ -149,6 +149,13 @@ function AdminUsers() {
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">{staffCounts[u.id] || 0}</td>
                     <td className="py-3 px-4 text-xs text-muted-foreground">
+                      {u.createdByStaffName ? (
+                        <span title={u.createdByStaffEmail || ""}>{u.createdByStaffName}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-muted-foreground">
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
                     </td>
                     <td className="py-3 px-4 text-right">
