@@ -126,6 +126,7 @@ function AdminUsers() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">KYC</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Staff</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Created By</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Login</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
