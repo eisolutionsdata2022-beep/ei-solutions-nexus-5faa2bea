@@ -58,6 +58,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
+    { label: "Staff User Creation", to: "/admin/staff-created-users", icon: BarChart3, tag: "new", hint: "How many users each staff has registered" },
     { label: "KYC Requests", to: "/admin/kyc", icon: ClipboardList, tag: "pending" },
     { label: "Services", to: "/admin/services", icon: ShoppingBag },
     { label: "Service Plans", to: "/admin/service-plans", icon: ShieldCheck },
@@ -143,6 +144,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   staff: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Create User", to: "/staff/create-user", icon: UserPlus, tag: "new", hint: "Register new retailers / users" },
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "Horoscope", to: "/staff/horoscope-requests", icon: Sparkles },
@@ -157,6 +159,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Create User", to: "/staff/create-user", icon: UserPlus, tag: "new", hint: "Register new retailers / users" },
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "Performance", to: "/staff/performance", icon: BarChart3 },

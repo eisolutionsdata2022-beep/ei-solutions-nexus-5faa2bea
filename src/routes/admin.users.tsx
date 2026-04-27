@@ -126,6 +126,7 @@ function AdminUsers() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">KYC</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Staff</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Created By</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Login</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
@@ -147,6 +148,13 @@ function AdminUsers() {
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">{staffCounts[u.id] || 0}</td>
+                    <td className="py-3 px-4 text-xs text-muted-foreground">
+                      {u.createdByStaffName ? (
+                        <span title={u.createdByStaffEmail || ""}>{u.createdByStaffName}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-xs text-muted-foreground">
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
                     </td>
@@ -178,7 +186,7 @@ function AdminUsers() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
+                  <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
                 )}
               </tbody>
             </table>

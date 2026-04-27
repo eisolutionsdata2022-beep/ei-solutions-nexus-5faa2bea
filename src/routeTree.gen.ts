@@ -45,6 +45,7 @@ import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horos
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
+import { Route as StaffCreateUserRouteImport } from './routes/staff.create-user'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
@@ -84,6 +85,7 @@ import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminTrainingReviewsRouteImport } from './routes/admin.training-reviews'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
+import { Route as AdminStaffCreatedUsersRouteImport } from './routes/admin.staff-created-users'
 import { Route as AdminSessionQualityRouteImport } from './routes/admin.session-quality'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServicePlansRouteImport } from './routes/admin.service-plans'
@@ -305,6 +307,11 @@ const StaffDmtRoute = StaffDmtRouteImport.update({
   path: '/dmt',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffCreateUserRoute = StaffCreateUserRouteImport.update({
+  id: '/create-user',
+  path: '/create-user',
+  getParentRoute: () => StaffRoute,
+} as any)
 const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
   id: '/work-badge',
   path: '/work-badge',
@@ -498,6 +505,11 @@ const AdminTrainingReviewsRoute = AdminTrainingReviewsRouteImport.update({
 const AdminTrainingEarningsRoute = AdminTrainingEarningsRouteImport.update({
   id: '/training-earnings',
   path: '/training-earnings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStaffCreatedUsersRoute = AdminStaffCreatedUsersRouteImport.update({
+  id: '/staff-created-users',
+  path: '/staff-created-users',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSessionQualityRoute = AdminSessionQualityRouteImport.update({
@@ -754,6 +766,7 @@ export interface FileRoutesByFullPath {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -793,6 +806,7 @@ export interface FileRoutesByFullPath {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -864,6 +878,7 @@ export interface FileRoutesByTo {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -903,6 +918,7 @@ export interface FileRoutesByTo {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -982,6 +998,7 @@ export interface FileRoutesById {
   '/admin/service-plans': typeof AdminServicePlansRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
+  '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -1021,6 +1038,7 @@ export interface FileRoutesById {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -1101,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1140,6 +1159,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1211,6 +1231,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1250,6 +1271,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1328,6 +1350,7 @@ export interface FileRouteTypes {
     | '/admin/service-plans'
     | '/admin/services'
     | '/admin/session-quality'
+    | '/admin/staff-created-users'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1367,6 +1390,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1674,6 +1698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffDmtRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/staff/create-user': {
+      id: '/staff/create-user'
+      path: '/create-user'
+      fullPath: '/staff/create-user'
+      preLoaderRoute: typeof StaffCreateUserRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/retailer/work-badge': {
       id: '/retailer/work-badge'
       path: '/work-badge'
@@ -1945,6 +1976,13 @@ declare module '@tanstack/react-router' {
       path: '/training-earnings'
       fullPath: '/admin/training-earnings'
       preLoaderRoute: typeof AdminTrainingEarningsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/staff-created-users': {
+      id: '/admin/staff-created-users'
+      path: '/staff-created-users'
+      fullPath: '/admin/staff-created-users'
+      preLoaderRoute: typeof AdminStaffCreatedUsersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/session-quality': {
@@ -2265,6 +2303,7 @@ interface AdminRouteChildren {
   AdminServicePlansRoute: typeof AdminServicePlansRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSessionQualityRoute: typeof AdminSessionQualityRoute
+  AdminStaffCreatedUsersRoute: typeof AdminStaffCreatedUsersRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
   AdminTrainingReviewsRoute: typeof AdminTrainingReviewsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
@@ -2312,6 +2351,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServicePlansRoute: AdminServicePlansRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSessionQualityRoute: AdminSessionQualityRoute,
+  AdminStaffCreatedUsersRoute: AdminStaffCreatedUsersRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
   AdminTrainingReviewsRoute: AdminTrainingReviewsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
@@ -2447,6 +2487,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffCreateUserRoute: typeof StaffCreateUserRoute
   StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
@@ -2462,6 +2503,7 @@ interface StaffRouteChildren {
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffCreateUserRoute: StaffCreateUserRoute,
   StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,
