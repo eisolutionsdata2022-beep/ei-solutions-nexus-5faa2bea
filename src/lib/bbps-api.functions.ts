@@ -219,7 +219,16 @@ async function callBbps<T>(
         : upstreamMsg
           ? `Provider ${httpInfo}: ${upstreamMsg}`
           : `Bridge ${httpInfo} (no body) — likely IP not whitelisted by provider yet`;
-      console.error("[BBPS] bridge error:", { endpoint, ...wrappedJson });
+      console.error("[BBPS] bridge error:", JSON.stringify({
+        endpoint,
+        httpStatus: res.status,
+        upstreamStatus: wrappedJson.status,
+        upstreamStatusText: wrappedJson.statusText,
+        bridgeError: wrappedJson.error,
+        body: typeof wrappedJson.body === "string"
+          ? wrappedJson.body.slice(0, 500)
+          : wrappedJson.body,
+      }));
       throw new Error(finalMsg);
     }
     return (wrappedJson.body ?? {}) as T;
