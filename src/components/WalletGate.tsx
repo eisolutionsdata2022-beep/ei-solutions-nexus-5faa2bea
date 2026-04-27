@@ -13,8 +13,12 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-
-const MIN_BALANCE = 100;
+import {
+  subscribeMinBalanceConfig,
+  resolveMinBalance,
+  FALLBACK_MIN_BALANCE,
+  type MinBalanceConfig,
+} from "@/lib/min-balance-config";
 
 interface WalletGateProps {
   children: React.ReactNode;
@@ -25,6 +29,12 @@ export function WalletGate({ children }: WalletGateProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
+  const [minCfg, setMinCfg] = useState<MinBalanceConfig | null>(null);
+
+  useEffect(() => {
+    const unsub = subscribeMinBalanceConfig(setMinCfg);
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!appUser || appUser.role !== "retailer") {
@@ -51,6 +61,7 @@ export function WalletGate({ children }: WalletGateProps) {
 
   if (loading) return null;
 
+  const MIN_BALANCE = appUser ? resolveMinBalance(minCfg, appUser.uid) : FALLBACK_MIN_BALANCE;
   const isBlocked = balance !== null && balance < MIN_BALANCE;
 
   if (isBlocked) {
