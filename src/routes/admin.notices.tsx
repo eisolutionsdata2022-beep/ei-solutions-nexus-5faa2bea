@@ -93,88 +93,111 @@ function AdminNoticeBoard() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Notice Board</h1>
-          <p className="text-muted-foreground text-sm">Manage announcements shown to retailers.</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gov-blue hover:opacity-90 text-white font-bold gap-2">
-              <Plus className="w-4 h-4" /> New Notice
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Notice</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Message</Label>
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your notice message..."
-                  required
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={priority} onValueChange={(v) => setPriority(v as "normal" | "urgent")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full bg-gov-blue text-white font-bold" disabled={submitting}>
-                {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Publishing...</> : "Publish Notice"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Notice Board</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage announcements and the retailer login popup.
+        </p>
       </div>
 
-      {/* Notices list */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="bg-gov-blue-light border-b border-border px-5 py-3 flex items-center gap-2">
-          <Megaphone className="w-4 h-4 text-gov-blue" />
-          <h2 className="text-base font-bold text-gov-blue">All Notices ({notices.length})</h2>
-        </div>
-        <div className="divide-y divide-border">
-          {notices.length === 0 ? (
-            <div className="px-5 py-8 text-center text-muted-foreground">No notices yet.</div>
-          ) : (
-            notices.map((n) => (
-              <div key={n.id} className="px-5 py-4 flex items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={n.priority === "urgent" ? "destructive" : "secondary"} className="text-xs capitalize">
-                      {n.priority}
-                    </Badge>
-                    <Badge variant={n.active ? "default" : "outline"} className="text-xs">
-                      {n.active ? "Active" : "Hidden"}
-                    </Badge>
+      <Tabs defaultValue="notices" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="notices" className="gap-1.5">
+            <Megaphone className="w-4 h-4" /> Notices
+          </TabsTrigger>
+          <TabsTrigger value="popup" className="gap-1.5">
+            <MessageSquare className="w-4 h-4" /> Login Popup
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="notices" className="space-y-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Marquee notices shown to retailers across the dashboard.
+            </p>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gov-blue hover:opacity-90 text-white font-bold gap-2">
+                  <Plus className="w-4 h-4" /> New Notice
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Notice</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Message</Label>
+                    <Textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type your notice message..."
+                      required
+                      rows={3}
+                    />
                   </div>
-                  <p className="text-sm text-foreground">{n.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground">Active</Label>
-                    <Switch checked={n.active} onCheckedChange={() => toggleActive(n.id, n.active)} />
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select value={priority} onValueChange={(v) => setPriority(v as "normal" | "urgent")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => deleteNotice(n.id)} className="text-destructive hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
+                  <Button type="submit" className="w-full bg-gov-blue text-white font-bold" disabled={submitting}>
+                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Publishing...</> : "Publish Notice"}
                   </Button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Notices list */}
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <div className="bg-gov-blue-light border-b border-border px-5 py-3 flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-gov-blue" />
+              <h2 className="text-base font-bold text-gov-blue">All Notices ({notices.length})</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {notices.length === 0 ? (
+                <div className="px-5 py-8 text-center text-muted-foreground">No notices yet.</div>
+              ) : (
+                notices.map((n) => (
+                  <div key={n.id} className="px-5 py-4 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={n.priority === "urgent" ? "destructive" : "secondary"} className="text-xs capitalize">
+                          {n.priority}
+                        </Badge>
+                        <Badge variant={n.active ? "default" : "outline"} className="text-xs">
+                          {n.active ? "Active" : "Hidden"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-foreground">{n.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Active</Label>
+                        <Switch checked={n.active} onCheckedChange={() => toggleActive(n.id, n.active)} />
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => deleteNotice(n.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="popup">
+          <LoginPopupAdmin />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
