@@ -194,7 +194,14 @@ async function callBbps<T>(
       signal: AbortSignal.timeout(60_000),
     });
     // Bridge wraps the upstream body — unwrap before returning.
-    const wrappedJson = (await res.json().catch(() => ({}))) as {
+    const wrappedText = await res.text();
+    const wrappedJson = ((() => {
+      try {
+        return wrappedText ? JSON.parse(wrappedText) : {};
+      } catch {
+        return { body: wrappedText };
+      }
+    })()) as {
       success?: boolean;
       status?: number;
       statusText?: string;
@@ -225,6 +232,7 @@ async function callBbps<T>(
         upstreamStatus: wrappedJson.status,
         upstreamStatusText: wrappedJson.statusText,
         bridgeError: wrappedJson.error,
+        wrappedText: wrappedText.slice(0, 500),
         body: typeof wrappedJson.body === "string"
           ? wrappedJson.body.slice(0, 500)
           : wrappedJson.body,
@@ -732,7 +740,14 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
         body: wrapped,
         signal: AbortSignal.timeout(30_000),
       });
-      const wrappedJson = (await res.json().catch(() => ({}))) as {
+      const wrappedText = await res.text();
+      const wrappedJson = ((() => {
+        try {
+          return wrappedText ? JSON.parse(wrappedText) : {};
+        } catch {
+          return { body: wrappedText };
+        }
+      })()) as {
         success?: boolean;
         status?: number;
         statusText?: string;
@@ -754,8 +769,8 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
         headersSent,
         bodySent,
         response: typeof wrappedJson.body === "string" ? wrappedJson.body : JSON.stringify(wrappedJson.body ?? null, null, 2),
-        rawText,
-        error: wrappedJson.error,
+        rawText: wrappedText || rawText,
+        error: wrappedJson.error ?? (!wrappedJson.success && !wrappedJson.body ? wrappedText || "Provider returned an empty response" : undefined),
         elapsedMs: Date.now() - startedAt,
         timestamp,
       };
