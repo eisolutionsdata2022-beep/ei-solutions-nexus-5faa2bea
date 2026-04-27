@@ -186,7 +186,7 @@ function AdminUsers() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
+                  <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No users found.</td></tr>
                 )}
               </tbody>
             </table>
