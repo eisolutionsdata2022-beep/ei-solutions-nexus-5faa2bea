@@ -118,6 +118,7 @@ function RetailerLayout() {
   return (
     <RouteGuard allowedRoles={["retailer", "staffSub"]}>
       <DashboardLayout />
+      <RetailerLoginPopup />
       <ServiceBlockedDialog
         open={showBlocked}
         onClose={() => {
