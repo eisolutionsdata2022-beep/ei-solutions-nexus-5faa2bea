@@ -485,14 +485,14 @@ function EmptyState({ message, hint }: { message: string; hint?: string }) {
 function hintForError(err: string | null): string {
   if (!err) return "Provider responded but with empty data.";
   const lower = err.toLowerCase();
+  if (lower.includes("bridge") && lower.includes("403")) {
+    return "The bridge itself returned 403 before the provider call completed. Verify the bridge URL, HMAC secret, and any VPS firewall or proxy rules.";
+  }
   if (lower.includes("403") || lower.includes("forbidden")) {
     return "Provider returned 403 Forbidden. This usually means IP whitelist is still not active, but it can also be an auth or bridge restriction — run Admin → BBPS Settings → Test Connection to confirm the exact response.";
   }
   if (lower.includes("401") || lower.includes("auth") || lower.includes("unauthor") || lower.includes("invalid token")) {
     return "Provider rejected our credentials (401). Verify BBPS_CLIENT_ID / BBPS_CLIENT_SECRET / BBPS_API_KEY match the values shared by the provider exactly.";
-  }
-  if (lower.includes("bridge") && lower.includes("403")) {
-    return "The bridge itself returned 403 before the provider call completed. Verify the bridge URL, HMAC secret, and any VPS firewall or proxy rules.";
   }
   if (lower.includes("bad signature") || lower.includes("missing signature") || lower.includes("timestamp")) {
     return "Bridge rejected our HMAC signature. The BBPS_BRIDGE_HMAC_SECRET in Lovable Cloud must exactly match HMAC_SECRET in the bridge's .env file.";
