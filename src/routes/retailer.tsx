@@ -22,6 +22,7 @@ import {
   subscribeUserActivations,
   type ActivationConfig,
 } from "@/lib/service-activation";
+import { RetailerLoginPopup } from "@/components/RetailerLoginPopup";
 
 export const Route = createFileRoute("/retailer")({
   ssr: false,
@@ -117,6 +118,7 @@ function RetailerLayout() {
   return (
     <RouteGuard allowedRoles={["retailer", "staffSub"]}>
       <DashboardLayout />
+      <RetailerLoginPopup />
       <ServiceBlockedDialog
         open={showBlocked}
         onClose={() => {
