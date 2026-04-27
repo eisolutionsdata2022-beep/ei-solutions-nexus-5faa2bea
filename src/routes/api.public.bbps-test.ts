@@ -13,7 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/bbps-test")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async () => {
         const startedAt = Date.now();
         const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET ?? "";
         const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL ?? "";
