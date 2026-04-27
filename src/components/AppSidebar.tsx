@@ -79,7 +79,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Training Reviews", to: "/admin/training-reviews", icon: MessageSquare },
     { label: "Session Quality", to: "/admin/session-quality", icon: Activity },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
-    { label: "Login Popup", to: "/admin/login-popup", icon: MessageSquare, tag: "new" },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
     { label: "Job Marketplace", to: "/admin/job-marketplace", icon: Briefcase },
     { label: "Job Earnings", to: "/admin/job-earnings", icon: BarChart3 },
