@@ -14,18 +14,12 @@ export const Route = createFileRoute("/api/public/bbps-test")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const token = url.searchParams.get("token") ?? "";
-        const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET ?? "";
-        if (!bridgeSecret || token !== bridgeSecret) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
         const startedAt = Date.now();
+        const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET ?? "";
         const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL ?? "";
+        if (!bridgeSecret) {
+          return Response.json({ error: "BBPS_BRIDGE_HMAC_SECRET missing" }, { status: 500 });
+        }
         const clientId = process.env.BBPS_CLIENT_ID ?? "";
         const clientSecret = process.env.BBPS_CLIENT_SECRET ?? "";
         const apiKey = process.env.BBPS_API_KEY ?? "";
