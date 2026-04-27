@@ -45,6 +45,7 @@ import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horos
 import { Route as StaffFormsRouteImport } from './routes/staff.forms'
 import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
+import { Route as StaffCreateUserRouteImport } from './routes/staff.create-user'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
 import { Route as RetailerWorkRouteImport } from './routes/retailer.work'
 import { Route as RetailerWalletRouteImport } from './routes/retailer.wallet'
@@ -303,6 +304,11 @@ const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
 const StaffDmtRoute = StaffDmtRouteImport.update({
   id: '/dmt',
   path: '/dmt',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffCreateUserRoute = StaffCreateUserRouteImport.update({
+  id: '/create-user',
+  path: '/create-user',
   getParentRoute: () => StaffRoute,
 } as any)
 const RetailerWorkBadgeRoute = RetailerWorkBadgeRouteImport.update({
@@ -793,6 +799,7 @@ export interface FileRoutesByFullPath {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -903,6 +910,7 @@ export interface FileRoutesByTo {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -1021,6 +1029,7 @@ export interface FileRoutesById {
   '/retailer/wallet': typeof RetailerWalletRoute
   '/retailer/work': typeof RetailerWorkRoute
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
+  '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
   '/staff/form-submissions': typeof StaffFormSubmissionsRoute
   '/staff/forms': typeof StaffFormsRoute
@@ -1140,6 +1149,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1250,6 +1260,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1367,6 +1378,7 @@ export interface FileRouteTypes {
     | '/retailer/wallet'
     | '/retailer/work'
     | '/retailer/work-badge'
+    | '/staff/create-user'
     | '/staff/dmt'
     | '/staff/form-submissions'
     | '/staff/forms'
@@ -1672,6 +1684,13 @@ declare module '@tanstack/react-router' {
       path: '/dmt'
       fullPath: '/staff/dmt'
       preLoaderRoute: typeof StaffDmtRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/staff/create-user': {
+      id: '/staff/create-user'
+      path: '/create-user'
+      fullPath: '/staff/create-user'
+      preLoaderRoute: typeof StaffCreateUserRouteImport
       parentRoute: typeof StaffRoute
     }
     '/retailer/work-badge': {
@@ -2447,6 +2466,7 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 )
 
 interface StaffRouteChildren {
+  StaffCreateUserRoute: typeof StaffCreateUserRoute
   StaffDmtRoute: typeof StaffDmtRoute
   StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
   StaffFormsRoute: typeof StaffFormsRoute
@@ -2462,6 +2482,7 @@ interface StaffRouteChildren {
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffCreateUserRoute: StaffCreateUserRoute,
   StaffDmtRoute: StaffDmtRoute,
   StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
   StaffFormsRoute: StaffFormsRoute,

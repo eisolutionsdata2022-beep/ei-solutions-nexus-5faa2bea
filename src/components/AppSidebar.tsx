@@ -143,6 +143,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   staff: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Create User", to: "/staff/create-user", icon: UserPlus, tag: "new", hint: "Register new retailers / users" },
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "Horoscope", to: "/staff/horoscope-requests", icon: Sparkles },
