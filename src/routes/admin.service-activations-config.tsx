@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,15 @@ import {
   type ActivationConfig,
   type ActivationValidity,
 } from "@/lib/service-activation";
-import { Save } from "lucide-react";
+import {
+  subscribeMinBalanceConfig,
+  saveMinBalanceDefault,
+  saveRetailerMinBalanceOverride,
+  type MinBalanceConfig,
+} from "@/lib/min-balance-config";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Save, Wallet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/service-activations-config")({
