@@ -97,6 +97,7 @@ import { Route as AdminPanLegacyBalancesRouteImport } from './routes/admin.pan-l
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminLoginPopupRouteImport } from './routes/admin.login-popup'
 import { Route as AdminLandingCmsRouteImport } from './routes/admin.landing-cms'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminJobMarketplaceRouteImport } from './routes/admin.job-marketplace'
@@ -566,6 +567,11 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLoginPopupRoute = AdminLoginPopupRouteImport.update({
+  id: '/login-popup',
+  path: '/login-popup',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLandingCmsRoute = AdminLandingCmsRouteImport.update({
   id: '/landing-cms',
   path: '/landing-cms',
@@ -741,6 +747,7 @@ export interface FileRoutesByFullPath {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/login-popup': typeof AdminLoginPopupRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -851,6 +858,7 @@ export interface FileRoutesByTo {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/login-popup': typeof AdminLoginPopupRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -969,6 +977,7 @@ export interface FileRoutesById {
   '/admin/job-marketplace': typeof AdminJobMarketplaceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/landing-cms': typeof AdminLandingCmsRoute
+  '/admin/login-popup': typeof AdminLoginPopupRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
@@ -1088,6 +1097,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/login-popup'
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -1198,6 +1208,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/login-popup'
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -1315,6 +1326,7 @@ export interface FileRouteTypes {
     | '/admin/job-marketplace'
     | '/admin/kyc'
     | '/admin/landing-cms'
+    | '/admin/login-popup'
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
@@ -2038,6 +2050,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMarketingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/login-popup': {
+      id: '/admin/login-popup'
+      path: '/login-popup'
+      fullPath: '/admin/login-popup'
+      preLoaderRoute: typeof AdminLoginPopupRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/landing-cms': {
       id: '/admin/landing-cms'
       path: '/landing-cms'
@@ -2252,6 +2271,7 @@ interface AdminRouteChildren {
   AdminJobMarketplaceRoute: typeof AdminJobMarketplaceRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminLandingCmsRoute: typeof AdminLandingCmsRoute
+  AdminLoginPopupRoute: typeof AdminLoginPopupRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
@@ -2299,6 +2319,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminJobMarketplaceRoute: AdminJobMarketplaceRoute,
   AdminKycRoute: AdminKycRoute,
   AdminLandingCmsRoute: AdminLandingCmsRoute,
+  AdminLoginPopupRoute: AdminLoginPopupRoute,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
