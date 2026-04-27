@@ -6,7 +6,6 @@ import {
   Users,
   Wallet,
   ShoppingBag,
-  TrendingUp,
   ShieldCheck,
   UserPlus,
   Sparkles,
@@ -14,30 +13,23 @@ import {
   Activity,
   IndianRupee,
   CreditCard,
-  Zap,
+  Banknote,
+  GraduationCap,
+  Heart,
+  Star,
+  ClipboardList,
+  Settings,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserSearchPanel } from "@/components/admin/UserSearchPanel";
 import { LegacyCleanupCard } from "@/components/admin/LegacyCleanupCard";
-import { StatsCard } from "@/components/StatsCard";
-import {
-  RevenueChart,
-  UserGrowthChart,
-  TransactionsChart,
-} from "@/components/admin/AdminCharts";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
   component: AdminDashboard,
 });
-
-type Txn = {
-  id: string;
-  type?: string;
-  amount?: number;
-  createdAt?: any;
-};
 
 type UserDoc = {
   id: string;
@@ -48,28 +40,28 @@ type UserDoc = {
   createdAt?: any;
 };
 
+type WalletReqDoc = { status?: string };
+
 function AdminDashboard() {
   const [stats, setStats] = useState({
     users: 0,
-    revenue: 0,
-    services: 0,
-    transactions: 0,
     todayRevenue: 0,
     pendingKyc: 0,
+    pendingWalletReq: 0,
+    walletFloat: 0,
     activeRetailers: 0,
   });
   const [recentUsers, setRecentUsers] = useState<UserDoc[]>([]);
-  const [allUsers, setAllUsers] = useState<UserDoc[]>([]);
-  const [allTxns, setAllTxns] = useState<Txn[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersSnap, transSnap, servSnap] = await Promise.all([
+        const [usersSnap, transSnap, walletsSnap, walletReqSnap] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "transactions")),
-          getDocs(collection(db, "services")),
+          getDocs(collection(db, "wallets")),
+          getDocs(collection(db, "walletRequests")).catch(() => null),
         ]);
 
         const users: UserDoc[] = [];
@@ -77,19 +69,13 @@ function AdminDashboard() {
           users.push({ id: d.id, ...(d.data() as Omit<UserDoc, "id">) }),
         );
 
-        const txns: Txn[] = [];
-        transSnap.forEach((d) =>
-          txns.push({ id: d.id, ...(d.data() as Omit<Txn, "id">) }),
-        );
-
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
-        let totalRevenue = 0;
         let todayRevenue = 0;
-        txns.forEach((t) => {
+        transSnap.forEach((d) => {
+          const t = d.data() as { type?: string; amount?: number; createdAt?: any };
           if (t.type !== "debit") return;
-          totalRevenue += t.amount || 0;
           const ts =
             t.createdAt instanceof Date
               ? t.createdAt
@@ -101,6 +87,20 @@ function AdminDashboard() {
           if (ts && ts >= startOfDay) todayRevenue += t.amount || 0;
         });
 
+        let walletFloat = 0;
+        walletsSnap.forEach((d) => {
+          const w = d.data() as { balance?: number };
+          walletFloat += w.balance || 0;
+        });
+
+        let pendingWalletReq = 0;
+        if (walletReqSnap) {
+          walletReqSnap.forEach((d) => {
+            const r = d.data() as WalletReqDoc;
+            if (r.status === "pending") pendingWalletReq += 1;
+          });
+        }
+
         const pendingKyc = users.filter((u) => u.kycStatus === "pending").length;
         const activeRetailers = users.filter(
           (u) => u.role === "retailer" && u.kycStatus === "approved",
@@ -108,16 +108,13 @@ function AdminDashboard() {
 
         setStats({
           users: users.length,
-          revenue: totalRevenue,
-          services: servSnap.size,
-          transactions: txns.length,
           todayRevenue,
           pendingKyc,
+          pendingWalletReq,
+          walletFloat,
           activeRetailers,
         });
-        setAllUsers(users);
-        setAllTxns(txns);
-        setRecentUsers(users.slice(-5).reverse());
+        setRecentUsers(users.slice(-6).reverse());
       } catch (err) {
         console.error("Error fetching stats:", err);
       } finally {
@@ -127,13 +124,15 @@ function AdminDashboard() {
     fetchStats();
   }, []);
 
+  const totalPending = stats.pendingKyc + stats.pendingWalletReq;
+
   return (
     <div className="space-y-6">
-      {/* Premium Greeting Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-premium-gradient p-7 text-white shadow-premium">
-        <div className="absolute -top-16 -right-10 h-56 w-56 rounded-full bg-white/15 blur-3xl animate-blob" />
-        <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl animate-blob [animation-delay:2s]" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ============ Welcome Header ============ */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl">
+        <div className="absolute -top-16 -right-10 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
+        <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center">
               <Sparkles className="w-7 h-7" />
@@ -142,13 +141,13 @@ function AdminDashboard() {
               <p className="text-xs uppercase tracking-widest text-white/70 font-semibold">
                 Admin Control Center
               </p>
-              <h1 className="text-2xl sm:text-3xl font-bold">Platform Overview</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Welcome, Admin 👋</h1>
               <p className="text-sm text-white/80 mt-1">
-                Real-time monitoring of users, revenue and live activity.
+                Here's what's happening across your platform today.
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link to="/admin/create-user">
               <Button
                 size="lg"
@@ -157,107 +156,72 @@ function AdminDashboard() {
                 <UserPlus className="w-4 h-4 mr-2" /> Create User
               </Button>
             </Link>
+            <Link to="/admin/users">
+              <Button
+                size="lg"
+                className="bg-white text-indigo-700 hover:bg-white/90 shadow-lg"
+              >
+                <Users className="w-4 h-4 mr-2" /> Manage Users
+              </Button>
+            </Link>
           </div>
+        </div>
+
+        {/* Inline KPI strip inside header */}
+        <div className="relative mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <HeaderStat
+            label="Today Revenue"
+            value={loading ? "…" : `₹${stats.todayRevenue.toLocaleString("en-IN")}`}
+            icon={IndianRupee}
+          />
+          <HeaderStat
+            label="Total Users"
+            value={loading ? "…" : stats.users.toLocaleString("en-IN")}
+            icon={Users}
+            sub={loading ? "" : `${stats.activeRetailers} active retailers`}
+          />
+          <HeaderStat
+            label="Pending Requests"
+            value={loading ? "…" : totalPending.toString()}
+            icon={ClipboardList}
+            sub={loading ? "" : `${stats.pendingKyc} KYC · ${stats.pendingWalletReq} Wallet`}
+            highlight={totalPending > 0}
+          />
+          <HeaderStat
+            label="Wallet Float"
+            value={loading ? "…" : `₹${stats.walletFloat.toLocaleString("en-IN")}`}
+            icon={Wallet}
+          />
         </div>
       </div>
 
-      {/* User Search Panel */}
-      <div className="glass-card-v2 rounded-2xl p-1">
+      {/* ============ User Search ============ */}
+      <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-sm p-1">
         <UserSearchPanel />
       </div>
 
-      {/* Premium Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? (
-          <>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
-            ))}
-          </>
-        ) : (
-          <>
-            <StatsCard
-              title="Total Users"
-              value={stats.users.toLocaleString("en-IN")}
-              icon={Users}
-              tone="primary"
-              delay={0}
-              description={`${stats.activeRetailers} active retailers`}
-            />
-            <StatsCard
-              title="Total Revenue"
-              value={`₹${stats.revenue.toLocaleString("en-IN")}`}
-              icon={IndianRupee}
-              tone="success"
-              delay={1}
-              description={`Today: ₹${stats.todayRevenue.toLocaleString("en-IN")}`}
-            />
-            <StatsCard
-              title="Transactions"
-              value={stats.transactions.toLocaleString("en-IN")}
-              icon={CreditCard}
-              tone="violet"
-              delay={2}
-            />
-            <StatsCard
-              title="Pending KYC"
-              value={stats.pendingKyc}
-              icon={ShieldCheck}
-              tone={stats.pendingKyc > 0 ? "warning" : "cyan"}
-              delay={3}
-              description="Awaiting review"
-            />
-          </>
-        )}
+      {/* ============ Services Grid ============ */}
+      <div>
+        <div className="flex items-end justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Manage Services</h2>
+            <p className="text-sm text-muted-foreground">
+              Quick access to platform service controls
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {SERVICE_TILES.map((s) => (
+            <ServiceCard key={s.to} {...s} />
+          ))}
+        </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <ChartPanel
-          title="Revenue (last 14 days)"
-          subtitle="Daily debit volume across all retailers"
-          icon={TrendingUp}
-          tone="from-blue-500 to-indigo-600"
-        >
-          {loading ? (
-            <Skeleton className="h-64 rounded-xl" />
-          ) : (
-            <RevenueChart transactions={allTxns} />
-          )}
-        </ChartPanel>
-
-        <ChartPanel
-          title="User Growth"
-          subtitle="New signups & cumulative total"
-          icon={Users}
-          tone="from-emerald-500 to-teal-600"
-        >
-          {loading ? (
-            <Skeleton className="h-64 rounded-xl" />
-          ) : (
-            <UserGrowthChart users={allUsers} />
-          )}
-        </ChartPanel>
-      </div>
-
-      <ChartPanel
-        title="Transactions Activity"
-        subtitle="Daily credit vs debit count"
-        icon={Activity}
-        tone="from-violet-500 to-purple-600"
-      >
-        {loading ? (
-          <Skeleton className="h-64 rounded-xl" />
-        ) : (
-          <TransactionsChart transactions={allTxns} />
-        )}
-      </ChartPanel>
-
-      {/* Recent Users — Glass Panel */}
-      <div className="glass-card-v2 rounded-2xl overflow-hidden">
+      {/* ============ Recent Users ============ */}
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
+            <div className="w-1 h-6 rounded-full bg-gradient-to-b from-blue-500 to-violet-600" />
             <h2 className="text-lg font-bold text-foreground">Recent Users</h2>
           </div>
           <Link to="/admin/users">
@@ -288,18 +252,10 @@ function AdminDashboard() {
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    <td className="px-5 py-3">
-                      <Skeleton className="h-4 w-24" />
-                    </td>
-                    <td className="px-5 py-3">
-                      <Skeleton className="h-4 w-40" />
-                    </td>
-                    <td className="px-5 py-3">
-                      <Skeleton className="h-4 w-16" />
-                    </td>
-                    <td className="px-5 py-3">
-                      <Skeleton className="h-4 w-20" />
-                    </td>
+                    <td className="px-5 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-5 py-3"><Skeleton className="h-4 w-40" /></td>
+                    <td className="px-5 py-3"><Skeleton className="h-4 w-16" /></td>
+                    <td className="px-5 py-3"><Skeleton className="h-4 w-20" /></td>
                   </tr>
                 ))
               ) : recentUsers.length === 0 ? (
@@ -342,139 +298,161 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions + Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="glass-card-v2 rounded-2xl overflow-hidden">
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40">
-            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
-            <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
-          </div>
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <QuickLink to="/admin/create-user" label="Create User" icon={UserPlus} primary />
-            <QuickLink to="/admin/crm-leads" label="CRM Leads" icon={Users} />
-            <QuickLink to="/admin/crm-reports" label="CRM Reports" icon={Activity} />
-            <QuickLink to="/admin/kyc" label="Review KYC" icon={ShieldCheck} />
-            <QuickLink to="/admin/wallet-requests" label="Wallet Requests" icon={Wallet} />
-            <QuickLink to="/admin/services" label="Services" icon={ShoppingBag} />
-          </div>
-        </div>
-
-        <div className="glass-card-v2 rounded-2xl overflow-hidden">
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40">
-            <div className="w-1 h-6 rounded-full bg-premium-gradient" />
-            <h2 className="text-lg font-bold text-foreground">Live Status</h2>
-            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              All Systems Operational
-            </span>
-          </div>
-          <div className="p-6 space-y-4">
-            <OverviewRow label="Active Services" value={stats.services.toString()} />
-            <OverviewRow label="Total Transactions" value={stats.transactions.toString()} />
-            <OverviewRow
-              label="Total Revenue"
-              value={`₹${stats.revenue.toLocaleString("en-IN")}`}
-              accent
-            />
-            <OverviewRow
-              label="Today's Revenue"
-              value={`₹${stats.todayRevenue.toLocaleString("en-IN")}`}
-            />
-            <OverviewRow
-              label="Active Retailers"
-              value={stats.activeRetailers.toString()}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Legacy Cleanup */}
       <LegacyCleanupCard />
     </div>
   );
 }
 
-function ChartPanel({
-  title,
-  subtitle,
+/* ===================== Sub-components ===================== */
+
+function HeaderStat({
+  label,
+  value,
+  sub,
   icon: Icon,
-  tone,
-  children,
+  highlight,
 }: {
-  title: string;
-  subtitle?: string;
+  label: string;
+  value: string;
+  sub?: string;
   icon: any;
-  tone: string;
-  children: React.ReactNode;
+  highlight?: boolean;
 }) {
   return (
-    <div className="glass-card-v2 rounded-2xl overflow-hidden">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40">
-        <div
-          className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tone} flex items-center justify-center text-white shadow-lg`}
-        >
-          <Icon className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-bold text-foreground leading-tight">{title}</h2>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-        </div>
-        <Zap className="ml-auto w-4 h-4 text-muted-foreground/60" />
+    <div
+      className={`rounded-2xl backdrop-blur-md border p-3 transition-colors ${
+        highlight
+          ? "bg-amber-400/20 border-amber-200/50"
+          : "bg-white/10 border-white/20"
+      }`}
+    >
+      <div className="flex items-center gap-2 text-white/80">
+        <Icon className="w-3.5 h-3.5" />
+        <span className="text-[10px] uppercase tracking-wider font-semibold">{label}</span>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="mt-1 text-xl font-bold text-white tabular-nums truncate">{value}</div>
+      {sub && <div className="text-[10px] text-white/70 truncate">{sub}</div>}
     </div>
   );
 }
 
-function QuickLink({
-  to,
-  label,
-  icon: Icon,
-  primary,
-}: {
+type ServiceTile = {
   to: string;
-  label: string;
+  title: string;
+  subtitle: string;
   icon: any;
-  primary?: boolean;
-}) {
+  gradient: string;
+};
+
+const SERVICE_TILES: ServiceTile[] = [
+  {
+    to: "/admin/service-plans",
+    title: "Service Plans",
+    subtitle: "Pricing tiers & visibility",
+    icon: ShieldCheck,
+    gradient: "from-blue-500 to-indigo-600",
+  },
+  {
+    to: "/admin/service-activations-config",
+    title: "Activation Charges",
+    subtitle: "Per-service fees & validity",
+    icon: Sparkles,
+    gradient: "from-fuchsia-500 to-pink-600",
+  },
+  {
+    to: "/admin/kyc",
+    title: "KYC Requests",
+    subtitle: "Review retailer documents",
+    icon: ClipboardList,
+    gradient: "from-amber-500 to-orange-600",
+  },
+  {
+    to: "/admin/wallet-requests",
+    title: "Wallet Requests",
+    subtitle: "Approve add-money asks",
+    icon: Wallet,
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    to: "/admin/bbps-settings",
+    title: "Bill Payment Settings",
+    subtitle: "BBPS & Bharat Connect",
+    icon: Banknote,
+    gradient: "from-cyan-500 to-blue-600",
+  },
+  {
+    to: "/admin/trainings",
+    title: "Trainings",
+    subtitle: "Sessions & schedules",
+    icon: GraduationCap,
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    to: "/admin/matrimony",
+    title: "Matrimony",
+    subtitle: "Profiles & moderation",
+    icon: Heart,
+    gradient: "from-rose-500 to-pink-600",
+  },
+  {
+    to: "/admin/horoscope-settings",
+    title: "Horoscope",
+    subtitle: "Premium engine settings",
+    icon: Star,
+    gradient: "from-yellow-500 to-amber-600",
+  },
+  {
+    to: "/admin/paytm-settings",
+    title: "Payment Settings",
+    subtitle: "Paytm gateway & QR",
+    icon: CreditCard,
+    gradient: "from-sky-500 to-indigo-600",
+  },
+  {
+    to: "/admin/services",
+    title: "All Services",
+    subtitle: "Master catalogue",
+    icon: ShoppingBag,
+    gradient: "from-slate-600 to-slate-800",
+  },
+];
+
+function ServiceCard({ to, title, subtitle, icon: Icon, gradient }: ServiceTile) {
   return (
-    <Link to={to as any}>
-      <Button
-        variant={primary ? "default" : "outline"}
-        className={`w-full justify-start gap-2 ${
-          primary
-            ? "bg-premium-gradient text-white border-0 shadow-premium hover:opacity-90"
-            : "bg-background/50 backdrop-blur-sm hover:bg-muted"
-        }`}
-      >
-        <Icon className="w-4 h-4" /> {label}
-      </Button>
+    <Link to={to as any} className="group block">
+      <div className="relative h-full rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-transparent overflow-hidden">
+        {/* gradient hover glow */}
+        <div
+          className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${gradient}`}
+          aria-hidden
+        />
+        <div className="relative flex items-start justify-between">
+          <div
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-md group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}
+          >
+            <Icon className="w-6 h-6" />
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
+        </div>
+        <div className="relative mt-4">
+          <h3 className="font-bold text-foreground group-hover:text-white transition-colors">
+            {title}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 group-hover:text-white/85 transition-colors">
+            {subtitle}
+          </p>
+        </div>
+        <div className="relative mt-4">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:text-white transition-colors">
+            Open
+            <ArrowRight className="w-3 h-3" />
+          </span>
+        </div>
+      </div>
     </Link>
   );
 }
 
-function OverviewRow({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span
-        className={`text-lg font-bold tabular-nums ${
-          accent ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
+// Suppress unused-import warnings if any remain (Activity icon kept for future)
+void Activity;
