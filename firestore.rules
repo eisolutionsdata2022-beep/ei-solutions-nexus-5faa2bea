@@ -102,16 +102,19 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
-    // Default — any authenticated user can read/write everything else.
-    // NOTE: Firestore evaluates rules with OR semantics, but path-specific
-    // matches above take precedence for their own paths. The wildcard below
-    // does NOT override the rules above for /users, /wallets, /csc_config,
-    // /pan_config, /walletRequests, /psa_ids, /rewards*, /crmLeads, or
-    // /platformConfig — those paths use only their explicit rules.
-    // Other operational collections still allow authed access.
+    // Default — authenticated read for operational collections.
+    // Writes are also allowed for operational collections (transactions,
+    // serviceApplications, crmCallLogs, training data, etc.).
+    //
+    // CRITICAL: Firestore uses OR semantics across rules. To prevent the
+    // catch-all from overriding the admin-only / owner-only rules above,
+    // we explicitly EXCLUDE the protected top-level collections by name.
     // ---------------------------------------------------------------
-    match /{document=**} {
-      allow read, write: if isAuthed();
+    match /{collection}/{document=**} {
+      allow read, write: if isAuthed()
+        && !(collection in ['csc_config', 'pan_config', 'platformConfig',
+                            'users', 'wallets', 'walletRequests', 'psa_ids',
+                            'rewardsWallets', 'rewardsTransferRequests']);
     }
   }
 }
