@@ -34,6 +34,7 @@ import {
   Search,
   IdCard,
   CreditCard,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -83,6 +84,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
+    { label: "System Cleanup", to: "/admin/system-cleanup", icon: Trash2 },
   ],
   distributor: [
     { label: "Dashboard", to: "/distributor", icon: LayoutDashboard },

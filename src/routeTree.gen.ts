@@ -85,6 +85,7 @@ import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
 import { Route as AdminTrainingReviewsRouteImport } from './routes/admin.training-reviews'
 import { Route as AdminTrainingEarningsRouteImport } from './routes/admin.training-earnings'
+import { Route as AdminSystemCleanupRouteImport } from './routes/admin.system-cleanup'
 import { Route as AdminStaffCreatedUsersRouteImport } from './routes/admin.staff-created-users'
 import { Route as AdminSessionQualityRouteImport } from './routes/admin.session-quality'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
@@ -504,6 +505,11 @@ const AdminTrainingEarningsRoute = AdminTrainingEarningsRouteImport.update({
   path: '/training-earnings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSystemCleanupRoute = AdminSystemCleanupRouteImport.update({
+  id: '/system-cleanup',
+  path: '/system-cleanup',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStaffCreatedUsersRoute = AdminStaffCreatedUsersRouteImport.update({
   id: '/staff-created-users',
   path: '/staff-created-users',
@@ -746,6 +752,7 @@ export interface FileRoutesByFullPath {
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
+  '/admin/system-cleanup': typeof AdminSystemCleanupRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -855,6 +862,7 @@ export interface FileRoutesByTo {
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
+  '/admin/system-cleanup': typeof AdminSystemCleanupRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -972,6 +980,7 @@ export interface FileRoutesById {
   '/admin/services': typeof AdminServicesRoute
   '/admin/session-quality': typeof AdminSessionQualityRoute
   '/admin/staff-created-users': typeof AdminStaffCreatedUsersRoute
+  '/admin/system-cleanup': typeof AdminSystemCleanupRoute
   '/admin/training-earnings': typeof AdminTrainingEarningsRoute
   '/admin/training-reviews': typeof AdminTrainingReviewsRoute
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
@@ -1090,6 +1099,7 @@ export interface FileRouteTypes {
     | '/admin/services'
     | '/admin/session-quality'
     | '/admin/staff-created-users'
+    | '/admin/system-cleanup'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1199,6 +1209,7 @@ export interface FileRouteTypes {
     | '/admin/services'
     | '/admin/session-quality'
     | '/admin/staff-created-users'
+    | '/admin/system-cleanup'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1315,6 +1326,7 @@ export interface FileRouteTypes {
     | '/admin/services'
     | '/admin/session-quality'
     | '/admin/staff-created-users'
+    | '/admin/system-cleanup'
     | '/admin/training-earnings'
     | '/admin/training-reviews'
     | '/admin/training-settings'
@@ -1942,6 +1954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTrainingEarningsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/system-cleanup': {
+      id: '/admin/system-cleanup'
+      path: '/system-cleanup'
+      fullPath: '/admin/system-cleanup'
+      preLoaderRoute: typeof AdminSystemCleanupRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/staff-created-users': {
       id: '/admin/staff-created-users'
       path: '/staff-created-users'
@@ -2244,6 +2263,7 @@ interface AdminRouteChildren {
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSessionQualityRoute: typeof AdminSessionQualityRoute
   AdminStaffCreatedUsersRoute: typeof AdminStaffCreatedUsersRoute
+  AdminSystemCleanupRoute: typeof AdminSystemCleanupRoute
   AdminTrainingEarningsRoute: typeof AdminTrainingEarningsRoute
   AdminTrainingReviewsRoute: typeof AdminTrainingReviewsRoute
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
@@ -2289,6 +2309,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServicesRoute: AdminServicesRoute,
   AdminSessionQualityRoute: AdminSessionQualityRoute,
   AdminStaffCreatedUsersRoute: AdminStaffCreatedUsersRoute,
+  AdminSystemCleanupRoute: AdminSystemCleanupRoute,
   AdminTrainingEarningsRoute: AdminTrainingEarningsRoute,
   AdminTrainingReviewsRoute: AdminTrainingReviewsRoute,
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
