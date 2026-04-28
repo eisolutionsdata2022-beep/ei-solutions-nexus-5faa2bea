@@ -74,7 +74,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
     { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
-    { label: "Form Builder", to: "/staff/forms", icon: FileText },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
