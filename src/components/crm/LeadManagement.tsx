@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare, Upload } from "lucide-react";
+import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare, Upload, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth-context";
-import { subscribeLeads, subscribeStaffMembers, updateLead, deleteLead } from "@/lib/crm-firebase";
+import { subscribeLeads, subscribeStaffMembers, updateLead, deleteLead, addLeadHistory } from "@/lib/crm-firebase";
 import { LEAD_STATUSES, STATUS_COLORS, type Lead, type StaffMember, type LeadStatus } from "@/lib/crm-types";
 import { AddLeadDialog } from "./AddLeadDialog";
 import { LeadDetailDialog } from "./LeadDetailDialog";
@@ -27,6 +28,9 @@ export function LeadManagement() {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAssignTo, setBulkAssignTo] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeLeads(
@@ -89,6 +93,62 @@ export function LeadManagement() {
     window.open(`https://wa.me/91${phone.replace(/\D/g, "")}`, "_blank");
   };
 
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(filtered.map((l) => l.id)) : new Set());
+  };
+  const toggleOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selectedIds.has(l.id));
+
+  const handleBulkAssign = async () => {
+    if (!bulkAssignTo || selectedIds.size === 0) {
+      toast.error("Staff തിരഞ്ഞെടുക്കുക, leads select ചെയ്യുക");
+      return;
+    }
+    const staffMember = staff.find((s) => s.uid === bulkAssignTo);
+    if (!staffMember) return;
+    setAssigning(true);
+    try {
+      const ids = Array.from(selectedIds);
+      let ok = 0;
+      for (const id of ids) {
+        const lead = leads.find((l) => l.id === id);
+        if (!lead) continue;
+        const oldName = lead.assignedStaffName || "Unassigned";
+        await updateLead(id, {
+          assignedStaffId: staffMember.uid,
+          assignedStaffName: staffMember.name,
+        });
+        try {
+          await addLeadHistory({
+            leadId: id,
+            action: "Bulk Reassigned",
+            field: "assignedStaffName",
+            oldValue: oldName,
+            newValue: staffMember.name,
+            updatedBy: appUser?.uid || "",
+            updatedByName: (appUser as any)?.name || appUser?.email || "Admin",
+            createdAt: new Date().toISOString(),
+          });
+        } catch {}
+        ok++;
+      }
+      toast.success(`${ok} leads ${staffMember.name}-ന് assign ചെയ്തു`);
+      setSelectedIds(new Set());
+      setBulkAssignTo("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Bulk assign പരാജയപ്പെട്ടു");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -146,6 +206,35 @@ export function LeadManagement() {
         </CardContent>
       </Card>
 
+      {!isStaffOnly && selectedIds.size > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+            <div className="text-sm font-medium">
+              {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} selected
+            </div>
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              <Select value={bulkAssignTo} onValueChange={setBulkAssignTo}>
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="Assign to staff..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {staff.map((s) => (
+                    <SelectItem key={s.uid} value={s.uid}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={handleBulkAssign} disabled={assigning || !bulkAssignTo}>
+                <UserCheck className="h-4 w-4 mr-1" />
+                {assigning ? "Assigning..." : "Bulk Assign"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {filtered.length > 0 ? (
@@ -153,6 +242,15 @@ export function LeadManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {!isStaffOnly && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allFilteredSelected}
+                          onCheckedChange={(c) => toggleSelectAll(!!c)}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Lead ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
@@ -167,6 +265,15 @@ export function LeadManagement() {
                 <TableBody>
                   {filtered.map((lead) => (
                     <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedLead(lead)}>
+                      {!isStaffOnly && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(lead.id)}
+                            onCheckedChange={(c) => toggleOne(lead.id, !!c)}
+                            aria-label={`Select ${lead.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-mono text-xs">{lead.leadId}</TableCell>
                       <TableCell className="font-medium">{lead.name}</TableCell>
                       <TableCell>{lead.phone}</TableCell>
