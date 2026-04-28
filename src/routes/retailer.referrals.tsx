@@ -38,6 +38,10 @@ import {
   type TransferRequestDoc,
 } from "@/lib/rewards-wallet";
 import {
+  listCommissionConfigs,
+  type CommissionConfig,
+} from "@/lib/commission-config";
+import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, Line, ComposedChart, Bar, Legend,
 } from "recharts";
