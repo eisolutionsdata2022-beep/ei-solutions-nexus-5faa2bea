@@ -55,13 +55,6 @@ export const CLEANUP_CATEGORIES: CleanupCategory[] = [
     timestampField: "createdAt",
   },
   {
-    key: "form-submissions",
-    label: "Form Submissions",
-    description: "All custom form submissions from retailers/staff.",
-    collections: ["formSubmissions"],
-    timestampField: "createdAt",
-  },
-  {
     key: "completed-transactions",
     label: "Completed Transactions",
     description:
