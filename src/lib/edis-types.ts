@@ -198,9 +198,22 @@ export async function uploadEdisDocuments(opts: {
     });
 
     try {
+      // Derive a Storage-rules-compatible contentType from extension when the
+      // browser failed to detect it (common with WhatsApp downloads on Android,
+      // which often report application/octet-stream for .jpeg files and get
+      // silently rejected by Storage rules — upload then sticks at 0%).
+      const extMatch = item.file.name.match(/\.(jpe?g|png|webp|pdf)$/i);
+      const extLower = (extMatch?.[1] || "").toLowerCase();
+      const extToMime: Record<string, string> = {
+        jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
+        webp: "image/webp", pdf: "application/pdf",
+      };
+      const mimeFromExt = extToMime[extLower] || "";
+      const safeContentType = ALLOWED_TYPES.test(ct) ? ct : (mimeFromExt || "image/jpeg");
+
       const url = await new Promise<string>((resolve, reject) => {
         const task = uploadBytesResumable(storageRef, item.file, {
-          contentType: ct || "application/octet-stream",
+          contentType: safeContentType,
           customMetadata: { originalFileName: item.file.name },
         });
         task.on(
