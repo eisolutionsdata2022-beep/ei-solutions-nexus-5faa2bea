@@ -341,7 +341,7 @@ function AdminIPPBSettingsPage() {
             <li>Staff OTP verify ചെയ്ത്, customer details + biometric (MFS110 / L1 sim) capture ചെയ്യും.</li>
             <li>Account number generate ആയി, staff "Mark Success" ക്ലിക്ക് ചെയ്യുമ്പോൾ <strong>only then</strong> retailer wallet-ൽ നിന്ന് <strong>₹{cfg.serviceCharge}</strong> debit ആകും.</li>
             <li>അതേ ട്രാൻസാക്ഷനിൽ commission auto-credit ആകും: Retailer ₹{cfg.retailerCommission}, Staff ₹{cfg.staffCommission}, Admin ₹{cfg.adminCommission}.</li>
-            <li>Retailer-ന് net cost ₹{netRetailerCost(cfg)} matters; failed/cancelled ആയാൽ <strong>charge ഇല്ല</strong>.</li>
+            <li>Retailer-ന് net cost ₹{Math.max(0, cfg.serviceCharge - cfg.retailerCommission)} matters; failed/cancelled ആയാൽ <strong>charge ഇല്ല</strong>.</li>
           </ol>
         </CardContent>
       </Card>
