@@ -328,6 +328,8 @@ function ReferralPanel() {
             </CardContent>
           </Card>
 
+          <ReferralEarningsChart payouts={payouts} />
+
           <Card>
             <CardHeader>
               <CardTitle>Your Referrals ({refs.length})</CardTitle>
