@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  getCountFromServer,
+  query,
+  where,
+  orderBy,
+  limit,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   Users,
@@ -57,64 +66,68 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersSnap, transSnap, walletsSnap, walletReqSnap] = await Promise.all([
-          getDocs(collection(db, "users")),
-          getDocs(collection(db, "transactions")),
-          getDocs(collection(db, "wallets")),
-          getDocs(collection(db, "walletRequests")).catch(() => null),
-        ]);
-
-        const users: UserDoc[] = [];
-        usersSnap.forEach((d) =>
-          users.push({ id: d.id, ...(d.data() as Omit<UserDoc, "id">) }),
-        );
-
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
+        const startTs = Timestamp.fromDate(startOfDay);
+
+        const usersCol = collection(db, "users");
+        const walletsCol = collection(db, "wallets");
+        const walletReqCol = collection(db, "walletRequests");
+        const transCol = collection(db, "transactions");
+
+        // Lightweight aggregations and scoped queries (avoid full-collection downloads)
+        const [
+          usersCountSnap,
+          activeRetailersCountSnap,
+          pendingKycCountSnap,
+          pendingWalletReqCountSnap,
+          todayDebitSnap,
+          recentUsersSnap,
+        ] = await Promise.all([
+          getCountFromServer(usersCol).catch(() => null),
+          getCountFromServer(
+            query(usersCol, where("role", "==", "retailer"), where("kycStatus", "==", "approved")),
+          ).catch(() => null),
+          getCountFromServer(query(usersCol, where("kycStatus", "==", "pending"))).catch(() => null),
+          getCountFromServer(query(walletReqCol, where("status", "==", "pending"))).catch(() => null),
+          getDocs(
+            query(transCol, where("type", "==", "debit"), where("createdAt", ">=", startTs)),
+          ).catch(() => null),
+          getDocs(query(usersCol, orderBy("createdAt", "desc"), limit(6))).catch(() => null),
+        ]);
 
         let todayRevenue = 0;
-        transSnap.forEach((d) => {
-          const t = d.data() as { type?: string; amount?: number; createdAt?: any };
-          if (t.type !== "debit") return;
-          const ts =
-            t.createdAt instanceof Date
-              ? t.createdAt
-              : t.createdAt?.seconds
-                ? new Date(t.createdAt.seconds * 1000)
-                : t.createdAt
-                  ? new Date(t.createdAt)
-                  : null;
-          if (ts && ts >= startOfDay) todayRevenue += t.amount || 0;
+        todayDebitSnap?.forEach((d) => {
+          const t = d.data() as { amount?: number };
+          todayRevenue += t.amount || 0;
         });
 
+        // Wallet float — fetch only balance field via paginated reads (kept simple but capped)
         let walletFloat = 0;
-        walletsSnap.forEach((d) => {
-          const w = d.data() as { balance?: number };
-          walletFloat += w.balance || 0;
-        });
-
-        let pendingWalletReq = 0;
-        if (walletReqSnap) {
-          walletReqSnap.forEach((d) => {
-            const r = d.data() as WalletReqDoc;
-            if (r.status === "pending") pendingWalletReq += 1;
+        try {
+          const walletsSnap = await getDocs(query(walletsCol, limit(2000)));
+          walletsSnap.forEach((d) => {
+            const w = d.data() as { balance?: number };
+            walletFloat += w.balance || 0;
           });
+        } catch {
+          /* ignore */
         }
 
-        const pendingKyc = users.filter((u) => u.kycStatus === "pending").length;
-        const activeRetailers = users.filter(
-          (u) => u.role === "retailer" && u.kycStatus === "approved",
-        ).length;
+        const recentUsers: UserDoc[] = [];
+        recentUsersSnap?.forEach((d) =>
+          recentUsers.push({ id: d.id, ...(d.data() as Omit<UserDoc, "id">) }),
+        );
 
         setStats({
-          users: users.length,
+          users: usersCountSnap?.data().count ?? 0,
           todayRevenue,
-          pendingKyc,
-          pendingWalletReq,
+          pendingKyc: pendingKycCountSnap?.data().count ?? 0,
+          pendingWalletReq: pendingWalletReqCountSnap?.data().count ?? 0,
           walletFloat,
-          activeRetailers,
+          activeRetailers: activeRetailersCountSnap?.data().count ?? 0,
         });
-        setRecentUsers(users.slice(-6).reverse());
+        setRecentUsers(recentUsers);
       } catch (err) {
         console.error("Error fetching stats:", err);
       } finally {
