@@ -437,3 +437,112 @@ function StatTile({
     </Card>
   );
 }
+
+function ReferralEarningsChart({ payouts }: { payouts: ReferralPayout[] }) {
+  // Build last 30 days
+  const days: { key: string; label: string; earnings: number; count: number }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const map = new Map<string, { label: string; earnings: number; count: number }>();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    map.set(key, { label, earnings: 0, count: 0 });
+  }
+  payouts.forEach((p) => {
+    if (!p.paidAt || !p.referrerReward) return;
+    const key = p.paidAt.slice(0, 10);
+    const row = map.get(key);
+    if (row) {
+      row.earnings += p.referrerReward || 0;
+      row.count += 1;
+    }
+  });
+  let cumulative = 0;
+  for (const [key, val] of map.entries()) {
+    cumulative += val.earnings;
+    days.push({ key, label: val.label, earnings: val.earnings, count: val.count });
+  }
+  // Recompute cumulative as array
+  let acc = 0;
+  const data = days.map((d) => {
+    acc += d.earnings;
+    return { ...d, cumulative: acc };
+  });
+
+  const totalLast30 = data.reduce((s, d) => s + d.earnings, 0);
+  const activationsLast30 = data.reduce((s, d) => s + d.count, 0);
+
+  const tooltipStyle = {
+    background: "var(--popover)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    fontSize: 12,
+    color: "var(--popover-foreground)",
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <IndianRupee className="h-5 w-5 text-amber-500" /> Referral Earnings (last 30 days)
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            ₹{totalLast30.toFixed(0)} earned · {activationsLast30} activation{activationsLast30 === 1 ? "" : "s"}
+          </p>
+        </div>
+        <Badge variant="secondary">{payouts.length} total</Badge>
+      </CardHeader>
+      <CardContent>
+        {payouts.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No referral earnings yet. Share your code to start earning!
+          </p>
+        ) : (
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={data} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="refEarnGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(40 95% 55%)" stopOpacity={0.7} />
+                    <stop offset="100%" stopColor="hsl(40 95% 55%)" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(v: any, name: string) =>
+                    name === "Activations"
+                      ? [v, name]
+                      : [`₹${Number(v ?? 0).toLocaleString("en-IN")}`, name]
+                  }
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar
+                  dataKey="earnings"
+                  name="Daily ₹"
+                  fill="url(#refEarnGrad)"
+                  stroke="hsl(40 95% 50%)"
+                  radius={[6, 6, 0, 0]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cumulative"
+                  name="Cumulative ₹"
+                  stroke="hsl(280 80% 60%)"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
