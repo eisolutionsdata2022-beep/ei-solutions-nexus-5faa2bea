@@ -23,6 +23,7 @@ import {
   TESTIMONIALS_PREMIUM,
   JOIN_STEPS_PREMIUM,
   PREMIUM_BOOKLET_PAGES,
+  IMPORTANT_ALERT,
   type Certification,
 } from "@/lib/premium-booklet-content";
 
@@ -199,45 +200,52 @@ function IntroPage() {
 function FounderPage() {
   return (
     <div className="h-full flex flex-col">
-      <Eyebrow text="സ്ഥാപകന്റെ വാക്കുകൾ · FROM THE FOUNDER" />
+      <Eyebrow text="ഡയറക്ടർ പ്രൊഫൈൽ · DIRECTOR PROFILE" />
       <Divider />
-      <div className="flex items-center gap-4 mb-5">
+
+      <div className="flex gap-4 mb-3">
         <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-2"
+          className="w-24 h-28 rounded-lg overflow-hidden border-2 shrink-0"
           style={{
             borderColor: C.gold,
-            background: `linear-gradient(135deg, ${C.gold}, ${C.goldDeep})`,
-            color: "#fff",
-            fontFamily: SERIF,
+            boxShadow: `0 6px 18px ${C.goldDeep}40`,
           }}
         >
-          ST
+          <img
+            src={FOUNDER_MESSAGE.photoUrl}
+            alt={FOUNDER_MESSAGE.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         </div>
-        <div>
-          <div className="text-xl font-bold" style={{ fontFamily: SERIF, color: C.ink }}>
+        <div className="min-w-0 flex-1">
+          <div className="text-lg font-bold leading-tight" style={{ fontFamily: SERIF, color: C.ink }}>
             {FOUNDER_MESSAGE.name}
           </div>
-          <div className="text-xs tracking-wider mt-0.5" style={{ color: C.goldDeep }}>
+          <div className="text-[10px] tracking-widest mt-1" style={{ color: C.goldDeep }}>
             {FOUNDER_MESSAGE.designationMl.toUpperCase()} · {FOUNDER_MESSAGE.designation.toUpperCase()}
+          </div>
+          <div className="text-[10px] mt-1.5 opacity-70 leading-snug" style={{ color: C.ink }}>
+            {FOUNDER_MESSAGE.company}
           </div>
         </div>
       </div>
 
-      <div className="text-5xl leading-none mb-2" style={{ color: C.gold, fontFamily: SERIF }}>
-        “
-      </div>
-      <p className="text-[15px] leading-relaxed italic -mt-2" style={{ color: C.ink, fontFamily: SERIF }}>
-        {FOUNDER_MESSAGE.message}
-      </p>
-      <p className="mt-3 text-[12px] leading-relaxed opacity-60" style={{ color: C.ink }}>
-        {FOUNDER_MESSAGE.messageEn}
-      </p>
-      <div className="text-5xl leading-none mt-2 text-right" style={{ color: C.gold, fontFamily: SERIF }}>
-        ”
+      <div className="space-y-2 overflow-y-auto pr-1 flex-1 text-[11px] leading-relaxed" style={{ color: C.ink }}>
+        {FOUNDER_MESSAGE.bio.map((p, i) => (
+          <p key={i} className={i === 0 ? "font-medium" : "opacity-85"}>
+            {p}
+          </p>
+        ))}
       </div>
 
-      <div className="mt-auto pt-4 border-t border-amber-700/20">
-        <div className="text-[10px] tracking-[0.3em] opacity-60">DIRECTOR · CIN U74999KL2020OPC066254</div>
+      <div className="mt-3 pt-3 border-t border-amber-700/20 grid grid-cols-2 gap-1.5">
+        {FOUNDER_MESSAGE.highlights.map((h) => (
+          <div key={h.text} className="flex items-start gap-1.5 text-[10px]" style={{ color: C.ink }}>
+            <span className="text-sm leading-none">{h.icon}</span>
+            <span className="leading-snug opacity-85">{h.text}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -581,6 +589,82 @@ function ContactPage() {
   );
 }
 
+function AlertPage() {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-2">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
+          style={{ background: `${C.red}15`, color: C.red, border: `1.5px solid ${C.red}55` }}
+        >
+          ⚠️
+        </div>
+        <div>
+          <div className="text-[10px] tracking-[0.3em] font-bold" style={{ color: C.red }}>
+            {IMPORTANT_ALERT.titleEn.toUpperCase()}
+          </div>
+          <div className="text-lg font-bold leading-tight" style={{ fontFamily: SERIF, color: C.ink }}>
+            {IMPORTANT_ALERT.titleMl}
+          </div>
+        </div>
+      </div>
+      <div className="my-3 h-px w-full" style={{ background: `linear-gradient(to right, ${C.red}, transparent)` }} />
+
+      <p className="text-[11px] leading-relaxed" style={{ color: C.ink }}>
+        {IMPORTANT_ALERT.intro}
+      </p>
+
+      <div className="mt-2.5 space-y-1.5">
+        {IMPORTANT_ALERT.authorized.map((a) => (
+          <div
+            key={a.tag}
+            className="flex items-start gap-2 rounded-md px-2.5 py-1.5"
+            style={{ background: `${C.green}10`, border: `1px solid ${C.green}30` }}
+          >
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: C.green, color: "#fff" }}>
+              ✓ {a.tag}
+            </span>
+            <span className="text-[10.5px] leading-snug pt-0.5" style={{ color: C.ink }}>{a.text}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2.5 space-y-1">
+        {IMPORTANT_ALERT.warnings.map((w, i) => (
+          <div key={i} className="flex items-start gap-1.5 text-[10.5px] leading-snug" style={{ color: C.ink }}>
+            <span style={{ color: C.red }}>✗</span>
+            <span className="opacity-85">{w}</span>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="mt-3 rounded-md p-2.5"
+        style={{ background: `${C.gold}15`, border: `1px solid ${C.gold}40` }}
+      >
+        <div className="text-[10px] font-bold mb-1.5" style={{ color: C.goldDeep }}>
+          💡 ബിസിനസ് തുടങ്ങുന്നതിന് മുമ്പ് ചിന്തിക്കുക:
+        </div>
+        <div className="space-y-1">
+          {IMPORTANT_ALERT.checklist.map((c, i) => (
+            <div key={i} className="flex items-start gap-1.5 text-[10.5px]" style={{ color: C.ink }}>
+              <span style={{ color: C.green }}>✔️</span>
+              <span className="leading-snug">{c}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="mt-auto pt-2.5 text-[10px] italic leading-snug text-center"
+        style={{ color: C.red }}
+      >
+        ⚠️ {IMPORTANT_ALERT.footer}
+      </div>
+    </div>
+  );
+}
+
 function BackCover() {
   return (
     <div className="h-full flex flex-col items-center justify-between text-center" style={{ color: "#F8EFD0" }}>
@@ -695,6 +779,8 @@ function renderPage(kind: string, pageNum: number) {
       return <PageWrap pageNum={pageNum}><JoinStepsPage /></PageWrap>;
     case "contact":
       return <PageWrap pageNum={pageNum} tone="ink"><ContactPage /></PageWrap>;
+    case "alert":
+      return <PageWrap pageNum={pageNum}><AlertPage /></PageWrap>;
     case "back-cover":
       return <PageWrap pageNum={pageNum} tone="ink"><BackCover /></PageWrap>;
     default:
