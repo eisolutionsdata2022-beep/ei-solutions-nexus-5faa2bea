@@ -77,6 +77,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Disputes", to: "/admin/job-disputes", icon: Gavel },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
+    { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Settings },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Legacy Wallet", to: "/admin/pan-legacy-balances", icon: Wallet },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
