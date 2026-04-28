@@ -109,26 +109,37 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
   // Provider issues credentials in pre-encrypted form (version-prefixed
    // base64 strings like "_v9...", "_PzJN..."). Send them as-is — do NOT
   // re-encrypt locally.
-  const json = await callBbps<{
-    success?: boolean;
-    accessToken?: string;
-    message?: string;
-  }>(
-    "/getAccessToken",
-    {
-      clientId,
-      clientSecret,
-    },
-    { skipAuth: true },
-  );
+  let json: { success?: boolean; accessToken?: string; message?: string };
+  try {
+    json = await callBbps<{
+      success?: boolean;
+      accessToken?: string;
+      message?: string;
+    }>(
+      "/getAccessToken",
+      { clientId, clientSecret },
+      { skipAuth: true },
+    );
+  } catch (err) {
+    // Make sure a stale/failed token never lingers in the cache.
+    tokenCache = null;
+    throw err;
+  }
 
   if (!json.success || !json.accessToken) {
+    tokenCache = null;
     throw new Error(json.message ?? "Auth failed");
   }
 
   const expiresAt = jwtExpiryMs(json.accessToken) ?? Date.now() + 30 * 60_000;
   tokenCache = { accessToken: json.accessToken, expiresAt };
   return json.accessToken;
+}
+
+/** Clear the in-memory access-token cache. Used by admin diagnostics after the
+ *  provider clears a credential/whitelist issue, so the next call re-auths. */
+export function _resetBbpsTokenCache() {
+  tokenCache = null;
 }
 
 /** HMAC-SHA256 hex (used to sign bridge requests). */
@@ -668,6 +679,9 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
   }> => {
     const startedAt = Date.now();
     const timestamp = new Date().toISOString();
+    // Always invalidate any cached token so each diagnostic run is a true
+    // round-trip — important after the provider clears a whitelist/cred issue.
+    _resetBbpsTokenCache();
     const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
     const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET;
     const clientId = process.env.BBPS_CLIENT_ID;
