@@ -78,6 +78,7 @@ function ReferralPanel() {
     getOrCreateReferralCode(appUser.uid).then(setCode);
     loadReferralConfig().then(setCfg);
     getGameStats(appUser.uid).then(setGameStats);
+    listCommissionConfigs().then(setCommissionConfigs).catch(() => {});
     const u1 = subscribeReferredUsers(appUser.uid, setRefs);
     const u2 = subscribeReferrerPayouts(appUser.uid, setPayouts);
     const u3 = subscribeRecentPlays(appUser.uid, (plays) => {
