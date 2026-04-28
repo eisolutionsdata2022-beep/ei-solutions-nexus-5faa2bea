@@ -145,6 +145,8 @@ function StaffIPPBPage() {
         </div>
       </div>
 
+      <SoftwareDownloadCard variant="staffApk" />
+
       <Collapsible defaultOpen={false}>
         <Card className="border-gov-blue/30">
           <CollapsibleTrigger asChild>

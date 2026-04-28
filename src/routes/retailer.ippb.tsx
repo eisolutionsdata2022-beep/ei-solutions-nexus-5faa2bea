@@ -203,6 +203,7 @@ function RetailerIPPBPage() {
         { icon: ShieldCheck, label: "Badge", value: hasBadge ? "Active" : "Pending", accent: hasBadge ? "from-emerald-400 to-teal-400" : "from-rose-400 to-pink-400" },
       ]}
     >
+      <SoftwareDownloadCard variant="pcAgent" />
 
       {!hasBadge && (
         <Card className="border-amber-400 bg-amber-50">
