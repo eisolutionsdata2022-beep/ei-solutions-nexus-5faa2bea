@@ -93,6 +93,62 @@ export function LeadManagement() {
     window.open(`https://wa.me/91${phone.replace(/\D/g, "")}`, "_blank");
   };
 
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(filtered.map((l) => l.id)) : new Set());
+  };
+  const toggleOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selectedIds.has(l.id));
+
+  const handleBulkAssign = async () => {
+    if (!bulkAssignTo || selectedIds.size === 0) {
+      toast.error("Staff തിരഞ്ഞെടുക്കുക, leads select ചെയ്യുക");
+      return;
+    }
+    const staffMember = staff.find((s) => s.uid === bulkAssignTo);
+    if (!staffMember) return;
+    setAssigning(true);
+    try {
+      const ids = Array.from(selectedIds);
+      let ok = 0;
+      for (const id of ids) {
+        const lead = leads.find((l) => l.id === id);
+        if (!lead) continue;
+        const oldName = lead.assignedStaffName || "Unassigned";
+        await updateLead(id, {
+          assignedStaffId: staffMember.uid,
+          assignedStaffName: staffMember.name,
+        });
+        try {
+          await addLeadHistory({
+            leadId: id,
+            action: "Bulk Reassigned",
+            field: "assignedStaffName",
+            oldValue: oldName,
+            newValue: staffMember.name,
+            updatedBy: appUser?.uid || "",
+            updatedByName: (appUser as any)?.name || appUser?.email || "Admin",
+            createdAt: new Date().toISOString(),
+          });
+        } catch {}
+        ok++;
+      }
+      toast.success(`${ok} leads ${staffMember.name}-ന് assign ചെയ്തു`);
+      setSelectedIds(new Set());
+      setBulkAssignTo("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Bulk assign പരാജയപ്പെട്ടു");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
