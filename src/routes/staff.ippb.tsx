@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 import { useIPPBStaffNotifications } from "@/hooks/use-ippb-staff-notifications";
+import { SoftwareDownloadCard } from "@/components/ippb/SoftwareDownloadCard";
 
 export const Route = createFileRoute("/staff/ippb")({
   ssr: false,
@@ -143,6 +144,8 @@ function StaffIPPBPage() {
           )}
         </div>
       </div>
+
+      <SoftwareDownloadCard variant="staffApk" />
 
       <Collapsible defaultOpen={false}>
         <Card className="border-gov-blue/30">

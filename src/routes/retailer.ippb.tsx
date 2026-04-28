@@ -57,6 +57,7 @@ import {
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 import { applyForIPPBBadge, type IPPBBadgeApplicationDoc } from "@/lib/ippb-badge";
 import { ServicePageShell } from "@/components/ServicePageShell";
+import { SoftwareDownloadCard } from "@/components/ippb/SoftwareDownloadCard";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
@@ -202,6 +203,7 @@ function RetailerIPPBPage() {
         { icon: ShieldCheck, label: "Badge", value: hasBadge ? "Active" : "Pending", accent: hasBadge ? "from-emerald-400 to-teal-400" : "from-rose-400 to-pink-400" },
       ]}
     >
+      <SoftwareDownloadCard variant="pcAgent" />
 
       {!hasBadge && (
         <Card className="border-amber-400 bg-amber-50">
