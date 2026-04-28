@@ -581,7 +581,28 @@ function ContactPage() {
         <ContactRow icon={<MapPin className="w-4 h-4" />} label="Registered Office" value={COMPANY_LEGAL.registeredOffice} multiline />
       </div>
 
-      <div className="mt-4 pt-4 border-t border-amber-300/20 text-[9px] opacity-50 leading-relaxed">
+      <a
+        href="/register"
+        className="mt-4 block text-center rounded-lg py-3 font-bold tracking-wider text-sm shadow-lg"
+        style={{
+          background: `linear-gradient(135deg, ${C.gold}, ${C.goldDeep})`,
+          color: "#1A1306",
+          boxShadow: `0 6px 20px ${C.goldDeep}55`,
+        }}
+      >
+        🚀 ഇപ്പോൾ രജിസ്റ്റർ ചെയ്യുക · REGISTER NOW
+      </a>
+      <a
+        href={`https://wa.me/${COMPANY_LEGAL.whatsapp}?text=${encodeURIComponent("Hi, EI SOLUTIONS franchise-നെ കുറിച്ച് കൂടുതൽ അറിയണം.")}`}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 block text-center rounded-lg py-2.5 font-semibold text-xs border tracking-wider"
+        style={{ borderColor: `${C.gold}55`, color: "#F8EFD0" }}
+      >
+        💬 WhatsApp-ൽ സംസാരിക്കാം
+      </a>
+
+      <div className="mt-3 pt-3 border-t border-amber-300/20 text-[9px] opacity-50 leading-relaxed">
         <div>{COMPANY_LEGAL.legalName}</div>
         <div>CIN: {COMPANY_LEGAL.cin} · GSTIN: {COMPANY_LEGAL.gstin}</div>
       </div>
