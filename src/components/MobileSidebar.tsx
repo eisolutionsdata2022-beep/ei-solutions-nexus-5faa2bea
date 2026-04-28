@@ -73,7 +73,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
-    { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
@@ -81,7 +80,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "Performance", to: "/staff/performance", icon: BarChart3 },
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
-    { label: "Service Apps", to: "/staff/service-applications", icon: ClipboardList },
   ],
   operator: [
     { label: "Dashboard", to: "/operator" as any, icon: LayoutDashboard },
