@@ -328,6 +328,30 @@ export const JOIN_STEPS_PREMIUM = [
   { step: 5, titleMl: "വരുമാനം ആരംഭിക്കുക", titleEn: "Start Earning", desc: "Day-1 മുതൽ customers serve ചെയ്യാം" },
 ];
 
+/* ───────── Important Alert (Last Page) ───────── */
+export const IMPORTANT_ALERT = {
+  titleMl: "പ്രധാന മുന്നറിയിപ്പ്",
+  titleEn: "Important Alert",
+  intro:
+    "വ്യാജ ഓൺലൈൻ സേവനങ്ങളും ജനസേവന കേന്ദ്രങ്ങളുമെന്ന പേരിൽ നിരവധി തട്ടിപ്പുകൾ നടക്കുന്നു. പൊതുജനങ്ങളുടെ ആധാർ ഉൾപ്പെടെയുള്ള വ്യക്തിഗത രേഖകൾ ഉപയോഗിച്ച് സർക്കാർ അപേക്ഷകൾ പ്രോസസ് ചെയ്യുന്നതിനുള്ള അധികാരം:",
+  authorized: [
+    { tag: "CSC", text: "Common Service Centre — Central Government Project" },
+    { tag: "Akshaya", text: "Akshaya Centres — Government of Kerala Project" },
+    { tag: "MeitY", text: "Ministry of Electronics and Information Technology അംഗീകൃത സ്ഥാപനങ്ങൾ" },
+  ],
+  warnings: [
+    "ഇതിൽപ്പെടാത്ത മറ്റ് സ്ഥാപനങ്ങൾ/കേന്ദ്രങ്ങൾ ഇത്തരം സേവനങ്ങൾ നടത്തുന്നത് നിയമപരമായി അനുവദനീയമല്ല.",
+    "Affiliation / registration മാത്രം ഉള്ളത് കൊണ്ട് ഈ സേവനങ്ങൾ ചെയ്യാൻ അനുമതി ലഭിക്കില്ല.",
+    "അനധികൃത കേന്ദ്രങ്ങളിൽ വ്യക്തിഗത രേഖകൾ നൽകുന്നത് ഡാറ്റ മിസ്യൂസ്, സാമ്പത്തിക നഷ്ടം തുടങ്ങിയ ഗുരുതര പ്രശ്നങ്ങൾക്ക് കാരണമാകാം.",
+  ],
+  checklist: [
+    "ഇത് സർക്കാർ അംഗീകൃതമാണോ?",
+    "നിങ്ങൾക്ക് നിയമപരമായ അനുമതി ഉണ്ടോ?",
+    "നിങ്ങളുടെ ബിസിനസ് ഭാവിയിൽ പ്രശ്നങ്ങളില്ലാതെ പ്രവർത്തിക്കുമോ?",
+  ],
+  footer: "വ്യാജ ഓൺലൈൻ സേവനങ്ങളുടെ തട്ടിപ്പിന് ഇരയാവാതിരിക്കുക! സുരക്ഷിതവും നിയമാനുസൃതവുമായ സേവനങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കുക.",
+};
+
 /* ───────── Page list (controls flipbook order) ───────── */
 export type PremiumBookletPage =
   | "front-cover"
@@ -349,6 +373,7 @@ export type PremiumBookletPage =
   | "testimonials"
   | "join-steps"
   | "contact"
+  | "alert"
   | "back-cover";
 
 export const PREMIUM_BOOKLET_PAGES: PremiumBookletPage[] = [
@@ -371,5 +396,6 @@ export const PREMIUM_BOOKLET_PAGES: PremiumBookletPage[] = [
   "testimonials",
   "join-steps",
   "contact",
+  "alert",
   "back-cover",
 ];
