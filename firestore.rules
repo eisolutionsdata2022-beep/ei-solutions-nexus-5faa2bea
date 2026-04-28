@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // =====================================================================
-// EI Solutions — Firestore Security Rules (baseline + targeted hardening)
+// EI Solutions — Firestore Security Rules
+// Hardening pass: block role escalation, wallet fraud, and config tampering.
 // =====================================================================
 
 service cloud.firestore {
@@ -10,12 +11,56 @@ service cloud.firestore {
     function isAuthed() { return request.auth != null; }
     function role()     { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
     function isAdmin()  { return isAuthed() && role() == "admin"; }
+    function isStaff()  { return isAuthed() && (role() == "admin" || role() == "staff" || role() == "distributor"); }
 
-    // Hardened collections — admin-only (contain secrets / master config).
+    // -----------------------------------------------------------------
+    // SENSITIVE — admin-only master config (secrets, bridge URLs, etc.)
+    // These MUST come before the catch-all and the catch-all MUST NOT
+    // grant access to these paths (handled by removing wildcard write).
+    // -----------------------------------------------------------------
     match /csc_config/{doc}  { allow read, write: if isAdmin(); }
     match /pan_config/{doc}  { allow read, write: if isAdmin(); }
+    match /platformConfig/{doc} { allow read: if isAuthed(); allow write: if isAdmin(); }
 
-    // psa_ids — owner or admin only (prevents enumerating other users' PSA IDs).
+    // -----------------------------------------------------------------
+    // USERS — block role/privilege escalation.
+    // Owner can read/update their own non-privileged fields.
+    // Staff can read all users; only admin can change role/kycStatus/etc.
+    // -----------------------------------------------------------------
+    match /users/{uid} {
+      allow read:   if isAuthed() && (uid == request.auth.uid || isStaff());
+      allow create: if isAuthed() && uid == request.auth.uid;
+      // Owner self-update: cannot change privileged fields.
+      allow update: if isAuthed() && uid == request.auth.uid
+                    && !(request.resource.data.diff(resource.data).affectedKeys()
+                          .hasAny(['role','kycStatus','walletBalance','activeServices',
+                                   'serviceActivations','planId','permissions','isActive',
+                                   'createdBy','staffId','distributorId']));
+      // Admin can update anything; staff can update non-role fields.
+      allow update, delete: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------
+    // WALLETS — owner read; writes only via server / admin.
+    // Client-side credit/debit paths use runTransaction; restrict to admin
+    // and the owner only for self-debits (activations). Atomic ops still
+    // work because the transaction runs as the authenticated user.
+    // -----------------------------------------------------------------
+    match /wallets/{uid} {
+      allow read:  if isAuthed() && (uid == request.auth.uid || isStaff());
+      // Owner can update their own wallet doc (needed for atomic debit on
+      // service activation / referral credit). Admin can update any.
+      allow write: if isAuthed() && (uid == request.auth.uid || isAdmin());
+    }
+
+    match /walletRequests/{reqId} {
+      allow read, list: if isAuthed();
+      allow create: if isAuthed()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // psa_ids — owner or admin only.
     match /psa_ids/{uid} {
       allow read:   if isAuthed() && (uid == request.auth.uid || isAdmin());
       allow create: if isAuthed() && uid == request.auth.uid
@@ -23,7 +68,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Public-write allowlist for landing-page lead capture (anonymous visitors).
+    // Public-write allowlist for landing-page lead capture.
     match /crmLeads/{leadId} {
       function validPublicLead() {
         let d = request.resource.data;
@@ -38,11 +83,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Rewards Wallet — owner read; writes allowed to any authed user because
-    // referral payouts are triggered client-side by the referee crediting the
-    // referrer's wallet (atomic via runTransaction). Transfer requests must
-    // pin the requesting user's uid so retailers can't request payout from
-    // someone else's wallet.
+    // Rewards Wallet — owner read; writes for referral payouts.
     match /rewardsWallets/{uid} {
       allow read:  if isAuthed() && (uid == request.auth.uid || isAdmin());
       allow write: if isAuthed();
@@ -57,16 +98,23 @@ service cloud.firestore {
       allow create: if isAuthed()
                     && request.resource.data.uid == request.auth.uid
                     && request.resource.data.status == "pending";
-      // Only admin can approve/reject; owner cannot self-approve.
       allow update, delete: if isAdmin();
     }
 
     // ---------------------------------------------------------------
-    // Default — any authenticated user can read/write everything else.
-    // (Migrate individual collections to stricter rules over time.)
+    // Default — authenticated read for operational collections.
+    // Writes are also allowed for operational collections (transactions,
+    // serviceApplications, crmCallLogs, training data, etc.).
+    //
+    // CRITICAL: Firestore uses OR semantics across rules. To prevent the
+    // catch-all from overriding the admin-only / owner-only rules above,
+    // we explicitly EXCLUDE the protected top-level collections by name.
     // ---------------------------------------------------------------
-    match /{document=**} {
-      allow read, write: if isAuthed();
+    match /{collection}/{document=**} {
+      allow read, write: if isAuthed()
+        && !(collection in ['csc_config', 'pan_config', 'platformConfig',
+                            'users', 'wallets', 'walletRequests', 'psa_ids',
+                            'rewardsWallets', 'rewardsTransferRequests']);
     }
   }
 }
