@@ -130,7 +130,7 @@ export interface EdisDocInput {
   file: File;
 }
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 const ALLOWED_TYPES = /^(image\/(jpeg|jpg|png|webp)|application\/pdf)$/i;
 const ALLOWED_EXT = /\.(jpe?g|png|webp|pdf)$/i;
 
