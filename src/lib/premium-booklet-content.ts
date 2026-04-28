@@ -255,15 +255,28 @@ export const WHY_JOIN_PREMIUM = [
   },
 ];
 
-/* ───────── Real Founder Message ───────── */
+/* ───────── Real Founder Profile ───────── */
 export const FOUNDER_MESSAGE = {
-  name: "Sujith Thulasidharan",
-  designation: "Director & Founder",
-  designationMl: "സ്ഥാപകൻ & ഡയറക്ടർ",
-  message:
-    "EI SOLUTIONS തുടങ്ങിയത് ഒരു സ്വപ്നത്തിൽ നിന്നാണ് — കേരളത്തിലെ ഓരോ ഗ്രാമത്തിലും ഡിജിറ്റൽ സർവീസ് എത്തിക്കണം. ഇന്ന് 2,500+ centers, 6 government recognitions, 50+ services — ഞങ്ങൾ വളരുകയാണ്. നിങ്ങളും ഈ കുടുംബത്തിന്റെ ഭാഗമാകാം.",
-  messageEn:
-    "EI SOLUTIONS started with a dream — to bring digital services to every village in Kerala. Today, with 2,500+ centers and 6 government recognitions, we are growing every day. Join our family.",
+  name: "Mr. Sujith Thulasidharan",
+  designation: "Director",
+  designationMl: "ഡയറക്ടർ",
+  company: "EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED",
+  photoUrl: "/booklet/founder-sujith.jpg",
+  bio: [
+    "Mr. Sujith Thulasidharan is a dynamic entrepreneur and visionary leader, spearheading EI SOLUTIONS JANASEVANA KENDRAM (OPC) PRIVATE LIMITED with a mission to digitally empower communities across India. With strong expertise in e-Governance, healthcare digitization, and technology-driven service delivery, he has successfully built and expanded a network of 1200+ service centers nationwide.",
+    "He plays a pivotal role in implementing innovative projects that bridge the gap between government services and the public. Notably, he is actively involved in the implementation of the Ayushman Bharat Digital Mission (ABDM), contributing towards building a robust digital health ecosystem by enabling seamless access to healthcare services, digital health records, and citizen-centric health solutions.",
+    "Under his leadership, the organization has achieved key recognitions, including registration under Software Technology Parks of India (STPI) and alignment with the Ministry of Electronics and Information Technology, ensuring compliance, credibility, and technological excellence.",
+    "Mr. Sujith is deeply committed to rural empowerment, women entrepreneurship, and digital inclusion, creating sustainable opportunities through skill development programs and digital service platforms. His forward-thinking approach continues to drive the company toward becoming a leading force in India's digital transformation journey.",
+  ],
+  highlights: [
+    { icon: "🏥", text: "Ayushman Bharat Digital Mission (ABDM) implementation" },
+    { icon: "🏢", text: "1200+ service centers across India" },
+    { icon: "🏛️", text: "STPI & MeitY aligned operations" },
+    { icon: "👩‍💼", text: "Women entrepreneurship & rural empowerment" },
+  ],
+  // Legacy fields (kept for compatibility)
+  message: "",
+  messageEn: "",
 };
 
 /* ───────── Earnings Snapshot ───────── */
