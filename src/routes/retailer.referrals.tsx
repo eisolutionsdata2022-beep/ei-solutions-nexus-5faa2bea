@@ -335,6 +335,7 @@ function ReferralPanel() {
           </Card>
 
           <ReferralEarningsChart payouts={payouts} />
+          <CommissionRatesChart configs={commissionConfigs} />
 
           <Card>
             <CardHeader>
