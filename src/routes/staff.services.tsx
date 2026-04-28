@@ -190,15 +190,31 @@ function ManageEdisDialog({ app, staffName, onClose }: { app: EdisApplication; s
           <Row label="Retailer" value={app.retailerEmail} />
 
           <div className="pt-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Documents ({app.documents.length})</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Documents ({app.documents.length})</p>
+              {app.documents.length > 0 && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={async () => {
+                  for (const d of app.documents) {
+                    await downloadDoc(d, app);
+                  }
+                  toast.success("All documents downloaded");
+                }}>
+                  <Download className="w-3.5 h-3.5 mr-1" /> Download All
+                </Button>
+              )}
+            </div>
             <div className="space-y-1.5">
               {app.documents.map((d, i) => (
-                <a key={i} href={d.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 rounded-lg bg-muted/40">
-                  <Download className="w-4 h-4" />
-                  <span className="font-medium">{d.name}</span>
-                  <span className="text-xs text-muted-foreground truncate ml-auto">{d.fileName}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                <div key={i} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-muted/40">
+                  <span className="font-medium flex-1 min-w-0 truncate">{d.name}</span>
+                  <span className="text-xs text-muted-foreground truncate hidden sm:inline">{d.fileName}</span>
+                  <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => downloadDoc(d, app)} title="Download">
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
+                  <a href={d.url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-md border border-border hover:bg-muted" title="Open in new tab">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               ))}
               {app.documents.length === 0 && <p className="text-xs text-muted-foreground">No documents.</p>}
             </div>
