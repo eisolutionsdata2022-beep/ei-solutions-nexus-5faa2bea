@@ -159,7 +159,12 @@ function ServiceCard({ cfg, onEdit }: { cfg: CommissionConfig; onEdit: () => voi
           </>
         )}
         {cfg.type === "admin_payout" && (
-          <Row label="Default Payout" val={`₹${cfg.defaultPayoutAmount ?? 0}`} bold />
+          <>
+            <Row label="Default Payout" val={`₹${cfg.defaultPayoutAmount ?? 0}`} bold />
+            {cfg.retailerCommission ? <Row label="→ Retailer" val={`₹${cfg.retailerCommission}`} /> : null}
+            {cfg.staffCommission ? <Row label="→ Staff" val={`₹${cfg.staffCommission}`} /> : null}
+            {cfg.trainerCommission ? <Row label="→ Trainer" val={`₹${cfg.trainerCommission}`} /> : null}
+          </>
         )}
         {cfg.notes && <p className="text-[11px] text-muted-foreground italic pt-1">{cfg.notes}</p>}
       </CardContent>
@@ -348,16 +353,36 @@ function EditDialog({ cfg, onClose, onSaved, updatedBy }: { cfg: CommissionConfi
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Type</Label>
-              <Select value={form.type} onValueChange={(v: any) => update("type", v)}>
+              <Select value={form.type} onValueChange={(v: any) => {
+                setForm((f) => ({
+                  ...f,
+                  type: v,
+                  category:
+                    v === "admin_payout" ? "Admin Payouts" :
+                    v === "operator_based" ? "Operator-Based" :
+                    f.category === "Admin Payouts" || f.category === "Operator-Based" ? "Customer Charges" : f.category,
+                }));
+              }}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="customer_charge">Customer Charge</SelectItem>
-                  <SelectItem value="admin_payout">Admin Payout</SelectItem>
+                  <SelectItem value="customer_charge">Customer Charge (debit retailer)</SelectItem>
+                  <SelectItem value="admin_payout">Admin Payout (admin pays user)</SelectItem>
                   <SelectItem value="operator_based">Operator-Based</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
+              <Label className="text-xs">Category (Tab)</Label>
+              <Select value={form.category} onValueChange={(v: any) => update("category", v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {COMMISSION_TABS.map((t) => (
+                    <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
               <Label className="text-xs">Mode</Label>
               <Select value={form.mode || "fixed"} onValueChange={(v: any) => update("mode", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
@@ -393,10 +418,25 @@ function EditDialog({ cfg, onClose, onSaved, updatedBy }: { cfg: CommissionConfi
           )}
 
           {form.type === "admin_payout" && (
-            <div>
-              <Label className="text-xs">Default Payout Amount (₹)</Label>
-              <Input type="number" min={0} value={form.defaultPayoutAmount ?? 0} onChange={(e) => update("defaultPayoutAmount", Number(e.target.value))} className="h-9" />
-            </div>
+            <>
+              <div>
+                <Label className="text-xs">Default Payout Amount (₹)</Label>
+                <Input type="number" min={0} value={form.defaultPayoutAmount ?? 0} onChange={(e) => update("defaultPayoutAmount", Number(e.target.value))} className="h-9" />
+                <p className="text-[10px] text-muted-foreground mt-1">Pre-filled value when admin clicks "Generate Payment".</p>
+              </div>
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-xs font-semibold">Auto-split (per service completion)</p>
+                <p className="text-[10px] text-muted-foreground">Optional: how much admin pays each role automatically when service completes.</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div><Label className="text-xs">→ Retailer</Label><Input type="number" min={0} value={form.retailerCommission ?? 0} onChange={(e) => update("retailerCommission", Number(e.target.value))} className="h-9" /></div>
+                  <div><Label className="text-xs">→ Staff</Label><Input type="number" min={0} value={form.staffCommission ?? 0} onChange={(e) => update("staffCommission", Number(e.target.value))} className="h-9" /></div>
+                  <div><Label className="text-xs">→ Trainer</Label><Input type="number" min={0} value={form.trainerCommission ?? 0} onChange={(e) => update("trainerCommission", Number(e.target.value))} className="h-9" /></div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total admin pays per service: <span className="font-semibold text-foreground">₹{(form.retailerCommission ?? 0) + (form.staffCommission ?? 0) + (form.trainerCommission ?? 0)}</span>
+                </p>
+              </div>
+            </>
           )}
 
           <div>
