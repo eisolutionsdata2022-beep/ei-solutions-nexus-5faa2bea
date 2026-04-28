@@ -159,7 +159,12 @@ function ServiceCard({ cfg, onEdit }: { cfg: CommissionConfig; onEdit: () => voi
           </>
         )}
         {cfg.type === "admin_payout" && (
-          <Row label="Default Payout" val={`₹${cfg.defaultPayoutAmount ?? 0}`} bold />
+          <>
+            <Row label="Default Payout" val={`₹${cfg.defaultPayoutAmount ?? 0}`} bold />
+            {cfg.retailerCommission ? <Row label="→ Retailer" val={`₹${cfg.retailerCommission}`} /> : null}
+            {cfg.staffCommission ? <Row label="→ Staff" val={`₹${cfg.staffCommission}`} /> : null}
+            {cfg.trainerCommission ? <Row label="→ Trainer" val={`₹${cfg.trainerCommission}`} /> : null}
+          </>
         )}
         {cfg.notes && <p className="text-[11px] text-muted-foreground italic pt-1">{cfg.notes}</p>}
       </CardContent>
