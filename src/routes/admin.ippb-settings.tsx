@@ -88,95 +88,31 @@ function AdminIPPBSettingsPage() {
     );
   }
 
-  const sumSplits =
-    Number(cfg.retailerCommission) + Number(cfg.staffCommission) + Number(cfg.adminCommission);
-  const exceeds = sumSplits > Number(cfg.serviceCharge);
-
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Banknote className="w-6 h-6 text-gov-blue" />
-          IPPB Account Opening – Fee Settings
+          IPPB Account Opening – Settings
         </h1>
         <p className="text-sm text-muted-foreground">
-          Retailer wallet ഇതിൽ നിന്ന് debit ചെയ്യും. Staff success മാർക്ക് ചെയ്യുമ്പോൾ മാത്രം charge applies.
+          Software downloads, request workflow & legacy migration. Service charge / commission splits are now managed in the Commission Center.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Service Charge & Commission Split</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Service Charge (₹) — debited from retailer</Label>
-            <Input
-              type="number"
-              min={0}
-              value={cfg.serviceCharge}
-              onChange={(e) => setCfg({ ...cfg, serviceCharge: Number(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Retailer Commission (₹)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={cfg.retailerCommission}
-              onChange={(e) => setCfg({ ...cfg, retailerCommission: Number(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Staff Commission (₹)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={cfg.staffCommission}
-              onChange={(e) => setCfg({ ...cfg, staffCommission: Number(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Admin Commission (₹)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={cfg.adminCommission}
-              onChange={(e) => setCfg({ ...cfg, adminCommission: Number(e.target.value) })}
-            />
-          </div>
-
-          <div className="sm:col-span-2 rounded-lg border p-4 bg-muted/40 text-sm space-y-1">
-            <div className="flex items-start gap-2 text-gov-blue font-medium">
-              <Info className="w-4 h-4 mt-0.5" />
-              <span>Live Preview</span>
-            </div>
-            <div>Debit from retailer: <span className="font-bold">₹{cfg.serviceCharge}</span></div>
-            <div>
-              Splits: Retailer ₹{cfg.retailerCommission} + Staff ₹{cfg.staffCommission} + Admin ₹{cfg.adminCommission}
-              {" = "}₹{sumSplits}
-            </div>
-            <div>
-              Net cost to retailer:{" "}
-              <span className="font-bold text-gov-blue">₹{netRetailerCost(cfg)}</span>
-            </div>
-            {exceeds && (
-              <div className="text-destructive font-medium">
-                ⚠ Splits exceed service charge — adjust before saving.
-              </div>
-            )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <Button onClick={handleSave} disabled={saving || exceeds}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Settings
-            </Button>
-            {cfg.updatedAt && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Last updated: {new Date(cfg.updatedAt).toLocaleString()}
-              </p>
-            )}
+      <Card className="border-gov-blue/30 bg-gov-blue/5">
+        <CardContent className="pt-6 flex items-start gap-3 text-sm">
+          <Info className="w-5 h-5 text-gov-blue mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="font-semibold text-gov-blue">Commission moved to Commission Center</p>
+            <p className="text-muted-foreground">
+              IPPB customer charge & commission splits (Retailer / Staff / Admin) ഇപ്പോൾ{" "}
+              <a href="/admin/commission-center" className="underline font-medium">/admin/commission-center</a>{" "}
+              → <em>Customer Charges</em> tab → <strong>IPPB Account Opening</strong>-ൽ manage ചെയ്യാം.
+            </p>
+            <p className="text-xs text-muted-foreground pt-1">
+              Current values: ₹{cfg.serviceCharge} charge → Retailer ₹{cfg.retailerCommission} + Staff ₹{cfg.staffCommission} + Admin ₹{cfg.adminCommission}
+            </p>
           </div>
         </CardContent>
       </Card>
