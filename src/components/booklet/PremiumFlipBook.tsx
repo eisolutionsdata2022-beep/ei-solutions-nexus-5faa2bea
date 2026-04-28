@@ -688,32 +688,65 @@ function AlertPage() {
 
 function BackCover() {
   return (
-    <div className="h-full flex flex-col items-center justify-between text-center" style={{ color: "#F8EFD0" }}>
-      <div className="w-full pt-2">
+    <div className="h-full flex flex-col items-center text-center" style={{ color: "#F8EFD0" }}>
+      <div className="w-full pt-1">
         <div className="text-[10px] tracking-[0.4em] opacity-70" style={{ color: C.gold }}>
           THANK YOU FOR READING
         </div>
       </div>
 
-      <div className="flex flex-col items-center">
-        <Sparkles className="w-10 h-10 mb-4" style={{ color: C.gold }} />
-        <h2 className="text-3xl sm:text-4xl font-bold leading-tight" style={{ fontFamily: SERIF }}>
-          ഞങ്ങളുടെ digital<br/>കുടുംബത്തിലേക്ക് സ്വാഗതം.
+      <div className="flex flex-col items-center mt-5">
+        <Sparkles className="w-9 h-9 mb-3" style={{ color: C.gold }} />
+        <h2 className="text-2xl sm:text-3xl font-bold leading-tight" style={{ fontFamily: SERIF }}>
+          ഞങ്ങളുടെ digital<br />കുടുംബത്തിലേക്ക് സ്വാഗതം.
         </h2>
-        <div className="mx-auto mt-4 w-20 h-px" style={{ background: C.gold }} />
-        <p className="mt-4 text-xs italic opacity-80 max-w-[28ch]" style={{ fontFamily: SERIF }}>
+        <div className="mx-auto mt-3 w-20 h-px" style={{ background: C.gold }} />
+        <p className="mt-3 text-xs italic opacity-80 max-w-[28ch]" style={{ fontFamily: SERIF }}>
           "Welcome to our digital family."
         </p>
       </div>
 
-      <div className="w-full">
-        <div className="text-[16px] font-bold tracking-widest mb-2" style={{ color: C.gold, fontFamily: SERIF }}>
+      {/* CTA cluster — visible when the book closes */}
+      <div className="w-full mt-5 flex flex-col gap-2.5 px-1">
+        <a
+          href="/register"
+          className="block text-center rounded-lg py-3 font-bold tracking-wider text-sm shadow-lg"
+          style={{
+            background: `linear-gradient(135deg, ${C.gold}, ${C.goldDeep})`,
+            color: "#1A1306",
+            boxShadow: `0 8px 24px ${C.goldDeep}66`,
+          }}
+        >
+          🚀 ഇപ്പോൾ രജിസ്റ്റർ ചെയ്യുക
+        </a>
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={`https://wa.me/${COMPANY_LEGAL.whatsapp}?text=${encodeURIComponent("Hi, EI SOLUTIONS-ൽ join ചെയ്യണം.")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="block text-center rounded-lg py-2 text-[11px] font-semibold border tracking-wider"
+            style={{ borderColor: `${C.gold}55`, color: "#F8EFD0", background: "rgba(255,255,255,0.04)" }}
+          >
+            💬 WhatsApp
+          </a>
+          <a
+            href={`tel:${COMPANY_LEGAL.phone.replace(/\s/g, "")}`}
+            className="block text-center rounded-lg py-2 text-[11px] font-semibold border tracking-wider"
+            style={{ borderColor: `${C.gold}55`, color: "#F8EFD0", background: "rgba(255,255,255,0.04)" }}
+          >
+            📞 Call Now
+          </a>
+        </div>
+      </div>
+
+      <div className="w-full mt-auto pt-4">
+        <div className="text-[15px] font-bold tracking-widest mb-1.5" style={{ color: C.gold, fontFamily: SERIF }}>
           EI SOLUTIONS
         </div>
         <div className="text-[9px] opacity-60 tracking-wider">
           {COMPANY_LEGAL.website.replace("https://", "")} · {COMPANY_LEGAL.phone}
         </div>
-        <div className="text-[8px] opacity-40 mt-3">© 2026 EI SOLUTIONS · ALL RIGHTS RESERVED</div>
+        <div className="text-[8px] opacity-40 mt-2">© 2026 EI SOLUTIONS · ALL RIGHTS RESERVED</div>
       </div>
     </div>
   );
