@@ -278,9 +278,6 @@ function RetailerIPPBPage() {
               <Download className="w-4 h-4" /> Download .exe (161 MB)
             </a>
           </Button>
-          <Button asChild size="sm" variant="outline" className="border-amber-500 text-amber-900 hover:bg-amber-200">
-            <Link to="/install"><Info className="w-4 h-4" /> Install Guide</Link>
-          </Button>
         </div>
       </div>
 
