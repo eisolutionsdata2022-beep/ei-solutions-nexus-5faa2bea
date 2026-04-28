@@ -63,6 +63,7 @@ function ReferralPanel() {
   const [payouts, setPayouts] = useState<ReferralPayout[]>([]);
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
+  const [commissionConfigs, setCommissionConfigs] = useState<CommissionConfig[]>([]);
 
   // Rewards wallet (separate from main wallet)
   const [rewardsBalance, setRewardsBalance] = useState(0);
