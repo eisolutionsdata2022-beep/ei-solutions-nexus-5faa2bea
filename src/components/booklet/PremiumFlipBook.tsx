@@ -8,9 +8,9 @@
 import { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import HTMLFlipBook from "react-pageflip";
 import {
-  ChevronLeft, ChevronRight, Download, Maximize2, Phone,
+  ChevronLeft, ChevronRight, Download, Phone,
   MessageCircle, Mail, Globe, MapPin, Star, ShieldCheck,
-  Award, Sparkles, TrendingUp, Users, CheckCircle2, Building2,
+  Award, Sparkles, TrendingUp, CheckCircle2, Share2, Loader2,
 } from "lucide-react";
 import {
   COMPANY_LEGAL,
