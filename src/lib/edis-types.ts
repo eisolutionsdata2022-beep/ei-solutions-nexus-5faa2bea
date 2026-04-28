@@ -176,7 +176,7 @@ export async function uploadEdisDocuments(opts: {
     if (item.file.size > MAX_BYTES) {
       const mb = (item.file.size / (1024 * 1024)).toFixed(1);
       throw new EdisUploadError("FILE_TOO_LARGE", item.name, item.file.name,
-        `"${item.name}" is ${mb} MB. Max allowed size is 10 MB.`);
+        `"${item.name}" is ${mb} MB. Max allowed size is 100 MB.`);
     }
 
     const path = [
