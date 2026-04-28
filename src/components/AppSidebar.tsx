@@ -56,6 +56,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
     { label: "Marketing Hub", to: "/admin/marketing", icon: Gift, tag: "new", hint: "CMS, Leads, Bulk Email, WhatsApp, Brochures" },
+    { label: "Premium Booklet", to: "/admin/booklet", icon: BookOpen, tag: "new", hint: "3D flipbook with real govt certifications" },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "Staff User Creation", to: "/admin/staff-created-users", icon: BarChart3, hint: "How many users each staff has registered" },
