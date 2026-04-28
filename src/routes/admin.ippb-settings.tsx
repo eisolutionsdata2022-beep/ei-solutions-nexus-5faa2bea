@@ -63,26 +63,6 @@ function AdminIPPBSettingsPage() {
     }
   };
 
-  const handleSave = async () => {
-    if (!appUser) return;
-    setSaving(true);
-    try {
-      await saveIPPBFeeConfig(
-        {
-          serviceCharge: Number(cfg.serviceCharge) || 0,
-          retailerCommission: Number(cfg.retailerCommission) || 0,
-          staffCommission: Number(cfg.staffCommission) || 0,
-          adminCommission: Number(cfg.adminCommission) || 0,
-        },
-        appUser.uid
-      );
-      toast.success("IPPB fee config saved");
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleMigrate = async () => {
     if (!appUser) return;
