@@ -45,6 +45,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Wallet Requests", to: "/admin/wallet-requests", icon: Banknote },
     { label: "Trainings", to: "/admin/trainings", icon: GraduationCap },
     { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
+    { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Settings },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
   ],
   distributor: [
