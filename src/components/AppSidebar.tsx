@@ -79,8 +79,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Portal Settings", to: "/admin/pan-portal-settings", icon: IdCard as any },
     { label: "PAN Legacy Wallet", to: "/admin/pan-legacy-balances", icon: Wallet },
-    { label: "Finance Overview", to: "/admin/finance", icon: Banknote },
-    { label: "Finance Branches", to: "/admin/finance-branches", icon: ShieldCheck },
     { label: "DMT Settings", to: "/admin/dmt-settings", icon: ArrowLeftRight },
     { label: "DMT Daily Digest", to: "/admin/dmt-daily-digest", icon: CalendarDays },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
