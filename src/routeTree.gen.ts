@@ -107,9 +107,6 @@ import { Route as AdminJobDisputesRouteImport } from './routes/admin.job-dispute
 import { Route as AdminIppbSettingsRouteImport } from './routes/admin.ippb-settings'
 import { Route as AdminIppbBadgesRouteImport } from './routes/admin.ippb-badges'
 import { Route as AdminHoroscopeSettingsRouteImport } from './routes/admin.horoscope-settings'
-import { Route as AdminFormAnalyticsRouteImport } from './routes/admin.form-analytics'
-import { Route as AdminFinanceBranchesRouteImport } from './routes/admin.finance-branches'
-import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminCscSettingsRouteImport } from './routes/admin.csc-settings'
 import { Route as AdminCscMonitorRouteImport } from './routes/admin.csc-monitor'
 import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
@@ -618,21 +615,6 @@ const AdminHoroscopeSettingsRoute = AdminHoroscopeSettingsRouteImport.update({
   path: '/horoscope-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFormAnalyticsRoute = AdminFormAnalyticsRouteImport.update({
-  id: '/form-analytics',
-  path: '/form-analytics',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFinanceBranchesRoute = AdminFinanceBranchesRouteImport.update({
-  id: '/finance-branches',
-  path: '/finance-branches',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFinanceRoute = AdminFinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminCscSettingsRoute = AdminCscSettingsRouteImport.update({
   id: '/csc-settings',
   path: '/csc-settings',
@@ -742,9 +724,6 @@ export interface FileRoutesByFullPath {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/finance': typeof AdminFinanceRoute
-  '/admin/finance-branches': typeof AdminFinanceBranchesRoute
-  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -854,9 +833,6 @@ export interface FileRoutesByTo {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/finance': typeof AdminFinanceRoute
-  '/admin/finance-branches': typeof AdminFinanceBranchesRoute
-  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -974,9 +950,6 @@ export interface FileRoutesById {
   '/admin/crm-reports': typeof AdminCrmReportsRoute
   '/admin/csc-monitor': typeof AdminCscMonitorRoute
   '/admin/csc-settings': typeof AdminCscSettingsRoute
-  '/admin/finance': typeof AdminFinanceRoute
-  '/admin/finance-branches': typeof AdminFinanceBranchesRoute
-  '/admin/form-analytics': typeof AdminFormAnalyticsRoute
   '/admin/horoscope-settings': typeof AdminHoroscopeSettingsRoute
   '/admin/ippb-badges': typeof AdminIppbBadgesRoute
   '/admin/ippb-settings': typeof AdminIppbSettingsRoute
@@ -1095,9 +1068,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/finance'
-    | '/admin/finance-branches'
-    | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -1207,9 +1177,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/finance'
-    | '/admin/finance-branches'
-    | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -1326,9 +1293,6 @@ export interface FileRouteTypes {
     | '/admin/crm-reports'
     | '/admin/csc-monitor'
     | '/admin/csc-settings'
-    | '/admin/finance'
-    | '/admin/finance-branches'
-    | '/admin/form-analytics'
     | '/admin/horoscope-settings'
     | '/admin/ippb-badges'
     | '/admin/ippb-settings'
@@ -2132,27 +2096,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHoroscopeSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/form-analytics': {
-      id: '/admin/form-analytics'
-      path: '/form-analytics'
-      fullPath: '/admin/form-analytics'
-      preLoaderRoute: typeof AdminFormAnalyticsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/finance-branches': {
-      id: '/admin/finance-branches'
-      path: '/finance-branches'
-      fullPath: '/admin/finance-branches'
-      preLoaderRoute: typeof AdminFinanceBranchesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/finance': {
-      id: '/admin/finance'
-      path: '/finance'
-      fullPath: '/admin/finance'
-      preLoaderRoute: typeof AdminFinanceRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/csc-settings': {
       id: '/admin/csc-settings'
       path: '/csc-settings'
@@ -2279,9 +2222,6 @@ interface AdminRouteChildren {
   AdminCrmReportsRoute: typeof AdminCrmReportsRoute
   AdminCscMonitorRoute: typeof AdminCscMonitorRoute
   AdminCscSettingsRoute: typeof AdminCscSettingsRoute
-  AdminFinanceRoute: typeof AdminFinanceRoute
-  AdminFinanceBranchesRoute: typeof AdminFinanceBranchesRoute
-  AdminFormAnalyticsRoute: typeof AdminFormAnalyticsRoute
   AdminHoroscopeSettingsRoute: typeof AdminHoroscopeSettingsRoute
   AdminIppbBadgesRoute: typeof AdminIppbBadgesRoute
   AdminIppbSettingsRoute: typeof AdminIppbSettingsRoute
@@ -2327,9 +2267,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCrmReportsRoute: AdminCrmReportsRoute,
   AdminCscMonitorRoute: AdminCscMonitorRoute,
   AdminCscSettingsRoute: AdminCscSettingsRoute,
-  AdminFinanceRoute: AdminFinanceRoute,
-  AdminFinanceBranchesRoute: AdminFinanceBranchesRoute,
-  AdminFormAnalyticsRoute: AdminFormAnalyticsRoute,
   AdminHoroscopeSettingsRoute: AdminHoroscopeSettingsRoute,
   AdminIppbBadgesRoute: AdminIppbBadgesRoute,
   AdminIppbSettingsRoute: AdminIppbSettingsRoute,
