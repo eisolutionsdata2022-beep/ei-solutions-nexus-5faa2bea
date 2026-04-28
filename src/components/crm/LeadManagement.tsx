@@ -206,6 +206,35 @@ export function LeadManagement() {
         </CardContent>
       </Card>
 
+      {!isStaffOnly && selectedIds.size > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+            <div className="text-sm font-medium">
+              {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} selected
+            </div>
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              <Select value={bulkAssignTo} onValueChange={setBulkAssignTo}>
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="Assign to staff..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {staff.map((s) => (
+                    <SelectItem key={s.uid} value={s.uid}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={handleBulkAssign} disabled={assigning || !bulkAssignTo}>
+                <UserCheck className="h-4 w-4 mr-1" />
+                {assigning ? "Assigning..." : "Bulk Assign"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {filtered.length > 0 ? (
@@ -213,6 +242,15 @@ export function LeadManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {!isStaffOnly && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allFilteredSelected}
+                          onCheckedChange={(c) => toggleSelectAll(!!c)}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Lead ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
@@ -227,6 +265,15 @@ export function LeadManagement() {
                 <TableBody>
                   {filtered.map((lead) => (
                     <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedLead(lead)}>
+                      {!isStaffOnly && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(lead.id)}
+                            onCheckedChange={(c) => toggleOne(lead.id, !!c)}
+                            aria-label={`Select ${lead.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-mono text-xs">{lead.leadId}</TableCell>
                       <TableCell className="font-medium">{lead.name}</TableCell>
                       <TableCell>{lead.phone}</TableCell>
