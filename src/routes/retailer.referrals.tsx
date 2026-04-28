@@ -37,6 +37,10 @@ import {
   REWARDS_MIN_TRANSFER,
   type TransferRequestDoc,
 } from "@/lib/rewards-wallet";
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, Line, ComposedChart, Bar, Legend,
+} from "recharts";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TreasureBox } from "@/components/games/TreasureBox";
