@@ -23,6 +23,7 @@ import {
   TESTIMONIALS_PREMIUM,
   JOIN_STEPS_PREMIUM,
   PREMIUM_BOOKLET_PAGES,
+  IMPORTANT_ALERT,
   type Certification,
 } from "@/lib/premium-booklet-content";
 
