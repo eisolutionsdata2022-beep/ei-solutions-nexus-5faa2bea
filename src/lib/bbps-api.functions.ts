@@ -679,6 +679,9 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
   }> => {
     const startedAt = Date.now();
     const timestamp = new Date().toISOString();
+    // Always invalidate any cached token so each diagnostic run is a true
+    // round-trip — important after the provider clears a whitelist/cred issue.
+    _resetBbpsTokenCache();
     const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
     const bridgeSecret = process.env.BBPS_BRIDGE_HMAC_SECRET;
     const clientId = process.env.BBPS_CLIENT_ID;
