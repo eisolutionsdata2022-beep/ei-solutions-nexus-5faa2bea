@@ -65,8 +65,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Buttons", to: "/admin/service-buttons", icon: ShoppingBag },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
-    { label: "Form Analytics", to: "/admin/form-analytics", icon: BarChart3 },
-    { label: "Service Apps", to: "/admin/service-applications", icon: ClipboardList },
     { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
     { label: "Training Earnings", to: "/admin/training-earnings", icon: BarChart3 },
     { label: "Training Reviews", to: "/admin/training-reviews", icon: MessageSquare },
