@@ -28,6 +28,9 @@ export function LeadManagement() {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAssignTo, setBulkAssignTo] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeLeads(
