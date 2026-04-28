@@ -3,7 +3,10 @@ import { db } from "./firebase";
 
 /**
  * Atomically debit a wallet and log the transaction.
- * Returns the new balance or throws on insufficient funds.
+ * Auto-creates the wallet doc if missing (with balance 0) so debits fail
+ * cleanly with "Insufficient balance" rather than the misleading
+ * "Wallet not found" — which previously broke service activation for any
+ * retailer who had never topped up.
  */
 export async function atomicDebit(
   userId: string,
@@ -15,11 +18,14 @@ export async function atomicDebit(
   const walletRef = doc(db, "wallets", userId);
   const newBalance = await runTransaction(db, async (transaction) => {
     const walletDoc = await transaction.get(walletRef);
-    if (!walletDoc.exists()) throw new Error("Wallet not found");
-    const current = walletDoc.data().balance || 0;
+    const current = walletDoc.exists() ? walletDoc.data().balance || 0 : 0;
     if (current < amount) throw new Error("Insufficient balance");
     const updated = current - amount;
-    transaction.update(walletRef, { balance: updated });
+    if (walletDoc.exists()) {
+      transaction.update(walletRef, { balance: updated });
+    } else {
+      transaction.set(walletRef, { balance: updated, userId, createdAt: new Date().toISOString() });
+    }
     return updated;
   });
 
@@ -36,6 +42,9 @@ export async function atomicDebit(
 
 /**
  * Atomically credit a wallet and log the transaction.
+ * Auto-creates the wallet doc if missing — fixes the bug where admin-approved
+ * wallet top-ups appeared "approved" but never actually credited the user
+ * because their wallet doc didn't exist yet.
  */
 export async function atomicCredit(
   userId: string,
@@ -47,10 +56,13 @@ export async function atomicCredit(
   const walletRef = doc(db, "wallets", userId);
   const newBalance = await runTransaction(db, async (transaction) => {
     const walletDoc = await transaction.get(walletRef);
-    if (!walletDoc.exists()) throw new Error("Wallet not found");
-    const current = walletDoc.data().balance || 0;
+    const current = walletDoc.exists() ? walletDoc.data().balance || 0 : 0;
     const updated = current + amount;
-    transaction.update(walletRef, { balance: updated });
+    if (walletDoc.exists()) {
+      transaction.update(walletRef, { balance: updated });
+    } else {
+      transaction.set(walletRef, { balance: updated, userId, createdAt: new Date().toISOString() });
+    }
     return updated;
   });
 

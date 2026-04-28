@@ -46,7 +46,9 @@ export function LeadManagement() {
     const s = search.trim().toLowerCase();
     return leads.filter((l) => {
       if (statusFilter !== "all" && l.status !== statusFilter) return false;
-      if (staffFilter !== "all" && l.assignedStaffId !== staffFilter) return false;
+      if (staffFilter === "unassigned") {
+        if (l.assignedStaffId && l.assignedStaffId !== "") return false;
+      } else if (staffFilter !== "all" && l.assignedStaffId !== staffFilter) return false;
       if (sourceFilter !== "all" && l.leadSource !== sourceFilter) return false;
       if (!s) return true;
       return [l.name, l.phone, l.leadId, l.courseInterested, l.location]
@@ -136,6 +138,7 @@ export function LeadManagement() {
               <SelectTrigger><SelectValue placeholder="All Staff" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Staff</SelectItem>
+                <SelectItem value="unassigned">⚠ Unassigned</SelectItem>
                 {staff.map((s) => <SelectItem key={s.uid} value={s.uid}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>

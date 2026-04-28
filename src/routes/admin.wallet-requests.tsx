@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, doc, updateDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, doc, updateDoc, onSnapshot, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { atomicCredit } from "@/lib/firebase-transactions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,18 +51,21 @@ function AdminWalletRequests() {
   const handleAction = async (req: WalletRequest, action: "approved" | "rejected") => {
     setProcessing(req.id);
     try {
+      // For approvals, credit the wallet FIRST. If credit fails we don't
+      // want the request marked "approved" (previous bug let requests show
+      // approved without ever crediting the user).
+      if (action === "approved") {
+        await atomicCredit(req.userId, req.amount, {
+          source: "wallet_topup",
+          description: `Wallet top-up approved (${req.paymentMethod})`,
+          requestId: req.id,
+        });
+      }
       await updateDoc(doc(db, "walletRequests", req.id), {
         status: action,
         remarks: remarks[req.id] || "",
         processedAt: new Date().toISOString(),
       });
-
-      if (action === "approved") {
-        await atomicCredit(req.userId, req.amount, {
-          source: "wallet_topup",
-          description: `Wallet top-up approved (${req.paymentMethod})`,
-        });
-      }
       toast.success(`Request ${action}`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to process request");
@@ -181,6 +184,42 @@ function AdminWalletRequests() {
                           </Button>
                         </div>
                       </>
+                    )}
+                    {req.status === "approved" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={processing === req.id}
+                        onClick={async () => {
+                          setProcessing(req.id);
+                          try {
+                            // Idempotency: skip if a credit transaction with this requestId already exists
+                            const existing = await getDocs(
+                              query(
+                                collection(db, "transactions"),
+                                where("requestId", "==", req.id),
+                                where("type", "==", "credit"),
+                              ),
+                            );
+                            if (!existing.empty) {
+                              toast.info("Already credited — no action needed.");
+                              return;
+                            }
+                            await atomicCredit(req.userId, req.amount, {
+                              source: "wallet_topup_recredit",
+                              description: `Re-credit for missed top-up (${req.paymentMethod})`,
+                              requestId: req.id,
+                            });
+                            toast.success(`Credited ₹${req.amount}`);
+                          } catch (e: any) {
+                            toast.error(e?.message || "Re-credit failed");
+                          } finally {
+                            setProcessing(null);
+                          }
+                        }}
+                      >
+                        Re-credit (if missed)
+                      </Button>
                     )}
                     {req.remarks && <p className="text-xs text-muted-foreground">Remarks: {req.remarks}</p>}
                   </div>
