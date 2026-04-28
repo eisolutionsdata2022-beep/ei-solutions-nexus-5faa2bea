@@ -42,8 +42,6 @@ import { Route as StaffMarketingRouteImport } from './routes/staff.marketing'
 import { Route as StaffLeadsRouteImport } from './routes/staff.leads'
 import { Route as StaffIppbRouteImport } from './routes/staff.ippb'
 import { Route as StaffHoroscopeRequestsRouteImport } from './routes/staff.horoscope-requests'
-import { Route as StaffFormsRouteImport } from './routes/staff.forms'
-import { Route as StaffFormSubmissionsRouteImport } from './routes/staff.form-submissions'
 import { Route as StaffDmtRouteImport } from './routes/staff.dmt'
 import { Route as StaffCreateUserRouteImport } from './routes/staff.create-user'
 import { Route as RetailerWorkBadgeRouteImport } from './routes/retailer.work-badge'
@@ -67,7 +65,6 @@ import { Route as RetailerKycRouteImport } from './routes/retailer.kyc'
 import { Route as RetailerJobsRouteImport } from './routes/retailer.jobs'
 import { Route as RetailerIppbRouteImport } from './routes/retailer.ippb'
 import { Route as RetailerHoroscopeRouteImport } from './routes/retailer.horoscope'
-import { Route as RetailerFormsRouteImport } from './routes/retailer.forms'
 import { Route as RetailerFinanceRouteImport } from './routes/retailer.finance'
 import { Route as RetailerEiPayRouteImport } from './routes/retailer.ei-pay'
 import { Route as RetailerCvBuilderRouteImport } from './routes/retailer.cv-builder'
@@ -290,16 +287,6 @@ const StaffHoroscopeRequestsRoute = StaffHoroscopeRequestsRouteImport.update({
   path: '/horoscope-requests',
   getParentRoute: () => StaffRoute,
 } as any)
-const StaffFormsRoute = StaffFormsRouteImport.update({
-  id: '/forms',
-  path: '/forms',
-  getParentRoute: () => StaffRoute,
-} as any)
-const StaffFormSubmissionsRoute = StaffFormSubmissionsRouteImport.update({
-  id: '/form-submissions',
-  path: '/form-submissions',
-  getParentRoute: () => StaffRoute,
-} as any)
 const StaffDmtRoute = StaffDmtRouteImport.update({
   id: '/dmt',
   path: '/dmt',
@@ -413,11 +400,6 @@ const RetailerIppbRoute = RetailerIppbRouteImport.update({
 const RetailerHoroscopeRoute = RetailerHoroscopeRouteImport.update({
   id: '/horoscope',
   path: '/horoscope',
-  getParentRoute: () => RetailerRoute,
-} as any)
-const RetailerFormsRoute = RetailerFormsRouteImport.update({
-  id: '/forms',
-  path: '/forms',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerFinanceRoute = RetailerFinanceRouteImport.update({
@@ -770,7 +752,6 @@ export interface FileRoutesByFullPath {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
-  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
@@ -794,8 +775,6 @@ export interface FileRoutesByFullPath {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
-  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
-  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -880,7 +859,6 @@ export interface FileRoutesByTo {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
-  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
@@ -904,8 +882,6 @@ export interface FileRoutesByTo {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
-  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
-  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -998,7 +974,6 @@ export interface FileRoutesById {
   '/retailer/cv-builder': typeof RetailerCvBuilderRoute
   '/retailer/ei-pay': typeof RetailerEiPayRoute
   '/retailer/finance': typeof RetailerFinanceRoute
-  '/retailer/forms': typeof RetailerFormsRoute
   '/retailer/horoscope': typeof RetailerHoroscopeRoute
   '/retailer/ippb': typeof RetailerIppbRoute
   '/retailer/jobs': typeof RetailerJobsRouteWithChildren
@@ -1022,8 +997,6 @@ export interface FileRoutesById {
   '/retailer/work-badge': typeof RetailerWorkBadgeRoute
   '/staff/create-user': typeof StaffCreateUserRoute
   '/staff/dmt': typeof StaffDmtRoute
-  '/staff/form-submissions': typeof StaffFormSubmissionsRoute
-  '/staff/forms': typeof StaffFormsRoute
   '/staff/horoscope-requests': typeof StaffHoroscopeRequestsRoute
   '/staff/ippb': typeof StaffIppbRoute
   '/staff/leads': typeof StaffLeadsRoute
@@ -1117,7 +1090,6 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
-    | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
@@ -1141,8 +1113,6 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/create-user'
     | '/staff/dmt'
-    | '/staff/form-submissions'
-    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -1227,7 +1197,6 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
-    | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
@@ -1251,8 +1220,6 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/create-user'
     | '/staff/dmt'
-    | '/staff/form-submissions'
-    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -1344,7 +1311,6 @@ export interface FileRouteTypes {
     | '/retailer/cv-builder'
     | '/retailer/ei-pay'
     | '/retailer/finance'
-    | '/retailer/forms'
     | '/retailer/horoscope'
     | '/retailer/ippb'
     | '/retailer/jobs'
@@ -1368,8 +1334,6 @@ export interface FileRouteTypes {
     | '/retailer/work-badge'
     | '/staff/create-user'
     | '/staff/dmt'
-    | '/staff/form-submissions'
-    | '/staff/forms'
     | '/staff/horoscope-requests'
     | '/staff/ippb'
     | '/staff/leads'
@@ -1653,20 +1617,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffHoroscopeRequestsRouteImport
       parentRoute: typeof StaffRoute
     }
-    '/staff/forms': {
-      id: '/staff/forms'
-      path: '/forms'
-      fullPath: '/staff/forms'
-      preLoaderRoute: typeof StaffFormsRouteImport
-      parentRoute: typeof StaffRoute
-    }
-    '/staff/form-submissions': {
-      id: '/staff/form-submissions'
-      path: '/form-submissions'
-      fullPath: '/staff/form-submissions'
-      preLoaderRoute: typeof StaffFormSubmissionsRouteImport
-      parentRoute: typeof StaffRoute
-    }
     '/staff/dmt': {
       id: '/staff/dmt'
       path: '/dmt'
@@ -1826,13 +1776,6 @@ declare module '@tanstack/react-router' {
       path: '/horoscope'
       fullPath: '/retailer/horoscope'
       preLoaderRoute: typeof RetailerHoroscopeRouteImport
-      parentRoute: typeof RetailerRoute
-    }
-    '/retailer/forms': {
-      id: '/retailer/forms'
-      path: '/forms'
-      fullPath: '/retailer/forms'
-      preLoaderRoute: typeof RetailerFormsRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/finance': {
@@ -2384,7 +2327,6 @@ interface RetailerRouteChildren {
   RetailerCvBuilderRoute: typeof RetailerCvBuilderRoute
   RetailerEiPayRoute: typeof RetailerEiPayRoute
   RetailerFinanceRoute: typeof RetailerFinanceRoute
-  RetailerFormsRoute: typeof RetailerFormsRoute
   RetailerHoroscopeRoute: typeof RetailerHoroscopeRoute
   RetailerIppbRoute: typeof RetailerIppbRoute
   RetailerJobsRoute: typeof RetailerJobsRouteWithChildren
@@ -2415,7 +2357,6 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerCvBuilderRoute: RetailerCvBuilderRoute,
   RetailerEiPayRoute: RetailerEiPayRoute,
   RetailerFinanceRoute: RetailerFinanceRoute,
-  RetailerFormsRoute: RetailerFormsRoute,
   RetailerHoroscopeRoute: RetailerHoroscopeRoute,
   RetailerIppbRoute: RetailerIppbRoute,
   RetailerJobsRoute: RetailerJobsRouteWithChildren,
@@ -2447,8 +2388,6 @@ const RetailerRouteWithChildren = RetailerRoute._addFileChildren(
 interface StaffRouteChildren {
   StaffCreateUserRoute: typeof StaffCreateUserRoute
   StaffDmtRoute: typeof StaffDmtRoute
-  StaffFormSubmissionsRoute: typeof StaffFormSubmissionsRoute
-  StaffFormsRoute: typeof StaffFormsRoute
   StaffHoroscopeRequestsRoute: typeof StaffHoroscopeRequestsRoute
   StaffIppbRoute: typeof StaffIppbRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
@@ -2463,8 +2402,6 @@ interface StaffRouteChildren {
 const StaffRouteChildren: StaffRouteChildren = {
   StaffCreateUserRoute: StaffCreateUserRoute,
   StaffDmtRoute: StaffDmtRoute,
-  StaffFormSubmissionsRoute: StaffFormSubmissionsRoute,
-  StaffFormsRoute: StaffFormsRoute,
   StaffHoroscopeRequestsRoute: StaffHoroscopeRequestsRoute,
   StaffIppbRoute: StaffIppbRoute,
   StaffLeadsRoute: StaffLeadsRoute,
