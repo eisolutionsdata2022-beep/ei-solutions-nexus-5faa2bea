@@ -779,6 +779,8 @@ function renderPage(kind: string, pageNum: number) {
       return <PageWrap pageNum={pageNum}><JoinStepsPage /></PageWrap>;
     case "contact":
       return <PageWrap pageNum={pageNum} tone="ink"><ContactPage /></PageWrap>;
+    case "alert":
+      return <PageWrap pageNum={pageNum}><AlertPage /></PageWrap>;
     case "back-cover":
       return <PageWrap pageNum={pageNum} tone="ink"><BackCover /></PageWrap>;
     default:
