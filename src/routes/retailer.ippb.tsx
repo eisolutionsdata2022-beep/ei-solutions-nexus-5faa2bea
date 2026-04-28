@@ -170,12 +170,6 @@ function RetailerIPPBPage() {
               <ShieldCheck className="w-3 h-3" /> Badged
             </Badge>
           )}
-          <Button asChild variant="secondary" size="sm" className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl gap-1.5">
-            <a href="/ippb-training-malayalam.pdf" target="_blank" rel="noopener noreferrer" download>
-              <Download className="w-3.5 h-3.5" />
-              PDF
-            </a>
-          </Button>
           {(() => {
             const terminal = ["success", "failed", "cancelled"];
             const active = rows
