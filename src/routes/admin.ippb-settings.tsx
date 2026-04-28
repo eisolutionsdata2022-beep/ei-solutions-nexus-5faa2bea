@@ -8,11 +8,19 @@ import {
   saveIPPBFeeConfig,
   type IPPBFeeConfig,
 } from "@/lib/ippb-fee-config";
+import {
+  DEFAULT_IPPB_SOFTWARE,
+  getIPPBSoftwareConfig,
+  saveIPPBSoftwareConfig,
+  type IPPBSoftwareConfig,
+} from "@/lib/ippb-software-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Banknote, Loader2, Save, Info, AlertTriangle, Download, Wrench, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Banknote, Loader2, Save, Info, AlertTriangle, Download, Wrench, CheckCircle2, Monitor, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { migrateLegacyIPPBRequests, type MigrationResult } from "@/lib/ippb-firebase";
@@ -29,12 +37,33 @@ function AdminIPPBSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
+  const [sw, setSw] = useState<IPPBSoftwareConfig>(DEFAULT_IPPB_SOFTWARE);
+  const [savingSw, setSavingSw] = useState(false);
 
   useEffect(() => {
-    getIPPBFeeConfig()
-      .then(setCfg)
+    Promise.all([getIPPBFeeConfig(), getIPPBSoftwareConfig()])
+      .then(([f, s]) => {
+        setCfg(f);
+        setSw(s);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSaveSw = async () => {
+    if (!appUser) return;
+    setSavingSw(true);
+    try {
+      await saveIPPBSoftwareConfig(
+        { pcAgent: sw.pcAgent, staffApk: sw.staffApk },
+        appUser.uid
+      );
+      toast.success("Software download links saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed");
+    } finally {
+      setSavingSw(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!appUser) return;
