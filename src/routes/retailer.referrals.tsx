@@ -516,7 +516,7 @@ function ReferralEarningsChart({ payouts }: { payouts: ReferralPayout[] }) {
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(v: any, name: string) =>
+                  formatter={(v: any, name: any) =>
                     name === "Activations"
                       ? [v, name]
                       : [`₹${Number(v ?? 0).toLocaleString("en-IN")}`, name]
