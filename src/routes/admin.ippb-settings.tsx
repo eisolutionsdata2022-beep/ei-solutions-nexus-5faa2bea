@@ -203,6 +203,135 @@ function AdminIPPBSettingsPage() {
         </CardContent>
       </Card>
 
+      <Card className="border-gov-blue/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-gov-blue" />
+            Native Software Downloads
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Retailer-ന്റെയും Staff-ന്റെയും IPPB pages-ൽ കാണിക്കുന്ന download links. URL ഉം version ഉം ഇവിടെ update ചെയ്യാം.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* PC Agent (retailer) */}
+          <div className="rounded-lg border p-4 space-y-3 bg-blue-50/50">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 font-semibold">
+                <Monitor className="w-5 h-5 text-blue-600" />
+                PC Agent (Windows) — Retailer
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="pc-enabled" className="text-xs">Show on /retailer/ippb</Label>
+                <Switch
+                  id="pc-enabled"
+                  checked={sw.pcAgent.enabled}
+                  onCheckedChange={(v) => setSw({ ...sw, pcAgent: { ...sw.pcAgent, enabled: v } })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Version</Label>
+                <Input
+                  value={sw.pcAgent.version}
+                  onChange={(e) => setSw({ ...sw, pcAgent: { ...sw.pcAgent, version: e.target.value } })}
+                  placeholder="1.0.0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Size (MB)</Label>
+                <Input
+                  type="number"
+                  value={sw.pcAgent.sizeMB ?? 0}
+                  onChange={(e) => setSw({ ...sw, pcAgent: { ...sw.pcAgent, sizeMB: Number(e.target.value) } })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Download URL (.exe / .zip)</Label>
+                <Input
+                  value={sw.pcAgent.url}
+                  onChange={(e) => setSw({ ...sw, pcAgent: { ...sw.pcAgent, url: e.target.value } })}
+                  placeholder="https://…/EISolutionsAgent-Setup.exe"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Release Notes</Label>
+              <Textarea
+                rows={2}
+                value={sw.pcAgent.releaseNotes ?? ""}
+                onChange={(e) => setSw({ ...sw, pcAgent: { ...sw.pcAgent, releaseNotes: e.target.value } })}
+              />
+            </div>
+          </div>
+
+          {/* Staff APK */}
+          <div className="rounded-lg border p-4 space-y-3 bg-emerald-50/50">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 font-semibold">
+                <Smartphone className="w-5 h-5 text-emerald-600" />
+                Staff APK (Android) — Tablet
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="apk-enabled" className="text-xs">Show on /staff/ippb</Label>
+                <Switch
+                  id="apk-enabled"
+                  checked={sw.staffApk.enabled}
+                  onCheckedChange={(v) => setSw({ ...sw, staffApk: { ...sw.staffApk, enabled: v } })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Version</Label>
+                <Input
+                  value={sw.staffApk.version}
+                  onChange={(e) => setSw({ ...sw, staffApk: { ...sw.staffApk, version: e.target.value } })}
+                  placeholder="1.0.0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Size (MB)</Label>
+                <Input
+                  type="number"
+                  value={sw.staffApk.sizeMB ?? 0}
+                  onChange={(e) => setSw({ ...sw, staffApk: { ...sw.staffApk, sizeMB: Number(e.target.value) } })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Download URL (.apk)</Label>
+                <Input
+                  value={sw.staffApk.url}
+                  onChange={(e) => setSw({ ...sw, staffApk: { ...sw.staffApk, url: e.target.value } })}
+                  placeholder="https://…/eisolutions-ippb-staff.apk"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Release Notes</Label>
+              <Textarea
+                rows={2}
+                value={sw.staffApk.releaseNotes ?? ""}
+                onChange={(e) => setSw({ ...sw, staffApk: { ...sw.staffApk, releaseNotes: e.target.value } })}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSaveSw} disabled={savingSw}>
+              {savingSw ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save Software Links
+            </Button>
+            {sw.updatedAt && (
+              <p className="text-xs text-muted-foreground">
+                Last updated: {new Date(sw.updatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="border-destructive/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
