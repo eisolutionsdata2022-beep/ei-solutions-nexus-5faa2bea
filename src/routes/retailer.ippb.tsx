@@ -57,6 +57,7 @@ import {
 import { DEFAULT_IPPB_FEE, getIPPBFeeConfig, type IPPBFeeConfig } from "@/lib/ippb-fee-config";
 import { applyForIPPBBadge, type IPPBBadgeApplicationDoc } from "@/lib/ippb-badge";
 import { ServicePageShell } from "@/components/ServicePageShell";
+import { SoftwareDownloadCard } from "@/components/ippb/SoftwareDownloadCard";
 
 export const Route = createFileRoute("/retailer/ippb")({
   ssr: false,
