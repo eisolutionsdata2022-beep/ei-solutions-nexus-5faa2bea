@@ -38,6 +38,10 @@ import {
   type TransferRequestDoc,
 } from "@/lib/rewards-wallet";
 import {
+  listCommissionConfigs,
+  type CommissionConfig,
+} from "@/lib/commission-config";
+import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, Line, ComposedChart, Bar, Legend,
 } from "recharts";
@@ -59,6 +63,7 @@ function ReferralPanel() {
   const [payouts, setPayouts] = useState<ReferralPayout[]>([]);
   const [recentPlays, setRecentPlays] = useState<GamePlay[]>([]);
   const [gameStats, setGameStats] = useState<GameStats>({ totalRewards: 0, totalPlays: 0 });
+  const [commissionConfigs, setCommissionConfigs] = useState<CommissionConfig[]>([]);
 
   // Rewards wallet (separate from main wallet)
   const [rewardsBalance, setRewardsBalance] = useState(0);
@@ -73,6 +78,7 @@ function ReferralPanel() {
     getOrCreateReferralCode(appUser.uid).then(setCode);
     loadReferralConfig().then(setCfg);
     getGameStats(appUser.uid).then(setGameStats);
+    listCommissionConfigs().then(setCommissionConfigs).catch(() => {});
     const u1 = subscribeReferredUsers(appUser.uid, setRefs);
     const u2 = subscribeReferrerPayouts(appUser.uid, setPayouts);
     const u3 = subscribeRecentPlays(appUser.uid, (plays) => {
@@ -329,6 +335,7 @@ function ReferralPanel() {
           </Card>
 
           <ReferralEarningsChart payouts={payouts} />
+          <CommissionRatesChart configs={commissionConfigs} />
 
           <Card>
             <CardHeader>
@@ -541,6 +548,128 @@ function ReferralEarningsChart({ payouts }: { payouts: ReferralPayout[] }) {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CommissionRatesChart({ configs }: { configs: CommissionConfig[] }) {
+  // Build retailer-facing rate rows
+  const rows = configs
+    .filter((c) => c.enabled !== false)
+    .map((c) => {
+      let earn = 0;
+      let kind: "earn" | "payout" | "operator" = "earn";
+      if (c.type === "customer_charge") {
+        earn = c.retailerCommission ?? 0;
+        kind = "earn";
+      } else if (c.type === "admin_payout") {
+        earn = c.retailerCommission ?? c.defaultPayoutAmount ?? 0;
+        kind = "payout";
+      } else if (c.type === "operator_based") {
+        const rates = Object.values(c.operatorRates ?? {});
+        earn = rates.length ? Math.max(...rates) : 0;
+        kind = "operator";
+      }
+      return {
+        key: c.serviceKey,
+        name: c.serviceName,
+        category: c.category,
+        type: c.type,
+        kind,
+        earn,
+        customerCharge: c.customerCharge ?? 0,
+      };
+    })
+    .filter((r) => r.earn > 0)
+    .sort((a, b) => b.earn - a.earn);
+
+  const tooltipStyle = {
+    background: "var(--popover)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    fontSize: 12,
+    color: "var(--popover-foreground)",
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5 text-emerald-500" /> My Commission Rates
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Per-transaction earning for every active service. Set by admin.
+          </p>
+        </div>
+        <Badge variant="secondary">{rows.length} services</Badge>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {rows.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No commission rates configured yet.
+          </p>
+        ) : (
+          <>
+            <div className="h-[340px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={rows}
+                  layout="vertical"
+                  margin={{ top: 5, right: 20, left: 10, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="commGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="hsl(160 70% 45%)" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="hsl(190 80% 55%)" stopOpacity={0.95} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(v: any) => [`₹${Number(v ?? 0).toLocaleString("en-IN")}`, "Your earning"]}
+                  />
+                  <Bar dataKey="earn" fill="url(#commGrad)" radius={[0, 6, 6, 0]} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="divide-y rounded-lg border">
+              {rows.map((r) => (
+                <div key={r.key} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {r.kind === "earn" && r.customerCharge > 0 && (
+                        <>Customer pays ₹{r.customerCharge} · You earn </>
+                      )}
+                      {r.kind === "payout" && <>Admin pays you per completion · </>}
+                      {r.kind === "operator" && <>Up to (operator-based) · </>}
+                      <span className="text-muted-foreground/70">{r.category}</span>
+                    </p>
+                  </div>
+                  <Badge
+                    className={
+                      r.kind === "payout"
+                        ? "bg-violet-600 hover:bg-violet-600"
+                        : "bg-emerald-600 hover:bg-emerald-600"
+                    }
+                  >
+                    +₹{r.earn}{r.kind === "operator" ? " max" : ""}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
