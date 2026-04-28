@@ -8,9 +8,9 @@
 import { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import HTMLFlipBook from "react-pageflip";
 import {
-  ChevronLeft, ChevronRight, Download, Maximize2, Phone,
+  ChevronLeft, ChevronRight, Download, Phone,
   MessageCircle, Mail, Globe, MapPin, Star, ShieldCheck,
-  Award, Sparkles, TrendingUp, Users, CheckCircle2, Building2,
+  Award, Sparkles, TrendingUp, CheckCircle2, Share2, Loader2,
 } from "lucide-react";
 import {
   COMPANY_LEGAL,
@@ -793,29 +793,46 @@ function renderPage(kind: string, pageNum: number) {
    ============================================================ */
 export function PremiumFlipBook() {
   const bookRef = useRef<any>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [size, setSize] = useState({ w: 480, h: 680 });
+  const [size, setSize] = useState({ w: 480, h: 680, isMobile: false });
+  const [exporting, setExporting] = useState(false);
   const totalPages = PREMIUM_BOOKLET_PAGES.length;
 
-  // Responsive sizing
+  // Responsive sizing — single portrait page on mobile, spread on tablet+
   useEffect(() => {
     const calc = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const maxH = vh - 180;
-      const maxWPerPage = (vw - 80) / 2;
-      let h = Math.min(maxH, 760);
-      let w = h * 0.7;
-      if (w > maxWPerPage) {
-        w = maxWPerPage;
-        h = w / 0.7;
+      const isMobile = vw < 720;
+
+      if (isMobile) {
+        // Portrait single-page, fills screen with comfortable margins
+        const padX = 24;
+        const headerFooter = 170;
+        let w = vw - padX * 2;
+        let h = w / 0.7;
+        const maxH = vh - headerFooter;
+        if (h > maxH) {
+          h = maxH;
+          w = h * 0.7;
+        }
+        setSize({ w: Math.floor(w), h: Math.floor(h), isMobile: true });
+      } else {
+        const maxH = vh - 180;
+        const maxWPerPage = (vw - 120) / 2;
+        let h = Math.min(maxH, 760);
+        let w = h * 0.7;
+        if (w > maxWPerPage) {
+          w = maxWPerPage;
+          h = w / 0.7;
+        }
+        if (w < 320) {
+          w = Math.min(maxWPerPage, 360);
+          h = w / 0.7;
+        }
+        setSize({ w: Math.floor(w), h: Math.floor(h), isMobile: false });
       }
-      // Min size for readability
-      if (w < 320) {
-        w = Math.min(maxWPerPage, 360);
-        h = w / 0.7;
-      }
-      setSize({ w: Math.floor(w), h: Math.floor(h) });
     };
     calc();
     window.addEventListener("resize", calc);
@@ -827,68 +844,204 @@ export function PremiumFlipBook() {
 
   const pages = useMemo(() => PREMIUM_BOOKLET_PAGES, []);
 
+  /* ───────── PDF EXPORT ─────────
+     Renders an off-screen high-res copy of every page sequentially with
+     html2canvas, then composes them into a multi-page A4-ish PDF with jsPDF.
+     Works on mobile (offers Web Share if available). */
+  async function generatePdf(): Promise<Blob> {
+    const [{ default: html2canvas }, jsPdfMod] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+    const JsPDF = (jsPdfMod as any).jsPDF || (jsPdfMod as any).default;
+
+    const PAGE_W = 700; // capture pixel size (good print quality)
+    const PAGE_H = 1000;
+    const pdf = new JsPDF({ orientation: "portrait", unit: "px", format: [PAGE_W, PAGE_H] });
+
+    const host = exportRef.current;
+    if (!host) throw new Error("Export host missing");
+
+    for (let i = 0; i < pages.length; i++) {
+      // Render one page into the hidden host
+      host.innerHTML = "";
+      const slot = document.createElement("div");
+      slot.style.width = `${PAGE_W}px`;
+      slot.style.height = `${PAGE_H}px`;
+      slot.style.position = "relative";
+      host.appendChild(slot);
+
+      // Mount React page via createRoot
+      const { createRoot } = await import("react-dom/client");
+      const root = createRoot(slot);
+      await new Promise<void>((resolve) => {
+        root.render(renderPage(pages[i], i + 1));
+        // Wait two frames for layout + images
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      // Wait for images inside to load
+      const imgs = Array.from(slot.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise<void>((res) => {
+              if (img.complete) return res();
+              img.onload = () => res();
+              img.onerror = () => res();
+            }),
+        ),
+      );
+      // Small settle delay
+      await new Promise((r) => setTimeout(r, 80));
+
+      const canvas = await html2canvas(slot, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      if (i > 0) pdf.addPage([PAGE_W, PAGE_H], "portrait");
+      pdf.addImage(imgData, "JPEG", 0, 0, PAGE_W, PAGE_H);
+
+      root.unmount();
+    }
+    host.innerHTML = "";
+    return pdf.output("blob");
+  }
+
+  async function handleDownload() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await generatePdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "EI-Solutions-Premium-Booklet.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      console.error("[booklet] PDF generation failed:", err);
+      alert("PDF ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കൂ.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleShare() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await generatePdf();
+      const file = new File([blob], "EI-Solutions-Booklet.pdf", { type: "application/pdf" });
+      const nav = navigator as any;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: "EI SOLUTIONS — Premium Digital Booklet",
+          text: "EI SOLUTIONS-ന്റെ premium digital booklet — government recognised, 50+ services.",
+        });
+      } else {
+        // Fallback: trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "EI-Solutions-Booklet.pdf";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (err) {
+      console.error("[booklet] share failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-center"
+      className="min-h-screen w-full flex flex-col items-center"
       style={{
         background: `radial-gradient(circle at 50% 30%, ${C.inkSoft}, ${C.ink} 70%)`,
       }}
     >
       {/* Top bar */}
-      <div className="w-full max-w-7xl px-4 py-3 flex items-center justify-between text-amber-50">
-        <div>
-          <div className="text-[10px] tracking-[0.3em] opacity-60">A PREMIUM PUBLICATION</div>
-          <div className="text-base font-bold tracking-widest" style={{ fontFamily: SERIF, color: C.gold }}>
+      <div className="w-full max-w-7xl px-3 sm:px-4 py-3 flex items-center justify-between gap-3 text-amber-50">
+        <div className="min-w-0">
+          <div className="text-[9px] sm:text-[10px] tracking-[0.3em] opacity-60">A PREMIUM PUBLICATION</div>
+          <div
+            className="text-[13px] sm:text-base font-bold tracking-widest truncate"
+            style={{ fontFamily: SERIF, color: C.gold }}
+          >
             EI SOLUTIONS · DIGITAL BOOKLET
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="/EI-Solutions-Brochure.pdf"
-            download
-            className="px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-300/30 hover:bg-amber-300/10 transition flex items-center gap-1.5"
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            onClick={handleShare}
+            disabled={exporting}
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border border-amber-300/30 hover:bg-amber-300/10 transition flex items-center gap-1.5 disabled:opacity-50"
+            aria-label="Share"
           >
-            <Download className="w-3.5 h-3.5" /> PDF
-          </a>
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span className="hidden xs:inline sm:inline">Share</span>
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={exporting}
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
+            style={{
+              background: `linear-gradient(135deg, ${C.gold}, ${C.goldDeep})`,
+              color: "#1A1306",
+            }}
+            aria-label="Download PDF"
+          >
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            <span>{exporting ? "Creating…" : "PDF"}</span>
+          </button>
         </div>
       </div>
 
       {/* Book stage */}
-      <div className="relative flex-1 w-full flex items-center justify-center py-4">
+      <div className="relative flex-1 w-full flex items-center justify-center py-2 sm:py-4 px-1">
         {/* Subtle book shadow on floor */}
         <div
           className="absolute pointer-events-none"
           style={{
-            width: size.w * 2,
+            width: size.isMobile ? size.w : size.w * 2,
             height: 32,
-            bottom: "12%",
+            bottom: "10%",
             background: "radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%)",
             filter: "blur(8px)",
           }}
         />
 
-        <button
-          onClick={goPrev}
-          className="absolute left-2 sm:left-6 z-20 w-11 h-11 rounded-full bg-amber-50/10 hover:bg-amber-50/20 backdrop-blur border border-amber-300/30 flex items-center justify-center text-amber-50 transition"
-          aria-label="Previous"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        {!size.isMobile && (
+          <button
+            onClick={goPrev}
+            className="absolute left-2 sm:left-6 z-20 w-11 h-11 rounded-full bg-amber-50/10 hover:bg-amber-50/20 backdrop-blur border border-amber-300/30 flex items-center justify-center text-amber-50 transition"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
 
         <HTMLFlipBook
           ref={bookRef}
           width={size.w}
           height={size.h}
-          minWidth={300}
+          minWidth={260}
           maxWidth={600}
-          minHeight={420}
-          maxHeight={840}
+          minHeight={380}
+          maxHeight={900}
           showCover
           mobileScrollSupport
-          flippingTime={900}
+          flippingTime={size.isMobile ? 700 : 900}
           maxShadowOpacity={0.6}
           drawShadow
-          usePortrait={false}
+          usePortrait={size.isMobile}
           startPage={0}
           size="fixed"
           className=""
@@ -897,7 +1050,7 @@ export function PremiumFlipBook() {
           autoSize={false}
           clickEventForward
           useMouseEvents
-          swipeDistance={30}
+          swipeDistance={20}
           showPageCorners
           disableFlipByClick={false}
           onFlip={(e: any) => setCurrentPage(e.data)}
@@ -909,17 +1062,42 @@ export function PremiumFlipBook() {
           ))}
         </HTMLFlipBook>
 
-        <button
-          onClick={goNext}
-          className="absolute right-2 sm:right-6 z-20 w-11 h-11 rounded-full bg-amber-50/10 hover:bg-amber-50/20 backdrop-blur border border-amber-300/30 flex items-center justify-center text-amber-50 transition"
-          aria-label="Next"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+        {!size.isMobile && (
+          <button
+            onClick={goNext}
+            className="absolute right-2 sm:right-6 z-20 w-11 h-11 rounded-full bg-amber-50/10 hover:bg-amber-50/20 backdrop-blur border border-amber-300/30 flex items-center justify-center text-amber-50 transition"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
+      {/* Mobile nav buttons (below book) */}
+      {size.isMobile && (
+        <div className="flex items-center justify-center gap-3 pb-2">
+          <button
+            onClick={goPrev}
+            className="w-12 h-12 rounded-full bg-amber-50/10 active:bg-amber-50/25 border border-amber-300/30 flex items-center justify-center text-amber-50"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-[10px] tracking-widest text-amber-50/70 px-3">
+            👆 Swipe / Tap corner to flip
+          </div>
+          <button
+            onClick={goNext}
+            className="w-12 h-12 rounded-full bg-amber-50/10 active:bg-amber-50/25 border border-amber-300/30 flex items-center justify-center text-amber-50"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Bottom progress */}
-      <div className="w-full max-w-md px-4 pb-6">
+      <div className="w-full max-w-md px-4 pb-4 sm:pb-6">
         <div className="flex items-center justify-between text-[10px] text-amber-50/60 tracking-widest mb-2">
           <span>PAGE {String(currentPage + 1).padStart(2, "0")}</span>
           <span>OF {String(totalPages).padStart(2, "0")}</span>
@@ -934,6 +1112,33 @@ export function PremiumFlipBook() {
           />
         </div>
       </div>
+
+      {/* Hidden off-screen host used for PDF capture */}
+      <div
+        ref={exportRef}
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: 700,
+          height: 1000,
+          pointerEvents: "none",
+          opacity: 0,
+        }}
+      />
+
+      {/* Full-screen overlay while exporting */}
+      {exporting && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-amber-50 backdrop-blur-sm"
+          style={{ background: "rgba(11,23,39,0.75)" }}
+        >
+          <Loader2 className="w-10 h-10 animate-spin mb-4" style={{ color: C.gold }} />
+          <div className="text-sm font-semibold tracking-wider">PDF തയ്യാറാക്കുന്നു…</div>
+          <div className="text-[11px] opacity-60 mt-1">{totalPages} pages · few seconds</div>
+        </div>
+      )}
     </div>
   );
 }
