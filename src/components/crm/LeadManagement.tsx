@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare, Upload } from "lucide-react";
+import { Search, Plus, Download, Phone as PhoneIcon, MessageSquare, Upload, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth-context";
-import { subscribeLeads, subscribeStaffMembers, updateLead, deleteLead } from "@/lib/crm-firebase";
+import { subscribeLeads, subscribeStaffMembers, updateLead, deleteLead, addLeadHistory } from "@/lib/crm-firebase";
 import { LEAD_STATUSES, STATUS_COLORS, type Lead, type StaffMember, type LeadStatus } from "@/lib/crm-types";
 import { AddLeadDialog } from "./AddLeadDialog";
 import { LeadDetailDialog } from "./LeadDetailDialog";
