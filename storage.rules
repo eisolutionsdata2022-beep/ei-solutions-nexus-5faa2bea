@@ -33,6 +33,10 @@ service firebase.storage {
       return request.resource.size < 10 * 1024 * 1024;
     }
 
+    function under100MB() {
+      return request.resource.size < 100 * 1024 * 1024;
+    }
+
     // ---------- E-dis service documents ------------------------------
     // Path: serviceDocuments/{userId}/{appNo}/{file}
     // Owner uploads + reads; staff/admin can read for review.
