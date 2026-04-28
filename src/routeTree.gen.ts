@@ -111,6 +111,7 @@ import { Route as AdminCrmReportsRouteImport } from './routes/admin.crm-reports'
 import { Route as AdminCrmLeadsRouteImport } from './routes/admin.crm-leads'
 import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-comm'
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
+import { Route as AdminCommissionCenterRouteImport } from './routes/admin.commission-center'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
 import { Route as AdminBookletRouteImport } from './routes/admin.booklet'
@@ -634,6 +635,11 @@ const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   path: '/create-user',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCommissionCenterRoute = AdminCommissionCenterRouteImport.update({
+  id: '/commission-center',
+  path: '/commission-center',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminChatInboxRoute = AdminChatInboxRouteImport.update({
   id: '/chat-inbox',
   path: '/chat-inbox',
@@ -713,6 +719,7 @@ export interface FileRoutesByFullPath {
   '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
+  '/admin/commission-center': typeof AdminCommissionCenterRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -821,6 +828,7 @@ export interface FileRoutesByTo {
   '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
+  '/admin/commission-center': typeof AdminCommissionCenterRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -937,6 +945,7 @@ export interface FileRoutesById {
   '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
+  '/admin/commission-center': typeof AdminCommissionCenterRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/crm-bulk-comm': typeof AdminCrmBulkCommRoute
   '/admin/crm-leads': typeof AdminCrmLeadsRoute
@@ -1054,6 +1063,7 @@ export interface FileRouteTypes {
     | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
+    | '/admin/commission-center'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -1162,6 +1172,7 @@ export interface FileRouteTypes {
     | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
+    | '/admin/commission-center'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -1277,6 +1288,7 @@ export interface FileRouteTypes {
     | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
+    | '/admin/commission-center'
     | '/admin/create-user'
     | '/admin/crm-bulk-comm'
     | '/admin/crm-leads'
@@ -2112,6 +2124,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreateUserRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/commission-center': {
+      id: '/admin/commission-center'
+      path: '/commission-center'
+      fullPath: '/admin/commission-center'
+      preLoaderRoute: typeof AdminCommissionCenterRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/chat-inbox': {
       id: '/admin/chat-inbox'
       path: '/chat-inbox'
@@ -2198,6 +2217,7 @@ interface AdminRouteChildren {
   AdminBookletRoute: typeof AdminBookletRoute
   AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
+  AdminCommissionCenterRoute: typeof AdminCommissionCenterRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
   AdminCrmBulkCommRoute: typeof AdminCrmBulkCommRoute
   AdminCrmLeadsRoute: typeof AdminCrmLeadsRoute
@@ -2245,6 +2265,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBookletRoute: AdminBookletRoute,
   AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
+  AdminCommissionCenterRoute: AdminCommissionCenterRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
   AdminCrmBulkCommRoute: AdminCrmBulkCommRoute,
   AdminCrmLeadsRoute: AdminCrmLeadsRoute,

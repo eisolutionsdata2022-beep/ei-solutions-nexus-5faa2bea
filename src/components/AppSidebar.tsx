@@ -35,6 +35,7 @@ import {
   IdCard,
   CreditCard,
   Trash2,
+  IndianRupee as IndianRupeeIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -67,7 +68,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Service Buttons", to: "/admin/service-buttons", icon: ShoppingBag },
     { label: "Notice Board", to: "/admin/notices", icon: ClipboardList },
     { label: "Chat Inbox", to: "/admin/chat-inbox", icon: MessageSquare },
-    { label: "Training Settings", to: "/admin/training-settings", icon: Settings },
+    { label: "💰 Commission Center", to: "/admin/commission-center", icon: IndianRupeeIcon as any, tag: "new", hint: "Unified fees, splits, payouts for all services" },
     { label: "Training Earnings", to: "/admin/training-earnings", icon: BarChart3 },
     { label: "Training Reviews", to: "/admin/training-reviews", icon: MessageSquare },
     { label: "Session Quality", to: "/admin/session-quality", icon: Activity },
@@ -76,10 +77,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Job Disputes", to: "/admin/job-disputes", icon: Gavel },
     { label: "Work Badges", to: "/admin/work-badges", icon: ShieldCheck },
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
-    { label: "IPPB Settings", to: "/admin/ippb-settings", icon: Banknote },
-    { label: "EI PAY Settings", to: "/admin/csc-settings", icon: Banknote },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
-    { label: "PAN Portal Settings", to: "/admin/pan-portal-settings", icon: IdCard as any },
     { label: "PAN Legacy Wallet", to: "/admin/pan-legacy-balances", icon: Wallet },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
