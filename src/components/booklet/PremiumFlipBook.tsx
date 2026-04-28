@@ -789,7 +789,6 @@ export function PremiumFlipBook() {
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        {/* @ts-expect-error react-pageflip types */}
         <HTMLFlipBook
           ref={bookRef}
           width={size.w}
