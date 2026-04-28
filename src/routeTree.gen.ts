@@ -113,6 +113,7 @@ import { Route as AdminCrmBulkCommRouteImport } from './routes/admin.crm-bulk-co
 import { Route as AdminCreateUserRouteImport } from './routes/admin.create-user'
 import { Route as AdminChatInboxRouteImport } from './routes/admin.chat-inbox'
 import { Route as AdminCertificateReissuesRouteImport } from './routes/admin.certificate-reissues'
+import { Route as AdminBookletRouteImport } from './routes/admin.booklet'
 import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-transactions'
 import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
@@ -644,6 +645,11 @@ const AdminCertificateReissuesRoute =
     path: '/certificate-reissues',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminBookletRoute = AdminBookletRouteImport.update({
+  id: '/booklet',
+  path: '/booklet',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBbpsTransactionsRoute = AdminBbpsTransactionsRouteImport.update({
   id: '/bbps-transactions',
   path: '/bbps-transactions',
@@ -704,6 +710,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
   '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
+  '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -811,6 +818,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
   '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
+  '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -926,6 +934,7 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/admin/bbps-settings': typeof AdminBbpsSettingsRoute
   '/admin/bbps-transactions': typeof AdminBbpsTransactionsRoute
+  '/admin/booklet': typeof AdminBookletRoute
   '/admin/certificate-reissues': typeof AdminCertificateReissuesRoute
   '/admin/chat-inbox': typeof AdminChatInboxRoute
   '/admin/create-user': typeof AdminCreateUserRoute
@@ -1042,6 +1051,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/bbps-settings'
     | '/admin/bbps-transactions'
+    | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -1149,6 +1159,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/bbps-settings'
     | '/admin/bbps-transactions'
+    | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -1263,6 +1274,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/bbps-settings'
     | '/admin/bbps-transactions'
+    | '/admin/booklet'
     | '/admin/certificate-reissues'
     | '/admin/chat-inbox'
     | '/admin/create-user'
@@ -2114,6 +2126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCertificateReissuesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/booklet': {
+      id: '/admin/booklet'
+      path: '/booklet'
+      fullPath: '/admin/booklet'
+      preLoaderRoute: typeof AdminBookletRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/bbps-transactions': {
       id: '/admin/bbps-transactions'
       path: '/bbps-transactions'
@@ -2176,6 +2195,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminBbpsSettingsRoute: typeof AdminBbpsSettingsRoute
   AdminBbpsTransactionsRoute: typeof AdminBbpsTransactionsRoute
+  AdminBookletRoute: typeof AdminBookletRoute
   AdminCertificateReissuesRoute: typeof AdminCertificateReissuesRoute
   AdminChatInboxRoute: typeof AdminChatInboxRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
@@ -2222,6 +2242,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBbpsSettingsRoute: AdminBbpsSettingsRoute,
   AdminBbpsTransactionsRoute: AdminBbpsTransactionsRoute,
+  AdminBookletRoute: AdminBookletRoute,
   AdminCertificateReissuesRoute: AdminCertificateReissuesRoute,
   AdminChatInboxRoute: AdminChatInboxRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
