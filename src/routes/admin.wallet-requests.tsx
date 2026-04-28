@@ -51,18 +51,21 @@ function AdminWalletRequests() {
   const handleAction = async (req: WalletRequest, action: "approved" | "rejected") => {
     setProcessing(req.id);
     try {
+      // For approvals, credit the wallet FIRST. If credit fails we don't
+      // want the request marked "approved" (previous bug let requests show
+      // approved without ever crediting the user).
+      if (action === "approved") {
+        await atomicCredit(req.userId, req.amount, {
+          source: "wallet_topup",
+          description: `Wallet top-up approved (${req.paymentMethod})`,
+          requestId: req.id,
+        });
+      }
       await updateDoc(doc(db, "walletRequests", req.id), {
         status: action,
         remarks: remarks[req.id] || "",
         processedAt: new Date().toISOString(),
       });
-
-      if (action === "approved") {
-        await atomicCredit(req.userId, req.amount, {
-          source: "wallet_topup",
-          description: `Wallet top-up approved (${req.paymentMethod})`,
-        });
-      }
       toast.success(`Request ${action}`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to process request");
