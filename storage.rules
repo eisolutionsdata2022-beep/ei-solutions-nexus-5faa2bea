@@ -45,7 +45,7 @@ service firebase.storage {
       allow write:  if isAuthed()
                     && request.auth.uid == userId
                     && isImageOrPdf()
-                    && under10MB();
+                    && under100MB();
       allow delete: if isAdmin();
     }
 
