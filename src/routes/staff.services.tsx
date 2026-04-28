@@ -157,6 +157,25 @@ function StatBox({ label, value, color }: { label: string; value: number; color:
   );
 }
 
+async function downloadDoc(d: { name: string; url: string; fileName: string }, app: EdisApplication) {
+  try {
+    const res = await fetch(d.url);
+    const blob = await res.blob();
+    const ext = (d.fileName.split(".").pop() || "bin").toLowerCase();
+    const safeName = `${app.applicationNo}_${app.fullName}_${d.name}`.replace(/[^a-zA-Z0-9_-]+/g, "_");
+    const a = document.createElement("a");
+    const objUrl = URL.createObjectURL(blob);
+    a.href = objUrl;
+    a.download = `${safeName}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objUrl);
+  } catch (e: any) {
+    toast.error(`Download failed: ${d.name}`);
+  }
+}
+
 function ManageEdisDialog({ app, staffName, onClose }: { app: EdisApplication; staffName: string; onClose: () => void }) {
   const [remark, setRemark] = useState(app.staffRemark || "");
   const [govNo, setGovNo] = useState(app.govReceiptNo || "");
