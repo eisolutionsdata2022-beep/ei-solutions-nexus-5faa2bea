@@ -189,16 +189,33 @@ async function callBbps<T>(
     "Content-Type": "application/json",
     apiKey: process.env.BBPS_API_KEY ?? "",
   };
+  const payload: Record<string, unknown> = { ...body };
   if (!opts.skipAuth) {
     const tok = await getAccessToken(cfg.baseUrl);
     headers.Authorization = `Bearer ${tok.accessToken}`;
+    headers.authorization = `Bearer ${tok.accessToken}`;
+    headers.accessToken = tok.accessToken;
+    headers.access_token = tok.accessToken;
+    headers.jwt_token = tok.accessToken;
     // AcePe-style providers also require these on every authenticated call.
     if (tok.accessId) headers.access_id = tok.accessId;
     if (tok.accessCode) headers.access_code = tok.accessCode;
+    if (tok.accessId) headers.accessId = tok.accessId;
+    if (tok.accessCode) headers.accessCode = tok.accessCode;
     // Provider requires geo coords on every authenticated call (HTTP 411 otherwise).
     // Default to the VPS bridge region (Bangalore) — overridable via env.
     headers.latitude = process.env.BBPS_LATITUDE ?? "12.9716";
     headers.longitude = process.env.BBPS_LONGITUDE ?? "77.5946";
+    payload.accessToken = tok.accessToken;
+    payload.jwt_token = tok.accessToken;
+    if (tok.accessId) {
+      payload.access_id = tok.accessId;
+      payload.accessId = tok.accessId;
+    }
+    if (tok.accessCode) {
+      payload.access_code = tok.accessCode;
+      payload.accessCode = tok.accessCode;
+    }
   }
 
   const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
@@ -209,7 +226,7 @@ async function callBbps<T>(
   if (!direct && bridgeBase && bridgeSecret) {
     // Route via VPS bridge — provider sees the bridge's static IP.
     const apiPath = endpoint.replace(/^\/+/, "");
-    const wrapped = JSON.stringify({ __headers: headers, __payload: body });
+    const wrapped = JSON.stringify({ __headers: headers, __payload: payload });
     const ts = Date.now();
     const signature = await hmacHex(bridgeSecret, wrapped);
     const url = `${bridgeBase.replace(/\/+$/, "")}/provider/${apiPath}`;
@@ -277,7 +294,7 @@ async function callBbps<T>(
   res = await fetch(`${cfg.baseUrl}${endpoint}`, {
     method: "POST",
     headers,
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
 
   const text = await res.text();
