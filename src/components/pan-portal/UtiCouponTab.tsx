@@ -12,7 +12,9 @@ import {
   createUtiCoupon,
   getPanConfig,
   updateUtiCoupon,
+  upsertPsaRecord,
 } from "@/lib/pan-portal-firebase";
+import { generateVleId } from "@/lib/vle-id";
 import {
   panUtiCouponPurchase,
   panUtiPanStatusTrack,
@@ -56,6 +58,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
+  // Effective VLE ID — use existing PSA record if approved, else fall back to
+  // the deterministic RMPMCST-<mobile> ID. The provider auto-generates / links
+  // the PSA on the upstream side after the first 2-coupon purchase.
+  const effectiveVleId = psa?.vleId || generateVleId(user.uid, user.phone);
   const MIN_QTY = 2;
   const MAX_QTY = 100;
   const totalAmount = fee * quantity;
@@ -68,26 +74,14 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     );
   }
 
-  if (!psaActive) {
-    return (
-      <Card className="border-amber-200 dark:border-amber-900/50">
-        <CardContent className="p-8 text-center space-y-3">
-          <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-            <ShieldAlert className="h-7 w-7 text-amber-600" />
-          </div>
-          <h3 className="text-lg font-bold">PSA / VLE ID required</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            UTI coupons require an active PSA (UTI VLE) account. Switch to the
-            <strong> PSA Auto-ID</strong> tab to register or link your existing UTI VLE ID first.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   async function handlePurchase(e: FormEvent) {
     e.preventDefault();
-    if (!psa || !config.cipher) return;
+    if (!config.cipher) return;
+    if (!user.phone || !/^\d{10}$/.test(user.phone)) {
+      toast.error("Mobile number missing or invalid in your profile. Update profile first.");
+      return;
+    }
     const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
     const totalDebit = fee * qty;
     setPurchasing(true);
@@ -122,9 +116,9 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         data: {
           url: cfg.utiCouponPurchaseUrl!,
           cipher: cfg.cipher!,
-          vleId: psa.vleId,
+          vleId: effectiveVleId,
           orderId: batchOrderId,
-          shopName: psa.shopName || user.name || user.email,
+          shopName: psa?.shopName || user.name || user.email,
           weburl: typeof window !== "undefined" ? window.location.hostname : "ei-solutions",
           qty,
         },
@@ -143,7 +137,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           orderId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
-          vleId: psa.vleId,
+          vleId: effectiveVleId,
           amount: totalDebit,
           providerCost: cfg.utiPanProviderCost ? cfg.utiPanProviderCost * qty : undefined,
           oldBalance,
@@ -185,7 +179,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           orderId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
-          vleId: psa.vleId,
+          vleId: effectiveVleId,
           amount: fee,
           providerCost: cfg.utiPanProviderCost,
           oldBalance: before,
@@ -198,6 +192,30 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           updatedAt: nowIso,
         });
         setProgress({ done: i + 1, total: qty });
+      }
+
+      // 4. Auto-activate PSA record if this is the first-ever purchase.
+      // Provider generates / links the PSA ID upstream once 2 coupons are
+      // bought, so we mirror that locally — the retailer can now log into the
+      // UTI portal with this VLE ID.
+      if (!psa && received >= 2) {
+        try {
+          await upsertPsaRecord({
+            retailerId: user.uid,
+            vleId: effectiveVleId,
+            status: "approved",
+            linkedExisting: false,
+            ownerName: user.name || user.email,
+            shopName: user.name || user.email,
+            mobile: user.phone!,
+            email: user.email,
+            remark: "Auto-activated after first 2-coupon purchase",
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          });
+        } catch (e) {
+          console.error("[PAN][UTI] PSA auto-activation failed", e);
+        }
       }
 
       if (received === qty) {
@@ -263,6 +281,23 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     <div className="space-y-5">
       {/* Training PDF — quick access right above the purchase card */}
       <UtiTrainingPdfCard />
+      {!psaActive && (
+        <Card className="border-amber-300 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-900/60">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+              <ShieldAlert className="h-4.5 w-4.5 text-amber-600" />
+            </div>
+            <div className="text-sm space-y-1">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                New PSA / VLE ID — buy 2 coupons to activate
+              </p>
+              <p className="text-amber-800/90 dark:text-amber-200/80">
+                Your PSA ID <code className="font-mono bg-white/70 dark:bg-black/30 px-1.5 py-0.5 rounded">{effectiveVleId}</code> will be generated by the provider once you complete your first purchase of <strong>2 coupons</strong>. After that, you can log into the UTI portal with this ID.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Purchase card */}
       <Card className="border-primary/20 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 p-1" />
@@ -371,7 +406,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
             </Button>
           </form>
           <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3 space-y-1">
-            <p>📌 After purchase, copy the coupon number and log into the UTI portal with your PSA ID <code className="font-mono">{psa?.vleId}</code> to fill the customer's PAN application form.</p>
+            <p>📌 After purchase, copy the coupon number and log into the UTI portal with your PSA ID <code className="font-mono">{effectiveVleId}</code> to fill the customer's PAN application form.</p>
             <p>📌 Failed purchases auto-refund your wallet.</p>
           </div>
         </CardContent>
