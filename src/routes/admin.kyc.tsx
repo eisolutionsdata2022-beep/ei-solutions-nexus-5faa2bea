@@ -59,9 +59,23 @@ function AdminKYC() {
     }
   };
 
-  const filtered = users.filter((u) =>
-    (u.name || u.email).toLowerCase().includes(search.toLowerCase())
-  );
+  const statusRank = (s?: string) => {
+    const v = (s || "pending").toLowerCase();
+    if (v === "pending" || v === "" || v === "submitted") return 0;
+    if (v === "rejected") return 1;
+    return 2; // approved
+  };
+
+  const filtered = users
+    .filter((u) => (u.name || u.email).toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const r = statusRank(a.kycStatus) - statusRank(b.kycStatus);
+      if (r !== 0) return r;
+      // Newest submissions first within the same status bucket
+      const at = a.kycSubmittedAt || a.updatedAt || a.createdAt || "";
+      const bt = b.kycSubmittedAt || b.updatedAt || b.createdAt || "";
+      return String(bt).localeCompare(String(at));
+    });
 
   return (
     <div className="space-y-6">
