@@ -80,6 +80,30 @@ app.get('/health', (_req, res) => {
 });
 
 /**
+ * Returns the public egress IP this VPS uses for outbound HTTPS calls.
+ * Use to verify the IP the provider sees == the IP they whitelisted.
+ * No auth — response is just our own public IP, harmless.
+ */
+app.get('/whoami', async (_req, res) => {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', {
+      signal: AbortSignal.timeout(8000),
+    });
+    const j = await r.json();
+    let geo = null;
+    try {
+      const g = await fetch(`https://ipinfo.io/${j.ip}/json`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      geo = await g.json();
+    } catch { /* ignore */ }
+    res.json({ outboundIp: j.ip, geo });
+  } catch (err) {
+    res.status(500).json({ error: err?.message || 'whoami failed' });
+  }
+});
+
+/**
  * Forward to provider. Path is appended after BASE_URL.
  *   POST /provider/billpay/bill-category   →   ${BASE_URL}/billpay/bill-category
  *
