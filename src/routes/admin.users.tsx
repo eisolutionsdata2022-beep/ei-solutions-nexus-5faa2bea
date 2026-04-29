@@ -35,6 +35,7 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 function AdminUsers() {
+  const { appUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [permUser, setPermUser] = useState<{ id: string; name?: string; email?: string } | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
@@ -45,6 +46,9 @@ function AdminUsers() {
   const [roleUser, setRoleUser] = useState<any | null>(null);
   const [newRole, setNewRole] = useState<UserRole>("retailer");
   const [savingRole, setSavingRole] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<any | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
