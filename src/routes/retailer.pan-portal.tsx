@@ -309,11 +309,17 @@ function PsaTab({
     try {
       const cfg = await getPanConfig();
       if (!cfg.cipher) throw new Error("Credentials not configured");
+      // VLE ID must match the format the upstream UTI portal expects and that
+      // the coupon-purchase call sends — `RMPMCST-<10-digit-mobile>`. Using
+      // the raw Firebase uid here previously caused the provider to reject
+      // every subsequent coupon purchase with "Vle Data Not Exist" because
+      // the registered ID and the purchase ID never matched.
+      const properVleId = generateVleId(user.uid, user.phone);
       const res = await panPsaCreate({
         data: {
           url: cfg.psaCreateUrl!,
           cipher: cfg.cipher,
-          vleId: user.uid.slice(0, 20),
+          vleId: properVleId,
           vleName: user.name || user.email,
           vleShop: form.shopName,
           vleLoc: form.address.slice(0, 50),
@@ -328,7 +334,7 @@ function PsaTab({
       if (!res.success) throw new Error(res.error);
       await upsertPsaRecord({
         retailerId: user.uid,
-        vleId: user.uid.slice(0, 20),
+        vleId: properVleId,
         vleRegCode: res.vleRegCode,
         status: "approved",
         remark: res.message,
