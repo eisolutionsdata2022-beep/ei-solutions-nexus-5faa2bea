@@ -70,12 +70,14 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   staff: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Create User", to: "/staff/create-user", icon: UserPlus },
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "E-dis Services", to: "/staff/services", icon: ShoppingBag },
   ],
   manager: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard },
+    { label: "Create User", to: "/staff/create-user", icon: UserPlus },
     { label: "Leads", to: "/staff/leads", icon: Users },
     { label: "Reports", to: "/staff/reports", icon: BarChart3 },
     { label: "Performance", to: "/staff/performance", icon: BarChart3 },
