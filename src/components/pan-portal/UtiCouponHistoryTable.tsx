@@ -294,6 +294,16 @@ export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
                               <DetailRow label="Application" value={c.applicationStatus} />
                             )}
                             {c.remark && <DetailRow label="Remark" value={c.remark} />}
+                            {c.status === "refunded" && c.rawResponse && (
+                              <div className="mt-2 p-2 rounded border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900/50">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-300 mb-1">
+                                  Provider Response (for diagnosis)
+                                </p>
+                                <pre className="text-[10px] font-mono whitespace-pre-wrap break-all max-h-40 overflow-auto text-rose-900 dark:text-rose-200">
+                                  {c.rawResponse.slice(0, 2000)}
+                                </pre>
+                              </div>
+                            )}
                             <DetailRow
                               label="Wallet Before"
                               value={`₹${c.oldBalance ?? 0}`}
