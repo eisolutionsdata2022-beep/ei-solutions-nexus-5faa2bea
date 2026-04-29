@@ -194,6 +194,30 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         setProgress({ done: i + 1, total: qty });
       }
 
+      // 4. Auto-activate PSA record if this is the first-ever purchase.
+      // Provider generates / links the PSA ID upstream once 2 coupons are
+      // bought, so we mirror that locally — the retailer can now log into the
+      // UTI portal with this VLE ID.
+      if (!psa && received >= 2) {
+        try {
+          await upsertPsaRecord({
+            retailerId: user.uid,
+            vleId: effectiveVleId,
+            status: "approved",
+            linkedExisting: false,
+            ownerName: user.name || user.email,
+            shopName: user.name || user.email,
+            mobile: user.phone!,
+            email: user.email,
+            remark: "Auto-activated after first 2-coupon purchase",
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          });
+        } catch (e) {
+          console.error("[PAN][UTI] PSA auto-activation failed", e);
+        }
+      }
+
       if (received === qty) {
         toast.success(`✅ ${received} coupon${received > 1 ? "s" : ""} purchased successfully!`);
       } else {
