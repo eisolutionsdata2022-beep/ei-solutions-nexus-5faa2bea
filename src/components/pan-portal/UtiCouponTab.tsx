@@ -77,7 +77,11 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
   async function handlePurchase(e: FormEvent) {
     e.preventDefault();
-    if (!psa || !config.cipher) return;
+    if (!config.cipher) return;
+    if (!user.phone || !/^\d{10}$/.test(user.phone)) {
+      toast.error("Mobile number missing or invalid in your profile. Update profile first.");
+      return;
+    }
     const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
     const totalDebit = fee * qty;
     setPurchasing(true);
