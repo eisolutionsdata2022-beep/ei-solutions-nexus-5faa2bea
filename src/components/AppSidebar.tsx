@@ -79,6 +79,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "IPPB Badges", to: "/admin/ippb-badges", icon: ShieldCheck },
     { label: "EI PAY Monitor", to: "/admin/csc-monitor", icon: BarChart3 },
     { label: "PAN Legacy Wallet", to: "/admin/pan-legacy-balances", icon: Wallet },
+    { label: "PAN Portal Settings", to: "/admin/pan-portal-settings", icon: Settings, hint: "PSA + NSDL eKYC + UTI Coupon credentials, URLs, fees" },
     { label: "Cert. Reissues", to: "/admin/certificate-reissues", icon: Award as any },
     { label: "Referrals", to: "/admin/referrals", icon: Gift, tag: "offer" },
     { label: "System Cleanup", to: "/admin/system-cleanup", icon: Trash2 },
