@@ -42,6 +42,13 @@ function AdminWalletRequests() {
       (snap) => {
         const list: WalletRequest[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WalletRequest));
+        // Pending requests always at the top, then by newest first
+        const rank = (s: string) => (s === "pending" ? 0 : s === "rejected" ? 1 : 2);
+        list.sort((a, b) => {
+          const r = rank(a.status) - rank(b.status);
+          if (r !== 0) return r;
+          return (b.createdAt || "").localeCompare(a.createdAt || "");
+        });
         setRequests(list);
       }
     );
