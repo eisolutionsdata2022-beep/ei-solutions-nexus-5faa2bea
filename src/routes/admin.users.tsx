@@ -141,6 +141,10 @@ function AdminUsers() {
       setDeleting(false);
     }
   };
+
+  return (
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold text-foreground">Users</h1>
         <p className="text-muted-foreground">All registered platform users — {users.length} total.</p>
       </div>
