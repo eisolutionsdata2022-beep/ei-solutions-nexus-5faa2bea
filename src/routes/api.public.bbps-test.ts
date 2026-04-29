@@ -64,6 +64,24 @@ export const Route = createFileRoute("/api/public/bbps-test")({
           return Response.json(diag, { status: 502 });
         }
 
+        // Stage 1b: bridge /whoami — confirm outbound egress IP
+        try {
+          const w = await fetch(`${bridgeBase.replace(/\/+$/, "")}/whoami`, {
+            signal: AbortSignal.timeout(15_000),
+          });
+          const wt = await w.text();
+          let wp: unknown = wt;
+          try { wp = JSON.parse(wt); } catch { /* ignore */ }
+          diag.whoami = {
+            status: w.status,
+            response: wp,
+            expectedIp: "139.59.13.241",
+            note: "outboundIp must match expectedIp — that is the IP BBPS sees and must whitelist.",
+          };
+        } catch (e) {
+          diag.whoami = { error: e instanceof Error ? e.message : String(e) };
+        }
+
         // Stage 2: getAccessToken via bridge
         const headers = { "Content-Type": "application/json", apiKey };
         const payload = { clientId, clientSecret };
