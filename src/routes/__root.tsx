@@ -1,7 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
 import { GlobalChatButton } from "@/components/chat/GlobalChatButton";
-import { PWAUnregister } from "@/components/PWAUnregister";
+import { InstallPWAPrompt } from "@/components/InstallPWAPrompt";
 
 import appCss from "../styles.css?url";
 
@@ -45,6 +45,10 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "theme-color", content: "#1e3a8a" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "EI SOLUTIONS" },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       {
@@ -55,7 +59,9 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap",
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+      { rel: "apple-touch-icon", href: "/icon-512.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -80,9 +86,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <AuthProvider>
-      <PWAUnregister />
       <Outlet />
       <GlobalChatButton />
+      <InstallPWAPrompt />
     </AuthProvider>
   );
 }
