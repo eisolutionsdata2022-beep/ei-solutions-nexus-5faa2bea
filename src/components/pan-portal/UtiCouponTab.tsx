@@ -403,11 +403,16 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 ))}
               </div>
             </div>
-            <Button type="submit" disabled={purchasing} size="lg" className="w-full">
+            <Button type="submit" disabled={purchasing || !psaActive} size="lg" className="w-full">
               {purchasing ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
                   {progress ? `Purchasing ${progress.done + 1}/${progress.total}…` : "Processing…"}
+                </>
+              ) : !psaActive ? (
+                <>
+                  <ShieldAlert className="h-5 w-5 mr-2" />
+                  Register PSA / VLE ID first
                 </>
               ) : (
                 <>
