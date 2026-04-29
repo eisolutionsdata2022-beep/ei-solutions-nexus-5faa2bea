@@ -51,6 +51,8 @@ import {
 
 interface TokenCache {
   accessToken: string;
+  accessId: string;
+  accessCode: string;
   expiresAt: number; // epoch ms
 }
 let tokenCache: TokenCache | null = null;
@@ -93,10 +95,10 @@ function jwtExpiryMs(jwt: string): number | null {
   return null;
 }
 
-async function getAccessToken(_baseUrl: string): Promise<string> {
+async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
   // Use cached token if still valid for ≥60s.
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
-    return tokenCache.accessToken;
+    return tokenCache;
   }
   const clientId = process.env.BBPS_CLIENT_ID;
   const clientSecret = process.env.BBPS_CLIENT_SECRET;
@@ -137,8 +139,13 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
   }
 
   const expiresAt = jwtExpiryMs(token) ?? Date.now() + 30 * 60_000;
-  tokenCache = { accessToken: token, expiresAt };
-  return token;
+  tokenCache = {
+    accessToken: token,
+    accessId: json.access_id ?? "",
+    accessCode: json.access_code ?? "",
+    expiresAt,
+  };
+  return tokenCache;
 }
 
 /** Clear the in-memory access-token cache. Used by admin diagnostics after the
@@ -183,8 +190,11 @@ async function callBbps<T>(
     apiKey: process.env.BBPS_API_KEY ?? "",
   };
   if (!opts.skipAuth) {
-    const token = await getAccessToken(cfg.baseUrl);
-    headers.Authorization = `Bearer ${token}`;
+    const tok = await getAccessToken(cfg.baseUrl);
+    headers.Authorization = `Bearer ${tok.accessToken}`;
+    // AcePe-style providers also require these on every authenticated call.
+    if (tok.accessId) headers.access_id = tok.accessId;
+    if (tok.accessCode) headers.access_code = tok.accessCode;
     // Provider requires geo coords on every authenticated call (HTTP 411 otherwise).
     // Default to the VPS bridge region (Bangalore) — overridable via env.
     headers.latitude = process.env.BBPS_LATITUDE ?? "12.9716";
