@@ -116,9 +116,9 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
         data: {
           url: cfg.utiCouponPurchaseUrl!,
           cipher: cfg.cipher!,
-          vleId: psa.vleId,
+          vleId: effectiveVleId,
           orderId: batchOrderId,
-          shopName: psa.shopName || user.name || user.email,
+          shopName: psa?.shopName || user.name || user.email,
           weburl: typeof window !== "undefined" ? window.location.hostname : "ei-solutions",
           qty,
         },
