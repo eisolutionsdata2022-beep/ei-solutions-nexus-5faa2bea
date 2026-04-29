@@ -109,13 +109,16 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
   // Provider issues credentials in pre-encrypted form (version-prefixed
    // base64 strings like "_v9...", "_PzJN..."). Send them as-is — do NOT
   // re-encrypt locally.
-  let json: { success?: boolean; accessToken?: string; message?: string };
+  let json: {
+    success?: boolean;
+    accessToken?: string;
+    jwt_token?: string;
+    access_id?: string;
+    access_code?: string;
+    message?: string;
+  };
   try {
-    json = await callBbps<{
-      success?: boolean;
-      accessToken?: string;
-      message?: string;
-    }>(
+    json = await callBbps<typeof json>(
       "/getAccessToken",
       { clientId, clientSecret },
       { skipAuth: true },
@@ -126,14 +129,16 @@ async function getAccessToken(_baseUrl: string): Promise<string> {
     throw err;
   }
 
-  if (!json.success || !json.accessToken) {
+  // Provider returns the JWT under `jwt_token` (legacy `accessToken` kept as fallback).
+  const token = json.jwt_token ?? json.accessToken;
+  if (!json.success || !token) {
     tokenCache = null;
     throw new Error(json.message ?? "Auth failed");
   }
 
-  const expiresAt = jwtExpiryMs(json.accessToken) ?? Date.now() + 30 * 60_000;
-  tokenCache = { accessToken: json.accessToken, expiresAt };
-  return json.accessToken;
+  const expiresAt = jwtExpiryMs(token) ?? Date.now() + 30 * 60_000;
+  tokenCache = { accessToken: token, expiresAt };
+  return token;
 }
 
 /** Clear the in-memory access-token cache. Used by admin diagnostics after the
