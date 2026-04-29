@@ -44,4 +44,4 @@ Legacy PHP source preserved at `.lovable/legacy-pan/` (extracted from old portal
 - Admin enters credentials in `/admin/pan-portal-settings`, encrypted at rest with AES-GCM (key derived from LOVABLE_API_KEY).
 
 ## VLE ID
-Display only — `RMPMCST-<10-digit-mobile>` via `src/lib/vle-id.ts`. Backend PSA registration uses retailer username/uid as `vle_id`.
+**CRITICAL**: VLE ID must be `RMPMCST-<10-digit-mobile>` everywhere — both in PSA Create AND in UTI coupon purchase. Use `generateVleId(uid, phone)` from `src/lib/vle-id.ts`. Sending different IDs (e.g. raw Firebase uid for register, RMPMCST for purchase) causes provider to return `"Vle Data Not Exist"` on every coupon purchase. Coupon purchase is now blocked client-side until `psa.status === "approved"`.
