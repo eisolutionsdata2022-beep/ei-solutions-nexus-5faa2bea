@@ -179,7 +179,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           orderId: batchOrderId,
           retailerId: user.uid,
           retailerUsername: user.name || user.email,
-          vleId: psa.vleId,
+          vleId: effectiveVleId,
           amount: fee,
           providerCost: cfg.utiPanProviderCost,
           oldBalance: before,
