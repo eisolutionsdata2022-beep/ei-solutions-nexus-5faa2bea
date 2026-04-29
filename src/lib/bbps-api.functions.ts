@@ -185,6 +185,10 @@ async function callBbps<T>(
   if (!opts.skipAuth) {
     const token = await getAccessToken(cfg.baseUrl);
     headers.Authorization = `Bearer ${token}`;
+    // Provider requires geo coords on every authenticated call (HTTP 411 otherwise).
+    // Default to the VPS bridge region (Bangalore) — overridable via env.
+    headers.latitude = process.env.BBPS_LATITUDE ?? "12.9716";
+    headers.longitude = process.env.BBPS_LONGITUDE ?? "77.5946";
   }
 
   const bridgeBase = process.env.BBPS_BRIDGE_BASE_URL;
