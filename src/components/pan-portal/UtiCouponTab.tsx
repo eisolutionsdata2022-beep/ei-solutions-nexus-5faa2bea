@@ -12,7 +12,9 @@ import {
   createUtiCoupon,
   getPanConfig,
   updateUtiCoupon,
+  upsertPsaRecord,
 } from "@/lib/pan-portal-firebase";
+import { generateVleId } from "@/lib/vle-id";
 import {
   panUtiCouponPurchase,
   panUtiPanStatusTrack,
