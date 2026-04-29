@@ -395,6 +395,13 @@ const SERVICE_TILES: ServiceTile[] = [
     gradient: "from-cyan-500 to-blue-600",
   },
   {
+    to: "/admin/pan-portal-settings",
+    title: "PAN Portal Settings",
+    subtitle: "PSA + NSDL eKYC + UTI Coupon",
+    icon: CreditCard,
+    gradient: "from-sky-500 to-indigo-600",
+  },
+  {
     to: "/admin/trainings",
     title: "Trainings",
     subtitle: "Sessions & schedules",
