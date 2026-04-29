@@ -389,7 +389,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
             </Button>
           </form>
           <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3 space-y-1">
-            <p>📌 After purchase, copy the coupon number and log into the UTI portal with your PSA ID <code className="font-mono">{psa?.vleId}</code> to fill the customer's PAN application form.</p>
+            <p>📌 After purchase, copy the coupon number and log into the UTI portal with your PSA ID <code className="font-mono">{effectiveVleId}</code> to fill the customer's PAN application form.</p>
             <p>📌 Failed purchases auto-refund your wallet.</p>
           </div>
         </CardContent>
