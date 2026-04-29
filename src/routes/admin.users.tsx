@@ -12,12 +12,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ShieldCheck, Eye, Search, UserCog } from "lucide-react";
+import { ShieldCheck, Eye, Search, UserCog, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
 import { getEditHistory, getRecentLogins, type UserEditLog } from "@/lib/profile-edits";
 import { getStaffCounts } from "@/lib/retailer-staff";
-import type { UserRole } from "@/lib/auth-context";
+import { deleteUserCompletely } from "@/lib/user-deletion";
+import { useAuth, type UserRole } from "@/lib/auth-context";
 
 const ASSIGNABLE_ROLES: { value: UserRole; label: string; hint: string }[] = [
   { value: "retailer", label: "Retailer", hint: "Franchise partner / shop owner" },
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 function AdminUsers() {
+  const { appUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [permUser, setPermUser] = useState<{ id: string; name?: string; email?: string } | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
@@ -44,6 +46,9 @@ function AdminUsers() {
   const [roleUser, setRoleUser] = useState<any | null>(null);
   const [newRole, setNewRole] = useState<UserRole>("retailer");
   const [savingRole, setSavingRole] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<any | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -100,6 +105,40 @@ function AdminUsers() {
       toast.error(e?.message || "Failed to update role");
     } finally {
       setSavingRole(false);
+    }
+  };
+
+  const openDelete = (u: any) => {
+    setDeleteUser(u);
+    setDeleteConfirm("");
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteUser) return;
+    if (deleteUser.id === appUser?.uid) {
+      toast.error("You cannot delete your own admin account.");
+      return;
+    }
+    if (deleteConfirm.trim().toUpperCase() !== "DELETE") {
+      toast.error('Type "DELETE" to confirm.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      const report = await deleteUserCompletely(deleteUser.id);
+      setUsers((prev) => prev.filter((x) => x.id !== deleteUser.id));
+      toast.success(
+        `User deleted. Removed ${report.uidDocsDeleted + report.referenceDocsDeleted} record(s) across ${Object.keys(report.perCollection).length} collection(s).`,
+      );
+      if (report.errors.length) {
+        console.warn("Deletion warnings:", report.errors);
+      }
+      setDeleteUser(null);
+      setDeleteConfirm("");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -181,6 +220,16 @@ function AdminUsers() {
                         >
                           <ShieldCheck className="w-3 h-3" /> Services
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => openDelete(u)}
+                          disabled={u.id === appUser?.uid}
+                          title={u.id === appUser?.uid ? "You cannot delete your own account" : "Permanently delete this user and all their data"}
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -249,6 +298,52 @@ function AdminUsers() {
             </Button>
             <Button onClick={saveRole} disabled={savingRole || newRole === roleUser?.role}>
               {savingRole ? "Saving..." : "Update Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteUser} onOpenChange={(o) => { if (!o && !deleting) { setDeleteUser(null); setDeleteConfirm(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Delete User Permanently
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently remove <b>{deleteUser?.name || deleteUser?.email}</b> and all of their data (profile, wallet, transactions, applications, etc.) from the database. This action <b>cannot be undone</b>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+              <p>⚠️ All Firestore records linked to this user will be deleted across users, wallets, transactions, KYC, applications, referrals, and more.</p>
+              <p className="text-muted-foreground">Note: The Firebase Auth login is disabled by removing the user profile (login will fail with "User profile not found").</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Type <span className="font-mono text-destructive">DELETE</span> to confirm
+              </label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="DELETE"
+                disabled={deleting}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirm(""); }} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
+            >
+              {deleting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Deleting...</> : <><Trash2 className="w-4 h-4 mr-2" /> Delete Permanently</>}
             </Button>
           </DialogFooter>
         </DialogContent>
