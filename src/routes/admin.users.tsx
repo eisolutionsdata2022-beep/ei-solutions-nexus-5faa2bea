@@ -220,6 +220,16 @@ function AdminUsers() {
                         >
                           <ShieldCheck className="w-3 h-3" /> Services
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => openDelete(u)}
+                          disabled={u.id === appUser?.uid}
+                          title={u.id === appUser?.uid ? "You cannot delete your own account" : "Permanently delete this user and all their data"}
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
