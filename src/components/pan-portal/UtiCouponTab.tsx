@@ -82,6 +82,15 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       toast.error("Mobile number missing or invalid in your profile. Update profile first.");
       return;
     }
+    // Provider rejects unregistered VLE IDs with "Vle Data Not Exist".
+    // Block purchase until PSA is registered or an existing UTI ID is linked.
+    if (!psaActive) {
+      toast.error(
+        "Register your PSA / VLE ID first. The provider rejects coupon purchases for unregistered VLEs (\"Vle Data Not Exist\").",
+        { duration: 6000 },
+      );
+      return;
+    }
     const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
     const totalDebit = fee * qty;
     setPurchasing(true);
