@@ -108,9 +108,39 @@ function AdminUsers() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div>
+  const openDelete = (u: any) => {
+    setDeleteUser(u);
+    setDeleteConfirm("");
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteUser) return;
+    if (deleteUser.id === appUser?.uid) {
+      toast.error("You cannot delete your own admin account.");
+      return;
+    }
+    if (deleteConfirm.trim().toUpperCase() !== "DELETE") {
+      toast.error('Type "DELETE" to confirm.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      const report = await deleteUserCompletely(deleteUser.id);
+      setUsers((prev) => prev.filter((x) => x.id !== deleteUser.id));
+      toast.success(
+        `User deleted. Removed ${report.uidDocsDeleted + report.referenceDocsDeleted} record(s) across ${Object.keys(report.perCollection).length} collection(s).`,
+      );
+      if (report.errors.length) {
+        console.warn("Deletion warnings:", report.errors);
+      }
+      setDeleteUser(null);
+      setDeleteConfirm("");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete user");
+    } finally {
+      setDeleting(false);
+    }
+  };
         <h1 className="text-2xl font-bold text-foreground">Users</h1>
         <p className="text-muted-foreground">All registered platform users — {users.length} total.</p>
       </div>
