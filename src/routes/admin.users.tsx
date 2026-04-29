@@ -12,12 +12,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ShieldCheck, Eye, Search, UserCog } from "lucide-react";
+import { ShieldCheck, Eye, Search, UserCog, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { UserServicePermissionsDialog } from "@/components/admin/UserServicePermissionsDialog";
 import { getEditHistory, getRecentLogins, type UserEditLog } from "@/lib/profile-edits";
 import { getStaffCounts } from "@/lib/retailer-staff";
-import type { UserRole } from "@/lib/auth-context";
+import { deleteUserCompletely } from "@/lib/user-deletion";
+import { useAuth, type UserRole } from "@/lib/auth-context";
 
 const ASSIGNABLE_ROLES: { value: UserRole; label: string; hint: string }[] = [
   { value: "retailer", label: "Retailer", hint: "Franchise partner / shop owner" },
