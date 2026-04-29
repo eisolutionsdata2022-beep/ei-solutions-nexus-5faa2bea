@@ -303,6 +303,52 @@ function AdminUsers() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!deleteUser} onOpenChange={(o) => { if (!o && !deleting) { setDeleteUser(null); setDeleteConfirm(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Delete User Permanently
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently remove <b>{deleteUser?.name || deleteUser?.email}</b> and all of their data (profile, wallet, transactions, applications, etc.) from the database. This action <b>cannot be undone</b>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+              <p>⚠️ All Firestore records linked to this user will be deleted across users, wallets, transactions, KYC, applications, referrals, and more.</p>
+              <p className="text-muted-foreground">Note: The Firebase Auth login is disabled by removing the user profile (login will fail with "User profile not found").</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Type <span className="font-mono text-destructive">DELETE</span> to confirm
+              </label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="DELETE"
+                disabled={deleting}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirm(""); }} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
+            >
+              {deleting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Deleting...</> : <><Trash2 className="w-4 h-4 mr-2" /> Delete Permanently</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{detail?.name || detail?.email}</DialogTitle></DialogHeader>
