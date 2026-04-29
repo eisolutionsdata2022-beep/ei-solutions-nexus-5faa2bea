@@ -58,6 +58,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
+  // Effective VLE ID — use existing PSA record if approved, else fall back to
+  // the deterministic RMPMCST-<mobile> ID. The provider auto-generates / links
+  // the PSA on the upstream side after the first 2-coupon purchase.
+  const effectiveVleId = psa?.vleId || generateVleId(user.uid, user.phone);
   const MIN_QTY = 2;
   const MAX_QTY = 100;
   const totalAmount = fee * quantity;
@@ -70,22 +74,6 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     );
   }
 
-  if (!psaActive) {
-    return (
-      <Card className="border-amber-200 dark:border-amber-900/50">
-        <CardContent className="p-8 text-center space-y-3">
-          <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-            <ShieldAlert className="h-7 w-7 text-amber-600" />
-          </div>
-          <h3 className="text-lg font-bold">PSA / VLE ID required</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            UTI coupons require an active PSA (UTI VLE) account. Switch to the
-            <strong> PSA Auto-ID</strong> tab to register or link your existing UTI VLE ID first.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   async function handlePurchase(e: FormEvent) {
     e.preventDefault();
