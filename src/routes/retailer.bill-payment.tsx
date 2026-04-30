@@ -73,12 +73,31 @@ function BillPaymentPage() {
           toast.error(res.message ?? "Failed to load categories");
           return;
         }
-        // Debug: confirm Water & Electricity are present and not gated/disabled in any way.
+
+        // Runtime validation: ensure response is well-formed and contains Water + Electricity.
+        if (!Array.isArray(res.categories)) {
+          const msg = "Malformed categories response from provider (not an array).";
+          console.error("[BBPS][validate]", msg, res);
+          setLoadError(msg);
+          toast.error(msg);
+          return;
+        }
+
+        const malformed = res.categories.filter(
+          (c) => !c || typeof c.id === "undefined" || typeof c.name !== "string" || !c.name.trim(),
+        );
+        if (malformed.length > 0) {
+          const msg = `Malformed category entries received (${malformed.length}). Check provider response.`;
+          console.error("[BBPS][validate]", msg, malformed);
+          toast.error(msg);
+        }
+
         const names = res.categories.map((c) => c.name);
         const hasWater = names.some((n) => /water/i.test(n));
         const hasElectricity = names.some((n) => /electric/i.test(n));
         console.log("[BBPS][debug] category count:", res.categories.length, "names:", names);
         console.log("[BBPS][debug] Water present:", hasWater, "| Electricity present:", hasElectricity);
+
         const gatedKeys = ["disabled", "enabled", "active", "status", "isActive", "blocked"];
         res.categories.forEach((c) => {
           const flags: Record<string, unknown> = {};
@@ -91,11 +110,22 @@ function BillPaymentPage() {
             console.log(`[BBPS][debug] category "${c.name}" carries gating flags:`, flags);
           }
         });
-        if (!hasWater || !hasElectricity) {
-          console.warn("[BBPS][debug] Water or Electricity MISSING from provider response — UI will not render those tiles.");
+
+        const missing: string[] = [];
+        if (!hasWater) missing.push("Water");
+        if (!hasElectricity) missing.push("Electricity");
+        if (missing.length > 0) {
+          const msg = `Missing categories from provider: ${missing.join(", ")}. Tiles cannot render.`;
+          console.warn("[BBPS][validate]", msg);
+          setLoadError(msg);
+          toast.error(msg, {
+            description: "Provider response did not include these categories. Contact admin to refresh BBPS provider config.",
+            duration: 8000,
+          });
         } else {
           console.log("[BBPS][debug] ✅ Water & Electricity will render as enabled (no client-side gating applied).");
         }
+
         setCategories(res.categories);
         if (res.mock) setDemoMode(true);
       })
