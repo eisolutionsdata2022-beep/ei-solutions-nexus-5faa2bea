@@ -49,14 +49,14 @@ interface DuplicateGroup {
 }
 
 function PanRefundRepairPage() {
-  const { user } = useAuth();
+  const { appUser } = useAuth();
   const [scanning, setScanning] = useState(false);
   const [reversing, setReversing] = useState(false);
   const [groups, setGroups] = useState<DuplicateGroup[]>([]);
   const [scanned, setScanned] = useState(false);
   const [reversedCount, setReversedCount] = useState(0);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = appUser?.role === "admin";
 
   async function scan() {
     if (!isAdmin) return;
@@ -148,7 +148,7 @@ function PanRefundRepairPage() {
           description: `Duplicate refund reversal — ${g.orderId} (${g.extraCredits} extra credit${g.extraCredits === 1 ? "" : "s"})`,
           orderId: g.orderId,
           reversalOf: g.txIds,
-          adminUserId: user!.uid,
+          adminUserId: appUser!.uid,
           createdAt: new Date().toISOString(),
         });
 
@@ -157,7 +157,7 @@ function PanRefundRepairPage() {
           await updateDoc(doc(db, "transactions", txId), {
             reversedDuplicate: true,
             reversedAt: new Date().toISOString(),
-            reversedBy: user!.uid,
+            reversedBy: appUser!.uid,
           });
         }
         ok++;
