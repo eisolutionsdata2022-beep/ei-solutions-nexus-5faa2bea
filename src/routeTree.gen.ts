@@ -120,8 +120,6 @@ import { Route as AdminBbpsTransactionsRouteImport } from './routes/admin.bbps-t
 import { Route as AdminBbpsSettingsRouteImport } from './routes/admin.bbps-settings'
 import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$jobId'
 import { Route as ApiPublicPaytmCallbackRouteImport } from './routes/api.public.paytm-callback'
-import { Route as ApiPublicBbpsTestRouteImport } from './routes/api.public.bbps-test'
-import { Route as ApiPublicBbpsBillfetchTestRouteImport } from './routes/api.public.bbps-billfetch-test'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
 import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
@@ -683,17 +681,6 @@ const ApiPublicPaytmCallbackRoute = ApiPublicPaytmCallbackRouteImport.update({
   path: '/api/public/paytm-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicBbpsTestRoute = ApiPublicBbpsTestRouteImport.update({
-  id: '/api/public/bbps-test',
-  path: '/api/public/bbps-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicBbpsBillfetchTestRoute =
-  ApiPublicBbpsBillfetchTestRouteImport.update({
-    id: '/api/public/bbps-billfetch-test',
-    path: '/api/public/bbps-billfetch-test',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
@@ -823,8 +810,6 @@ export interface FileRoutesByFullPath {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
-  '/api/public/bbps-billfetch-test': typeof ApiPublicBbpsBillfetchTestRoute
-  '/api/public/bbps-test': typeof ApiPublicBbpsTestRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
@@ -934,8 +919,6 @@ export interface FileRoutesByTo {
   '/trainer': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
-  '/api/public/bbps-billfetch-test': typeof ApiPublicBbpsBillfetchTestRoute
-  '/api/public/bbps-test': typeof ApiPublicBbpsTestRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
@@ -1053,8 +1036,6 @@ export interface FileRoutesById {
   '/trainer/': typeof TrainerIndexRoute
   '/api/email/open': typeof ApiEmailOpenRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
-  '/api/public/bbps-billfetch-test': typeof ApiPublicBbpsBillfetchTestRoute
-  '/api/public/bbps-test': typeof ApiPublicBbpsTestRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
   '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
@@ -1173,8 +1154,6 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
-    | '/api/public/bbps-billfetch-test'
-    | '/api/public/bbps-test'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
@@ -1284,8 +1263,6 @@ export interface FileRouteTypes {
     | '/trainer'
     | '/api/email/open'
     | '/api/email/unsubscribe'
-    | '/api/public/bbps-billfetch-test'
-    | '/api/public/bbps-test'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
@@ -1402,8 +1379,6 @@ export interface FileRouteTypes {
     | '/trainer/'
     | '/api/email/open'
     | '/api/email/unsubscribe'
-    | '/api/public/bbps-billfetch-test'
-    | '/api/public/bbps-test'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
     | '/api/public/pan-portal/nsdl-webhook'
@@ -1428,8 +1403,6 @@ export interface RootRouteChildren {
   WorkerWorkerIdRoute: typeof WorkerWorkerIdRoute
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
-  ApiPublicBbpsBillfetchTestRoute: typeof ApiPublicBbpsBillfetchTestRoute
-  ApiPublicBbpsTestRoute: typeof ApiPublicBbpsTestRoute
   ApiPublicPaytmCallbackRoute: typeof ApiPublicPaytmCallbackRoute
   ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
@@ -2213,20 +2186,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaytmCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/bbps-test': {
-      id: '/api/public/bbps-test'
-      path: '/api/public/bbps-test'
-      fullPath: '/api/public/bbps-test'
-      preLoaderRoute: typeof ApiPublicBbpsTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/bbps-billfetch-test': {
-      id: '/api/public/bbps-billfetch-test'
-      path: '/api/public/bbps-billfetch-test'
-      fullPath: '/api/public/bbps-billfetch-test'
-      preLoaderRoute: typeof ApiPublicBbpsBillfetchTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/email/unsubscribe': {
       id: '/api/email/unsubscribe'
       path: '/api/email/unsubscribe'
@@ -2533,8 +2492,6 @@ const rootRouteChildren: RootRouteChildren = {
   WorkerWorkerIdRoute: WorkerWorkerIdRoute,
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
-  ApiPublicBbpsBillfetchTestRoute: ApiPublicBbpsBillfetchTestRoute,
-  ApiPublicBbpsTestRoute: ApiPublicBbpsTestRoute,
   ApiPublicPaytmCallbackRoute: ApiPublicPaytmCallbackRoute,
   ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
