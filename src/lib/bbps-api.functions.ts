@@ -338,6 +338,35 @@ const billersInputSchema = z.object({
   category: z.string().min(1).max(100),
 });
 
+function normalizeBiller(raw: Partial<BbpsBiller>): BbpsBiller {
+  return {
+    bill_id: Number(raw.bill_id) || 0,
+    id: String(raw.id ?? ""),
+    name: String(raw.name ?? "Unknown Biller"),
+    categoryName: String(raw.categoryName ?? ""),
+    mode:
+      raw.mode === null ||
+      raw.mode === undefined ||
+      (typeof raw.mode === "string" && (raw.mode === "null" || raw.mode === ""))
+        ? null
+        : Number(raw.mode) || null,
+    acceptsAdhoc:
+      raw.acceptsAdhoc === null || raw.acceptsAdhoc === undefined
+        ? null
+        : String(raw.acceptsAdhoc).toLowerCase() === "true",
+    isParent:
+      raw.isParent === null || raw.isParent === undefined
+        ? null
+        : String(raw.isParent).toLowerCase() === "true",
+    parentBillerId:
+      raw.parentBillerId && raw.parentBillerId !== "null" ? String(raw.parentBillerId) : null,
+    fetchRequirement:
+      raw.fetchRequirement && raw.fetchRequirement !== "null"
+        ? String(raw.fetchRequirement)
+        : null,
+  };
+}
+
 export const bbpsGetBillers = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
@@ -351,7 +380,12 @@ export const bbpsGetBillers = createServerFn({ method: "POST" })
         "/V2/billpay/biller-info",
         { agent: cfg.agentId, category: data.category },
       );
-      return { success: true, billers: json.biller ?? [] };
+      return {
+        success: true,
+        billers: (json.biller ?? [])
+          .map((b) => normalizeBiller(b))
+          .filter((b) => b.id && b.name),
+      };
     } catch (err) {
       return { success: false, billers: [], message: err instanceof Error ? err.message : "Unknown error" };
     }
