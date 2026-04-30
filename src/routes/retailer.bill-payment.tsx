@@ -259,19 +259,7 @@ function BillPaymentPage() {
                       onClick={() => pickCategory(cat)}
                       className="flex flex-col items-start gap-1 rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-sm"
                     >
-                      {cat.icon && /^https?:\/\//i.test(cat.icon) ? (
-                        <img
-                          src={cat.icon}
-                          alt={cat.name}
-                          className="h-8 w-8 rounded object-contain"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <span className="text-2xl">{cat.icon ?? "🧾"}</span>
-                      )}
+                      <CategoryIcon icon={cat.icon} name={cat.name} />
                       <span className="text-sm font-medium">{cat.name}</span>
                     </button>
                   ))}
