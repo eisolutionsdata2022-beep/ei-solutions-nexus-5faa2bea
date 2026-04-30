@@ -345,7 +345,9 @@ function normalizeBiller(raw: Partial<BbpsBiller>): BbpsBiller {
     name: String(raw.name ?? "Unknown Biller"),
     categoryName: String(raw.categoryName ?? ""),
     mode:
-      raw.mode === null || raw.mode === undefined || raw.mode === "null" || raw.mode === ""
+      raw.mode === null ||
+      raw.mode === undefined ||
+      (typeof raw.mode === "string" && (raw.mode === "null" || raw.mode === ""))
         ? null
         : Number(raw.mode) || null,
     acceptsAdhoc:
