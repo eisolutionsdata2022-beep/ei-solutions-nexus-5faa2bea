@@ -429,6 +429,10 @@ const fetchInputSchema = z.object({
   paramValues: z.array(z.string().min(0).max(200)).min(1).max(20),
 });
 
+function formatProviderParamList(values: string[]): string {
+  return JSON.stringify(values);
+}
+
 export const bbpsFetchBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
@@ -441,9 +445,8 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
     }
     try {
       const cfg = await getProviderConfig();
-      // Provider expects stringified JSON-array-ish: {"Consumer Number"} format.
-      const paramName = `{${data.paramNames.map((n) => `"${n}"`).join(",")}}`;
-      const paramValue = `{${data.paramValues.map((v) => `"${v}"`).join(",")}}`;
+      const paramName = formatProviderParamList(data.paramNames);
+      const paramValue = formatProviderParamList(data.paramValues);
       const json = await callBbps<{
         success: boolean;
         insertid: number;
@@ -494,8 +497,8 @@ export const bbpsValidateBill = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
     try {
       const cfg = await getProviderConfig();
-      const paramName = `{${data.paramNames.map((n) => `"${n}"`).join(",")}}`;
-      const paramValue = `{${data.paramValues.map((v) => `"${v}"`).join(",")}}`;
+      const paramName = formatProviderParamList(data.paramNames);
+      const paramValue = formatProviderParamList(data.paramValues);
       const body: Record<string, unknown> = {
         agent: cfg.agentId,
         billerid: data.billerId,
