@@ -323,7 +323,7 @@ export const bbpsGetCategories = createServerFn({ method: "POST" })
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
-        "/billpay/bill-category",
+        "/V2/billpay/bill-category",
         { agent: cfg.agentId },
       );
       return { success: true, categories: json.data ?? [] };
@@ -348,7 +348,7 @@ export const bbpsGetBillers = createServerFn({ method: "POST" })
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
-        "/billpay/biller-info",
+        "/V2/billpay/biller-info",
         { agent: cfg.agentId, category: data.category },
       );
       return { success: true, billers: json.biller ?? [] };
@@ -378,7 +378,7 @@ export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
     try {
       const cfg = await getProviderConfig();
       const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
-        "/billpay/customer-params",
+        "/V2/billpay/customer-params",
         { agent: cfg.agentId, billerid: data.billerId },
       );
       return { success: true, params: json.param ?? [], mode: json.mode ?? null };
@@ -420,7 +420,7 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
         billNumber: string;
         message: string;
         requestId: string;
-      }>("/billpay/bill-fetch", {
+      }>("/V2/billpay/bill-fetch", {
         agent: cfg.agentId,
         billerid: data.billerId,
         paramName,
@@ -479,7 +479,7 @@ export const bbpsValidateBill = createServerFn({ method: "POST" })
         billNumber: string;
         message: string;
         requestId: string;
-      }>("/billpay/bill-validation", body);
+      }>("/V2/billpay/bill-validation", body);
       if (!json.success) return { success: false, message: json.message ?? "Validation failed" };
       return {
         success: true,
@@ -637,7 +637,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     // 3. Call provider /bill-pay.
     try {
       const json = await callBbps<{ success: boolean; message: string; receipt: string | number }>(
-        "/billpay/bill-pay",
+        "/V2/billpay/bill-pay",
         {
           agent: cfg.agentId,
           billerid: data.billerId,
