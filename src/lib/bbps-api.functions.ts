@@ -637,8 +637,11 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
       return { success: false, message: err instanceof Error ? err.message : "Wallet debit failed" };
     }
 
-    // 2. Create the txn record in `processing` state.
-    const txDoc = await addDoc(collection(db, "bbps_transactions"), {
+    // 2. Create the txn record + wallet history in PARALLEL with the provider call.
+    //    Previously these were sequential — adding ~300-800ms of latency before
+    //    we even started talking to the provider. Now they all run concurrently.
+    const createdAt = new Date().toISOString();
+    const txDocPromise = addDoc(collection(db, "bbps_transactions"), {
       retailerId,
       retailerEmail,
       categoryName: data.categoryName,
@@ -657,62 +660,44 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
       billDate: data.billDate ?? "",
       dueDate: data.dueDate ?? "",
       billNumber: data.billNumber ?? "",
-      createdAt: new Date().toISOString(),
+      createdAt,
     } satisfies Omit<BbpsTransaction, "id">);
 
-    // Wallet history entry for debit.
-    await addDoc(collection(db, "transactions"), {
+    // 3. Kick off the provider call in parallel with the Firestore writes.
+    const providerPromise = callBbps<{ success: boolean; message: string; receipt: string | number }>(
+      "/V2/billpay/bill-pay",
+      {
+        agent: cfg.agentId,
+        billerid: data.billerId,
+        billcategory: data.categoryName,
+        billpaymentid: data.billPaymentId,
+        requestId: data.requestId,
+        billermode: data.billerMode ?? 1,
+        ...(data.mobileNo ? { mobileno: data.mobileNo } : {}),
+      },
+    ).then(
+      (json) => ({ ok: true as const, json }),
+      (err: unknown) => ({ ok: false as const, err }),
+    );
+
+    // Wait for the txn doc (we need its id) and the provider response together.
+    const [txDoc, providerResult] = await Promise.all([txDocPromise, providerPromise]);
+
+    // Wallet history entry — fire-and-forget, doesn't block user response.
+    void addDoc(collection(db, "transactions"), {
       userId: retailerId,
       amount: totalDebit,
       type: "debit",
       source: "bbps",
       description: `${data.categoryName} — ${data.billerName}`,
       bbpsTransactionId: txDoc.id,
-      createdAt: new Date().toISOString(),
-    });
+      createdAt,
+    }).catch((e) => console.error("[bbps] wallet history write failed", e));
 
-    // 3. Call provider /bill-pay.
-    try {
-      const json = await callBbps<{ success: boolean; message: string; receipt: string | number }>(
-        "/V2/billpay/bill-pay",
-        {
-          agent: cfg.agentId,
-          billerid: data.billerId,
-          billcategory: data.categoryName,
-          billpaymentid: data.billPaymentId,
-          requestId: data.requestId,
-          billermode: data.billerMode ?? 1,
-          ...(data.mobileNo ? { mobileno: data.mobileNo } : {}),
-        },
-      );
-
-      if (!json.success) {
-        // Refund.
-        await refund(walletRef, totalDebit, retailerId, txDoc.id, json.message ?? "Bill payment failed");
-        await updateDoc(txDoc, {
-          status: "refunded",
-          errorMessage: json.message ?? "Bill payment failed",
-          refundedAt: new Date().toISOString(),
-        });
-        return { success: false, message: json.message ?? "Bill payment failed" };
-      }
-
-      await updateDoc(txDoc, {
-        status: "success",
-        providerReceipt: json.receipt,
-        paidAt: new Date().toISOString(),
-      });
-      return {
-        success: true,
-        transactionId: txDoc.id,
-        receipt: json.receipt,
-        newBalance,
-        fee,
-        totalDebited: totalDebit,
-        message: json.message,
-      };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Provider error";
+    if (!providerResult.ok) {
+      const msg = providerResult.err instanceof Error ? providerResult.err.message : "Provider error";
+      // Refund + mark refunded — must complete before we tell user "failed",
+      // otherwise their balance shows wrong on the next screen.
       await refund(walletRef, totalDebit, retailerId, txDoc.id, msg);
       await updateDoc(txDoc, {
         status: "refunded",
@@ -721,6 +706,35 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
       });
       return { success: false, message: `${msg} — wallet refunded` };
     }
+
+    const json = providerResult.json;
+    if (!json.success) {
+      await refund(walletRef, totalDebit, retailerId, txDoc.id, json.message ?? "Bill payment failed");
+      await updateDoc(txDoc, {
+        status: "refunded",
+        errorMessage: json.message ?? "Bill payment failed",
+        refundedAt: new Date().toISOString(),
+      });
+      return { success: false, message: json.message ?? "Bill payment failed" };
+    }
+
+    // Success — mark as success in the background so the user gets their
+    // receipt instantly. Worst case: doc shows "processing" for ~200ms.
+    void updateDoc(txDoc, {
+      status: "success",
+      providerReceipt: json.receipt,
+      paidAt: new Date().toISOString(),
+    }).catch((e) => console.error("[bbps] txn status update failed", e));
+
+    return {
+      success: true,
+      transactionId: txDoc.id,
+      receipt: json.receipt,
+      newBalance,
+      fee,
+      totalDebited: totalDebit,
+      message: json.message,
+    };
   });
 
 // ──────────────── Test Connection (admin diagnostic) ────────────────
