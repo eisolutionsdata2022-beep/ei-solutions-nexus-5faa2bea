@@ -92,6 +92,7 @@ import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admi
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
+import { Route as AdminPanRefundRepairRouteImport } from './routes/admin.pan-refund-repair'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
 import { Route as AdminPanLegacyBalancesRouteImport } from './routes/admin.pan-legacy-balances'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
@@ -540,6 +541,11 @@ const AdminPaytmSettingsRoute = AdminPaytmSettingsRouteImport.update({
   path: '/paytm-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPanRefundRepairRoute = AdminPanRefundRepairRouteImport.update({
+  id: '/pan-refund-repair',
+  path: '/pan-refund-repair',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   id: '/pan-portal-settings',
   path: '/pan-portal-settings',
@@ -739,6 +745,7 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -848,6 +855,7 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -965,6 +973,7 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
+  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -1083,6 +1092,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1192,6 +1202,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1308,6 +1319,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
+    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1991,6 +2003,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaytmSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pan-refund-repair': {
+      id: '/admin/pan-refund-repair'
+      path: '/pan-refund-repair'
+      fullPath: '/admin/pan-refund-repair'
+      preLoaderRoute: typeof AdminPanRefundRepairRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pan-portal-settings': {
       id: '/admin/pan-portal-settings'
       path: '/pan-portal-settings'
@@ -2237,6 +2256,7 @@ interface AdminRouteChildren {
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminPanLegacyBalancesRoute: typeof AdminPanLegacyBalancesRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
+  AdminPanRefundRepairRoute: typeof AdminPanRefundRepairRoute
   AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
@@ -2285,6 +2305,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNoticesRoute: AdminNoticesRoute,
   AdminPanLegacyBalancesRoute: AdminPanLegacyBalancesRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
+  AdminPanRefundRepairRoute: AdminPanRefundRepairRoute,
   AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
