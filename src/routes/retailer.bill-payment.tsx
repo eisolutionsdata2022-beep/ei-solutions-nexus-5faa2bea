@@ -73,6 +73,29 @@ function BillPaymentPage() {
           toast.error(res.message ?? "Failed to load categories");
           return;
         }
+        // Debug: confirm Water & Electricity are present and not gated/disabled in any way.
+        const names = res.categories.map((c) => c.name);
+        const hasWater = names.some((n) => /water/i.test(n));
+        const hasElectricity = names.some((n) => /electric/i.test(n));
+        console.log("[BBPS][debug] category count:", res.categories.length, "names:", names);
+        console.log("[BBPS][debug] Water present:", hasWater, "| Electricity present:", hasElectricity);
+        const gatedKeys = ["disabled", "enabled", "active", "status", "isActive", "blocked"];
+        res.categories.forEach((c) => {
+          const flags: Record<string, unknown> = {};
+          for (const k of gatedKeys) {
+            if (k in (c as unknown as Record<string, unknown>)) {
+              flags[k] = (c as unknown as Record<string, unknown>)[k];
+            }
+          }
+          if (Object.keys(flags).length > 0) {
+            console.log(`[BBPS][debug] category "${c.name}" carries gating flags:`, flags);
+          }
+        });
+        if (!hasWater || !hasElectricity) {
+          console.warn("[BBPS][debug] Water or Electricity MISSING from provider response — UI will not render those tiles.");
+        } else {
+          console.log("[BBPS][debug] ✅ Water & Electricity will render as enabled (no client-side gating applied).");
+        }
         setCategories(res.categories);
         if (res.mock) setDemoMode(true);
       })
