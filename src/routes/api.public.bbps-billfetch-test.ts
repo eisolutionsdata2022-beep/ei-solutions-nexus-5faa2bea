@@ -152,7 +152,7 @@ export const Route = createFileRoute("/api/public/bbps-billfetch-test")({
         // ── Stage 2: bill-category ──────────────────────────────
         let chosenCategory = wantCategory ?? "";
         try {
-          const r = await callProvider("billpay/bill-category", authHeaders, {
+          const r = await callProvider("V2/billpay/bill-category", authHeaders, {
             ...authPayloadBase, agent: agentId,
           });
           const body = r.parsed.body as { success?: boolean; data?: Array<{ name?: string; categoryName?: string }>; message?: string } | undefined;
@@ -183,7 +183,7 @@ export const Route = createFileRoute("/api/public/bbps-billfetch-test")({
         // ── Stage 3: biller-info ────────────────────────────────
         let chosenBillerId = wantBillerId ?? "";
         try {
-          const r = await callProvider("billpay/biller-info", authHeaders, {
+          const r = await callProvider("V2/billpay/biller-info", authHeaders, {
             ...authPayloadBase, agent: agentId, category: chosenCategory,
           });
           const body = r.parsed.body as { success?: boolean; biller?: Array<{ id?: string; billerid?: string; name?: string; billerName?: string }>; message?: string } | undefined;
@@ -214,7 +214,7 @@ export const Route = createFileRoute("/api/public/bbps-billfetch-test")({
         // ── Stage 4: customer-params ────────────────────────────
         let paramNames: string[] = [];
         try {
-          const r = await callProvider("billpay/customer-params", authHeaders, {
+          const r = await callProvider("V2/billpay/customer-params", authHeaders, {
             ...authPayloadBase, agent: agentId, billerid: chosenBillerId,
           });
           const body = r.parsed.body as { success?: boolean; param?: Array<{ name?: string; paramName?: string }>; mode?: number; message?: string } | undefined;
@@ -252,7 +252,7 @@ export const Route = createFileRoute("/api/public/bbps-billfetch-test")({
           paramValue,
         };
         try {
-          const r = await callProvider("billpay/bill-fetch", authHeaders, fetchPayload);
+          const r = await callProvider("V2/billpay/bill-fetch", authHeaders, fetchPayload);
           diag.stage5_billFetch = {
             outboundUrl: r.outboundUrl,
             requestPayload: {
