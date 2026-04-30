@@ -107,6 +107,12 @@ function RetailerLayout() {
     }
 
     // 3. Activation gate (highest priority for activatable services)
+    // BBPS bill payment is exposed as a direct working retailer tool and should
+    // not be blocked by the generic My Services activation overlay.
+    if (path.startsWith("/retailer/bill-payment")) {
+      return;
+    }
+
     const cfg = actConfigs[matched.key];
     const isActivatable = getActivatableServices().some((s) => s.key === matched.key);
     if (isActivatable && cfg?.enabled && !activeKeys.has(matched.key)) {
