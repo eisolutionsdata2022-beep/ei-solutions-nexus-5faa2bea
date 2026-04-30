@@ -256,11 +256,13 @@ function BillPaymentPage() {
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
+                      type="button"
                       onClick={() => pickCategory(cat)}
-                      className="flex flex-col items-start gap-1 rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-sm"
+                      style={{ textDecoration: "none" }}
+                      className="flex cursor-pointer flex-col items-start gap-1 rounded-lg border bg-card p-3 text-left text-foreground no-underline opacity-100 transition hover:border-primary hover:shadow-sm"
                     >
                       <CategoryIcon icon={cat.icon ?? undefined} name={cat.name} />
-                      <span className="text-sm font-medium">{cat.name}</span>
+                      <span className="text-sm font-medium no-underline">{cat.name}</span>
                     </button>
                   ))}
                 </div>
