@@ -4,7 +4,12 @@ import { Banknote, Loader2, Search, Receipt, CheckCircle2, AlertCircle, Download
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { ServicePageShell } from "@/components/ServicePageShell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { ServiceSectionCard } from "@/components/ServicePageShell";
+import {
+  Zap, Droplets, Flame, Smartphone, Tv, Car, Shield, GraduationCap,
+  CreditCard, Building2, Wifi, Home, Landmark, Wallet, FileText, ArrowLeft,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
