@@ -163,34 +163,47 @@ function BillPaymentPage() {
   }, [billers, billerQuery]);
 
   async function pickCategory(cat: BbpsCategory) {
+    if (loading) return;
     setSelectedCategory(cat);
     setLoading(true);
-    const res = await bbpsGetBillers({ data: { category: cat.name } });
-    setLoading(false);
-    if (!res.success) {
-      toast.error(res.message ?? "Failed to load billers");
-      return;
+    try {
+      const res = await bbpsGetBillers({ data: { category: cat.name } });
+      if (!res.success) {
+        toast.error(res.message ?? "Failed to load billers");
+        return;
+      }
+      setBillers(res.billers);
+      setStep("biller");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load billers");
+    } finally {
+      setLoading(false);
     }
-    setBillers(res.billers);
-    setStep("biller");
   }
 
   async function pickBiller(b: BbpsBiller) {
+    if (loading) return;
     setSelectedBiller(b);
     setLoading(true);
-    const res = await bbpsGetCustomerParams({ data: { billerId: b.id } });
-    setLoading(false);
-    if (!res.success) {
-      toast.error(res.message ?? "Failed to load biller form");
-      return;
+    try {
+      const res = await bbpsGetCustomerParams({ data: { billerId: b.id } });
+      if (!res.success) {
+        toast.error(res.message ?? "Failed to load biller form");
+        return;
+      }
+      setParams(res.params);
+      setBillerMode(res.mode);
+      setParamValues({});
+      setStep("params");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load biller form");
+    } finally {
+      setLoading(false);
     }
-    setParams(res.params);
-    setBillerMode(res.mode);
-    setParamValues({});
-    setStep("params");
   }
 
   async function fetchBill() {
+    if (loading) return;
     const names = params.map((p) => p.name);
     const values = names.map((n) => paramValues[n] ?? "");
     for (let i = 0; i < params.length; i++) {
@@ -202,52 +215,63 @@ function BillPaymentPage() {
     }
     if (!selectedBiller) return;
     setLoading(true);
-    const res = await bbpsFetchBill({
-      data: { billerId: selectedBiller.id, paramNames: names, paramValues: values },
-    });
-    setLoading(false);
-    if (!res.success || !res.bill) {
-      toast.error(res.message ?? "Could not fetch bill");
-      return;
+    try {
+      const res = await bbpsFetchBill({
+        data: { billerId: selectedBiller.id, paramNames: names, paramValues: values },
+      });
+      if (!res.success || !res.bill) {
+        toast.error(res.message ?? "Could not fetch bill");
+        return;
+      }
+      setBill(res.bill);
+      setStep("confirm");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not fetch bill");
+    } finally {
+      setLoading(false);
     }
-    setBill(res.bill);
-    setStep("confirm");
   }
 
   async function pay() {
+    if (paying) return;
     if (!bill || !selectedBiller || !selectedCategory) return;
     setPaying(true);
-    const res = await bbpsPayBill({
-      data: {
-        billerId: selectedBiller.id,
-        billerName: selectedBiller.name,
-        categoryName: selectedCategory.name,
-        billPaymentId: bill.insertid,
-        requestId: bill.requestId,
-        billerMode: billerMode ?? 1,
-        mobileNo: mobileNo || undefined,
+    try {
+      const res = await bbpsPayBill({
+        data: {
+          billerId: selectedBiller.id,
+          billerName: selectedBiller.name,
+          categoryName: selectedCategory.name,
+          billPaymentId: bill.insertid,
+          requestId: bill.requestId,
+          billerMode: billerMode ?? 1,
+          mobileNo: mobileNo || undefined,
+          amount: bill.amount,
+          params: paramValues,
+          customerName: bill.custname,
+          billDate: bill.billDate,
+          dueDate: bill.dueDate,
+          billNumber: bill.billNumber,
+        },
+      });
+      if (!res.success) {
+        toast.error(res.message ?? "Payment failed");
+        return;
+      }
+      setReceipt({
+        receipt: res.receipt ?? "",
+        txId: res.transactionId ?? "",
         amount: bill.amount,
-        params: paramValues,
-        customerName: bill.custname,
-        billDate: bill.billDate,
-        dueDate: bill.dueDate,
-        billNumber: bill.billNumber,
-      },
-    });
-    setPaying(false);
-    if (!res.success) {
-      toast.error(res.message ?? "Payment failed");
-      return;
+        fee: res.fee ?? 0,
+        totalDebited: res.totalDebited ?? bill.amount,
+        mock: res.mock,
+      });
+      setStep("success");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Payment failed");
+    } finally {
+      setPaying(false);
     }
-    setReceipt({
-      receipt: res.receipt ?? "",
-      txId: res.transactionId ?? "",
-      amount: bill.amount,
-      fee: res.fee ?? 0,
-      totalDebited: res.totalDebited ?? bill.amount,
-      mock: res.mock,
-    });
-    setStep("success");
   }
 
   function reset() {
