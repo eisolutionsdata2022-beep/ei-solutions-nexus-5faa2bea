@@ -259,7 +259,7 @@ function BillPaymentPage() {
                       onClick={() => pickCategory(cat)}
                       className="flex flex-col items-start gap-1 rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-sm"
                     >
-                      <CategoryIcon icon={cat.icon} name={cat.name} />
+                      <CategoryIcon icon={cat.icon ?? undefined} name={cat.name} />
                       <span className="text-sm font-medium">{cat.name}</span>
                     </button>
                   ))}
