@@ -135,12 +135,16 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       const nowIso = new Date().toISOString();
 
       if (!res.success) {
-        // Refund full batch.
+        // Refund full batch. Mark refund-done IMMEDIATELY so that if the
+        // subsequent createUtiCoupon write throws, the outer catch does NOT
+        // refund a second time (root cause of the "extra ₹214 in wallet" bug
+        // — wallet was credited once here and again from the catch handler).
         await atomicCredit(user.uid, totalDebit, {
           source: "pan-portal",
           description: `Refund — UTI coupons × ${qty} ${batchOrderId}`,
           orderId: batchOrderId,
         });
+        shouldAutoRefund = false;
         await createUtiCoupon({
           couponId: batchOrderId,
           orderId: batchOrderId,
