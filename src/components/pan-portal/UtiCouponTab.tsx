@@ -491,7 +491,12 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       </Card>
 
       {/* Premium history table with wallet transactions */}
-      <UtiCouponHistoryTable retailerId={user.uid} coupons={coupons} />
+      <UtiCouponHistoryTable
+        retailerId={user.uid}
+        coupons={coupons}
+        onTrack={handleTrack}
+        trackingId={trackingId}
+      />
 
       {/* Auto-VLE-registration dialog — opens when upstream returns
           "Vle Data Not Exist" so legacy-linked PSAs migrate seamlessly. */}
