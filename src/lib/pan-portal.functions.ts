@@ -389,8 +389,11 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     }
     const requestBody = {
       api_key: creds.apiKey,
+      secret: creds.secret,
       vle_id: data.vleId,
       weburl: data.weburl,
+      order_id: data.orderId,
+      shop_name: data.shopName,
       type: 1,
       qty: data.qty,
     };
