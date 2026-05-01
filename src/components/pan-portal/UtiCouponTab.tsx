@@ -39,9 +39,10 @@ import {
 import { toast } from "sonner";
 import { UtiCouponHistoryTable } from "./UtiCouponHistoryTable";
 import { UtiTrainingPdfCard } from "./UtiTrainingPdfCard";
+import { VleAutoRegisterDialog } from "./VleAutoRegisterDialog";
 
 interface Props {
-  user: { uid: string; email: string; name?: string; phone?: string };
+  user: { uid: string; email: string; name?: string; phone?: string; address?: string };
   config: PanMasterConfig;
   psa: PanPsaRecord | null;
   coupons: PanUtiCoupon[];
@@ -53,6 +54,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const [quantity, setQuantity] = useState(2);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackInput, setTrackInput] = useState("");
+  /** Auto-register dialog for legacy-linked PSAs that aren't in UTI yet. */
+  const [autoRegOpen, setAutoRegOpen] = useState(false);
+  /** Quantity to auto-retry after upstream PSA registration succeeds. */
+  const [pendingRetryQty, setPendingRetryQty] = useState<number | null>(null);
 
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
@@ -80,8 +85,11 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   }
 
 
-  async function handlePurchase(e: FormEvent) {
-    e.preventDefault();
+  async function handlePurchase(eOrQty?: FormEvent | number) {
+    if (eOrQty && typeof eOrQty === "object" && "preventDefault" in eOrQty) {
+      eOrQty.preventDefault();
+    }
+    const overrideQty = typeof eOrQty === "number" ? eOrQty : null;
     if (!config.hasCredentials) {
       toast.error("Provider credentials are not configured. Please contact admin.");
       return;
@@ -98,7 +106,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     // their PSA. For first-time buyers we force qty ≥ 2.
     const isFirstTime = !psaActive;
     const minQty = isFirstTime ? 2 : MIN_QTY;
-    const qty = Math.max(minQty, Math.min(MAX_QTY, quantity));
+    const baseQty = overrideQty ?? quantity;
+    const qty = Math.max(minQty, Math.min(MAX_QTY, baseQty));
     const totalDebit = fee * qty;
     setPurchasing(true);
     setProgress({ done: 0, total: qty });
@@ -165,6 +174,17 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           createdAt: nowIso,
           updatedAt: nowIso,
         });
+        // Detect "VLE Data Not Exist" — provider doesn't have this VLE registered.
+        // Trigger silent auto-registration flow and queue an auto-retry of this
+        // exact same quantity once registration succeeds. The user is NOT blocked,
+        // their wallet is already refunded, and they only see a single dialog.
+        const vleMissing = /vle\s*data\s*not\s*exist|vle\s*not\s*registered|vle\s*id\s*not\s*found/i.test(res.error);
+        if (vleMissing) {
+          setPendingRetryQty(qty);
+          setAutoRegOpen(true);
+          toast.info("Your VLE isn't registered with UTI yet — let's fix that in one step.");
+          return;
+        }
         toast.error(`❌ Purchase failed — ${res.error}. ₹${totalDebit} refunded.`);
         return;
       }
@@ -472,6 +492,24 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
       {/* Premium history table with wallet transactions */}
       <UtiCouponHistoryTable retailerId={user.uid} coupons={coupons} />
+
+      {/* Auto-VLE-registration dialog — opens when upstream returns
+          "Vle Data Not Exist" so legacy-linked PSAs migrate seamlessly. */}
+      <VleAutoRegisterDialog
+        open={autoRegOpen}
+        onOpenChange={(o) => {
+          setAutoRegOpen(o);
+          if (!o) setPendingRetryQty(null);
+        }}
+        user={user}
+        psa={psa}
+        onRegistered={() => {
+          const qtyToRetry = pendingRetryQty ?? Math.max(2, quantity);
+          setPendingRetryQty(null);
+          // Small delay so the upstream registration is fully visible before retry.
+          setTimeout(() => { void handlePurchase(qtyToRetry); }, 600);
+        }}
+      />
     </div>
   );
 }
