@@ -201,30 +201,72 @@ export function subscribeRetailerPendingCaptures(
     collectionGroup(db, "captureRequests"),
     where("retailerId", "==", retailerId)
   );
-  return onSnapshot(
-    q,
-    (snap) => {
-      const rows = snap.docs
+  // If a previous attempt for this retailer was denied (rules / no index),
+  // do NOT attach another listener — repeated permission-denied snapshots
+  // poison the Firestore SDK and crash unrelated pages.
+  if (ippbReadDeniedFor.has(retailerId)) {
+    cb([]);
+    return () => {};
+  }
+
+  const q = query(
+    collectionGroup(db, "captureRequests"),
+    where("retailerId", "==", retailerId),
+    limit(20)
+  );
+
+  // Precheck: try ONE getDocs call. If it fails (rules / index / network),
+  // bail out before we set up the realtime listener that would otherwise
+  // throw the INTERNAL ASSERTION crash.
+  let unsub: Unsubscribe = () => {};
+  let cancelled = false;
+
+  getDocs(q)
+    .then((snap) => {
+      if (cancelled) return;
+      // Initial deliver
+      const initial = snap.docs
         .map((d) => {
           const data = d.data() as any;
-          return {
-            id: d.id,
-            ippbRequestId: d.ref.parent.parent!.id,
-            ...data,
-          } as CaptureRequest & { ippbRequestId: string };
+          return { id: d.id, ippbRequestId: d.ref.parent.parent!.id, ...data } as
+            CaptureRequest & { ippbRequestId: string };
         })
         .filter((r) => r.status === "requested" || r.status === "capturing");
-      rows.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
-      cb(rows);
-    },
-    // Swallow errors (e.g. missing collection-group field index) so the rest of
-    // the app keeps working. Without this, Firestore can throw INTERNAL ASSERTION
-    // FAILED and tear down all listeners → blank pages.
-    (err) => {
-      console.warn("[ippb] pending-captures listener error:", err?.message ?? err);
+      initial.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
+      cb(initial);
+
+      // Now safe to subscribe
+      unsub = onSnapshot(
+        q,
+        (s) => {
+          const rows = s.docs
+            .map((d) => {
+              const data = d.data() as any;
+              return { id: d.id, ippbRequestId: d.ref.parent.parent!.id, ...data } as
+                CaptureRequest & { ippbRequestId: string };
+            })
+            .filter((r) => r.status === "requested" || r.status === "capturing");
+          rows.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
+          cb(rows);
+        },
+        (err) => {
+          console.warn("[ippb] pending-captures listener error:", err?.message ?? err);
+          ippbReadDeniedFor.add(retailerId);
+          try { unsub(); } catch {}
+          cb([]);
+        }
+      );
+    })
+    .catch((err) => {
+      console.warn("[ippb] pending-captures precheck failed, listener disabled:", err?.message ?? err);
+      ippbReadDeniedFor.add(retailerId);
       cb([]);
-    }
-  );
+    });
+
+  return () => {
+    cancelled = true;
+    try { unsub(); } catch {}
+  };
 }
 
 /* -------------------- RD Service helper (browser side) -------------------- */
