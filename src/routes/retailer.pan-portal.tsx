@@ -202,10 +202,9 @@ function PanPortalPage() {
 function PsaPanel({
   user, cfg, psa, onRefresh,
 }: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onRefresh: () => Promise<void>; }) {
-  // Default mode: if user already linked an existing VLE, show the upstream-register
-  // form so they can sync it with the provider after a "VLE Data Not Exist" failure.
+  // Keep manual sync available, but do not force migrated users into it by default.
   const defaultMode: "create" | "link" | "sync" =
-    psa?.linkedExisting ? "sync" : "create";
+    "create";
   const [mode, setMode] = useState<"create" | "link" | "sync">(defaultMode);
   return (
     <div className="space-y-4">
@@ -676,10 +675,10 @@ function CouponBuyPanel({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              Your VLE is linked locally but may not be registered upstream with UTI yet.
-              If a purchase fails with <strong>"VLE Data Not Exist"</strong>, your wallet is
-              auto-refunded — open the <strong>PSA → Sync Linked VLE with UTI</strong> tab
-              to register your existing VLE ID upstream (the ID stays the same).
+              Your old VLE is linked from the previous portal. If UTI says <strong>"VLE Data Not Exist"</strong>,
+              the system now tries a silent upstream sync and retries the purchase automatically.
+              Only if your PAN/Aadhaar/address details are missing will the order be refunded and you’ll need
+              the <strong>PSA → Sync Linked VLE with UTI</strong> form.
             </AlertDescription>
           </Alert>
         )}
