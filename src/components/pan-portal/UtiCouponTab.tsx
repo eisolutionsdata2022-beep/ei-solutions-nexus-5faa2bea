@@ -10,7 +10,6 @@ import { useState, type FormEvent } from "react";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import {
   createUtiCoupon,
-  getPanConfig,
   updateUtiCoupon,
   upsertPsaRecord,
 } from "@/lib/pan-portal-firebase";
