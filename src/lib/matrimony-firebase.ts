@@ -101,11 +101,18 @@ export async function addNotification(userId: string, notification: {
 
 export function subscribeNotifications(userId: string, callback: (notifications: Array<{ id: string; type: string; title: string; message: string; read: boolean; createdAt: string; data?: Record<string, string> }>) => void) {
   const q = query(collection(db, "notifications"), where("userId", "==", userId));
-  return onSnapshot(q, (snap) => {
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-    list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-    callback(list);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      callback(list);
+    },
+    (error) => {
+      console.warn("[Notifications] listener skipped:", error.message);
+      callback([]);
+    },
+  );
 }
 
 export async function markNotificationRead(id: string) {
