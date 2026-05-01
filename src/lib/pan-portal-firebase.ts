@@ -74,16 +74,25 @@ export async function getPanConfig(): Promise<PanMasterConfig> {
   };
 }
 
-export function subscribePanConfig(cb: (cfg: PanMasterConfig) => void) {
-  return onSnapshot(CONFIG_DOC, (snap) => {
-    const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
-    cb({
-      ...PAN_DEFAULT_URLS,
-      ...PAN_DEFAULT_FEES,
-      enabled: true,
-      ...data,
-    });
-  });
+export function subscribePanConfig(
+  cb: (cfg: PanMasterConfig) => void,
+  onError?: (error: Error) => void,
+) {
+  return onSnapshot(
+    CONFIG_DOC,
+    (snap) => {
+      const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
+      cb({
+        ...PAN_DEFAULT_URLS,
+        ...PAN_DEFAULT_FEES,
+        enabled: true,
+        ...data,
+      });
+    },
+    (error) => {
+      if (onError) onError(error as Error);
+    },
+  );
 }
 
 /** Admin-only: write the public-safe parts of the config (URLs, fees, enabled). */

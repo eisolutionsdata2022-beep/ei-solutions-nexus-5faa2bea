@@ -11,7 +11,10 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getApps, initializeApp } from "firebase/app";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
+import { PAN_DEFAULT_FEES, PAN_DEFAULT_URLS, type PanMasterConfig } from "./pan-portal-types";
 
 /* ---------------------------- crypto helpers ----------------------------- */
 // Same scheme used by csc-bridge.functions.ts — re-implemented locally to
@@ -19,6 +22,15 @@ import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 
 const PAN_CRED_CIPHER_PREFIX = "panv2:";
 const PAN_LEGACY_FALLBACK_SEED = "ei-solutions-pan-default-key-do-not-use-in-prod";
+const firebaseConfig = {
+  apiKey: "AIzaSyDCCMmXPtFxcylhjRNvlR5PFgLYwgzb12U",
+  authDomain: "ei-fix.firebaseapp.com",
+  projectId: "ei-fix",
+  storageBucket: "ei-fix.firebasestorage.app",
+  messagingSenderId: "80350889731",
+  appId: "1:80350889731:web:4a7a9af9ec8a10e1c4cb36",
+  measurementId: "G-78XX8NWC2M",
+};
 
 async function getCryptoKey(seed: string): Promise<CryptoKey> {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("pan-cred|" + seed));
@@ -95,6 +107,49 @@ async function decryptCreds(cipher: string): Promise<{ apiKey: string; secret: s
 
   throw lastError ?? new Error("Unable to decrypt PAN credentials");
 }
+
+function getDb() {
+  const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+  return getFirestore(app);
+}
+
+async function readPanMasterConfig(): Promise<PanMasterConfig> {
+  const snap = await getDoc(doc(getDb(), "pan_config", "master"));
+  const data = snap.exists() ? (snap.data() as PanMasterConfig) : {};
+  const utiCouponPurchaseUrl = data.utiCouponPurchaseUrl?.trim();
+  const utiPanStatusUrl = data.utiPanStatusUrl?.trim();
+
+  return {
+    ...PAN_DEFAULT_URLS,
+    ...PAN_DEFAULT_FEES,
+    enabled: true,
+    ...data,
+    utiCouponPurchaseUrl: utiCouponPurchaseUrl || PAN_DEFAULT_URLS.utiCouponPurchaseUrl,
+    utiPanStatusUrl: utiPanStatusUrl || PAN_DEFAULT_URLS.utiPanStatusUrl,
+  };
+}
+
+function sanitizePanConfig(config: PanMasterConfig): PanMasterConfig {
+  const { cipher: _cipher, webhookSecret: _webhookSecret, ...safe } = config;
+  return safe;
+}
+
+type PanClientConfigResult =
+  | { success: true; config: PanMasterConfig }
+  | { success: false; error: string };
+
+export const getPanClientConfig = createServerFn({ method: "GET" })
+  .middleware([firebaseAuthMiddleware])
+  .handler(async ({ context }): Promise<PanClientConfigResult> => {
+    if (!context.authUser) return { success: false, error: "Authentication required" };
+    try {
+      const config = await readPanMasterConfig();
+      return { success: true, config: sanitizePanConfig(config) };
+    } catch (err) {
+      console.error("[PAN] failed to load client config:", err);
+      return { success: false, error: "Unable to load PAN settings" };
+    }
+  });
 
 /* ----------------------- 1. Encrypt admin credentials -------------------- */
 
@@ -341,8 +396,8 @@ export const testPanConnection = createServerFn({ method: "POST" })
 /* --------------- 6. UTI — purchase coupon -------------------------------- */
 
 const utiPurchaseInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   vleId: z.string().min(2).max(80),
   orderId: z.string().min(4).max(80),
   shopName: z.string().min(1).max(200),
@@ -381,9 +436,15 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const resolvedUrl = data.url || cfg?.utiCouponPurchaseUrl;
+    const resolvedCipher = data.cipher || cfg?.cipher;
+    if (!resolvedUrl || !resolvedCipher) {
+      return { success: false, error: "Provider credentials are not configured." };
+    }
     let creds: { apiKey: string; secret: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(resolvedCipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
@@ -398,7 +459,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       qty: data.qty,
     };
     try {
-      const res = await fetch(data.url, {
+      const res = await fetch(resolvedUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -600,8 +661,8 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
 /* --------------- 7. UTI — track PAN application by ack/coupon ------------ */
 
 const utiTrackInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   ackNo: z.string().min(4).max(80),
 });
 
@@ -620,13 +681,19 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiTrackInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiTrackResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const resolvedUrl = data.url || cfg?.utiPanStatusUrl;
+    const resolvedCipher = data.cipher || cfg?.cipher;
+    if (!resolvedUrl || !resolvedCipher) {
+      return { success: false, error: "Provider credentials are not configured." };
+    }
     let creds: { apiKey: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(resolvedCipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const qs = new URL(data.url);
+    const qs = new URL(resolvedUrl);
     qs.searchParams.set("api_key", creds.apiKey);
     qs.searchParams.set("order_id", data.ackNo);
     try {
