@@ -12,6 +12,9 @@ export interface PanPsaRecord {
   status: PsaStatus;
   /** True when retailer linked an EXISTING old-portal VLE (no upstream psa_create call). */
   linkedExisting: boolean;
+  /** Legacy-migration metadata used to silently sync old VLE IDs upstream when possible. */
+  linkedMobile?: string;
+  vleRegCode?: string;
 
   ownerName: string;
   shopName: string;
