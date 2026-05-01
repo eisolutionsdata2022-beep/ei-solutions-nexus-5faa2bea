@@ -29,6 +29,8 @@ import {
   ArrowUpCircle,
   Wallet,
   History,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
