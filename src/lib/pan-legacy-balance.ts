@@ -4,6 +4,7 @@
  */
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -12,6 +13,7 @@ import {
   query,
   setDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type {
