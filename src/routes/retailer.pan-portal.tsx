@@ -561,14 +561,16 @@ function CouponBuyPanel({
   async function buy() {
     if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
+    const currentPsa = psa;
+    if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
     if (!confirm(`Buy ${qty} coupon(s) for ₹${total}? This will be debited from your wallet.`)) return;
     setBusy(true);
 
     let orderId = "";
     let debited = false;
     try {
-      let effectivePsa = psa;
-      let effectiveVleId = getPsaPrimaryVleId(psa);
+      let effectivePsa: PanPsaRecord = currentPsa;
+      let effectiveVleId = getPsaPrimaryVleId(currentPsa);
 
       // 1. Debit wallet first
       await atomicDebit(user.uid, total, {
