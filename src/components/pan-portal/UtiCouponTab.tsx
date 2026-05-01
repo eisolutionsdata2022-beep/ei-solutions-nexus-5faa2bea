@@ -82,7 +82,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
   async function handlePurchase(e: FormEvent) {
     e.preventDefault();
-    if (!config.cipher) return;
+    if (!config.hasCredentials) {
+      toast.error("Provider credentials are not configured. Please contact admin.");
+      return;
+    }
     if (!user.phone || !/^\d{10}$/.test(user.phone)) {
       toast.error("Mobile number missing or invalid in your profile. Update profile first.");
       return;
@@ -258,7 +261,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   }
 
   async function handleTrack(couponId: string, ackNo?: string) {
-    if (!config.cipher) return;
+    if (!config.hasCredentials) {
+      toast.error("Provider credentials are not configured. Please contact admin.");
+      return;
+    }
     const tracker = ackNo || couponId;
     setTrackingId(couponId);
     try {
