@@ -465,11 +465,13 @@ function PsaLinkForm({
       await upsertPsaRecord({
         retailerId: user.uid,
         vleId: id,
+        vleRegCode: id,
         status: "approved",
         linkedExisting: true,
         ownerName: user.name || user.email,
         shopName: user.name || user.email,
         mobile,
+        linkedMobile: mobile,
         email: user.email,
         remark: "Linked existing UTI VLE from old portal",
         createdAt: now,
