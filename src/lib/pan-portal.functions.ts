@@ -1,15 +1,21 @@
 /**
  * PAN Portal — server functions for UTI PSA + Coupon API
- * Provider: mallikacyberzone.com  (api_key + secret stored encrypted in pan_config/master).
+ * Provider: mallikacyberzone.com
  *
- * Endpoints:
- *   GET  /psa_create?api_key=…&vle_id=…&vle_name=…&...
- *   GET  /coupon_buy?api_key=…&vle_id=…&type=1&qty=…
- *   GET  /coupon_status?api_key=…&order_id=…
- *   GET  /psa_password?api_key=…&vle_id=…
+ * IMPORTANT — corrected per legacy PHP reference (Apr 2026):
+ *   The provider expects POST + JSON body with auth fields:
+ *       bot_id   = stored as `apiKey`  in our cred blob
+ *       api_key  = stored as `secret`  in our cred blob
+ *   (The labels were swapped in the admin UI historically. We keep the
+ *   storage shape stable and just map them correctly when calling upstream.)
  *
- * All server functions require Firebase auth. Admin-only ones additionally
- * verify the caller's role from Firestore.
+ * Endpoints (POST + JSON):
+ *   /Api/WalletTransfer   → coupon purchase   (was wrongly /coupon_buy + GET)
+ *   /Api/PSACreate        → new VLE registration
+ *   /Api/CouponStatus     → status lookup by utr_no
+ *   /Api/PSAPassword      → password reset
+ *
+ * Coupon purchase: client generates utr_no; amount = qty * 107.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -55,34 +61,49 @@ async function decryptBlob(cipher: string): Promise<{ apiKey: string; secret: st
   return JSON.parse(new TextDecoder().decode(pt));
 }
 
-// ─── Provider config loader (server-side direct Firestore read) ─────────
-async function loadProviderConfig(): Promise<{
-  apiKey: string;
-  baseUrl: string;
-}> {
-  throw new Error("loadProviderConfig should not be called directly — pass cipher + baseUrl in input");
+/**
+ * Map our stored cred blob to the upstream auth fields.
+ *
+ * In the admin UI the two fields were historically labeled the wrong way:
+ *   - "API Key"  → actually the bot_id
+ *   - "Secret"   → actually the api_key
+ *
+ * Heuristic: the legacy `bot_id` looks like `b4b599-bc1eb9-7891de-cd0953-a0d8fb`
+ * (groups separated by hyphens), while the api_key is a single ~20-char token.
+ * If our stored `apiKey` contains hyphens, we treat it as bot_id; otherwise
+ * we assume the operator entered them in the new (correct) order.
+ */
+function resolveUpstreamAuth(creds: { apiKey: string; secret: string }): { bot_id: string; api_key: string } {
+  const a = creds.apiKey.trim();
+  const b = creds.secret.trim();
+  const aLooksLikeBotId = a.includes("-");
+  const bLooksLikeBotId = b.includes("-");
+  if (aLooksLikeBotId && !bLooksLikeBotId) return { bot_id: a, api_key: b };
+  if (bLooksLikeBotId && !aLooksLikeBotId) return { bot_id: b, api_key: a };
+  // Fallback: assume legacy order (apiKey field = bot_id).
+  return { bot_id: a, api_key: b };
 }
-void loadProviderConfig;
 
-// ─── Provider GET helper ───────────────────────────────────────────────
-async function providerGet(
+// ─── Provider POST helper (JSON body, per legacy PHP) ──────────────────
+async function providerPost(
   baseUrl: string,
   path: string,
-  params: Record<string, string | number>,
+  body: Record<string, unknown>,
 ): Promise<{ ok: boolean; status: number; json: any; raw: string }> {
-  const url = new URL(baseUrl.replace(/\/+$/, "") + path);
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, String(v));
-  }
+  const url = baseUrl.replace(/\/+$/, "") + path;
   try {
-    const res = await fetch(url.toString(), {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(30_000),
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(45_000),
     });
     const raw = await res.text();
     let json: any = {};
-    try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 200) }; }
+    try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
     return { ok: res.ok, status: res.status, json, raw };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -90,8 +111,21 @@ async function providerGet(
   }
 }
 
+function generateUtrNo(): string {
+  const ts = Date.now().toString();
+  const rnd = Math.floor(Math.random() * 1_000_000).toString().padStart(6, "0");
+  return `EIPAN${ts}${rnd}`;
+}
+
+function normalizeStatus(raw: unknown): "SUCCESS" | "PENDING" | "FAILED" {
+  const s = String(raw || "").toUpperCase();
+  if (s === "SUCCESS" || s === "SUCCESSFUL" || s === "OK" || s === "1" || s === "TRUE") return "SUCCESS";
+  if (s === "PENDING" || s === "PROCESSING" || s === "INPROGRESS") return "PENDING";
+  return "FAILED";
+}
+
 // ═══════════════════════════════════════════════════════════════════════
-// 1. Encrypt admin credentials (admin only, but middleware just verifies auth).
+// 1. Encrypt admin credentials
 // ═══════════════════════════════════════════════════════════════════════
 const encryptInput = z.object({
   apiKey: z.string().min(8).max(120),
@@ -117,7 +151,7 @@ export const encryptPanCredentials = createServerFn({ method: "POST" })
   });
 
 // ═══════════════════════════════════════════════════════════════════════
-// 2. PSA Create
+// 2. PSA Create  →  POST /Api/PSACreate
 // ═══════════════════════════════════════════════════════════════════════
 const psaCreateInput = z.object({
   credCipher: z.string().min(20),
@@ -127,7 +161,7 @@ const psaCreateInput = z.object({
   vleShop: z.string().min(2).max(80),
   vleMob: z.string().regex(/^\d{10}$/),
   vleEmail: z.string().email().max(120),
-  vleLoc: z.string().min(2).max(80),
+  vleLoc: z.string().min(2).max(120),
   vleState: z.string().min(1).max(40),
   vlePin: z.string().regex(/^\d{6}$/),
   vleUid: z.string().regex(/^\d{12}$/),
@@ -144,38 +178,46 @@ export const panPsaCreate = createServerFn({ method: "POST" })
     try { creds = await decryptBlob(data.credCipher); }
     catch { return { success: false as const, error: "Provider credentials are corrupted. Re-save them in admin settings." }; }
 
-    const r = await providerGet(data.baseUrl, "/psa_create", {
-      api_key: creds.apiKey,
-      secret: creds.secret,
-      vle_id: data.vleId,
-      vle_name: data.vleName,
-      vle_shop: data.vleShop,
-      vle_mob: data.vleMob,
-      vle_email: data.vleEmail,
-      vle_loc: data.vleLoc,
-      vle_state: data.vleState,
-      vle_pin: data.vlePin,
-      vle_uid: data.vleUid,
-      vle_pan: data.vlePan.toUpperCase(),
+    const auth = resolveUpstreamAuth(creds);
+
+    const r = await providerPost(data.baseUrl, "/Api/PSACreate", {
+      bot_id: auth.bot_id,
+      api_key: auth.api_key,
+      vleid: data.vleId,
+      vlename: data.vleName,
+      contactperson: data.vleName,
+      shopname: data.vleShop,
+      mobile: data.vleMob,
+      email: data.vleEmail,
+      address: data.vleLoc,
+      address1: data.vleLoc,
+      address2: "",
+      address3: "",
+      state: data.vleState,
+      pincode: data.vlePin,
+      aadhaar: data.vleUid,
+      pan: data.vlePan.toUpperCase(),
     });
 
-    const status = String(r.json?.status || "").toUpperCase();
-    if (status === "SUCCESS") {
+    const status = normalizeStatus(r.json?.status);
+    const results = r.json?.results || r.json?.result || {};
+    if (status === "SUCCESS" || status === "PENDING") {
       return {
         success: true as const,
-        message: r.json?.message || "VLE created",
-        vleId: r.json?.vle_id || data.vleId,
-        vleStatus: String(r.json?.vle_status || "PENDING").toUpperCase(),
+        message: r.json?.message || results?.message || "VLE created",
+        vleId: String(results?.vle_id || results?.vleid || data.vleId),
+        vleStatus: String(results?.vle_status || status).toUpperCase(),
       };
     }
     return {
       success: false as const,
-      error: r.json?.message || `Provider error (HTTP ${r.status})`,
+      error: r.json?.message || results?.message || `Provider error (HTTP ${r.status})`,
     };
   });
 
 // ═══════════════════════════════════════════════════════════════════════
-// 3. Coupon Buy
+// 3. Coupon Buy  →  POST /Api/WalletTransfer
+//    Per legacy PHP: amount = qty * 107, client generates utr_no.
 // ═══════════════════════════════════════════════════════════════════════
 const couponBuyInput = z.object({
   credCipher: z.string().min(20),
@@ -195,35 +237,42 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     try { creds = await decryptBlob(data.credCipher); }
     catch { return { success: false as const, error: "Provider credentials are corrupted." }; }
 
-    const r = await providerGet(data.baseUrl, "/coupon_buy", {
-      api_key: creds.apiKey,
-      secret: creds.secret,
-      vle_id: data.vleId,
+    const auth = resolveUpstreamAuth(creds);
+    const utrNo = generateUtrNo();
+    const amount = data.qty * 107;
+
+    const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", {
+      bot_id: auth.bot_id,
+      api_key: auth.api_key,
+      vleid: data.vleId,
       type: data.type,
       qty: data.qty,
+      amount,
+      utr_no: utrNo,
     });
 
-    const status = String(r.json?.status || "").toUpperCase();
+    const status = normalizeStatus(r.json?.status);
+    const results = r.json?.results || r.json?.result || {};
     if (status === "SUCCESS" || status === "PENDING") {
       return {
         success: true as const,
         status: status as "SUCCESS" | "PENDING",
-        message: r.json?.message || "Coupon purchase submitted",
-        orderId: String(r.json?.order_id || ""),
-        date: String(r.json?.date || ""),
-        vleId: String(r.json?.vle_id || data.vleId),
-        vleName: String(r.json?.vle_name || ""),
-        qty: Number(r.json?.qty || data.qty),
+        message: r.json?.message || results?.message || "Coupon purchase submitted",
+        orderId: String(results?.txn_no || results?.utr_no || utrNo),
+        date: String(results?.date || results?.txn_date || ""),
+        vleId: String(results?.vle_id || results?.vleid || data.vleId),
+        vleName: String(results?.vle_name || results?.vlename || ""),
+        qty: Number(results?.qty || data.qty),
       };
     }
     return {
       success: false as const,
-      error: r.json?.message || `Provider error (HTTP ${r.status})`,
+      error: r.json?.message || results?.message || `Provider error (HTTP ${r.status})`,
     };
   });
 
 // ═══════════════════════════════════════════════════════════════════════
-// 4. Coupon Status
+// 4. Coupon Status  →  POST /Api/CouponStatus
 // ═══════════════════════════════════════════════════════════════════════
 const couponStatusInput = z.object({
   credCipher: z.string().min(20),
@@ -241,29 +290,30 @@ export const panCouponStatus = createServerFn({ method: "POST" })
     try { creds = await decryptBlob(data.credCipher); }
     catch { return { success: false as const, error: "Provider credentials are corrupted." }; }
 
-    const r = await providerGet(data.baseUrl, "/coupon_status", {
-      api_key: creds.apiKey,
-      secret: creds.secret,
-      order_id: data.orderId,
+    const auth = resolveUpstreamAuth(creds);
+
+    const r = await providerPost(data.baseUrl, "/Api/CouponStatus", {
+      bot_id: auth.bot_id,
+      api_key: auth.api_key,
+      utr_no: data.orderId,
     });
 
-    const status = String(r.json?.status || "").toUpperCase();
+    const status = normalizeStatus(r.json?.status);
+    const results = r.json?.results || r.json?.result || {};
     return {
       success: true as const,
-      status: (status === "SUCCESS" || status === "PENDING" || status === "FAILED")
-        ? (status as "SUCCESS" | "PENDING" | "FAILED")
-        : "PENDING",
-      message: r.json?.message || "",
-      orderId: String(r.json?.order_id || data.orderId),
-      date: String(r.json?.date || ""),
-      vleId: String(r.json?.vle_id || ""),
-      vleName: String(r.json?.vle_name || ""),
-      qty: Number(r.json?.qty || 0),
+      status,
+      message: r.json?.message || results?.message || "",
+      orderId: String(results?.txn_no || results?.utr_no || data.orderId),
+      date: String(results?.date || results?.txn_date || ""),
+      vleId: String(results?.vle_id || results?.vleid || ""),
+      vleName: String(results?.vle_name || results?.vlename || ""),
+      qty: Number(results?.qty || 0),
     };
   });
 
 // ═══════════════════════════════════════════════════════════════════════
-// 5. PSA Password Reset
+// 5. PSA Password Reset  →  POST /Api/PSAPassword
 // ═══════════════════════════════════════════════════════════════════════
 const psaPwdInput = z.object({
   credCipher: z.string().min(20),
@@ -281,13 +331,15 @@ export const panPsaPasswordReset = createServerFn({ method: "POST" })
     try { creds = await decryptBlob(data.credCipher); }
     catch { return { success: false as const, error: "Provider credentials are corrupted." }; }
 
-    const r = await providerGet(data.baseUrl, "/psa_password", {
-      api_key: creds.apiKey,
-      secret: creds.secret,
-      vle_id: data.vleId,
+    const auth = resolveUpstreamAuth(creds);
+
+    const r = await providerPost(data.baseUrl, "/Api/PSAPassword", {
+      bot_id: auth.bot_id,
+      api_key: auth.api_key,
+      vleid: data.vleId,
     });
 
-    const status = String(r.json?.status || "").toUpperCase();
+    const status = normalizeStatus(r.json?.status);
     if (status === "SUCCESS") {
       return { success: true as const, message: r.json?.message || "Password reset successfully" };
     }
