@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Loader2, IdCard, ShoppingCart, ShieldCheck, AlertTriangle, Link2,
   RefreshCcw, KeyRound, ExternalLink, Copy, History,
 } from "lucide-react";
@@ -550,6 +554,7 @@ function CouponBuyPanel({
 }: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onChange: () => Promise<void>; }) {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!psa || psa.status !== "approved") {
     return <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>Register or link your PSA first.</AlertDescription></Alert>;
@@ -558,11 +563,11 @@ function CouponBuyPanel({
   const total = qty * cfg.couponRetailerFee;
 
   async function buy() {
+    setConfirmOpen(false);
     if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
     const currentPsa = psa;
     if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
-    if (!confirm(`Buy ${qty} coupon(s) for ₹${total}? This will be debited from your wallet.`)) return;
     setBusy(true);
 
     let orderId = "";
@@ -668,7 +673,7 @@ function CouponBuyPanel({
             <Input value={`₹${total}`} disabled className="font-bold" />
           </div>
         </div>
-        <Button onClick={buy} disabled={busy} size="lg" className="w-full sm:w-auto">
+        <Button onClick={() => setConfirmOpen(true)} disabled={busy} size="lg" className="w-full sm:w-auto">
           {busy ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing…</> : <>Buy {qty} Coupon{qty > 1 ? "s" : ""} for ₹{total}</>}
         </Button>
         {psa.linkedExisting && (
@@ -682,6 +687,21 @@ function CouponBuyPanel({
             </AlertDescription>
           </Alert>
         )}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm coupon purchase</AlertDialogTitle>
+              <AlertDialogDescription>
+                Buy <strong>{qty}</strong> UTI PAN coupon{qty > 1 ? "s" : ""} for <strong>₹{total}</strong>?
+                This amount will be debited from your wallet.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={buy}>Confirm & Buy</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

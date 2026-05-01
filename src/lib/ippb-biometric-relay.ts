@@ -13,14 +13,23 @@ import {
   collection,
   collectionGroup,
   doc,
+  getDocs,
   onSnapshot,
   query,
   runTransaction,
   serverTimestamp,
   where,
+  limit,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
+
+// Module-level cache: once we know the retailer can't read the IPPB
+// collection-group, never try again — every failed snapshot listener
+// can corrupt the Firestore SDK internal state and trigger
+// "INTERNAL ASSERTION FAILED (ve:-1)", which silently breaks every other
+// Firestore call in the app (blank pages, hung loaders, etc.).
+const ippbReadDeniedFor = new Set<string>();
 
 export type CaptureStatus =
   | "requested" // staff asked for capture
@@ -188,34 +197,72 @@ export function subscribeRetailerPendingCaptures(
   cb: (rows: (CaptureRequest & { ippbRequestId: string })[]) => void
 ): Unsubscribe {
   // Single-field where → no composite index required. Status filtered client-side.
+  // If a previous attempt for this retailer was denied (rules / no index),
+  // do NOT attach another listener — repeated permission-denied snapshots
+  // poison the Firestore SDK and crash unrelated pages.
+  if (ippbReadDeniedFor.has(retailerId)) {
+    cb([]);
+    return () => {};
+  }
+
   const q = query(
     collectionGroup(db, "captureRequests"),
-    where("retailerId", "==", retailerId)
+    where("retailerId", "==", retailerId),
+    limit(20)
   );
-  return onSnapshot(
-    q,
-    (snap) => {
-      const rows = snap.docs
+
+  // Precheck: try ONE getDocs call. If it fails (rules / index / network),
+  // bail out before we set up the realtime listener that would otherwise
+  // throw the INTERNAL ASSERTION crash.
+  let unsub: Unsubscribe = () => {};
+  let cancelled = false;
+
+  getDocs(q)
+    .then((snap) => {
+      if (cancelled) return;
+      // Initial deliver
+      const initial = snap.docs
         .map((d) => {
           const data = d.data() as any;
-          return {
-            id: d.id,
-            ippbRequestId: d.ref.parent.parent!.id,
-            ...data,
-          } as CaptureRequest & { ippbRequestId: string };
+          return { id: d.id, ippbRequestId: d.ref.parent.parent!.id, ...data } as
+            CaptureRequest & { ippbRequestId: string };
         })
         .filter((r) => r.status === "requested" || r.status === "capturing");
-      rows.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
-      cb(rows);
-    },
-    // Swallow errors (e.g. missing collection-group field index) so the rest of
-    // the app keeps working. Without this, Firestore can throw INTERNAL ASSERTION
-    // FAILED and tear down all listeners → blank pages.
-    (err) => {
-      console.warn("[ippb] pending-captures listener error:", err?.message ?? err);
+      initial.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
+      cb(initial);
+
+      // Now safe to subscribe
+      unsub = onSnapshot(
+        q,
+        (s) => {
+          const rows = s.docs
+            .map((d) => {
+              const data = d.data() as any;
+              return { id: d.id, ippbRequestId: d.ref.parent.parent!.id, ...data } as
+                CaptureRequest & { ippbRequestId: string };
+            })
+            .filter((r) => r.status === "requested" || r.status === "capturing");
+          rows.sort((a, b) => (a.requestedAt ?? "").localeCompare(b.requestedAt ?? ""));
+          cb(rows);
+        },
+        (err) => {
+          console.warn("[ippb] pending-captures listener error:", err?.message ?? err);
+          ippbReadDeniedFor.add(retailerId);
+          try { unsub(); } catch {}
+          cb([]);
+        }
+      );
+    })
+    .catch((err) => {
+      console.warn("[ippb] pending-captures precheck failed, listener disabled:", err?.message ?? err);
+      ippbReadDeniedFor.add(retailerId);
       cb([]);
-    }
-  );
+    });
+
+  return () => {
+    cancelled = true;
+    try { unsub(); } catch {}
+  };
 }
 
 /* -------------------- RD Service helper (browser side) -------------------- */
