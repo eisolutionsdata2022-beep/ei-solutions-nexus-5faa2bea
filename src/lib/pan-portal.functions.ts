@@ -268,7 +268,7 @@ export const panPsaCreate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => psaCreateInput.parse(input))
   .handler(async ({ data, context }): Promise<PanPsaResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig((context as any).firebaseIdToken) : null;
     const url = data.url || cfg?.psaCreateUrl;
     const cipher = data.cipher || cfg?.cipher;
     if (!url || !cipher) return { success: false, error: "Provider not configured" };
@@ -332,7 +332,7 @@ export const panPsaPasswordReset = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => psaPwdInput.parse(input))
   .handler(async ({ data, context }): Promise<PanPsaResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig((context as any).firebaseIdToken) : null;
     const url = data.url || cfg?.psaPasswordUrl;
     const cipher = data.cipher || cfg?.cipher;
     if (!url || !cipher) return { success: false, error: "Provider not configured" };
@@ -386,7 +386,7 @@ export const panNsdlGetAuthorization = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nsdlAuthInput.parse(input))
   .handler(async ({ data, context }): Promise<PanNsdlAuthResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig((context as any).firebaseIdToken) : null;
     const url = data.url || cfg?.nsdlAuthUrl;
     const cipher = data.cipher || cfg?.cipher;
     if (!url || !cipher) return { success: false, error: "Provider not configured" };
@@ -512,7 +512,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig((context as any).firebaseIdToken) : null;
     const resolvedUrl = data.url || cfg?.utiCouponPurchaseUrl;
     const resolvedCipher = data.cipher || cfg?.cipher;
     if (!resolvedUrl || !resolvedCipher) {
@@ -757,7 +757,7 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiTrackInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiTrackResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig((context as any).firebaseIdToken) : null;
     const resolvedUrl = data.url || cfg?.utiPanStatusUrl;
     const resolvedCipher = data.cipher || cfg?.cipher;
     if (!resolvedUrl || !resolvedCipher) {
