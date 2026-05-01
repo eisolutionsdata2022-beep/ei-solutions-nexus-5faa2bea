@@ -304,8 +304,8 @@ export const panPsaPasswordReset = createServerFn({ method: "POST" })
 /* --------------- 4. NSDL eKYC — request authorization (SSO) -------------- */
 
 const nsdlAuthInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   userId: z.string().min(2).max(80),    // upstream nsdl_id
   orderId: z.string().min(4).max(80),
   shopName: z.string().min(1).max(200),
@@ -322,9 +322,13 @@ export const panNsdlGetAuthorization = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nsdlAuthInput.parse(input))
   .handler(async ({ data, context }): Promise<PanNsdlAuthResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const url = data.url || cfg?.nsdlAuthUrl;
+    const cipher = data.cipher || cfg?.cipher;
+    if (!url || !cipher) return { success: false, error: "Provider not configured" };
     let creds: { apiKey: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(cipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
@@ -337,7 +341,7 @@ export const panNsdlGetAuthorization = createServerFn({ method: "POST" })
       shop_name: data.shopName,
     };
     try {
-      const res = await fetch(data.url, {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
