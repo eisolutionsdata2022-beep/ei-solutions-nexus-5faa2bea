@@ -4,7 +4,7 @@
  * (debit at purchase + refund on failure).
  */
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { PanUtiCoupon } from "@/lib/pan-portal-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,13 +55,7 @@ export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
   // Subscribe to retailer's pan-portal wallet transactions for cross-reference.
   useEffect(() => {
     if (!retailerId) return;
-    const q = query(
-      collection(db, "transactions"),
-      where("userId", "==", retailerId),
-      where("source", "==", "pan-portal"),
-      orderBy("createdAt", "desc"),
-    );
-    const fallbackQ = query(
+    const txQuery = query(
       collection(db, "transactions"),
       where("userId", "==", retailerId),
       where("source", "==", "pan-portal"),
@@ -74,22 +68,17 @@ export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
       createdAt: String(data.createdAt || ""),
       orderId: data.orderId ? String(data.orderId) : undefined,
     });
-    let unsubscribe = onSnapshot(
-      q,
+    const unsubscribe = onSnapshot(
+      txQuery,
       (snap) => {
-        setWalletTxns(
-          snap.docs.map((d) => mapTxn(d.data() as Record<string, unknown>, d.id)),
-        );
+        const txns = snap.docs
+          .map((d) => mapTxn(d.data() as Record<string, unknown>, d.id))
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setWalletTxns(txns);
       },
-      // Fallback: if composite index missing, fetch unsorted client-side.
       (err) => {
-        console.warn("[UtiCouponHistory] tx subscribe fallback:", err.message);
-        unsubscribe = onSnapshot(fallbackQ, (snap) => {
-          const txns = snap.docs
-            .map((d) => mapTxn(d.data() as Record<string, unknown>, d.id))
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-          setWalletTxns(txns);
-        });
+        console.warn("[UtiCouponHistory] tx subscribe skipped:", err.message);
+        setWalletTxns([]);
       },
     );
     return () => unsubscribe();
