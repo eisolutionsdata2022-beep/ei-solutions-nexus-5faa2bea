@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 import { UtiCouponHistoryTable } from "./UtiCouponHistoryTable";
 import { UtiTrainingPdfCard } from "./UtiTrainingPdfCard";
+import { VleAutoRegisterDialog } from "./VleAutoRegisterDialog";
 
 interface Props {
   user: { uid: string; email: string; name?: string; phone?: string };
