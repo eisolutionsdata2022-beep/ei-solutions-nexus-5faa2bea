@@ -174,6 +174,17 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           createdAt: nowIso,
           updatedAt: nowIso,
         });
+        // Detect "VLE Data Not Exist" — provider doesn't have this VLE registered.
+        // Trigger silent auto-registration flow and queue an auto-retry of this
+        // exact same quantity once registration succeeds. The user is NOT blocked,
+        // their wallet is already refunded, and they only see a single dialog.
+        const vleMissing = /vle\s*data\s*not\s*exist|vle\s*not\s*registered|vle\s*id\s*not\s*found/i.test(res.error);
+        if (vleMissing) {
+          setPendingRetryQty(qty);
+          setAutoRegOpen(true);
+          toast.info("Your VLE isn't registered with UTI yet — let's fix that in one step.");
+          return;
+        }
         toast.error(`❌ Purchase failed — ${res.error}. ₹${totalDebit} refunded.`);
         return;
       }
