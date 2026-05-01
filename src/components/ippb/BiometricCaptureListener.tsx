@@ -57,10 +57,17 @@ export function BiometricCaptureListener() {
   const [phase, setPhase] = useState<"idle" | "detecting" | "capturing">("idle");
   const seen = useRef<Set<string>>(new Set());
 
+  // Use a ref so the snapshot callback can read the latest "active" value
+  // WITHOUT making it a useEffect dependency. Re-subscribing on every state
+  // change caused parallel listeners which corrupted the Firestore SDK
+  // internal state and triggered "INTERNAL ASSERTION FAILED (ve:-1)".
+  const activeRef = useRef<(CaptureRequest & { ippbRequestId: string }) | null>(null);
+  useEffect(() => { activeRef.current = active; }, [active]);
+
   useEffect(() => {
-    if (!appUser || appUser.role !== "retailer") return;
-    return subscribeRetailerPendingCaptures(appUser.uid, (rows) => {
-      // Pick the oldest pending one
+    if (!appUser?.uid || appUser.role !== "retailer") return;
+    const uid = appUser.uid;
+    return subscribeRetailerPendingCaptures(uid, (rows) => {
       const pending = rows.find((r) => r.status === "requested");
       if (pending && !seen.current.has(pending.id)) {
         seen.current.add(pending.id);
@@ -70,13 +77,13 @@ export function BiometricCaptureListener() {
         });
         setActive(pending);
       }
-      // If active was cancelled remotely, close
-      if (active && !rows.find((r) => r.id === active.id)) {
+      const cur = activeRef.current;
+      if (cur && !rows.find((r) => r.id === cur.id)) {
         setActive(null);
         setPhase("idle");
       }
     });
-  }, [appUser, active]);
+  }, [appUser?.uid, appUser?.role]);
 
   const handleCapture = async () => {
     if (!active || !appUser) return;
