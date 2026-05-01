@@ -17,11 +17,19 @@ import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 // Same scheme used by csc-bridge.functions.ts — re-implemented locally to
 // avoid cross-importing server-only modules.
 
-async function getCryptoKey(): Promise<CryptoKey> {
-  const seed = process.env.LOVABLE_API_KEY || "ei-solutions-pan-default-key-do-not-use-in-prod";
+const PAN_CRED_CIPHER_PREFIX = "panv2:";
+const PAN_LEGACY_FALLBACK_SEED = "ei-solutions-pan-default-key-do-not-use-in-prod";
+
+async function getCryptoKey(seed: string): Promise<CryptoKey> {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("pan-cred|" + seed));
   return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
+
+function getPanCredentialSeeds(): string[] {
+  const configuredSeed = process.env.LOVABLE_API_KEY?.trim();
+  return Array.from(new Set([configuredSeed, PAN_LEGACY_FALLBACK_SEED].filter(Boolean) as string[]));
+}
+
 function b64encode(buf: ArrayBuffer | Uint8Array): string {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   let s = "";
@@ -35,22 +43,57 @@ function b64decode(s: string): Uint8Array {
   return out;
 }
 async function encryptCreds(apiKey: string, secret: string): Promise<string> {
-  const key = await getCryptoKey();
+  const key = await getCryptoKey(process.env.LOVABLE_API_KEY?.trim() || PAN_LEGACY_FALLBACK_SEED);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const plaintext = new TextEncoder().encode(JSON.stringify({ apiKey, secret }));
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
   const combined = new Uint8Array(iv.length + ct.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(ct), iv.length);
-  return b64encode(combined);
+  return `${PAN_CRED_CIPHER_PREFIX}${b64encode(combined)}`;
 }
+
+function parsePanCreds(value: unknown): { apiKey: string; secret: string } | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const apiKey = typeof record.apiKey === "string" ? record.apiKey.trim() : "";
+  const secret = typeof record.secret === "string" ? record.secret : "";
+  return apiKey ? { apiKey, secret } : null;
+}
+
 async function decryptCreds(cipher: string): Promise<{ apiKey: string; secret: string }> {
-  const key = await getCryptoKey();
-  const data = b64decode(cipher);
+  const raw = cipher.trim();
+  const directJson = raw.startsWith("{") ? parsePanCreds(JSON.parse(raw)) : null;
+  if (directJson) return directJson;
+
+  const encoded = raw.startsWith(PAN_CRED_CIPHER_PREFIX) ? raw.slice(PAN_CRED_CIPHER_PREFIX.length) : raw;
+  let lastError: unknown = null;
+
+  try {
+    const decodedText = new TextDecoder().decode(b64decode(encoded));
+    const parsed = parsePanCreds(JSON.parse(decodedText));
+    if (parsed) return parsed;
+  } catch {
+    // Not a base64(JSON) legacy payload; continue with AES-GCM attempts.
+  }
+
+  const data = b64decode(encoded);
   const iv = data.slice(0, 12);
   const ct = data.slice(12);
-  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-  return JSON.parse(new TextDecoder().decode(pt));
+  for (const seed of getPanCredentialSeeds()) {
+    try {
+      const key = await getCryptoKey(seed);
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+      if (seed === PAN_LEGACY_FALLBACK_SEED && process.env.LOVABLE_API_KEY?.trim()) {
+        console.warn("[PAN] decrypted credentials using legacy fallback seed");
+      }
+      return JSON.parse(new TextDecoder().decode(pt));
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError ?? new Error("Unable to decrypt PAN credentials");
 }
 
 /* ----------------------- 1. Encrypt admin credentials -------------------- */
