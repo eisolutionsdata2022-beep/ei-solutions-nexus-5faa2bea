@@ -311,6 +311,46 @@ export function UtiCouponHistoryTable({ retailerId, coupons, onTrack, trackingId
                                 value={new Date(c.updatedAt).toLocaleString()}
                               />
                             )}
+                            {c.status !== "refunded" && c.status !== "failed" && (
+                              <div className="flex flex-wrap gap-2 pt-3 mt-2 border-t">
+                                {onTrack && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    disabled={trackingId === c.couponId}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onTrack(c.couponId, c.ackNo);
+                                    }}
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${trackingId === c.couponId ? "animate-spin" : ""}`} />
+                                    {trackingId === c.couponId ? "Tracking…" : "Track Status"}
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open("https://www.psaonline.utiitsl.com/", "_blank", "noopener");
+                                  }}
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                                  Open UTI Portal
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copy(c.couponId);
+                                  }}
+                                >
+                                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                                  Copy Coupon
+                                </Button>
+                              </div>
+                            )}
                           </div>
 
                           {/* Wallet transactions */}
