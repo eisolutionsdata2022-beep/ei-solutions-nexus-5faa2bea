@@ -5,12 +5,10 @@ import { atomicDebit } from "@/lib/firebase-transactions";
 import {
   createPanOrder,
   getPanActivation,
-  getPanConfig,
   getPsaRecord,
   newOrderId,
   setPanActivation,
   subscribePanActivation,
-  subscribePanConfig,
   subscribePsaRecord,
   subscribeRetailerOrders,
   updatePanOrder,
@@ -64,10 +62,6 @@ function PanPortalPage() {
 
   useEffect(() => {
     let active = true;
-    const unsub = subscribePanConfig(setConfig, (error) => {
-      if (!active) return;
-      setConfigError(error.message || "Unable to load PAN settings");
-    });
     getPanClientConfig()
       .then((res) => {
         if (!active) return;
@@ -84,7 +78,6 @@ function PanPortalPage() {
       });
     return () => {
       active = false;
-      unsub();
     };
   }, []);
   useEffect(() => {
@@ -342,8 +335,7 @@ function PsaTab({
     }
     setSubmitting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials not configured");
+      // Server function reads url + cipher from pan_config/master internally.
       // VLE ID must match the format the upstream UTI portal expects and that
       // the coupon-purchase call sends — `RMPMCST-<10-digit-mobile>`. Using
       // the raw Firebase uid here previously caused the provider to reject
@@ -352,8 +344,6 @@ function PsaTab({
       const properVleId = generateVleId(user.uid, user.phone);
       const res = await panPsaCreate({
         data: {
-          url: cfg.psaCreateUrl!,
-          cipher: cfg.cipher,
           vleId: properVleId,
           vleName: user.name || user.email,
           vleShop: form.shopName,
@@ -397,10 +387,8 @@ function PsaTab({
     if (!psa) return;
     setResetting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials not configured");
       const res = await panPsaPasswordReset({
-        data: { url: cfg.psaPasswordUrl!, cipher: cfg.cipher, vleId: psa.vleId },
+        data: { vleId: psa.vleId },
       });
       if (!res.success) throw new Error(res.error);
       toast.success(res.message);
@@ -893,9 +881,7 @@ function PanTab({
     }
     setSubmitting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials missing");
-
+      // Server function reads url + cipher from pan_config/master internally.
       const orderId = newOrderId(user.uid);
       const newBalance = await atomicDebit(user.uid, fee, {
         source: "pan-portal",
@@ -915,7 +901,7 @@ function PanTab({
         mobile: form.mobile,
         email: form.email,
         amount: fee,
-        providerCost: cfg.panProviderCost,
+        providerCost: config.panProviderCost,
         oldBalance: newBalance + fee,
         newBalance,
         status: "pending",
@@ -926,8 +912,6 @@ function PanTab({
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const res = await panNsdlGetAuthorization({
         data: {
-          url: cfg.nsdlAuthUrl!,
-          cipher: cfg.cipher,
           userId: user.uid.slice(0, 20),
           orderId,
           shopName: user.name || user.email,
@@ -950,7 +934,7 @@ function PanTab({
       });
 
       // Submit hidden form to NSDL
-      const dashboardUrl = cfg.digipayDashboardUrl || "https://digipaydashboard.religaredigital.in/Login/Authenticate";
+      const dashboardUrl = config.digipayDashboardUrl || "https://digipaydashboard.religaredigital.in/Login/Authenticate";
       const f = document.createElement("form");
       f.method = "POST";
       f.action = dashboardUrl;
