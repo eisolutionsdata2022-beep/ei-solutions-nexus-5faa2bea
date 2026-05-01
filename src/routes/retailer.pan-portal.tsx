@@ -5,12 +5,10 @@ import { atomicDebit } from "@/lib/firebase-transactions";
 import {
   createPanOrder,
   getPanActivation,
-  getPanConfig,
   getPsaRecord,
   newOrderId,
   setPanActivation,
   subscribePanActivation,
-  subscribePanConfig,
   subscribePsaRecord,
   subscribeRetailerOrders,
   updatePanOrder,
