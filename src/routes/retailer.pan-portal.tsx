@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
-  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken,
+  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken, getPsaPrimaryVleId,
   createCouponOrder, updateCouponOrder, listCouponOrders,
 } from "@/lib/pan-portal-firebase";
 import {
@@ -23,6 +23,81 @@ import {
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { generateVleId } from "@/lib/vle-id";
 import { DEFAULT_PAN_CONFIG, type PanCouponOrder, type PanPortalConfig, type PanPsaRecord } from "@/lib/pan-portal-types";
+
+function looksLikeMissingVleError(message: string | undefined) {
+  const text = (message || "").toLowerCase();
+  return text.includes("vle data not exist") || text.includes("vle not exist") || text.includes("vle does not exist");
+}
+
+async function trySilentLegacyVleSync({
+  user,
+  cfg,
+  psa,
+}: {
+  user: NonNullable<ReturnType<typeof useAuth>["appUser"]>;
+  cfg: PanPortalConfig;
+  psa: PanPsaRecord;
+}) {
+  if (!cfg.credCipher || !psa.linkedExisting) return { synced: false as const };
+
+  const shopName = psa.shopName?.trim() || user.name || user.email;
+  const mobile = (psa.linkedMobile || psa.mobile || user.phone || "").trim();
+  const email = (psa.email || user.email || "").trim();
+  const address = (psa.address || user.address || "").trim();
+  const state = (psa.state || "").trim();
+  const pinCode = (psa.pinCode || "").trim();
+  const uidNo = (psa.uidNo || "").trim();
+  const panNo = (psa.panNo || "").trim().toUpperCase();
+  const vleId = getPsaPrimaryVleId(psa);
+
+  if (!shopName || !/^\d{10}$/.test(mobile) || !email || !address || !state || !/^\d{6}$/.test(pinCode) || !/^\d{12}$/.test(uidNo) || !/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(panNo)) {
+    return { synced: false as const, reason: "missing_profile" as const };
+  }
+
+  const res = await panPsaCreate({
+    data: {
+      credCipher: cfg.credCipher,
+      baseUrl: cfg.providerBaseUrl,
+      vleId,
+      vleName: psa.ownerName?.trim() || user.name || user.email,
+      vleShop: shopName,
+      vleLoc: address.slice(0, 50),
+      vleState: state,
+      vleUid: uidNo,
+      vlePin: pinCode,
+      vleEmail: email,
+      vleMob: mobile,
+      vlePan: panNo,
+    },
+  });
+
+  if (!res.success) {
+    return { synced: false as const, reason: "provider_failed" as const, error: res.error };
+  }
+
+  const now = new Date().toISOString();
+  await upsertPsaRecord({
+    ...psa,
+    vleId,
+    vleRegCode: vleId,
+    linkedMobile: mobile,
+    linkedExisting: false,
+    status: res.vleStatus === "SUCCESS" ? "approved" : "pending",
+    ownerName: psa.ownerName?.trim() || user.name || user.email,
+    shopName,
+    mobile,
+    email,
+    panNo,
+    uidNo,
+    address,
+    state,
+    pinCode,
+    remark: res.message || "Legacy VLE synced automatically during coupon purchase",
+    updatedAt: now,
+  });
+
+  return { synced: true as const, vleId };
+}
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
