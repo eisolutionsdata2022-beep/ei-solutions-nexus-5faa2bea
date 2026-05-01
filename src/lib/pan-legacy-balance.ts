@@ -95,12 +95,19 @@ export function subscribeRetailerTransferRequests(
   cb: (list: PanLegacyTransferRequest[]) => void,
 ) {
   const q = query(REQ_COL, where("retailerId", "==", retailerId));
-  return onSnapshot(q, (snap) => {
-    const list: PanLegacyTransferRequest[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanLegacyTransferRequest) }));
-    list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-    cb(list);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: PanLegacyTransferRequest[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanLegacyTransferRequest) }));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      cb(list);
+    },
+    (error) => {
+      console.warn("[PAN legacy] transfer requests listener skipped:", error.message);
+      cb([]);
+    },
+  );
 }
 
 export function subscribeAllTransferRequests(
