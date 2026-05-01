@@ -565,8 +565,10 @@ function CouponBuyPanel({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              You linked an existing VLE. If the provider rejects the purchase with "VLE Data Not Exist",
-              your wallet is auto-refunded and you'll need to re-register via "New PSA Registration".
+              Your VLE is linked locally but may not be registered upstream with UTI yet.
+              If a purchase fails with <strong>"VLE Data Not Exist"</strong>, your wallet is
+              auto-refunded — open the <strong>PSA → Sync Linked VLE with UTI</strong> tab
+              to register your existing VLE ID upstream (the ID stays the same).
             </AlertDescription>
           </Alert>
         )}
