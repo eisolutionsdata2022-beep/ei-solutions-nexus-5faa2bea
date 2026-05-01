@@ -130,6 +130,94 @@ function AdminPanLegacyBalances() {
     }
   }
 
+  function handleDownloadTemplate() {
+    const sample = [
+      { Username: "RMPMCST-9447175704", Mobile: "9447175704", Name: "Sample Retailer", Balance: 1250.5 },
+      { Username: "RMPMCST-9876543210", Mobile: "9876543210", Name: "Another Retailer", Balance: 500 },
+    ];
+    const ws = XLSX.utils.json_to_sheet(sample);
+    ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 28 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LegacyBalances");
+    XLSX.writeFile(wb, "legacy-pan-balances-template.xlsx");
+    toast.success("Template downloaded — fill Username, Mobile, Name, Balance");
+  }
+
+  async function handleUploadFile(file: File) {
+    setUploading(true);
+    setUploadProgress({ done: 0, total: 0 });
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws) throw new Error("Sheet not found in file");
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+
+      const norm = (k: string) => k.trim().toLowerCase();
+      const records = rows
+        .map((row) => {
+          const m: Record<string, unknown> = {};
+          Object.keys(row).forEach((k) => (m[norm(k)] = row[k]));
+          const username = String(m["username"] ?? m["vle id"] ?? m["vleid"] ?? "").trim().toUpperCase();
+          const mobile = String(m["mobile"] ?? m["phone"] ?? "").replace(/\D/g, "").slice(-10);
+          const name = String(m["name"] ?? m["full name"] ?? "").trim();
+          const balance = Number(String(m["balance"] ?? m["amount"] ?? "0").replace(/[,₹\s]/g, ""));
+          return { username, mobile, name, balance };
+        })
+        .filter((r) => r.username && r.mobile.length === 10 && Number.isFinite(r.balance) && r.balance > 0);
+
+      if (records.length === 0) {
+        throw new Error("No valid rows found. Required columns: Username, Mobile, Name, Balance");
+      }
+
+      if (!confirm(`Upload ${records.length} legacy balance records? Existing records with the same Username will be updated.`)) {
+        setUploading(false);
+        return;
+      }
+
+      setUploadProgress({ done: 0, total: records.length });
+      const importedAt = new Date().toISOString();
+      let total = 0;
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        await upsertLegacyBalance({
+          username: r.username,
+          mobile: r.mobile,
+          name: r.name,
+          balance: r.balance,
+          remaining: r.balance,
+          claimed: false,
+          importedAt,
+        });
+        total += r.balance;
+        if (i % 5 === 0) setUploadProgress({ done: i + 1, total: records.length });
+      }
+      setUploadProgress({ done: records.length, total: records.length });
+      toast.success(`Uploaded ${records.length} records (₹${total.toLocaleString("en-IN")})`);
+      await refreshStats();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleClearAll() {
+    if (!confirm("Delete ALL UNCLAIMED legacy balance records? Already-claimed records will be kept for audit. This cannot be undone.")) return;
+    if (!confirm("Are you absolutely sure? Click OK to confirm deletion.")) return;
+    setClearing(true);
+    try {
+      const res = await clearUnclaimedLegacyBalances();
+      toast.success(`Deleted ${res.deleted} unclaimed · kept ${res.kept} claimed`);
+      await refreshStats();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Clear failed");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   async function handleAction(
     req: PanLegacyTransferRequest,
     action: "approved" | "rejected",
