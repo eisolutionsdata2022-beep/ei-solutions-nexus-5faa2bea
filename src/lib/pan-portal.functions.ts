@@ -149,7 +149,7 @@ export const panPsaCreate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => psaCreateInput.parse(input))
   .handler(async ({ data, context }): Promise<PanPsaResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    let creds: { apiKey: string };
+    let creds: { apiKey: string; secret: string };
     try {
       creds = await decryptCreds(data.cipher);
     } catch {
@@ -381,7 +381,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    let creds: { apiKey: string };
+    let creds: { apiKey: string; secret: string };
     try {
       creds = await decryptCreds(data.cipher);
     } catch {
@@ -389,8 +389,11 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
     }
     const requestBody = {
       api_key: creds.apiKey,
+      secret: creds.secret,
       vle_id: data.vleId,
       weburl: data.weburl,
+      order_id: data.orderId,
+      shop_name: data.shopName,
       type: 1,
       qty: data.qty,
     };
