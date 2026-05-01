@@ -58,10 +58,16 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
   const psaActive = psa?.status === "approved";
-  // Effective VLE ID — use existing PSA record if approved, else fall back to
-  // the deterministic RMPMCST-<mobile> ID. The provider auto-generates / links
-  // the PSA on the upstream side after the first 2-coupon purchase.
-  const effectiveVleId = psa?.vleId || generateVleId(user.uid, user.phone);
+  // Effective VLE ID — provider ALWAYS expects `RMPMCST-<10-digit-mobile>`.
+  // Older PSA records may have a stale / non-conforming vleId (e.g. raw uid
+  // from a previous build), which causes the provider to reject every coupon
+  // purchase with "Vle Data Not Exist". Always prefer the canonical mobile-
+  // based ID, falling back to the stored vleId only if it's already in the
+  // expected format.
+  const canonicalVleId = generateVleId(user.uid, user.phone);
+  const storedVleId = psa?.vleId?.trim() || "";
+  const storedIsCanonical = /^RMPMCST-\d{10}$/i.test(storedVleId);
+  const effectiveVleId = storedIsCanonical ? storedVleId.toUpperCase() : canonicalVleId;
   const MIN_QTY = 2;
   const MAX_QTY = 100;
   const totalAmount = fee * quantity;
