@@ -550,6 +550,7 @@ function CouponBuyPanel({
 }: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onChange: () => Promise<void>; }) {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!psa || psa.status !== "approved") {
     return <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>Register or link your PSA first.</AlertDescription></Alert>;
@@ -558,11 +559,11 @@ function CouponBuyPanel({
   const total = qty * cfg.couponRetailerFee;
 
   async function buy() {
+    setConfirmOpen(false);
     if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
     const currentPsa = psa;
     if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
-    if (!confirm(`Buy ${qty} coupon(s) for ₹${total}? This will be debited from your wallet.`)) return;
     setBusy(true);
 
     let orderId = "";
