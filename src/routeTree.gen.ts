@@ -91,6 +91,7 @@ import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admi
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
+import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -530,6 +531,11 @@ const AdminPaytmSettingsRoute = AdminPaytmSettingsRouteImport.update({
   path: '/paytm-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
+  id: '/pan-portal-settings',
+  path: '/pan-portal-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -706,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -810,6 +817,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -922,6 +930,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -1035,6 +1044,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1139,6 +1149,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1250,6 +1261,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1921,6 +1933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaytmSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pan-portal-settings': {
+      id: '/admin/pan-portal-settings'
+      path: '/pan-portal-settings'
+      fullPath: '/admin/pan-portal-settings'
+      preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/notices': {
       id: '/admin/notices'
       path: '/notices'
@@ -2137,6 +2156,7 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
+  AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
   AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
@@ -2183,6 +2203,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
+  AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
   AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
