@@ -241,15 +241,19 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     const utrNo = generateUtrNo();
     const amount = data.qty * 107;
 
-    const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", {
-      bot_id: auth.bot_id,
+    // Per legacy PHP: WalletTransfer payload is EXACTLY these 5 fields.
+    // No `type` or `qty` go upstream — those are only used locally for
+    // wallet pricing/classification.
+    const payload = {
       api_key: auth.api_key,
-      vleid: data.vleId,
-      type: data.type,
-      qty: data.qty,
-      amount,
+      bot_id: auth.bot_id,
+      vle_id: data.vleId,
       utr_no: utrNo,
-    });
+      amount,
+    };
+    console.log("[PAN][CouponBuy] →", data.baseUrl, "/Api/WalletTransfer", { ...payload, api_key: "***", bot_id: auth.bot_id.slice(0, 6) + "***" });
+    const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", payload);
+    console.log("[PAN][CouponBuy] ← status=", r.status, "body=", r.raw.slice(0, 500));
 
     const status = normalizeStatus(r.json?.status);
     const results = r.json?.results || r.json?.result || {};
