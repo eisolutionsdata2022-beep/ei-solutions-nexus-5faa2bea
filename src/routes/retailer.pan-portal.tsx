@@ -25,6 +25,7 @@ import {
 import type { PanLegacyBalance, PanLegacyTransferRequest } from "@/lib/pan-legacy-balance-types";
 import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
 import {
+  getPanClientConfig,
   panNsdlGetAuthorization,
   panPsaCreate,
   panPsaPasswordReset,
@@ -59,8 +60,33 @@ function PanPortalPage() {
   const [psa, setPsa] = useState<PanPsaRecord | null>(null);
   const [orders, setOrders] = useState<PanOrder[]>([]);
   const [coupons, setCoupons] = useState<PanUtiCoupon[]>([]);
+  const [configError, setConfigError] = useState<string | null>(null);
 
-  useEffect(() => subscribePanConfig(setConfig), []);
+  useEffect(() => {
+    let active = true;
+    const unsub = subscribePanConfig(setConfig, (error) => {
+      if (!active) return;
+      setConfigError(error.message || "Unable to load PAN settings");
+    });
+    getPanClientConfig()
+      .then((res) => {
+        if (!active) return;
+        if (res.success) {
+          setConfig(res.config);
+          setConfigError(null);
+        } else {
+          setConfigError(res.error);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        setConfigError(err instanceof Error ? err.message : "Unable to load PAN settings");
+      });
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, []);
   useEffect(() => {
     if (!appUser?.uid) return;
     const u1 = subscribePanActivation(appUser.uid, setActivation);
@@ -76,7 +102,16 @@ function PanPortalPage() {
   if (!config) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        {configError ? (
+          <Card className="max-w-lg border-amber-200 bg-amber-50/70 dark:bg-amber-950/20">
+            <CardContent className="p-6 text-center space-y-2">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">PAN settings could not be loaded from live Firestore.</p>
+              <p className="text-sm text-amber-800/90 dark:text-amber-100/80">{configError}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        )}
       </div>
     );
   }
