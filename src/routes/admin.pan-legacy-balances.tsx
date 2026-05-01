@@ -362,6 +362,76 @@ function AdminPanLegacyBalances() {
         </CardContent>
       </Card>
 
+      {/* Upload custom Excel/CSV */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" /> Upload Custom Sheet (Excel / CSV)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-2">
+            <p className="font-semibold">📋 Required columns (case-insensitive):</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li><strong>Username</strong> — e.g. <code>RMPMCST-9447175704</code></li>
+              <li><strong>Mobile</strong> — 10-digit number (must match retailer's claim mobile)</li>
+              <li><strong>Name</strong> — retailer's name from old portal</li>
+              <li><strong>Balance</strong> — amount in ₹ (e.g. <code>1250.50</code>)</li>
+            </ul>
+            <p className="text-xs text-muted-foreground pt-1">
+              Existing rows with the same Username are <strong>updated</strong>. New rows are added.
+              For a complete fresh start, click <em>Clear Unclaimed</em> first.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+              <Download className="h-4 w-4 mr-2" /> Download Template (.xlsx)
+            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUploadFile(f);
+              }}
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Uploading {uploadProgress.done}/{uploadProgress.total}…
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" /> Upload Sheet
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleClearAll}
+              disabled={clearing}
+            >
+              {clearing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Clear Unclaimed
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Requests */}
       <Card>
         <CardHeader>
