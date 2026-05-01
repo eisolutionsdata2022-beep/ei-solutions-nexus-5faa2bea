@@ -669,7 +669,7 @@ function CouponBuyPanel({
             <Input value={`₹${total}`} disabled className="font-bold" />
           </div>
         </div>
-        <Button onClick={buy} disabled={busy} size="lg" className="w-full sm:w-auto">
+        <Button onClick={() => setConfirmOpen(true)} disabled={busy} size="lg" className="w-full sm:w-auto">
           {busy ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing…</> : <>Buy {qty} Coupon{qty > 1 ? "s" : ""} for ₹{total}</>}
         </Button>
         {psa.linkedExisting && (
@@ -683,6 +683,21 @@ function CouponBuyPanel({
             </AlertDescription>
           </Alert>
         )}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm coupon purchase</AlertDialogTitle>
+              <AlertDialogDescription>
+                Buy <strong>{qty}</strong> UTI PAN coupon{qty > 1 ? "s" : ""} for <strong>₹{total}</strong>?
+                This amount will be debited from your wallet.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={buy}>Confirm & Buy</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
