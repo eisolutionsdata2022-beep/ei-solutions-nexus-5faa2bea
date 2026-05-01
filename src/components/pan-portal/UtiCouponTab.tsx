@@ -125,11 +125,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
     // 2. Single upstream call.
     try {
-      const cfg = await getPanConfig();
       const res = await panUtiCouponPurchase({
         data: {
-          url: cfg.utiCouponPurchaseUrl!,
-          cipher: cfg.cipher!,
           vleId: effectiveVleId,
           orderId: batchOrderId,
           shopName: psa?.shopName || user.name || user.email,
@@ -157,7 +154,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           retailerUsername: user.name || user.email,
           vleId: effectiveVleId,
           amount: totalDebit,
-          providerCost: cfg.utiPanProviderCost ? cfg.utiPanProviderCost * qty : undefined,
+            providerCost: config.utiPanProviderCost ? config.utiPanProviderCost * qty : undefined,
           oldBalance,
           newBalance: oldBalance,
           status: "refunded",
@@ -199,7 +196,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
           retailerUsername: user.name || user.email,
           vleId: effectiveVleId,
           amount: fee,
-          providerCost: cfg.utiPanProviderCost,
+            providerCost: config.utiPanProviderCost,
           oldBalance: before,
           newBalance: runningBalance,
           status: "purchased",
@@ -266,9 +263,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     const tracker = ackNo || couponId;
     setTrackingId(couponId);
     try {
-      const cfg = await getPanConfig();
       const res = await panUtiPanStatusTrack({
-        data: { url: cfg.utiPanStatusUrl!, cipher: cfg.cipher!, ackNo: tracker },
+        data: { ackNo: tracker },
       });
       if (!res.success) {
         toast.error(res.error);
