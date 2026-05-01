@@ -387,10 +387,8 @@ function PsaTab({
     if (!psa) return;
     setResetting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials not configured");
       const res = await panPsaPasswordReset({
-        data: { url: cfg.psaPasswordUrl!, cipher: cfg.cipher, vleId: psa.vleId },
+        data: { vleId: psa.vleId },
       });
       if (!res.success) throw new Error(res.error);
       toast.success(res.message);
