@@ -567,17 +567,20 @@ function CouponBuyPanel({
     let orderId = "";
     let debited = false;
     try {
+      let effectivePsa = psa;
+      let effectiveVleId = getPsaPrimaryVleId(psa);
+
       // 1. Debit wallet first
       await atomicDebit(user.uid, total, {
         source: "pan-portal",
-        description: `UTI coupon × ${qty} (VLE ${psa!.vleId})`,
+        description: `UTI coupon × ${qty} (VLE ${effectiveVleId})`,
       });
       debited = true;
 
       // 2. Create local pending order
       const now = new Date().toISOString();
       orderId = await createCouponOrder({
-        retailerId: user.uid, vleId: psa!.vleId,
+        retailerId: user.uid, vleId: effectiveVleId,
         qty, couponType: 1,
         unitFee: cfg.couponRetailerFee, unitProviderCost: cfg.couponProviderCost,
         totalDebit: total,
@@ -585,9 +588,38 @@ function CouponBuyPanel({
       });
 
       // 3. Call provider
-      const res = await panCouponBuy({
-        data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: psa!.vleId, type: 1, qty },
+      let res = await panCouponBuy({
+        data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
       });
+
+      if (!res.success && effectivePsa.linkedExisting && looksLikeMissingVleError(res.error)) {
+        const syncResult = await trySilentLegacyVleSync({ user, cfg, psa: effectivePsa });
+
+        if (syncResult.synced) {
+          effectiveVleId = syncResult.vleId;
+          effectivePsa = {
+            ...effectivePsa,
+            vleId: effectiveVleId,
+            vleRegCode: effectiveVleId,
+            linkedExisting: false,
+          };
+          await updateCouponOrder(orderId, {
+            vleId: effectiveVleId,
+            message: "Legacy VLE auto-synced with UTI. Retrying purchase…",
+          });
+          res = await panCouponBuy({
+            data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
+          });
+        } else if (syncResult.reason === "missing_profile") {
+          await atomicCredit(user.uid, total, { source: "pan-portal", description: "Refund: linked VLE needs PAN/Aadhaar/address details before sync" });
+          await updateCouponOrder(orderId, {
+            status: "FAILED",
+            message: "Legacy VLE needs PAN, Aadhaar, address, PIN and email details before UTI sync can complete.",
+            refunded: true,
+          });
+          throw new Error("ഈ പഴയ VLE upstream sync ചെയ്യാൻ PAN, Aadhaar, address, PIN, email details വേണം. PSA tab-ൽ details update ചെയ്ത ശേഷം വീണ്ടും try ചെയ്യൂ.");
+        }
+      }
 
       if (!res.success) {
         // Refund + mark failed
