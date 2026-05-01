@@ -228,7 +228,7 @@ export const panPsaCreate = createServerFn({ method: "POST" })
       vle_pan: data.vlePan.toUpperCase(),
     };
     try {
-      const res = await fetch(data.url, {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
