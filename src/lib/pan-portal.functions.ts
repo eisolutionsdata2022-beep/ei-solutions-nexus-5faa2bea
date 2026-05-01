@@ -381,7 +381,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
-    let creds: { apiKey: string };
+    let creds: { apiKey: string; secret: string };
     try {
       creds = await decryptCreds(data.cipher);
     } catch {
