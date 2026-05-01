@@ -95,16 +95,28 @@ export function subscribePanConfig(
   );
 }
 
-/** Admin-only: write the public-safe parts of the config (URLs, fees, enabled). */
+/**
+ * Admin-only: write the public-safe parts of the config (URLs, fees, enabled).
+ * `webhookSecret` is split off into `pan_config/secrets` because the master
+ * doc is now readable by any authenticated user (server-side load needs it).
+ */
 export async function savePanConfigPublic(
   patch: Partial<PanMasterConfig>,
   adminId: string,
 ) {
+  const { webhookSecret, ...publicPatch } = patch;
   await setDoc(
     CONFIG_DOC,
-    { ...patch, updatedAt: new Date().toISOString(), updatedBy: adminId },
+    { ...publicPatch, updatedAt: new Date().toISOString(), updatedBy: adminId },
     { merge: true },
   );
+  if (typeof webhookSecret === "string") {
+    await setDoc(
+      doc(db, "pan_config", "secrets"),
+      { webhookSecret, updatedAt: new Date().toISOString(), updatedBy: adminId },
+      { merge: true },
+    );
+  }
 }
 
 /** Admin-only: store the encrypted credential blob produced by the server fn. */
