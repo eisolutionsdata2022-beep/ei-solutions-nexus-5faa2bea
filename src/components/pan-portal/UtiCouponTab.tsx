@@ -54,6 +54,10 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   const [quantity, setQuantity] = useState(2);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackInput, setTrackInput] = useState("");
+  /** Auto-register dialog for legacy-linked PSAs that aren't in UTI yet. */
+  const [autoRegOpen, setAutoRegOpen] = useState(false);
+  /** Quantity to auto-retry after upstream PSA registration succeeds. */
+  const [pendingRetryQty, setPendingRetryQty] = useState<number | null>(null);
 
   const utiEnabled = config.utiEnabled ?? true;
   const fee = config.utiPanRetailerFee ?? 107;
