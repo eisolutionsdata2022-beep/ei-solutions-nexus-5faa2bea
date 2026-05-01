@@ -88,16 +88,15 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       toast.error("Mobile number missing or invalid in your profile. Update profile first.");
       return;
     }
-    // Provider rejects unregistered VLE IDs with "Vle Data Not Exist".
-    // Block purchase until PSA is registered or an existing UTI ID is linked.
-    if (!psaActive) {
-      toast.error(
-        "Register your PSA / VLE ID first. The provider rejects coupon purchases for unregistered VLEs (\"Vle Data Not Exist\").",
-        { duration: 6000 },
-      );
-      return;
-    }
-    const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
+    // NOTE: PSA gate intentionally removed. New retailers MUST be able to buy
+    // their first batch of 2 coupons — the upstream provider auto-creates the
+    // VLE / PSA ID after the first 2-coupon purchase, and we mirror that
+    // locally in step 4 below (`upsertPsaRecord`). Blocking on `!psaActive`
+    // created a chicken-and-egg deadlock where new users could never bootstrap
+    // their PSA. For first-time buyers we force qty ≥ 2.
+    const isFirstTime = !psaActive;
+    const minQty = isFirstTime ? 2 : MIN_QTY;
+    const qty = Math.max(minQty, Math.min(MAX_QTY, quantity));
     const totalDebit = fee * qty;
     setPurchasing(true);
     setProgress({ done: 0, total: qty });
