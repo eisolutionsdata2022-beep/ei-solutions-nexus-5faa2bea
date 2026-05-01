@@ -881,9 +881,7 @@ function PanTab({
     }
     setSubmitting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials missing");
-
+      // Server function reads url + cipher from pan_config/master internally.
       const orderId = newOrderId(user.uid);
       const newBalance = await atomicDebit(user.uid, fee, {
         source: "pan-portal",
@@ -903,7 +901,7 @@ function PanTab({
         mobile: form.mobile,
         email: form.email,
         amount: fee,
-        providerCost: cfg.panProviderCost,
+        providerCost: config.panProviderCost,
         oldBalance: newBalance + fee,
         newBalance,
         status: "pending",
@@ -914,8 +912,6 @@ function PanTab({
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const res = await panNsdlGetAuthorization({
         data: {
-          url: cfg.nsdlAuthUrl!,
-          cipher: cfg.cipher,
           userId: user.uid.slice(0, 20),
           orderId,
           shopName: user.name || user.email,
