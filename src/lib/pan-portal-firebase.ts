@@ -144,9 +144,16 @@ export function subscribePsaRecord(
   retailerId: string,
   cb: (rec: PanPsaRecord | null) => void,
 ) {
-  return onSnapshot(doc(PSA_COL, retailerId), (snap) => {
-    cb(snap.exists() ? (snap.data() as PanPsaRecord) : null);
-  });
+  return onSnapshot(
+    doc(PSA_COL, retailerId),
+    (snap) => {
+      cb(snap.exists() ? (snap.data() as PanPsaRecord) : null);
+    },
+    (error) => {
+      console.warn("[PAN] psa listener skipped:", error.message);
+      cb(null);
+    },
+  );
 }
 
 export async function upsertPsaRecord(rec: PanPsaRecord) {
@@ -164,9 +171,16 @@ export function subscribePanActivation(
   retailerId: string,
   cb: (act: PanServiceActivation | null) => void,
 ) {
-  return onSnapshot(doc(ACTIVATIONS_COL, retailerId), (snap) => {
-    cb(snap.exists() ? (snap.data() as PanServiceActivation) : null);
-  });
+  return onSnapshot(
+    doc(ACTIVATIONS_COL, retailerId),
+    (snap) => {
+      cb(snap.exists() ? (snap.data() as PanServiceActivation) : null);
+    },
+    (error) => {
+      console.warn("[PAN] activation listener skipped:", error.message);
+      cb(null);
+    },
+  );
 }
 
 export async function setPanActivation(act: PanServiceActivation) {
@@ -197,12 +211,19 @@ export function subscribeRetailerOrders(
 ) {
   // Client-side ordering to avoid composite index — see project memory.
   const q = query(ORDERS_COL, where("retailerId", "==", retailerId));
-  return onSnapshot(q, (snap) => {
-    const list: PanOrder[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanOrder) }));
-    list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-    cb(list);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: PanOrder[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanOrder) }));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      cb(list);
+    },
+    (error) => {
+      console.warn("[PAN] retailer orders listener skipped:", error.message);
+      cb([]);
+    },
+  );
 }
 
 export function subscribeAllOrders(cb: (orders: PanOrder[]) => void) {
@@ -236,12 +257,19 @@ export function subscribeRetailerUtiCoupons(
   cb: (coupons: PanUtiCoupon[]) => void,
 ) {
   const q = query(UTI_COUPONS_COL, where("retailerId", "==", retailerId));
-  return onSnapshot(q, (snap) => {
-    const list: PanUtiCoupon[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
-    list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-    cb(list);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: PanUtiCoupon[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      cb(list);
+    },
+    (error) => {
+      console.warn("[PAN] UTI coupons listener skipped:", error.message);
+      cb([]);
+    },
+  );
 }
 
 export function subscribeAllUtiCoupons(cb: (coupons: PanUtiCoupon[]) => void) {
