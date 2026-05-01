@@ -398,16 +398,9 @@ const SERVICE_TILES: ServiceTile[] = [
   {
     to: "/admin/pan-portal-settings",
     title: "PAN Portal Settings",
-    subtitle: "PSA + NSDL eKYC + UTI Coupon",
+    subtitle: "UTI PSA + Coupon credentials & fees",
     icon: CreditCard,
     gradient: "from-sky-500 to-indigo-600",
-  },
-  {
-    to: "/admin/pan-refund-repair",
-    title: "PAN Refund Repair",
-    subtitle: "Reverse duplicate UTI refunds",
-    icon: ShieldAlert,
-    gradient: "from-amber-500 to-red-600",
   },
   {
     to: "/admin/trainings",

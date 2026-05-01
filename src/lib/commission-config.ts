@@ -112,7 +112,7 @@ export const DEFAULT_COMMISSION_SEEDS: CommissionConfig[] = [
   // --- Customer Charges ---
   {
     serviceKey: "pan-portal",
-    serviceName: "PAN Portal (PSA + NSDL)",
+    serviceName: "PAN Portal (UTI Coupon)",
     category: "Customer Charges",
     type: "customer_charge",
     enabled: true,

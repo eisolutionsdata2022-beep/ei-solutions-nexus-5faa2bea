@@ -23,7 +23,7 @@ export const PLATFORM_SERVICES: PlatformService[] = [
   { key: "money-transfer", name: "Money Transfer", category: "Core Services", route: "/retailer/money-transfer", description: "Fund transfer services", defaultFee: 10 },
   { key: "ippb", name: "IPPB Account Opening", category: "Core Services", route: "/retailer/ippb", description: "India Post Payments Bank account opening with biometric capture", defaultFee: 50 },
   { key: "ei-pay", name: "EI Solutions Pay (CSC)", category: "Core Services", route: "/retailer/ei-pay", description: "CSC services bridge", defaultFee: 20 },
-  { key: "pan-portal", name: "PAN Portal (PSA + NSDL)", category: "Core Services", route: "/retailer/pan-portal", description: "PSA Auto-ID registration & NSDL eKYC PAN application (Form 49A)", defaultFee: 107 },
+  { key: "pan-portal", name: "PAN Portal (UTI)", category: "Core Services", route: "/retailer/pan-portal", description: "UTI PSA registration & coupon purchase", defaultFee: 107 },
   // Professional Services
   { key: "horoscope", name: "Horoscope", category: "Professional Services", route: "/retailer/horoscope", description: "Horoscope generation service", defaultFee: 50 },
   { key: "matrimony", name: "Matrimony", category: "Professional Services", route: "/retailer/matrimony", description: "Matrimony profile management", defaultFee: 100 },
