@@ -396,8 +396,8 @@ export const testPanConnection = createServerFn({ method: "POST" })
 /* --------------- 6. UTI — purchase coupon -------------------------------- */
 
 const utiPurchaseInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   vleId: z.string().min(2).max(80),
   orderId: z.string().min(4).max(80),
   shopName: z.string().min(1).max(200),
@@ -436,9 +436,15 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiPurchaseInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiPurchaseResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const resolvedUrl = data.url || cfg?.utiCouponPurchaseUrl;
+    const resolvedCipher = data.cipher || cfg?.cipher;
+    if (!resolvedUrl || !resolvedCipher) {
+      return { success: false, error: "Provider credentials are not configured." };
+    }
     let creds: { apiKey: string; secret: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(resolvedCipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
@@ -453,7 +459,7 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       qty: data.qty,
     };
     try {
-      const res = await fetch(data.url, {
+      const res = await fetch(resolvedUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -655,8 +661,8 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
 /* --------------- 7. UTI — track PAN application by ack/coupon ------------ */
 
 const utiTrackInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   ackNo: z.string().min(4).max(80),
 });
 
@@ -675,13 +681,19 @@ export const panUtiPanStatusTrack = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => utiTrackInput.parse(input))
   .handler(async ({ data, context }): Promise<PanUtiTrackResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const resolvedUrl = data.url || cfg?.utiPanStatusUrl;
+    const resolvedCipher = data.cipher || cfg?.cipher;
+    if (!resolvedUrl || !resolvedCipher) {
+      return { success: false, error: "Provider credentials are not configured." };
+    }
     let creds: { apiKey: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(resolvedCipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
-    const qs = new URL(data.url);
+    const qs = new URL(resolvedUrl);
     qs.searchParams.set("api_key", creds.apiKey);
     qs.searchParams.set("order_id", data.ackNo);
     try {
