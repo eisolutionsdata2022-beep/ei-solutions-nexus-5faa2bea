@@ -74,18 +74,25 @@ export function subscribeUserActivations(
   cb: (activeKeys: Set<string>, list: ServiceActivation[]) => void,
 ) {
   const q = query(collection(db, "serviceActivations"), where("userId", "==", uid));
-  return onSnapshot(q, (snap) => {
-    const all: ServiceActivation[] = [];
-    snap.forEach((d) => all.push({ ...(d.data() as ServiceActivation), id: d.id }));
-    const now = Date.now();
-    const active = new Set<string>();
-    all.forEach((a) => {
-      if (!a.expiresAt || new Date(a.expiresAt).getTime() > now) {
-        active.add(a.serviceKey);
-      }
-    });
-    cb(active, all);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const all: ServiceActivation[] = [];
+      snap.forEach((d) => all.push({ ...(d.data() as ServiceActivation), id: d.id }));
+      const now = Date.now();
+      const active = new Set<string>();
+      all.forEach((a) => {
+        if (!a.expiresAt || new Date(a.expiresAt).getTime() > now) {
+          active.add(a.serviceKey);
+        }
+      });
+      cb(active, all);
+    },
+    (error) => {
+      console.warn("[ServiceActivation] user activations listener skipped:", error.message);
+      cb(new Set(), []);
+    },
+  );
 }
 
 /** Admin-side: subscribe to all activations (for the report page). */
