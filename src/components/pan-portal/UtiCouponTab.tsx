@@ -85,8 +85,11 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
   }
 
 
-  async function handlePurchase(e: FormEvent) {
-    e.preventDefault();
+  async function handlePurchase(eOrQty?: FormEvent | number) {
+    if (eOrQty && typeof eOrQty === "object" && "preventDefault" in eOrQty) {
+      eOrQty.preventDefault();
+    }
+    const overrideQty = typeof eOrQty === "number" ? eOrQty : null;
     if (!config.hasCredentials) {
       toast.error("Provider credentials are not configured. Please contact admin.");
       return;
@@ -103,7 +106,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
     // their PSA. For first-time buyers we force qty ≥ 2.
     const isFirstTime = !psaActive;
     const minQty = isFirstTime ? 2 : MIN_QTY;
-    const qty = Math.max(minQty, Math.min(MAX_QTY, quantity));
+    const baseQty = overrideQty ?? quantity;
+    const qty = Math.max(minQty, Math.min(MAX_QTY, baseQty));
     const totalDebit = fee * qty;
     setPurchasing(true);
     setProgress({ done: 0, total: qty });
