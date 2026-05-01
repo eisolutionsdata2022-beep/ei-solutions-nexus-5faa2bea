@@ -88,16 +88,15 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       toast.error("Mobile number missing or invalid in your profile. Update profile first.");
       return;
     }
-    // Provider rejects unregistered VLE IDs with "Vle Data Not Exist".
-    // Block purchase until PSA is registered or an existing UTI ID is linked.
-    if (!psaActive) {
-      toast.error(
-        "Register your PSA / VLE ID first. The provider rejects coupon purchases for unregistered VLEs (\"Vle Data Not Exist\").",
-        { duration: 6000 },
-      );
-      return;
-    }
-    const qty = Math.max(MIN_QTY, Math.min(MAX_QTY, quantity));
+    // NOTE: PSA gate intentionally removed. New retailers MUST be able to buy
+    // their first batch of 2 coupons — the upstream provider auto-creates the
+    // VLE / PSA ID after the first 2-coupon purchase, and we mirror that
+    // locally in step 4 below (`upsertPsaRecord`). Blocking on `!psaActive`
+    // created a chicken-and-egg deadlock where new users could never bootstrap
+    // their PSA. For first-time buyers we force qty ≥ 2.
+    const isFirstTime = !psaActive;
+    const minQty = isFirstTime ? 2 : MIN_QTY;
+    const qty = Math.max(minQty, Math.min(MAX_QTY, quantity));
     const totalDebit = fee * qty;
     setPurchasing(true);
     setProgress({ done: 0, total: qty });
@@ -301,20 +300,20 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
       {/* Training PDF — quick access right above the purchase card */}
       <UtiTrainingPdfCard />
       {!psaActive && (
-        <Card className="border-amber-300 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-900/60">
+        <Card className="border-blue-300 bg-blue-50/70 dark:bg-blue-950/20 dark:border-blue-900/60">
           <CardContent className="p-4 flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-              <ShieldAlert className="h-4.5 w-4.5 text-amber-600" />
+            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+              <Ticket className="h-4.5 w-4.5 text-blue-600" />
             </div>
             <div className="text-sm space-y-1">
-              <p className="font-semibold text-amber-900 dark:text-amber-200">
-                Register your PSA / VLE ID before buying coupons
+              <p className="font-semibold text-blue-900 dark:text-blue-200">
+                New here? Buy your first 2 coupons to activate your VLE ID
               </p>
-              <p className="text-amber-800/90 dark:text-amber-200/80">
-                The UTI provider rejects coupon purchases for unregistered VLE IDs (error: <em>"Vle Data Not Exist"</em>).
-                Open the <strong>PSA Registration</strong> tab and either register a new PSA (your ID will be{" "}
-                <code className="font-mono bg-white/70 dark:bg-black/30 px-1.5 py-0.5 rounded">{effectiveVleId}</code>)
-                or link an existing UTI / PSA ID. Coupon purchase will unlock automatically once your PSA is approved.
+              <p className="text-blue-800/90 dark:text-blue-200/80">
+                Your VLE ID will be{" "}
+                <code className="font-mono bg-white/70 dark:bg-black/30 px-1.5 py-0.5 rounded">{effectiveVleId}</code>.
+                The UTI provider auto-creates your PSA account after the first
+                2-coupon purchase. After that, buy any quantity (2 or more) anytime.
               </p>
             </div>
           </CardContent>
@@ -413,7 +412,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 ))}
               </div>
             </div>
-            <Button type="submit" disabled={purchasing || !psaActive} size="lg" className="w-full">
+            <Button type="submit" disabled={purchasing} size="lg" className="w-full">
               {purchasing ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -421,8 +420,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 </>
               ) : !psaActive ? (
                 <>
-                  <ShieldAlert className="h-5 w-5 mr-2" />
-                  Register PSA / VLE ID first
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Buy first 2 coupons & activate VLE ID — ₹{(fee * Math.max(2, quantity)).toLocaleString("en-IN")}
                 </>
               ) : (
                 <>
