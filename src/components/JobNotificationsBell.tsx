@@ -17,12 +17,19 @@ export function JobNotificationsBell() {
   useEffect(() => {
     if (!appUser?.uid) return;
     const q = query(collection(db, "jobNotifications"), where("userId", "==", appUser.uid));
-    const unsub = onSnapshot(q, (snap) => {
-      const list: JobNotificationDoc[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
-      list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-      setItems(list.slice(0, 30));
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list: JobNotificationDoc[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+        list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        setItems(list.slice(0, 30));
+      },
+      (error) => {
+        console.warn("[JobNotificationsBell] listener skipped:", error.message);
+        setItems([]);
+      },
+    );
     return unsub;
   }, [appUser?.uid]);
 
