@@ -56,6 +56,7 @@ import { Route as RetailerStaffRouteImport } from './routes/retailer.staff'
 import { Route as RetailerServicesRouteImport } from './routes/retailer.services'
 import { Route as RetailerReferralsRouteImport } from './routes/retailer.referrals'
 import { Route as RetailerProfileRouteImport } from './routes/retailer.profile'
+import { Route as RetailerPanPortalRouteImport } from './routes/retailer.pan-portal'
 import { Route as RetailerPageToolsRouteImport } from './routes/retailer.page-tools'
 import { Route as RetailerMyServicesRouteImport } from './routes/retailer.my-services'
 import { Route as RetailerMoneyTransferRouteImport } from './routes/retailer.money-transfer'
@@ -353,6 +354,11 @@ const RetailerReferralsRoute = RetailerReferralsRouteImport.update({
 const RetailerProfileRoute = RetailerProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => RetailerRoute,
+} as any)
+const RetailerPanPortalRoute = RetailerPanPortalRouteImport.update({
+  id: '/pan-portal',
+  path: '/pan-portal',
   getParentRoute: () => RetailerRoute,
 } as any)
 const RetailerPageToolsRoute = RetailerPageToolsRouteImport.update({
@@ -748,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -853,6 +860,7 @@ export interface FileRoutesByTo {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -966,6 +974,7 @@ export interface FileRoutesById {
   '/retailer/money-transfer': typeof RetailerMoneyTransferRoute
   '/retailer/my-services': typeof RetailerMyServicesRoute
   '/retailer/page-tools': typeof RetailerPageToolsRoute
+  '/retailer/pan-portal': typeof RetailerPanPortalRoute
   '/retailer/profile': typeof RetailerProfileRoute
   '/retailer/referrals': typeof RetailerReferralsRoute
   '/retailer/services': typeof RetailerServicesRoute
@@ -1080,6 +1089,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1185,6 +1195,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1297,6 +1308,7 @@ export interface FileRouteTypes {
     | '/retailer/money-transfer'
     | '/retailer/my-services'
     | '/retailer/page-tools'
+    | '/retailer/pan-portal'
     | '/retailer/profile'
     | '/retailer/referrals'
     | '/retailer/services'
@@ -1686,6 +1698,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/retailer/profile'
       preLoaderRoute: typeof RetailerProfileRouteImport
+      parentRoute: typeof RetailerRoute
+    }
+    '/retailer/pan-portal': {
+      id: '/retailer/pan-portal'
+      path: '/pan-portal'
+      fullPath: '/retailer/pan-portal'
+      preLoaderRoute: typeof RetailerPanPortalRouteImport
       parentRoute: typeof RetailerRoute
     }
     '/retailer/page-tools': {
@@ -2296,6 +2315,7 @@ interface RetailerRouteChildren {
   RetailerMoneyTransferRoute: typeof RetailerMoneyTransferRoute
   RetailerMyServicesRoute: typeof RetailerMyServicesRoute
   RetailerPageToolsRoute: typeof RetailerPageToolsRoute
+  RetailerPanPortalRoute: typeof RetailerPanPortalRoute
   RetailerProfileRoute: typeof RetailerProfileRoute
   RetailerReferralsRoute: typeof RetailerReferralsRoute
   RetailerServicesRoute: typeof RetailerServicesRoute
@@ -2325,6 +2345,7 @@ const RetailerRouteChildren: RetailerRouteChildren = {
   RetailerMoneyTransferRoute: RetailerMoneyTransferRoute,
   RetailerMyServicesRoute: RetailerMyServicesRoute,
   RetailerPageToolsRoute: RetailerPageToolsRoute,
+  RetailerPanPortalRoute: RetailerPanPortalRoute,
   RetailerProfileRoute: RetailerProfileRoute,
   RetailerReferralsRoute: RetailerReferralsRoute,
   RetailerServicesRoute: RetailerServicesRoute,
