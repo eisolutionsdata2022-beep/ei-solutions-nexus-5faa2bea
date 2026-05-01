@@ -62,10 +62,6 @@ function PanPortalPage() {
 
   useEffect(() => {
     let active = true;
-    const unsub = subscribePanConfig(setConfig, (error) => {
-      if (!active) return;
-      setConfigError(error.message || "Unable to load PAN settings");
-    });
     getPanClientConfig()
       .then((res) => {
         if (!active) return;
@@ -82,7 +78,6 @@ function PanPortalPage() {
       });
     return () => {
       active = false;
-      unsub();
     };
   }, []);
   useEffect(() => {
