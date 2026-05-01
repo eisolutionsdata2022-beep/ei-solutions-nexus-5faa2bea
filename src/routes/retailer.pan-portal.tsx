@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
-  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken,
+  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken, getPsaPrimaryVleId,
   createCouponOrder, updateCouponOrder, listCouponOrders,
 } from "@/lib/pan-portal-firebase";
 import {
@@ -23,6 +23,81 @@ import {
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { generateVleId } from "@/lib/vle-id";
 import { DEFAULT_PAN_CONFIG, type PanCouponOrder, type PanPortalConfig, type PanPsaRecord } from "@/lib/pan-portal-types";
+
+function looksLikeMissingVleError(message: string | undefined) {
+  const text = (message || "").toLowerCase();
+  return text.includes("vle data not exist") || text.includes("vle not exist") || text.includes("vle does not exist");
+}
+
+async function trySilentLegacyVleSync({
+  user,
+  cfg,
+  psa,
+}: {
+  user: NonNullable<ReturnType<typeof useAuth>["appUser"]>;
+  cfg: PanPortalConfig;
+  psa: PanPsaRecord;
+}) {
+  if (!cfg.credCipher || !psa.linkedExisting) return { synced: false as const };
+
+  const shopName = psa.shopName?.trim() || user.name || user.email;
+  const mobile = (psa.linkedMobile || psa.mobile || user.phone || "").trim();
+  const email = (psa.email || user.email || "").trim();
+  const address = (psa.address || user.address || "").trim();
+  const state = (psa.state || "").trim();
+  const pinCode = (psa.pinCode || "").trim();
+  const uidNo = (psa.uidNo || "").trim();
+  const panNo = (psa.panNo || "").trim().toUpperCase();
+  const vleId = getPsaPrimaryVleId(psa);
+
+  if (!shopName || !/^\d{10}$/.test(mobile) || !email || !address || !state || !/^\d{6}$/.test(pinCode) || !/^\d{12}$/.test(uidNo) || !/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(panNo)) {
+    return { synced: false as const, reason: "missing_profile" as const };
+  }
+
+  const res = await panPsaCreate({
+    data: {
+      credCipher: cfg.credCipher,
+      baseUrl: cfg.providerBaseUrl,
+      vleId,
+      vleName: psa.ownerName?.trim() || user.name || user.email,
+      vleShop: shopName,
+      vleLoc: address.slice(0, 50),
+      vleState: state,
+      vleUid: uidNo,
+      vlePin: pinCode,
+      vleEmail: email,
+      vleMob: mobile,
+      vlePan: panNo,
+    },
+  });
+
+  if (!res.success) {
+    return { synced: false as const, reason: "provider_failed" as const, error: res.error };
+  }
+
+  const now = new Date().toISOString();
+  await upsertPsaRecord({
+    ...psa,
+    vleId,
+    vleRegCode: vleId,
+    linkedMobile: mobile,
+    linkedExisting: false,
+    status: res.vleStatus === "SUCCESS" ? "approved" : "pending",
+    ownerName: psa.ownerName?.trim() || user.name || user.email,
+    shopName,
+    mobile,
+    email,
+    panNo,
+    uidNo,
+    address,
+    state,
+    pinCode,
+    remark: res.message || "Legacy VLE synced automatically during coupon purchase",
+    updatedAt: now,
+  });
+
+  return { synced: true as const, vleId };
+}
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -127,10 +202,9 @@ function PanPortalPage() {
 function PsaPanel({
   user, cfg, psa, onRefresh,
 }: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onRefresh: () => Promise<void>; }) {
-  // Default mode: if user already linked an existing VLE, show the upstream-register
-  // form so they can sync it with the provider after a "VLE Data Not Exist" failure.
+  // Keep manual sync available, but do not force migrated users into it by default.
   const defaultMode: "create" | "link" | "sync" =
-    psa?.linkedExisting ? "sync" : "create";
+    "create";
   const [mode, setMode] = useState<"create" | "link" | "sync">(defaultMode);
   return (
     <div className="space-y-4">
@@ -390,11 +464,13 @@ function PsaLinkForm({
       await upsertPsaRecord({
         retailerId: user.uid,
         vleId: id,
+        vleRegCode: id,
         status: "approved",
         linkedExisting: true,
         ownerName: user.name || user.email,
         shopName: user.name || user.email,
         mobile,
+        linkedMobile: mobile,
         email: user.email,
         remark: "Linked existing UTI VLE from old portal",
         createdAt: now,
@@ -484,23 +560,28 @@ function CouponBuyPanel({
   async function buy() {
     if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
+    const currentPsa = psa;
+    if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
     if (!confirm(`Buy ${qty} coupon(s) for ₹${total}? This will be debited from your wallet.`)) return;
     setBusy(true);
 
     let orderId = "";
     let debited = false;
     try {
+      let effectivePsa: PanPsaRecord = currentPsa;
+      let effectiveVleId = getPsaPrimaryVleId(currentPsa);
+
       // 1. Debit wallet first
       await atomicDebit(user.uid, total, {
         source: "pan-portal",
-        description: `UTI coupon × ${qty} (VLE ${psa!.vleId})`,
+        description: `UTI coupon × ${qty} (VLE ${effectiveVleId})`,
       });
       debited = true;
 
       // 2. Create local pending order
       const now = new Date().toISOString();
       orderId = await createCouponOrder({
-        retailerId: user.uid, vleId: psa!.vleId,
+        retailerId: user.uid, vleId: effectiveVleId,
         qty, couponType: 1,
         unitFee: cfg.couponRetailerFee, unitProviderCost: cfg.couponProviderCost,
         totalDebit: total,
@@ -508,9 +589,38 @@ function CouponBuyPanel({
       });
 
       // 3. Call provider
-      const res = await panCouponBuy({
-        data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: psa!.vleId, type: 1, qty },
+      let res = await panCouponBuy({
+        data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
       });
+
+      if (!res.success && effectivePsa.linkedExisting && looksLikeMissingVleError(res.error)) {
+        const syncResult = await trySilentLegacyVleSync({ user, cfg, psa: effectivePsa });
+
+        if (syncResult.synced) {
+          effectiveVleId = syncResult.vleId;
+          effectivePsa = {
+            ...effectivePsa,
+            vleId: effectiveVleId,
+            vleRegCode: effectiveVleId,
+            linkedExisting: false,
+          };
+          await updateCouponOrder(orderId, {
+            vleId: effectiveVleId,
+            message: "Legacy VLE auto-synced with UTI. Retrying purchase…",
+          });
+          res = await panCouponBuy({
+            data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
+          });
+        } else if (syncResult.reason === "missing_profile") {
+          await atomicCredit(user.uid, total, { source: "pan-portal", description: "Refund: linked VLE needs PAN/Aadhaar/address details before sync" });
+          await updateCouponOrder(orderId, {
+            status: "FAILED",
+            message: "Legacy VLE needs PAN, Aadhaar, address, PIN and email details before UTI sync can complete.",
+            refunded: true,
+          });
+          throw new Error("ഈ പഴയ VLE upstream sync ചെയ്യാൻ PAN, Aadhaar, address, PIN, email details വേണം. PSA tab-ൽ details update ചെയ്ത ശേഷം വീണ്ടും try ചെയ്യൂ.");
+        }
+      }
 
       if (!res.success) {
         // Refund + mark failed
@@ -565,10 +675,10 @@ function CouponBuyPanel({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              Your VLE is linked locally but may not be registered upstream with UTI yet.
-              If a purchase fails with <strong>"VLE Data Not Exist"</strong>, your wallet is
-              auto-refunded — open the <strong>PSA → Sync Linked VLE with UTI</strong> tab
-              to register your existing VLE ID upstream (the ID stays the same).
+              Your old VLE is linked from the previous portal. If UTI says <strong>"VLE Data Not Exist"</strong>,
+              the system now tries a silent upstream sync and retries the purchase automatically.
+              Only if your PAN/Aadhaar/address details are missing will the order be refunded and you’ll need
+              the <strong>PSA → Sync Linked VLE with UTI</strong> form.
             </AlertDescription>
           </Alert>
         )}

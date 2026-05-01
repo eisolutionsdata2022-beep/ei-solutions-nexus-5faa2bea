@@ -61,6 +61,13 @@ export async function loadPsaRecord(retailerId: string): Promise<PanPsaRecord | 
   };
 }
 
+export function getPsaPrimaryVleId(psa: Pick<PanPsaRecord, "vleId" | "linkedExisting" | "vleRegCode">): string {
+  if (psa.linkedExisting) {
+    return psa.vleRegCode?.trim() || psa.vleId;
+  }
+  return psa.vleId;
+}
+
 export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
   await setDoc(PSA_REF(rec.retailerId), rec, { merge: true });
 }
