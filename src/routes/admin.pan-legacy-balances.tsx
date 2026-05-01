@@ -80,6 +80,11 @@ function AdminPanLegacyBalances() {
   const [statusFilter, setStatusFilter] =
     useState<"all" | "pending" | "approved" | "rejected">("pending");
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
+  const [clearing, setClearing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     void refreshStats();
     return subscribeAllTransferRequests(setRequests);
