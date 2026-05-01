@@ -84,6 +84,17 @@ function resolveUpstreamAuth(creds: { apiKey: string; secret: string }): { bot_i
   return { bot_id: a, api_key: b };
 }
 
+function resolveAuthCandidates(creds: { apiKey: string; secret: string }): Array<{ bot_id: string; api_key: string }> {
+  const a = creds.apiKey.trim();
+  const b = creds.secret.trim();
+  const candidates = [
+    resolveUpstreamAuth(creds),
+    { bot_id: a, api_key: b },
+    { bot_id: b, api_key: a },
+  ];
+  return candidates.filter((c, i, arr) => arr.findIndex((x) => x.bot_id === c.bot_id && x.api_key === c.api_key) === i);
+}
+
 // ─── Provider POST helper (JSON body, per legacy PHP) ──────────────────
 function candidateProviderUrls(baseUrl: string, path: string): string[] {
   const cleanBase = baseUrl.replace(/\/+$/, "");
@@ -132,6 +143,43 @@ async function providerPost(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       last = { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg, url };
+    }
+  }
+
+  return last || {
+    ok: false,
+    status: 0,
+    json: { status: "FAILED", message: "Provider URL resolution failed" },
+    raw: "Provider URL resolution failed",
+    url: baseUrl,
+  };
+}
+
+async function providerGet(
+  baseUrl: string,
+  path: string,
+  query: Record<string, string | number>,
+): Promise<{ ok: boolean; status: number; json: any; raw: string; url: string }> {
+  let last: { ok: boolean; status: number; json: any; raw: string; url: string } | null = null;
+
+  for (const baseCandidate of candidateProviderUrls(baseUrl, path)) {
+    const url = new URL(baseCandidate);
+    for (const [key, value] of Object.entries(query)) url.searchParams.set(key, String(value));
+    try {
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(45_000),
+      });
+      const raw = await res.text();
+      let json: any = {};
+      try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
+      const result = { ok: res.ok, status: res.status, json, raw, url: url.toString() };
+      last = result;
+      if (!looksLikeHtmlNotFound(raw, res.status)) return result;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      last = { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg, url: url.toString() };
     }
   }
 
@@ -270,42 +318,57 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     try { creds = await decryptBlob(data.credCipher); }
     catch { return { success: false as const, error: "Provider credentials are corrupted." }; }
 
-    const auth = resolveUpstreamAuth(creds);
     const utrNo = generateUtrNo();
     const amount = data.qty * 107;
+    const authCandidates = resolveAuthCandidates(creds);
+    const apiKeyCandidates = [creds.apiKey.trim(), creds.secret.trim()]
+      .filter(Boolean)
+      .filter((v, i, arr) => arr.indexOf(v) === i);
 
-    // Per legacy PHP: WalletTransfer payload is EXACTLY these 5 fields.
-    // No `type` or `qty` go upstream — those are only used locally for
-    // wallet pricing/classification.
-    const payload = {
-      api_key: auth.api_key,
-      bot_id: auth.bot_id,
-      vle_id: data.vleId,
-      utr_no: utrNo,
-      amount,
+    const finalize = (r: { status: number; json: any; raw: string; url: string }) => {
+      const status = normalizeStatus(r.json?.status);
+      const results = r.json?.results || r.json?.result || {};
+      if (status === "SUCCESS" || status === "PENDING") {
+        return {
+          success: true as const,
+          status: status as "SUCCESS" | "PENDING",
+          message: r.json?.message || results?.message || "Coupon purchase submitted",
+          orderId: String(results?.txn_no || results?.utr_no || results?.order_id || utrNo),
+          date: String(results?.date || results?.txn_date || ""),
+          vleId: String(results?.vle_id || results?.vleid || data.vleId),
+          vleName: String(results?.vle_name || results?.vlename || ""),
+          qty: Number(results?.qty || data.qty),
+        };
+      }
+      return null;
     };
-    console.log("[PAN][CouponBuy] →", data.baseUrl, "/Api/WalletTransfer", { ...payload, api_key: "***", bot_id: auth.bot_id.slice(0, 6) + "***" });
-    const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", payload);
-    console.log("[PAN][CouponBuy] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 500));
 
-    const status = normalizeStatus(r.json?.status);
-    const results = r.json?.results || r.json?.result || {};
-    if (status === "SUCCESS" || status === "PENDING") {
-      return {
-        success: true as const,
-        status: status as "SUCCESS" | "PENDING",
-        message: r.json?.message || results?.message || "Coupon purchase submitted",
-        orderId: String(results?.txn_no || results?.utr_no || utrNo),
-        date: String(results?.date || results?.txn_date || ""),
-        vleId: String(results?.vle_id || results?.vleid || data.vleId),
-        vleName: String(results?.vle_name || results?.vlename || ""),
-        qty: Number(results?.qty || data.qty),
-      };
+    let lastError = "Provider request failed";
+
+    for (const auth of authCandidates) {
+      const payload = { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount };
+      console.log("[PAN][CouponBuy][legacy] →", data.baseUrl, { ...payload, api_key: "***", bot_id: auth.bot_id.slice(0, 6) + "***" });
+      const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", payload);
+      console.log("[PAN][CouponBuy][legacy] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
+      const ok = finalize(r);
+      if (ok) return ok;
+      lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
     }
-    return {
-      success: false as const,
-      error: r.json?.message || results?.message || `Provider error (HTTP ${r.status})`,
-    };
+
+    for (const apiKey of apiKeyCandidates) {
+      const r = await providerGet(data.baseUrl, "coupon_buy", {
+        api_key: apiKey,
+        vle_id: data.vleId,
+        type: data.type,
+        qty: data.qty,
+      });
+      console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
+      const ok = finalize(r);
+      if (ok) return ok;
+      lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
+    }
+
+    return { success: false as const, error: lastError };
   });
 
 // ═══════════════════════════════════════════════════════════════════════
