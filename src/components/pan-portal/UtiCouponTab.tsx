@@ -42,7 +42,7 @@ import { UtiTrainingPdfCard } from "./UtiTrainingPdfCard";
 import { VleAutoRegisterDialog } from "./VleAutoRegisterDialog";
 
 interface Props {
-  user: { uid: string; email: string; name?: string; phone?: string };
+  user: { uid: string; email: string; name?: string; phone?: string; address?: string };
   config: PanMasterConfig;
   psa: PanPsaRecord | null;
   coupons: PanUtiCoupon[];
