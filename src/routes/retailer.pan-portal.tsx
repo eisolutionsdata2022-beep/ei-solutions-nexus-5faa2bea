@@ -335,8 +335,7 @@ function PsaTab({
     }
     setSubmitting(true);
     try {
-      const cfg = await getPanConfig();
-      if (!cfg.cipher) throw new Error("Credentials not configured");
+      // Server function reads url + cipher from pan_config/master internally.
       // VLE ID must match the format the upstream UTI portal expects and that
       // the coupon-purchase call sends — `RMPMCST-<10-digit-mobile>`. Using
       // the raw Firebase uid here previously caused the provider to reject
@@ -345,8 +344,6 @@ function PsaTab({
       const properVleId = generateVleId(user.uid, user.phone);
       const res = await panPsaCreate({
         data: {
-          url: cfg.psaCreateUrl!,
-          cipher: cfg.cipher,
           vleId: properVleId,
           vleName: user.name || user.email,
           vleShop: form.shopName,
