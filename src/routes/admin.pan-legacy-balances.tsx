@@ -11,12 +11,14 @@
  * No PAN business logic touched — this is a pure money-migration tool.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc, runTransaction, updateDoc } from "firebase/firestore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { doc, runTransaction, updateDoc } from "firebase/firestore";
+import * as XLSX from "xlsx";
 import { db } from "@/lib/firebase";
 import { atomicCredit } from "@/lib/firebase-transactions";
 import { useAuth } from "@/lib/auth-context";
 import {
+  clearUnclaimedLegacyBalances,
   countLegacyBalances,
   subscribeAllTransferRequests,
   upsertLegacyBalance,
@@ -32,8 +34,11 @@ import {
   Clock,
   Database,
   Download,
+  FileSpreadsheet,
   Loader2,
   Search,
+  Trash2,
+  Upload,
   Wallet,
   XCircle,
 } from "lucide-react";
