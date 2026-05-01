@@ -31,6 +31,20 @@ const ORDERS_COL = collection(db, "pan_orders");
 const ACTIVATIONS_COL = collection(db, "pan_activations");
 const UTI_COUPONS_COL = collection(db, "pan_uti_coupons");
 
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)) as T;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).flatMap(([key, entry]) =>
+        entry === undefined ? [] : [[key, stripUndefined(entry)]],
+      ),
+    ) as T;
+  }
+  return value;
+}
+
 function normalizePanConfig(data: PanMasterConfig): PanMasterConfig {
   return {
     ...data,
@@ -184,12 +198,12 @@ export function newOrderId(retailerId: string): string {
 /* ------------------------------ UTI Coupons ------------------------------ */
 
 export async function createUtiCoupon(coupon: PanUtiCoupon) {
-  await setDoc(doc(UTI_COUPONS_COL, coupon.couponId), coupon, { merge: true });
+  await setDoc(doc(UTI_COUPONS_COL, coupon.couponId), stripUndefined(coupon), { merge: true });
 }
 
 export async function updateUtiCoupon(couponId: string, patch: Partial<PanUtiCoupon>) {
   await updateDoc(doc(UTI_COUPONS_COL, couponId), {
-    ...patch,
+    ...stripUndefined(patch),
     updatedAt: new Date().toISOString(),
   });
 }
