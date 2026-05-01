@@ -51,13 +51,20 @@ export async function getLoginPopupConfig(): Promise<LoginPopupConfig> {
 }
 
 export function subscribeLoginPopupConfig(cb: (cfg: LoginPopupConfig) => void) {
-  return onSnapshot(doc(db, DOC_PATH[0], DOC_PATH[1]), (snap) => {
-    if (!snap.exists()) {
+  return onSnapshot(
+    doc(db, DOC_PATH[0], DOC_PATH[1]),
+    (snap) => {
+      if (!snap.exists()) {
+        cb({ ...DEFAULT_LOGIN_POPUP });
+        return;
+      }
+      cb(normalize(snap.data() as Partial<LoginPopupConfig>));
+    },
+    (error) => {
+      console.warn("[LoginPopup] listener skipped:", error.message);
       cb({ ...DEFAULT_LOGIN_POPUP });
-      return;
-    }
-    cb(normalize(snap.data() as Partial<LoginPopupConfig>));
-  });
+    },
+  );
 }
 
 export async function saveLoginPopupConfig(
