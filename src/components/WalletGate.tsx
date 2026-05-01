@@ -42,14 +42,22 @@ export function WalletGate({ children }: WalletGateProps) {
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "wallets", appUser.uid), (snap) => {
-      if (snap.exists()) {
-        setBalance(snap.data().balance || 0);
-      } else {
+    const unsub = onSnapshot(
+      doc(db, "wallets", appUser.uid),
+      (snap) => {
+        if (snap.exists()) {
+          setBalance(snap.data().balance || 0);
+        } else {
+          setBalance(0);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.warn("[WalletGate] wallet listener skipped:", error.message);
         setBalance(0);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      },
+    );
 
     return unsub;
   }, [appUser]);
