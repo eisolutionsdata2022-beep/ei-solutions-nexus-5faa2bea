@@ -412,7 +412,7 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 ))}
               </div>
             </div>
-            <Button type="submit" disabled={purchasing || !psaActive} size="lg" className="w-full">
+            <Button type="submit" disabled={purchasing} size="lg" className="w-full">
               {purchasing ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -420,8 +420,8 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
                 </>
               ) : !psaActive ? (
                 <>
-                  <ShieldAlert className="h-5 w-5 mr-2" />
-                  Register PSA / VLE ID first
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Buy first 2 coupons & activate VLE ID — ₹{(fee * Math.max(2, quantity)).toLocaleString("en-IN")}
                 </>
               ) : (
                 <>
