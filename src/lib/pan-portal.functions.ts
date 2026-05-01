@@ -523,9 +523,11 @@ export const panUtiCouponPurchase = createServerFn({ method: "POST" })
       creds = await decryptCreds(resolvedCipher);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const cipherInfo = `len=${resolvedCipher.length} prefix=${resolvedCipher.slice(0, 8)} hasSeed=${!!process.env.LOVABLE_API_KEY}`;
-      console.error("[PAN][UTI buy] decryptCreds failed:", msg, cipherInfo);
-      return { success: false, error: `Provider credentials decrypt failed: ${msg} (${cipherInfo})` };
+      console.error("[PAN][UTI buy] decryptCreds failed:", msg, `len=${resolvedCipher.length} prefix=${resolvedCipher.slice(0, 8)} hasSeed=${!!process.env.LOVABLE_API_KEY}`);
+      return {
+        success: false,
+        error: "Provider credentials cannot be decrypted (encryption key changed). Admin must re-save the API key & secret in /admin/pan-portal-settings.",
+      };
     }
     const requestBody = {
       api_key: creds.apiKey,
