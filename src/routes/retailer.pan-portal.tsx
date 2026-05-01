@@ -127,22 +127,129 @@ function PanPortalPage() {
 function PsaPanel({
   user, cfg, psa, onRefresh,
 }: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onRefresh: () => Promise<void>; }) {
-  const [mode, setMode] = useState<"create" | "link">("create");
+  // Default mode: if user already linked an existing VLE, show the upstream-register
+  // form so they can sync it with the provider after a "VLE Data Not Exist" failure.
+  const defaultMode: "create" | "link" | "sync" =
+    psa?.linkedExisting ? "sync" : "create";
+  const [mode, setMode] = useState<"create" | "link" | "sync">(defaultMode);
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button variant={mode === "create" ? "default" : "outline"} onClick={() => setMode("create")} size="sm">
           <IdCard className="h-4 w-4 mr-1" />New PSA Registration
         </Button>
         <Button variant={mode === "link" ? "default" : "outline"} onClick={() => setMode("link")} size="sm">
           <Link2 className="h-4 w-4 mr-1" />Link Existing VLE
         </Button>
+        {psa?.linkedExisting && (
+          <Button variant={mode === "sync" ? "default" : "outline"} onClick={() => setMode("sync")} size="sm">
+            <RefreshCcw className="h-4 w-4 mr-1" />Sync Linked VLE with UTI
+          </Button>
+        )}
       </div>
-      {mode === "create"
-        ? <PsaCreateForm user={user} cfg={cfg} psa={psa} onRefresh={onRefresh} />
-        : <PsaLinkForm user={user} cfg={cfg} onRefresh={onRefresh} />}
+      {mode === "create" && <PsaCreateForm user={user} cfg={cfg} psa={psa} onRefresh={onRefresh} />}
+      {mode === "link"   && <PsaLinkForm user={user} cfg={cfg} onRefresh={onRefresh} />}
+      {mode === "sync" && psa && <PsaSyncForm user={user} cfg={cfg} psa={psa} onRefresh={onRefresh} />}
       {psa && <PsaPasswordResetCard cfg={cfg} psa={psa} />}
     </div>
+  );
+}
+
+// ─── PSA Sync (register the linked-existing VLE ID upstream) ───────────
+function PsaSyncForm({
+  user, cfg, psa, onRefresh,
+}: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord; onRefresh: () => Promise<void>; }) {
+  const [form, setForm] = useState({
+    shopName: psa.shopName || user.name || "",
+    panNo: (psa.panNo || "").toUpperCase(),
+    uidNo: psa.uidNo || "",
+    pinCode: psa.pinCode || "",
+    state: psa.state || "Kerala",
+    address: psa.address || user.address || "",
+    mobile: psa.mobile || user.phone || "",
+    email: psa.email || user.email,
+  });
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    if (!/^\d{10}$/.test(form.mobile)) { toast.error("Valid 10-digit mobile required"); return; }
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(form.panNo)) { toast.error("Invalid PAN format"); return; }
+    if (!/^\d{12}$/.test(form.uidNo)) { toast.error("Aadhaar must be 12 digits"); return; }
+    if (!/^\d{6}$/.test(form.pinCode)) { toast.error("PIN must be 6 digits"); return; }
+    if (!form.shopName.trim() || !form.address.trim() || !form.state.trim()) { toast.error("Shop name, address and state required"); return; }
+
+    setBusy(true);
+    try {
+      const res = await panPsaCreate({
+        data: {
+          credCipher: cfg.credCipher!, baseUrl: cfg.providerBaseUrl,
+          vleId: psa.vleId, // KEEP the existing linked ID
+          vleName: user.name || user.email,
+          vleShop: form.shopName.trim(), vleLoc: form.address.trim().slice(0, 50),
+          vleState: form.state.trim(), vleUid: form.uidNo,
+          vlePin: form.pinCode, vleEmail: form.email,
+          vleMob: form.mobile, vlePan: form.panNo.toUpperCase(),
+        },
+      });
+      if (!res.success) throw new Error(res.error);
+
+      const now = new Date().toISOString();
+      await upsertPsaRecord({
+        ...psa,
+        status: res.vleStatus === "SUCCESS" ? "approved" : "pending",
+        linkedExisting: false, // now properly registered upstream
+        ownerName: user.name || user.email,
+        shopName: form.shopName.trim(), mobile: form.mobile, email: form.email,
+        panNo: form.panNo.toUpperCase(), uidNo: form.uidNo,
+        address: form.address.trim(), state: form.state.trim(), pinCode: form.pinCode,
+        remark: res.message || "Synced linked VLE upstream",
+        updatedAt: now,
+      });
+      toast.success(`VLE ${psa.vleId} synced with UTI ✓ — you can buy coupons now.`);
+      await onRefresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="border-amber-500/40">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <RefreshCcw className="h-5 w-5 text-amber-600" />Sync Linked VLE with UTI
+        </CardTitle>
+        <CardDescription>
+          Your VLE ID <code className="font-mono">{psa.vleId}</code> is linked locally but not yet
+          registered in the UTI upstream system — that's why coupon purchases fail with
+          "VLE Data Not Exist". Fill in the details below to register your existing VLE
+          upstream <strong>without changing the ID</strong>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2 rounded-md bg-muted/40 px-3 py-2 text-xs">
+            VLE ID kept as: <code className="font-mono text-foreground">{psa.vleId}</code>
+          </div>
+          <div><Label>Shop Name</Label><Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} /></div>
+          <div><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+          <div className="sm:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+          <div><Label>Mobile (UTI registered)</Label><Input value={form.mobile} maxLength={10} inputMode="numeric" className="font-mono" onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} /></div>
+          <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          <div><Label>PAN No.</Label><Input value={form.panNo} maxLength={10} className="uppercase font-mono" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" /></div>
+          <div><Label>Aadhaar No.</Label><Input value={form.uidNo} maxLength={12} inputMode="numeric" className="font-mono" onChange={(e) => setForm({ ...form, uidNo: e.target.value.replace(/\D/g, "") })} placeholder="12-digit Aadhaar" /></div>
+          <div><Label>PIN Code</Label><Input value={form.pinCode} maxLength={6} inputMode="numeric" className="font-mono" onChange={(e) => setForm({ ...form, pinCode: e.target.value.replace(/\D/g, "") })} /></div>
+          <div className="sm:col-span-2">
+            <Button type="submit" disabled={busy || !cfg.credCipher}>
+              {busy ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Syncing…</> : `Sync ${psa.vleId} with UTI`}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
