@@ -4,6 +4,7 @@
  */
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -12,6 +13,7 @@ import {
   query,
   setDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type {
@@ -41,6 +43,36 @@ export async function upsertLegacyBalance(rec: PanLegacyBalance) {
     },
     { merge: true },
   );
+}
+
+/**
+ * Delete ALL legacy balance records that have NOT been claimed yet.
+ * Claimed records are preserved (audit trail / prevent re-claim).
+ * Used by admin "Clear & Replace" flow before uploading a fresh sheet.
+ */
+export async function clearUnclaimedLegacyBalances(): Promise<{ deleted: number; kept: number }> {
+  const snap = await getDocs(BAL_COL);
+  let deleted = 0;
+  let kept = 0;
+  let batch = writeBatch(db);
+  let ops = 0;
+  for (const d of snap.docs) {
+    const data = d.data() as PanLegacyBalance;
+    if (data.claimed) {
+      kept++;
+      continue;
+    }
+    batch.delete(d.ref);
+    deleted++;
+    ops++;
+    if (ops >= 400) {
+      await batch.commit();
+      batch = writeBatch(db);
+      ops = 0;
+    }
+  }
+  if (ops > 0) await batch.commit();
+  return { deleted, kept };
 }
 
 /* ----------------------------- transfer requests --------------------------- */

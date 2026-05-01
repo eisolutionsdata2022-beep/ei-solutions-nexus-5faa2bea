@@ -11,12 +11,14 @@
  * No PAN business logic touched — this is a pure money-migration tool.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc, runTransaction, updateDoc } from "firebase/firestore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { doc, runTransaction, updateDoc } from "firebase/firestore";
+import * as XLSX from "xlsx";
 import { db } from "@/lib/firebase";
 import { atomicCredit } from "@/lib/firebase-transactions";
 import { useAuth } from "@/lib/auth-context";
 import {
+  clearUnclaimedLegacyBalances,
   countLegacyBalances,
   subscribeAllTransferRequests,
   upsertLegacyBalance,
@@ -32,8 +34,11 @@ import {
   Clock,
   Database,
   Download,
+  FileSpreadsheet,
   Loader2,
   Search,
+  Trash2,
+  Upload,
   Wallet,
   XCircle,
 } from "lucide-react";
@@ -74,6 +79,11 @@ function AdminPanLegacyBalances() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<"all" | "pending" | "approved" | "rejected">("pending");
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
+  const [clearing, setClearing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void refreshStats();
@@ -117,6 +127,94 @@ function AdminPanLegacyBalances() {
       toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
       setImporting(false);
+    }
+  }
+
+  function handleDownloadTemplate() {
+    const sample = [
+      { Username: "RMPMCST-9447175704", Mobile: "9447175704", Name: "Sample Retailer", Balance: 1250.5 },
+      { Username: "RMPMCST-9876543210", Mobile: "9876543210", Name: "Another Retailer", Balance: 500 },
+    ];
+    const ws = XLSX.utils.json_to_sheet(sample);
+    ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 28 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LegacyBalances");
+    XLSX.writeFile(wb, "legacy-pan-balances-template.xlsx");
+    toast.success("Template downloaded — fill Username, Mobile, Name, Balance");
+  }
+
+  async function handleUploadFile(file: File) {
+    setUploading(true);
+    setUploadProgress({ done: 0, total: 0 });
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws) throw new Error("Sheet not found in file");
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+
+      const norm = (k: string) => k.trim().toLowerCase();
+      const records = rows
+        .map((row) => {
+          const m: Record<string, unknown> = {};
+          Object.keys(row).forEach((k) => (m[norm(k)] = row[k]));
+          const username = String(m["username"] ?? m["vle id"] ?? m["vleid"] ?? "").trim().toUpperCase();
+          const mobile = String(m["mobile"] ?? m["phone"] ?? "").replace(/\D/g, "").slice(-10);
+          const name = String(m["name"] ?? m["full name"] ?? "").trim();
+          const balance = Number(String(m["balance"] ?? m["amount"] ?? "0").replace(/[,₹\s]/g, ""));
+          return { username, mobile, name, balance };
+        })
+        .filter((r) => r.username && r.mobile.length === 10 && Number.isFinite(r.balance) && r.balance > 0);
+
+      if (records.length === 0) {
+        throw new Error("No valid rows found. Required columns: Username, Mobile, Name, Balance");
+      }
+
+      if (!confirm(`Upload ${records.length} legacy balance records? Existing records with the same Username will be updated.`)) {
+        setUploading(false);
+        return;
+      }
+
+      setUploadProgress({ done: 0, total: records.length });
+      const importedAt = new Date().toISOString();
+      let total = 0;
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        await upsertLegacyBalance({
+          username: r.username,
+          mobile: r.mobile,
+          name: r.name,
+          balance: r.balance,
+          remaining: r.balance,
+          claimed: false,
+          importedAt,
+        });
+        total += r.balance;
+        if (i % 5 === 0) setUploadProgress({ done: i + 1, total: records.length });
+      }
+      setUploadProgress({ done: records.length, total: records.length });
+      toast.success(`Uploaded ${records.length} records (₹${total.toLocaleString("en-IN")})`);
+      await refreshStats();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleClearAll() {
+    if (!confirm("Delete ALL UNCLAIMED legacy balance records? Already-claimed records will be kept for audit. This cannot be undone.")) return;
+    if (!confirm("Are you absolutely sure? Click OK to confirm deletion.")) return;
+    setClearing(true);
+    try {
+      const res = await clearUnclaimedLegacyBalances();
+      toast.success(`Deleted ${res.deleted} unclaimed · kept ${res.kept} claimed`);
+      await refreshStats();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Clear failed");
+    } finally {
+      setClearing(false);
     }
   }
 
@@ -259,6 +357,76 @@ function AdminPanLegacyBalances() {
             </Button>
             <Button variant="outline" onClick={refreshStats}>
               Refresh stats
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upload custom Excel/CSV */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" /> Upload Custom Sheet (Excel / CSV)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-2">
+            <p className="font-semibold">📋 Required columns (case-insensitive):</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li><strong>Username</strong> — e.g. <code>RMPMCST-9447175704</code></li>
+              <li><strong>Mobile</strong> — 10-digit number (must match retailer's claim mobile)</li>
+              <li><strong>Name</strong> — retailer's name from old portal</li>
+              <li><strong>Balance</strong> — amount in ₹ (e.g. <code>1250.50</code>)</li>
+            </ul>
+            <p className="text-xs text-muted-foreground pt-1">
+              Existing rows with the same Username are <strong>updated</strong>. New rows are added.
+              For a complete fresh start, click <em>Clear Unclaimed</em> first.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+              <Download className="h-4 w-4 mr-2" /> Download Template (.xlsx)
+            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUploadFile(f);
+              }}
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Uploading {uploadProgress.done}/{uploadProgress.total}…
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" /> Upload Sheet
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleClearAll}
+              disabled={clearing}
+            >
+              {clearing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Clear Unclaimed
             </Button>
           </div>
         </CardContent>
