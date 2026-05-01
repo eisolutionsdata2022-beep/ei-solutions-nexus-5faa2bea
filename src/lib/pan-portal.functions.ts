@@ -113,9 +113,72 @@ function getDb() {
   return getFirestore(app);
 }
 
-async function readPanMasterConfig(): Promise<PanMasterConfig> {
-  const snap = await getDoc(doc(getDb(), "pan_config", "master"));
-  const data = snap.exists() ? (snap.data() as PanMasterConfig) : {};
+/**
+ * Decode a single Firestore REST API field value to a plain JS value.
+ * Supports the value types we actually store in pan_config (strings, numbers,
+ * booleans, timestamps).
+ */
+function decodeFsField(val: any): unknown {
+  if (!val || typeof val !== "object") return undefined;
+  if ("stringValue" in val) return val.stringValue;
+  if ("integerValue" in val) return Number(val.integerValue);
+  if ("doubleValue" in val) return Number(val.doubleValue);
+  if ("booleanValue" in val) return Boolean(val.booleanValue);
+  if ("timestampValue" in val) return val.timestampValue;
+  if ("nullValue" in val) return null;
+  if ("mapValue" in val) {
+    const out: Record<string, unknown> = {};
+    const fields = val.mapValue.fields || {};
+    for (const k of Object.keys(fields)) out[k] = decodeFsField(fields[k]);
+    return out;
+  }
+  if ("arrayValue" in val) {
+    return (val.arrayValue.values || []).map((v: any) => decodeFsField(v));
+  }
+  return undefined;
+}
+
+/**
+ * Read pan_config/master via Firestore REST API using the caller's verified
+ * Firebase ID token. Falls back to the unauthenticated client SDK (which only
+ * succeeds for admins under the current rules) if no token is provided.
+ *
+ * The REST call carries the user's auth context, so the security rule
+ * `match /pan_config/master { allow read: if isAuthed(); }` is sufficient
+ * for retailers to load non-sensitive settings.
+ */
+async function readPanMasterConfig(idToken?: string): Promise<PanMasterConfig> {
+  let raw: Record<string, unknown> = {};
+
+  if (idToken) {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/pan_config/master`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { fields?: Record<string, any> };
+        const fields = json.fields || {};
+        const decoded: Record<string, unknown> = {};
+        for (const k of Object.keys(fields)) decoded[k] = decodeFsField(fields[k]);
+        raw = decoded;
+      } else if (res.status !== 404) {
+        const body = await res.text().catch(() => "");
+        console.warn(`[PAN] REST read pan_config/master ${res.status}: ${body.slice(0, 200)}`);
+      }
+    } catch (err) {
+      console.warn("[PAN] REST read pan_config/master failed:", err);
+    }
+  } else {
+    try {
+      const snap = await getDoc(doc(getDb(), "pan_config", "master"));
+      if (snap.exists()) raw = snap.data() as Record<string, unknown>;
+    } catch (err) {
+      console.warn("[PAN] SDK read pan_config/master failed:", err);
+    }
+  }
+
+  const data = raw as PanMasterConfig;
   const utiCouponPurchaseUrl = data.utiCouponPurchaseUrl?.trim();
   const utiPanStatusUrl = data.utiPanStatusUrl?.trim();
 
@@ -143,7 +206,8 @@ export const getPanClientConfig = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<PanClientConfigResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
     try {
-      const config = await readPanMasterConfig();
+      const idToken = (context as any).firebaseIdToken as string | undefined;
+      const config = await readPanMasterConfig(idToken);
       return { success: true, config: sanitizePanConfig(config) };
     } catch (err) {
       console.error("[PAN] failed to load client config:", err);
