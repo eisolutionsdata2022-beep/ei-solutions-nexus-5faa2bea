@@ -22,16 +22,23 @@ export function useDisabledServices() {
 
   useEffect(() => {
     // Listen to platformServices collection
-    const unsub = onSnapshot(collection(db, "platformServices"), (snap) => {
-      const disabled = new Set<string>();
-      snap.forEach((d) => {
-        const data = d.data();
-        if (data.enabled === false) {
-          disabled.add(d.id); // key like "recharge-bbps"
-        }
-      });
-      setDisabledKeys(disabled);
-    });
+    const unsub = onSnapshot(
+      collection(db, "platformServices"),
+      (snap) => {
+        const disabled = new Set<string>();
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data.enabled === false) {
+            disabled.add(d.id); // key like "recharge-bbps"
+          }
+        });
+        setDisabledKeys(disabled);
+      },
+      (error) => {
+        console.warn("[ServicePermissionCheck] platformServices listener skipped:", error.message);
+        setDisabledKeys(new Set());
+      },
+    );
     return unsub;
   }, []);
 

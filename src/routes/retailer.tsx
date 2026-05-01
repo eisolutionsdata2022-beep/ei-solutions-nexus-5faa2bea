@@ -45,17 +45,31 @@ function RetailerLayout() {
   // Subscribe to current user's permissions
   useEffect(() => {
     if (!appUser?.uid) return;
-    return onSnapshot(doc(db, "userPermissions", appUser.uid), (snap) => {
-      setPerm(snap.exists() ? (snap.data() as UserPermissionDoc) : null);
-    });
+    return onSnapshot(
+      doc(db, "userPermissions", appUser.uid),
+      (snap) => {
+        setPerm(snap.exists() ? (snap.data() as UserPermissionDoc) : null);
+      },
+      (error) => {
+        console.warn("[RetailerLayout] userPermissions listener skipped:", error.message);
+        setPerm(null);
+      },
+    );
   }, [appUser?.uid]);
 
   // Subscribe to assigned plan (if any)
   useEffect(() => {
     if (!perm?.planId) { setPlan(null); return; }
-    return onSnapshot(doc(db, "servicePlans", perm.planId), (snap) => {
-      setPlan(snap.exists() ? ({ id: snap.id, ...snap.data() } as ServicePlan) : null);
-    });
+    return onSnapshot(
+      doc(db, "servicePlans", perm.planId),
+      (snap) => {
+        setPlan(snap.exists() ? ({ id: snap.id, ...snap.data() } as ServicePlan) : null);
+      },
+      (error) => {
+        console.warn("[RetailerLayout] servicePlans listener skipped:", error.message);
+        setPlan(null);
+      },
+    );
   }, [perm?.planId]);
 
   // Subscribe to user's activations

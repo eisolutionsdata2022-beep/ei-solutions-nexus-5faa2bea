@@ -29,19 +29,26 @@ export async function getMinBalanceConfig(): Promise<MinBalanceConfig> {
 }
 
 export function subscribeMinBalanceConfig(cb: (cfg: MinBalanceConfig) => void) {
-  return onSnapshot(doc(db, DOC_PATH[0], DOC_PATH[1]), (snap) => {
-    if (!snap.exists()) {
+  return onSnapshot(
+    doc(db, DOC_PATH[0], DOC_PATH[1]),
+    (snap) => {
+      if (!snap.exists()) {
+        cb({ defaultMinBalance: FALLBACK_MIN_BALANCE, overrides: {} });
+        return;
+      }
+      const data = snap.data() as MinBalanceConfig;
+      cb({
+        defaultMinBalance: Number(data.defaultMinBalance ?? FALLBACK_MIN_BALANCE),
+        overrides: data.overrides ?? {},
+        updatedAt: data.updatedAt,
+        updatedBy: data.updatedBy,
+      });
+    },
+    (error) => {
+      console.warn("[MinBalanceConfig] listener skipped:", error.message);
       cb({ defaultMinBalance: FALLBACK_MIN_BALANCE, overrides: {} });
-      return;
-    }
-    const data = snap.data() as MinBalanceConfig;
-    cb({
-      defaultMinBalance: Number(data.defaultMinBalance ?? FALLBACK_MIN_BALANCE),
-      overrides: data.overrides ?? {},
-      updatedAt: data.updatedAt,
-      updatedBy: data.updatedBy,
-    });
-  });
+    },
+  );
 }
 
 export async function saveMinBalanceDefault(amount: number, updatedBy?: string): Promise<void> {
