@@ -146,6 +146,7 @@ export const panPsaCreate = createServerFn({ method: "POST" })
 
     const r = await providerGet(data.baseUrl, "/psa_create", {
       api_key: creds.apiKey,
+      secret: creds.secret,
       vle_id: data.vleId,
       vle_name: data.vleName,
       vle_shop: data.vleShop,
@@ -196,6 +197,7 @@ export const panCouponBuy = createServerFn({ method: "POST" })
 
     const r = await providerGet(data.baseUrl, "/coupon_buy", {
       api_key: creds.apiKey,
+      secret: creds.secret,
       vle_id: data.vleId,
       type: data.type,
       qty: data.qty,
@@ -241,6 +243,7 @@ export const panCouponStatus = createServerFn({ method: "POST" })
 
     const r = await providerGet(data.baseUrl, "/coupon_status", {
       api_key: creds.apiKey,
+      secret: creds.secret,
       order_id: data.orderId,
     });
 
@@ -280,6 +283,7 @@ export const panPsaPasswordReset = createServerFn({ method: "POST" })
 
     const r = await providerGet(data.baseUrl, "/psa_password", {
       api_key: creds.apiKey,
+      secret: creds.secret,
       vle_id: data.vleId,
     });
 
