@@ -204,9 +204,13 @@ export const panPsaCreate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => psaCreateInput.parse(input))
   .handler(async ({ data, context }): Promise<PanPsaResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const url = data.url || cfg?.psaCreateUrl;
+    const cipher = data.cipher || cfg?.cipher;
+    if (!url || !cipher) return { success: false, error: "Provider not configured" };
     let creds: { apiKey: string; secret: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(cipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted. Re-save them in admin." };
     }
