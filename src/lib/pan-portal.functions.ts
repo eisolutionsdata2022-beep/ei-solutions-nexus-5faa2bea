@@ -181,8 +181,8 @@ export const encryptPanCredentials = createServerFn({ method: "POST" })
 /* ------------------------ 2. PSA Auto-ID — create ------------------------ */
 
 const psaCreateInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   vleId: z.string().min(2).max(80),
   vleName: z.string().min(1).max(200),
   vleShop: z.string().min(1).max(200),
