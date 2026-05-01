@@ -934,7 +934,7 @@ function PanTab({
       });
 
       // Submit hidden form to NSDL
-      const dashboardUrl = cfg.digipayDashboardUrl || "https://digipaydashboard.religaredigital.in/Login/Authenticate";
+      const dashboardUrl = config.digipayDashboardUrl || "https://digipaydashboard.religaredigital.in/Login/Authenticate";
       const f = document.createElement("form");
       f.method = "POST";
       f.action = dashboardUrl;
