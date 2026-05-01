@@ -47,7 +47,18 @@ const PSA_REF = (retailerId: string) => doc(db, "pan_psa_records", retailerId);
 
 export async function loadPsaRecord(retailerId: string): Promise<PanPsaRecord | null> {
   const snap = await getDoc(PSA_REF(retailerId));
-  return snap.exists() ? (snap.data() as PanPsaRecord) : null;
+  if (!snap.exists()) return null;
+
+  const raw = snap.data() as PanPsaRecord & {
+    vleRegCode?: string;
+    linkedMobile?: string;
+  };
+
+  return {
+    ...raw,
+    vleId: raw.linkedExisting ? raw.vleRegCode?.trim() || raw.vleId : raw.vleId,
+    mobile: raw.linkedMobile?.trim() || raw.mobile,
+  };
 }
 
 export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
