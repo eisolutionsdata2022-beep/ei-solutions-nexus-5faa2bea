@@ -19,7 +19,13 @@ service cloud.firestore {
     // grant access to these paths (handled by removing wildcard write).
     // -----------------------------------------------------------------
     match /csc_config/{doc}  { allow read, write: if isAdmin(); }
-    match /pan_config/{doc}  { allow read, write: if isAdmin(); }
+    // pan_config/master holds non-secret settings (URLs, fees, enabled flags)
+    // and an AES-GCM-encrypted credential cipher (key stored only in
+    // LOVABLE_API_KEY server secret — clients cannot decrypt). Authenticated
+    // retailers need to read these settings to load the PAN portal.
+    // The webhook HMAC secret lives in pan_config/secrets and stays admin-only.
+    match /pan_config/master  { allow read: if isAuthed(); allow write: if isAdmin(); }
+    match /pan_config/{doc}   { allow read, write: if isAdmin(); }
     match /platformConfig/{doc} { allow read: if isAuthed(); allow write: if isAdmin(); }
 
     // -----------------------------------------------------------------

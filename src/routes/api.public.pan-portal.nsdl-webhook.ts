@@ -85,10 +85,18 @@ export const Route = createFileRoute("/api/public/pan-portal/nsdl-webhook")({
 
         // Verify HMAC signature if admin configured one.
         try {
-          const cfgSnap = await getDoc(doc(db, "pan_config", "master"));
-          const webhookSecret = cfgSnap.exists()
-            ? ((cfgSnap.data() as Record<string, unknown>).webhookSecret as string | undefined)
+          // webhookSecret now lives in pan_config/secrets (admin-only).
+          // Fall back to legacy location pan_config/master for older installs.
+          const secretsSnap = await getDoc(doc(db, "pan_config", "secrets")).catch(() => null);
+          let webhookSecret = secretsSnap && secretsSnap.exists()
+            ? ((secretsSnap.data() as Record<string, unknown>).webhookSecret as string | undefined)
             : undefined;
+          if (!webhookSecret) {
+            const cfgSnap = await getDoc(doc(db, "pan_config", "master")).catch(() => null);
+            webhookSecret = cfgSnap && cfgSnap.exists()
+              ? ((cfgSnap.data() as Record<string, unknown>).webhookSecret as string | undefined)
+              : undefined;
+          }
           if (webhookSecret && webhookSecret.length >= 8) {
             const sig = request.headers.get("x-webhook-signature") || "";
             const expected = await hmacSha256(webhookSecret, body);

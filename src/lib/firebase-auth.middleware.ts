@@ -26,6 +26,6 @@ export const firebaseAuthMiddleware = createMiddleware({ type: "function" })
     const token = (context as any).firebaseIdToken as string;
     const authUser = token ? await verifyFirebaseToken(token) : null;
     return next({
-      context: { authUser },
+      context: { authUser, firebaseIdToken: token || "" },
     });
   });
