@@ -46,16 +46,18 @@ function stripUndefined<T>(value: T): T {
 }
 
 function normalizePanConfig(data: PanMasterConfig): PanMasterConfig {
+  const utiCouponPurchaseUrl = data.utiCouponPurchaseUrl?.trim();
+  const utiPanStatusUrl = data.utiPanStatusUrl?.trim();
+
   return {
     ...data,
-    utiCouponPurchaseUrl:
-      !data.utiCouponPurchaseUrl || /\/Api\/PSACoupon$/i.test(data.utiCouponPurchaseUrl)
-        ? PAN_DEFAULT_URLS.utiCouponPurchaseUrl
-        : data.utiCouponPurchaseUrl,
-    utiPanStatusUrl:
-      !data.utiPanStatusUrl || /\/Api\/PANStatus$/i.test(data.utiPanStatusUrl)
-        ? PAN_DEFAULT_URLS.utiPanStatusUrl
-        : data.utiPanStatusUrl,
+    // Keep the admin-saved upstream URLs exactly as configured.
+    // Earlier code force-replaced legacy working endpoints like
+    // `/Api/PSACoupon` and `/Api/PANStatus` with the default
+    // `coupon_buy`/`coupon_status` URLs, which could break purchases for
+    // every retailer immediately after config load.
+    utiCouponPurchaseUrl: utiCouponPurchaseUrl || PAN_DEFAULT_URLS.utiCouponPurchaseUrl,
+    utiPanStatusUrl: utiPanStatusUrl || PAN_DEFAULT_URLS.utiPanStatusUrl,
   };
 }
 
