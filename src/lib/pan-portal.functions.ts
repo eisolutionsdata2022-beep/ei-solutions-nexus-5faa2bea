@@ -85,30 +85,63 @@ function resolveUpstreamAuth(creds: { apiKey: string; secret: string }): { bot_i
 }
 
 // ─── Provider POST helper (JSON body, per legacy PHP) ──────────────────
+function candidateProviderUrls(baseUrl: string, path: string): string[] {
+  const cleanBase = baseUrl.replace(/\/+$/, "");
+  const pathClean = path.replace(/^\/+/, "");
+  const normalized = [
+    `${cleanBase}/${pathClean}`,
+    cleanBase.includes("/index.php") ? "" : `${cleanBase}/index.php/${pathClean}`,
+    cleanBase.endsWith("/api") ? `${cleanBase}/index.php/${pathClean}` : "",
+    cleanBase.endsWith("/api") ? `${cleanBase.replace(/\/api$/, "")}/index.php/${pathClean}` : "",
+  ].filter(Boolean);
+  return [...new Set(normalized)];
+}
+
+function looksLikeHtmlNotFound(raw: string, status: number): boolean {
+  const text = raw.toLowerCase();
+  return status === 404 || text.includes("<!doctype html") || text.includes("<html") || text.includes("page not found");
+}
+
 async function providerPost(
   baseUrl: string,
   path: string,
   body: Record<string, unknown>,
-): Promise<{ ok: boolean; status: number; json: any; raw: string }> {
-  const url = baseUrl.replace(/\/+$/, "") + path;
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(45_000),
-    });
-    const raw = await res.text();
-    let json: any = {};
-    try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
-    return { ok: res.ok, status: res.status, json, raw };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg };
+): Promise<{ ok: boolean; status: number; json: any; raw: string; url: string }> {
+  let last: { ok: boolean; status: number; json: any; raw: string; url: string } | null = null;
+
+  for (const url of candidateProviderUrls(baseUrl, path)) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(45_000),
+      });
+      const raw = await res.text();
+      let json: any = {};
+      try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
+      const result = { ok: res.ok, status: res.status, json, raw, url };
+      last = result;
+      if (!looksLikeHtmlNotFound(raw, res.status)) {
+        return result;
+      }
+      console.warn("[PAN] provider path miss, trying fallback:", url, "status=", res.status);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      last = { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg, url };
+    }
   }
+
+  return last || {
+    ok: false,
+    status: 0,
+    json: { status: "FAILED", message: "Provider URL resolution failed" },
+    raw: "Provider URL resolution failed",
+    url: baseUrl,
+  };
 }
 
 function generateUtrNo(): string {
@@ -253,7 +286,7 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     };
     console.log("[PAN][CouponBuy] →", data.baseUrl, "/Api/WalletTransfer", { ...payload, api_key: "***", bot_id: auth.bot_id.slice(0, 6) + "***" });
     const r = await providerPost(data.baseUrl, "/Api/WalletTransfer", payload);
-    console.log("[PAN][CouponBuy] ← status=", r.status, "body=", r.raw.slice(0, 500));
+    console.log("[PAN][CouponBuy] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 500));
 
     const status = normalizeStatus(r.json?.status);
     const results = r.json?.results || r.json?.result || {};
