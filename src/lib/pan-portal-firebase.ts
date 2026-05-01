@@ -1,282 +1,96 @@
 /**
- * PAN Portal — Firestore helpers (client-safe).
- * Reads master config, PSA records, orders. Writes happen server-side or
- * via the admin UI directly.
+ * PAN Portal — Firestore helpers (UTI PSA + Coupon).
  */
 import {
   collection,
   doc,
   getDoc,
-  onSnapshot,
+  getDocs,
   orderBy,
   query,
   setDoc,
   updateDoc,
   where,
+  limit,
+  addDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
-  PAN_DEFAULT_FEES,
-  PAN_DEFAULT_URLS,
-  type PanMasterConfig,
-  type PanOrder,
+  DEFAULT_PAN_CONFIG,
+  type PanCouponOrder,
+  type PanPortalConfig,
   type PanPsaRecord,
-  type PanServiceActivation,
-  type PanUtiCoupon,
 } from "./pan-portal-types";
 
-const CONFIG_DOC = doc(db, "pan_config", "master");
-const PSA_COL = collection(db, "pan_psa_records");
-const ORDERS_COL = collection(db, "pan_orders");
-const ACTIVATIONS_COL = collection(db, "pan_activations");
-const UTI_COUPONS_COL = collection(db, "pan_uti_coupons");
+// ─── Config ────────────────────────────────────────────────────────────
+const CONFIG_REF = () => doc(db, "pan_config", "master");
 
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map((item) => stripUndefined(item)) as T;
-  }
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).flatMap(([key, entry]) =>
-        entry === undefined ? [] : [[key, stripUndefined(entry)]],
-      ),
-    ) as T;
-  }
-  return value;
+export async function loadPanConfig(): Promise<PanPortalConfig> {
+  const snap = await getDoc(CONFIG_REF());
+  if (!snap.exists()) return { ...DEFAULT_PAN_CONFIG };
+  return { ...DEFAULT_PAN_CONFIG, ...(snap.data() as PanPortalConfig) };
 }
 
-function normalizePanConfig(data: PanMasterConfig): PanMasterConfig {
-  const utiCouponPurchaseUrl = data.utiCouponPurchaseUrl?.trim();
-  const utiPanStatusUrl = data.utiPanStatusUrl?.trim();
-
-  return {
-    ...data,
-    // Keep the admin-saved upstream URLs exactly as configured.
-    // Earlier code force-replaced legacy working endpoints like
-    // `/Api/PSACoupon` and `/Api/PANStatus` with the default
-    // `coupon_buy`/`coupon_status` URLs, which could break purchases for
-    // every retailer immediately after config load.
-    utiCouponPurchaseUrl: utiCouponPurchaseUrl || PAN_DEFAULT_URLS.utiCouponPurchaseUrl,
-    utiPanStatusUrl: utiPanStatusUrl || PAN_DEFAULT_URLS.utiPanStatusUrl,
-  };
-}
-
-/* ------------------------------ master config ----------------------------- */
-
-export async function getPanConfig(): Promise<PanMasterConfig> {
-  const snap = await getDoc(CONFIG_DOC);
-  const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
-  return {
-    ...PAN_DEFAULT_URLS,
-    ...PAN_DEFAULT_FEES,
-    enabled: true,
-    ...data,
-  };
-}
-
-export function subscribePanConfig(
-  cb: (cfg: PanMasterConfig) => void,
-  onError?: (error: Error) => void,
-) {
-  return onSnapshot(
-    CONFIG_DOC,
-    (snap) => {
-      const data = normalizePanConfig(snap.exists() ? (snap.data() as PanMasterConfig) : {});
-      cb({
-        ...PAN_DEFAULT_URLS,
-        ...PAN_DEFAULT_FEES,
-        enabled: true,
-        ...data,
-      });
-    },
-    (error) => {
-      if (onError) onError(error as Error);
-    },
-  );
-}
-
-/**
- * Admin-only: write the public-safe parts of the config (URLs, fees, enabled).
- * `webhookSecret` is split off into `pan_config/secrets` because the master
- * doc is now readable by any authenticated user (server-side load needs it).
- */
-export async function savePanConfigPublic(
-  patch: Partial<PanMasterConfig>,
-  adminId: string,
-) {
-  const { webhookSecret, ...publicPatch } = patch;
+export async function savePanConfig(
+  patch: Partial<PanPortalConfig>,
+  updatedBy: string,
+): Promise<void> {
   await setDoc(
-    CONFIG_DOC,
-    { ...publicPatch, updatedAt: new Date().toISOString(), updatedBy: adminId },
-    { merge: true },
-  );
-  if (typeof webhookSecret === "string") {
-    await setDoc(
-      doc(db, "pan_config", "secrets"),
-      { webhookSecret, updatedAt: new Date().toISOString(), updatedBy: adminId },
-      { merge: true },
-    );
-  }
-}
-
-/** Admin-only: store the encrypted credential blob produced by the server fn. */
-export async function savePanCredentials(cipher: string, adminId: string) {
-  await setDoc(
-    CONFIG_DOC,
-    {
-      cipher,
-      hasCredentials: true,
-      updatedAt: new Date().toISOString(),
-      updatedBy: adminId,
-    },
+    CONFIG_REF(),
+    { ...patch, updatedAt: new Date().toISOString(), updatedBy },
     { merge: true },
   );
 }
 
-/* --------------------------------- PSA ------------------------------------ */
+// ─── PSA records ───────────────────────────────────────────────────────
+const PSA_REF = (retailerId: string) => doc(db, "pan_psa_records", retailerId);
 
-export async function getPsaRecord(retailerId: string): Promise<PanPsaRecord | null> {
-  const snap = await getDoc(doc(PSA_COL, retailerId));
+export async function loadPsaRecord(retailerId: string): Promise<PanPsaRecord | null> {
+  const snap = await getDoc(PSA_REF(retailerId));
   return snap.exists() ? (snap.data() as PanPsaRecord) : null;
 }
 
-export function subscribePsaRecord(
-  retailerId: string,
-  cb: (rec: PanPsaRecord | null) => void,
-) {
-  return onSnapshot(
-    doc(PSA_COL, retailerId),
-    (snap) => {
-      cb(snap.exists() ? (snap.data() as PanPsaRecord) : null);
-    },
-    (error) => {
-      console.warn("[PAN] psa listener skipped:", error.message);
-      cb(null);
-    },
+export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
+  await setDoc(PSA_REF(rec.retailerId), rec, { merge: true });
+}
+
+/** Ensures a VLE id is not already linked to another retailer. */
+export async function isVleIdTaken(vleId: string, exceptRetailerId: string): Promise<boolean> {
+  const q = query(
+    collection(db, "pan_psa_records"),
+    where("vleId", "==", vleId),
+    limit(2),
   );
+  const snap = await getDocs(q);
+  return snap.docs.some((d) => d.id !== exceptRetailerId);
 }
 
-export async function upsertPsaRecord(rec: PanPsaRecord) {
-  await setDoc(doc(PSA_COL, rec.retailerId), rec, { merge: true });
+// ─── Coupon orders ─────────────────────────────────────────────────────
+export async function createCouponOrder(
+  order: Omit<PanCouponOrder, "id">,
+): Promise<string> {
+  const ref = await addDoc(collection(db, "pan_coupon_orders"), order);
+  return ref.id;
 }
 
-/* ------------------------------ NSDL activation --------------------------- */
-
-export async function getPanActivation(retailerId: string): Promise<PanServiceActivation | null> {
-  const snap = await getDoc(doc(ACTIVATIONS_COL, retailerId));
-  return snap.exists() ? (snap.data() as PanServiceActivation) : null;
-}
-
-export function subscribePanActivation(
-  retailerId: string,
-  cb: (act: PanServiceActivation | null) => void,
-) {
-  return onSnapshot(
-    doc(ACTIVATIONS_COL, retailerId),
-    (snap) => {
-      cb(snap.exists() ? (snap.data() as PanServiceActivation) : null);
-    },
-    (error) => {
-      console.warn("[PAN] activation listener skipped:", error.message);
-      cb(null);
-    },
-  );
-}
-
-export async function setPanActivation(act: PanServiceActivation) {
-  await setDoc(doc(ACTIVATIONS_COL, act.retailerId), act, { merge: true });
-}
-
-/* -------------------------------- Orders ---------------------------------- */
-
-export async function createPanOrder(order: PanOrder) {
-  await setDoc(doc(ORDERS_COL, order.orderId), order, { merge: true });
-}
-
-export async function updatePanOrder(orderId: string, patch: Partial<PanOrder>) {
-  await updateDoc(doc(ORDERS_COL, orderId), {
+export async function updateCouponOrder(
+  orderId: string,
+  patch: Partial<PanCouponOrder>,
+): Promise<void> {
+  await updateDoc(doc(db, "pan_coupon_orders", orderId), {
     ...patch,
     updatedAt: new Date().toISOString(),
   });
 }
 
-export async function getPanOrder(orderId: string): Promise<PanOrder | null> {
-  const snap = await getDoc(doc(ORDERS_COL, orderId));
-  return snap.exists() ? ({ id: snap.id, ...(snap.data() as PanOrder) }) : null;
-}
-
-export function subscribeRetailerOrders(
-  retailerId: string,
-  cb: (orders: PanOrder[]) => void,
-) {
-  // Client-side ordering to avoid composite index — see project memory.
-  const q = query(ORDERS_COL, where("retailerId", "==", retailerId));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const list: PanOrder[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanOrder) }));
-      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-      cb(list);
-    },
-    (error) => {
-      console.warn("[PAN] retailer orders listener skipped:", error.message);
-      cb([]);
-    },
+export async function listCouponOrders(retailerId: string): Promise<PanCouponOrder[]> {
+  // Client-side ordering to avoid composite index requirement.
+  const q = query(
+    collection(db, "pan_coupon_orders"),
+    where("retailerId", "==", retailerId),
+    limit(200),
   );
-}
-
-export function subscribeAllOrders(cb: (orders: PanOrder[]) => void) {
-  const q = query(ORDERS_COL, orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    const list: PanOrder[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanOrder) }));
-    cb(list);
-  });
-}
-
-export function newOrderId(retailerId: string): string {
-  return `EKYC${Date.now()}A${retailerId.slice(-8)}`;
-}
-
-/* ------------------------------ UTI Coupons ------------------------------ */
-
-export async function createUtiCoupon(coupon: PanUtiCoupon) {
-  await setDoc(doc(UTI_COUPONS_COL, coupon.couponId), stripUndefined(coupon), { merge: true });
-}
-
-export async function updateUtiCoupon(couponId: string, patch: Partial<PanUtiCoupon>) {
-  await updateDoc(doc(UTI_COUPONS_COL, couponId), {
-    ...stripUndefined(patch),
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-export function subscribeRetailerUtiCoupons(
-  retailerId: string,
-  cb: (coupons: PanUtiCoupon[]) => void,
-) {
-  const q = query(UTI_COUPONS_COL, where("retailerId", "==", retailerId));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const list: PanUtiCoupon[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
-      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-      cb(list);
-    },
-    (error) => {
-      console.warn("[PAN] UTI coupons listener skipped:", error.message);
-      cb([]);
-    },
-  );
-}
-
-export function subscribeAllUtiCoupons(cb: (coupons: PanUtiCoupon[]) => void) {
-  const q = query(UTI_COUPONS_COL, orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    const list: PanUtiCoupon[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as PanUtiCoupon) }));
-    cb(list);
-  });
+  const snap = await getDocs(q);
+  const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as PanCouponOrder) }));
+  return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }

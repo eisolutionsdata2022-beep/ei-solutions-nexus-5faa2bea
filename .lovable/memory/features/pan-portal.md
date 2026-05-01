@@ -1,47 +1,40 @@
 ---
-name: PAN Portal (PSA + NSDL eKYC)
-description: Cloned from legacy mallikarecharge/utibot PHP portal. Two services — PSA Auto-ID (VLE registration) and NSDL eKYC PAN Application (Form 49A). Admin-managed credentials + flat margin (no 4-tier cascade).
+name: PAN Portal (UTI)
+description: Rebuilt Apr 2026 — UTI PSA registration + coupon purchase only. Provider mallikacyberzone.com. Supports linking existing old-portal VLE IDs.
 type: feature
 ---
 
-# PAN Portal — clone of legacy mallikarecharge/utibot system
+# PAN Portal — UTI PSA + Coupon (Rebuilt Apr 2026)
 
-## Source
-Legacy PHP source preserved at `.lovable/legacy-pan/` (extracted from old portal ZIP). Reference: `psa_create.php`, `psa_password.php`, `nsdlekycpan.php`, `app/ekycpanNsdl.php`, `nsdl_webhook.php`.
+## Scope
+NSDL eKYC + Legacy Wallet feature **removed**. Only two flows:
+1. **PSA Registration** — new VLE registration with UTI via `psa_create` (or link an existing old-portal VLE without re-registration).
+2. **Coupon Purchase** — buy UTI PAN application coupons via `coupon_buy`.
 
-## Two services
-1. **PSA Auto-ID** (`/retailer/pan-portal` → "PSA" tab)
-   - Registers retailer as a UTI PSA agent via `botapi_url/api/psa_create`.
-   - Reset PSA password via `botapi_url/api/psa_password`.
-   - One-time activation only — sets `loginusers.vle_id` + `psa_reg_code`.
+## Provider
+- Base URL: `https://mallikacyberzone.com/api` (admin-configurable)
+- API Key + Secret stored encrypted (AES-GCM, key from `LOVABLE_API_KEY`) in `pan_config/master.credCipher`.
+- Endpoints used: `/psa_create`, `/coupon_buy`, `/coupon_status`, `/psa_password` (all GET with `api_key` in query).
 
-2. **NSDL eKYC PAN** (`/retailer/pan-portal` → "PAN Application" tab)
-   - Service activation: charges `nsdlIdCharge` (admin-set) once → flips `nsdlActive=YES` on user.
-   - Per application: debits `panFee` (admin-set retailer charge) → calls `mallikarecharge.in/portallogin/nsdlAuth` (or admin-configured URL) → SSO redirect to NSDL → user completes form on NSDL → NSDL POSTs to `/api/public/pan-portal/nsdl-webhook`.
-   - On webhook success: mark order Success, no refund. On failure: refund retailer.
+## Files
+- `src/lib/pan-portal-types.ts` — `PanPsaRecord`, `PanCouponOrder`, `PanPortalConfig`.
+- `src/lib/pan-portal-firebase.ts` — Firestore helpers, `isVleIdTaken` uniqueness guard, client-side ordering for orders.
+- `src/lib/pan-portal.functions.ts` — server functions: `encryptPanCredentials`, `panPsaCreate`, `panCouponBuy`, `panCouponStatus`, `panPsaPasswordReset`.
+- `src/routes/retailer.pan-portal.tsx` — single retailer page with PSA / Buy / History tabs.
+- `src/routes/admin.pan-portal-settings.tsx` — admin page for credentials + fees + base URL.
 
-## Architecture
-- **Firestore collections:**
-  - `pan_config/master` — admin credentials (encrypted), provider URLs, fees, margins.
-  - `pan_psa_records/{retailerId}` — PSA registration state.
-  - `pan_orders/{orderId}` — eKYC PAN applications.
-  - `pan_transactions/...` (uses standard `transactions` collection with source=`pan-portal`).
-- **Server functions** (`pan-portal.functions.ts`):
-  - `encryptPanCredentials` — admin-only, AES-GCM encrypts API key + secret.
-  - `panPsaCreate` / `panPsaPasswordReset` — proxy to botapi.
-  - `panNsdlGetAuthorization` — proxy to nsdlAuth, returns SSO authorization token.
-- **Webhook**: `/api/public/pan-portal/nsdl-webhook` — verifies HMAC + processes status, no commission cascade (margin auto-credited to admin via accounting view).
+## Firestore collections
+- `pan_config/master` — provider URL, encrypted creds, retailer fee, provider cost.
+- `pan_psa_records/{retailerId}` — one VLE record per retailer; `linkedExisting: true` for old-portal users.
+- `pan_coupon_orders/{auto}` — coupon purchase log; debit + provider call + auto-refund on failure via `atomicDebit` / `atomicCredit`.
 
-## Commission model
-**Flat admin-managed margin** (per user decision Apr 2026, NOT 4-tier cascade):
-- Admin sets `panProviderCost` (₹ paid to upstream) and `panRetailerFee` (₹ charged to retailer).
-- Margin = retailer fee − provider cost. Tracked in admin transactions report; no per-tier credit logic.
-- Same model as EI Solutions Pay (CSC).
+## Link Existing flow
+Trust-based: user enters old VLE ID + UTI-registered mobile, Firestore records `linkedExisting: true`, `status: approved`. No upstream verification (UTI has no VLE-lookup endpoint). If the first coupon purchase fails with "VLE Data Not Exist", wallet is auto-refunded and user is told to re-register via "New PSA Registration" tab.
 
-## Provider config
-- Default URLs: `https://mallikarecharge.in/portallogin/nsdlAuth`, `https://utibot.in/api/nsdl/get_authorization` (legacy values, admin can override).
-- Default API key + secret: NEW values entered by admin (legacy values from `nsdlekycauth.json` are illustrative only — DO NOT hardcode).
-- Admin enters credentials in `/admin/pan-portal-settings`, encrypted at rest with AES-GCM (key derived from LOVABLE_API_KEY).
+## VLE ID format
+- New registrations: `RMPMCST-<10-digit-mobile>` via `generateVleId()` from `src/lib/vle-id.ts`.
+- Linked-existing: whatever the user entered (e.g. legacy `PSAxxxxxx`).
+Uniqueness enforced via `isVleIdTaken()` before insert.
 
-## VLE ID
-**CRITICAL**: VLE ID must be `RMPMCST-<10-digit-mobile>` everywhere — both in PSA Create AND in UTI coupon purchase. Use `generateVleId(uid, phone)` from `src/lib/vle-id.ts`. Sending different IDs (e.g. raw Firebase uid for register, RMPMCST for purchase) causes provider to return `"Vle Data Not Exist"` on every coupon purchase. Coupon purchase is now blocked client-side until `psa.status === "approved"`.
+## Pricing
+Per-coupon retailer fee + provider cost configured in admin settings page. Margin = fee − cost (tracked by reading `pan_coupon_orders.unitFee/unitProviderCost`). Wallet debit = `qty × unitFee` at purchase time; full amount refunded on provider failure.

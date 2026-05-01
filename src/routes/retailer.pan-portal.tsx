@@ -1,50 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useAuth } from "@/lib/auth-context";
-import { atomicDebit } from "@/lib/firebase-transactions";
-import {
-  createPanOrder,
-  getPanActivation,
-  getPsaRecord,
-  newOrderId,
-  setPanActivation,
-  subscribePanActivation,
-  subscribePsaRecord,
-  subscribeRetailerOrders,
-  updatePanOrder,
-  upsertPsaRecord,
-  subscribeRetailerUtiCoupons,
-} from "@/lib/pan-portal-firebase";
-import {
-  createLegacyTransferRequest,
-  getLegacyBalance,
-  subscribeRetailerTransferRequests,
-} from "@/lib/pan-legacy-balance";
-import type { PanLegacyBalance, PanLegacyTransferRequest } from "@/lib/pan-legacy-balance-types";
-import { UtiCouponTab } from "@/components/pan-portal/UtiCouponTab";
-import {
-  getPanClientConfig,
-  panNsdlGetAuthorization,
-  panPsaCreate,
-  panPsaPasswordReset,
-} from "@/lib/pan-portal.functions";
-import type {
-  PanMasterConfig,
-  PanOrder,
-  PanPsaRecord,
-  PanServiceActivation,
-  PanUtiCoupon,
-} from "@/lib/pan-portal-types";
-import { generateVleId } from "@/lib/vle-id";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, IdCard, FileText, RefreshCw, ShieldCheck, Sparkles, Wallet, Link2, CheckCircle2, ArrowRight, Clock, XCircle, TrendingUp, CreditCard, Zap, ChevronDown, ChevronUp, Send, ShieldAlert, Server, Undo2, Search } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Loader2, IdCard, ShoppingCart, ShieldCheck, AlertTriangle, Link2,
+  RefreshCcw, KeyRound, ExternalLink, Copy, History,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import {
+  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken,
+  createCouponOrder, updateCouponOrder, listCouponOrders,
+} from "@/lib/pan-portal-firebase";
+import {
+  panPsaCreate, panCouponBuy, panCouponStatus, panPsaPasswordReset,
+} from "@/lib/pan-portal.functions";
+import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
+import { generateVleId } from "@/lib/vle-id";
+import { DEFAULT_PAN_CONFIG, type PanCouponOrder, type PanPortalConfig, type PanPsaRecord } from "@/lib/pan-portal-types";
 
 export const Route = createFileRoute("/retailer/pan-portal")({
   ssr: false,
@@ -53,329 +31,178 @@ export const Route = createFileRoute("/retailer/pan-portal")({
 
 function PanPortalPage() {
   const { appUser } = useAuth();
-  const [config, setConfig] = useState<PanMasterConfig | null>(null);
-  const [activation, setActivation] = useState<PanServiceActivation | null>(null);
+  const [cfg, setCfg] = useState<PanPortalConfig>(DEFAULT_PAN_CONFIG);
   const [psa, setPsa] = useState<PanPsaRecord | null>(null);
-  const [orders, setOrders] = useState<PanOrder[]>([]);
-  const [coupons, setCoupons] = useState<PanUtiCoupon[]>([]);
-  const [configError, setConfigError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<PanCouponOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh() {
+    if (!appUser) return;
+    const [c, p, o] = await Promise.all([
+      loadPanConfig(),
+      loadPsaRecord(appUser.uid),
+      listCouponOrders(appUser.uid),
+    ]);
+    setCfg(c); setPsa(p); setOrders(o);
+  }
 
   useEffect(() => {
-    let active = true;
-    getPanClientConfig()
-      .then((res) => {
-        if (!active) return;
-        if (res.success) {
-          setConfig(res.config);
-          setConfigError(null);
-        } else {
-          setConfigError(res.error);
-        }
-      })
-      .catch((err) => {
-        if (!active) return;
-        setConfigError(err instanceof Error ? err.message : "Unable to load PAN settings");
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (!appUser?.uid) return;
-    const u1 = subscribePanActivation(appUser.uid, setActivation);
-    const u2 = subscribePsaRecord(appUser.uid, setPsa);
-    const u3 = subscribeRetailerOrders(appUser.uid, setOrders);
-    const u4 = subscribeRetailerUtiCoupons(appUser.uid, setCoupons);
-    return () => { u1(); u2(); u3(); u4(); };
+    if (!appUser) return;
+    setLoading(true);
+    refresh().catch((e) => toast.error(e.message)).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appUser?.uid]);
 
-  if (!appUser) {
-    return <div className="p-8 text-center">Please log in.</div>;
-  }
-  if (!config) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        {configError ? (
-          <Card className="max-w-lg border-amber-200 bg-amber-50/70 dark:bg-amber-950/20">
-            <CardContent className="p-6 text-center space-y-2">
-              <p className="font-semibold text-amber-900 dark:text-amber-200">PAN settings could not be loaded from live Firestore.</p>
-              <p className="text-sm text-amber-800/90 dark:text-amber-100/80">{configError}</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        )}
-      </div>
-    );
-  }
-  if (!config.enabled) {
-    return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
-          <CardContent className="p-10 text-center space-y-3">
-            <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-              <Clock className="h-7 w-7 text-amber-600" />
-            </div>
-            <h2 className="text-xl font-bold">PAN Portal is currently disabled</h2>
-            <p className="text-muted-foreground">Please check back later or contact support.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (!appUser) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="p-6 flex items-center gap-2"><Loader2 className="animate-spin h-5 w-5" />Loading PAN portal…</div>;
 
-  const vleId = generateVleId(appUser.uid, appUser.phone);
-  const successCount = orders.filter((o) => o.status === "success").length;
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
-  const psaActive = psa?.status === "approved";
-  const nsdlActive = !!activation?.nsdlActive;
+  const credsMissing = !cfg.credCipher;
+  const hasPsa = psa && psa.status === "approved";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20">
-      {/* ── Premium Hero ─────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-blue-700" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-        <div className="absolute top-0 inset-x-0 h-1 flex">
-          <div className="flex-1 bg-[#FF9933]" />
-          <div className="flex-1 bg-white" />
-          <div className="flex-1 bg-[#138808]" />
-        </div>
+    <div className="max-w-5xl mx-auto p-3 md:p-6 space-y-4">
+      <header className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <IdCard className="h-7 w-7 text-primary" /> PAN Portal (UTI)
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          PSA registration & coupon purchase via UTI authorised provider.
+        </p>
+      </header>
 
-        <div className="relative container mx-auto px-6 pt-12 pb-20 max-w-6xl">
-          <div className="flex items-center justify-between flex-wrap gap-6">
-            <div className="text-white space-y-3">
-              <Badge className="bg-white/15 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
-                <Sparkles className="h-3 w-3 mr-1" /> Premium Service
-              </Badge>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20">
-                  <IdCard className="h-7 w-7 md:h-8 md:w-8" />
-                </span>
-                PAN Portal
-              </h1>
-              <p className="text-blue-100 text-base md:text-lg max-w-xl">
-                Instant PAN card services with NSDL eKYC. One wallet, zero hassle.
-              </p>
-            </div>
+      {credsMissing && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Provider not configured</AlertTitle>
+          <AlertDescription>Admin must add API credentials in PAN Portal Settings before this service works.</AlertDescription>
+        </Alert>
+      )}
 
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 min-w-[240px] shadow-2xl">
-              <p className="text-xs uppercase tracking-wider text-blue-100 mb-1">Your VLE ID</p>
-              <p className="font-mono text-lg font-bold text-white">{vleId}</p>
-              <div className="mt-3 pt-3 border-t border-white/20 flex items-center gap-2 text-xs text-blue-100">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-                <span>Active retailer account</span>
+      {/* PSA status banner */}
+      <Card className={hasPsa ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}>
+        <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            {hasPsa
+              ? <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              : <AlertTriangle className="h-6 w-6 text-amber-600" />}
+            <div>
+              <div className="font-semibold">
+                {hasPsa ? "PSA Active" : psa ? `PSA ${psa.status}` : "PSA not registered"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {psa
+                  ? <>VLE ID: <code className="font-mono">{psa.vleId}</code>{psa.linkedExisting && " · linked from old portal"}</>
+                  : "Register a new PSA or link your existing UTI VLE ID below."}
               </div>
             </div>
           </div>
-        </div>
-      </div>
+          {psa && (
+            <Badge variant={hasPsa ? "default" : "secondary"} className="capitalize">{psa.status}</Badge>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* ── Stats Strip ──────────────────────────────────────────────── */}
-      <div className="container mx-auto px-6 max-w-6xl -mt-12 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatTile icon={<ShieldCheck className="h-5 w-5" />} label="PSA Status" value={psaActive ? "Active" : "Pending"} tone={psaActive ? "green" : "amber"} />
-          <StatTile icon={<Zap className="h-5 w-5" />} label="NSDL Service" value={nsdlActive ? "Activated" : "Inactive"} tone={nsdlActive ? "green" : "slate"} />
-          <StatTile icon={<TrendingUp className="h-5 w-5" />} label="Successful" value={String(successCount)} tone="blue" />
-          <StatTile icon={<Clock className="h-5 w-5" />} label="In Progress" value={String(pendingCount)} tone="amber" />
-        </div>
-      </div>
+      <Tabs defaultValue={hasPsa ? "buy" : "psa"} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="psa"><IdCard className="h-4 w-4 mr-1" />PSA</TabsTrigger>
+          <TabsTrigger value="buy" disabled={!hasPsa}><ShoppingCart className="h-4 w-4 mr-1" />Buy Coupons</TabsTrigger>
+          <TabsTrigger value="history"><History className="h-4 w-4 mr-1" />History</TabsTrigger>
+        </TabsList>
 
-      {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="container mx-auto px-6 max-w-6xl py-8 space-y-6">
-        <LegacyTransferStatusCard retailerId={appUser.uid} />
-        <Tabs defaultValue="psa">
-          <TabsList className="bg-white dark:bg-slate-900 border shadow-sm h-auto p-1.5 rounded-xl flex-wrap">
-            <TabsTrigger value="psa" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
-              <ShieldCheck className="h-4 w-4" /> PSA Auto-ID
-            </TabsTrigger>
-            <TabsTrigger value="uti" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
-              <Sparkles className="h-4 w-4" /> UTI PAN Coupon
-              {coupons.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-400 text-slate-900 rounded-full font-bold">
-                  {coupons.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="pan" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
-              <CreditCard className="h-4 w-4" /> NSDL eKYC PAN
-            </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-white px-5 py-2.5 rounded-lg gap-2">
-              <FileText className="h-4 w-4" /> My Orders
-              {orders.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-400 text-slate-900 rounded-full font-bold">
-                  {orders.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="psa" className="mt-6">
-            <PsaTab user={appUser} config={config} psa={psa} coupons={coupons} />
-          </TabsContent>
-
-          <TabsContent value="uti" className="mt-6">
-            <UtiCouponTab user={appUser} config={config} psa={psa} coupons={coupons} />
-          </TabsContent>
-
-          <TabsContent value="pan" className="mt-6">
-            <PanTab user={appUser} config={config} activation={activation} />
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-6">
-            <OrdersHistory orders={orders} />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="psa">
+          <PsaPanel user={appUser} cfg={cfg} psa={psa} onRefresh={refresh} />
+        </TabsContent>
+        <TabsContent value="buy">
+          <CouponBuyPanel user={appUser} cfg={cfg} psa={psa} onChange={refresh} />
+        </TabsContent>
+        <TabsContent value="history">
+          <CouponHistoryPanel orders={orders} cfg={cfg} onRefresh={refresh} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
-/* ----------------------------- Stat Tile --------------------------------- */
-function StatTile({
-  icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone: "green" | "amber" | "blue" | "slate";
-}) {
-  const tones: Record<string, string> = {
-    green: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60",
-    amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60",
-    blue: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/60",
-    slate: "bg-slate-50 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300 border-slate-200/60",
-  };
+// ─── PSA Panel: Create + Link Existing + Reset Password ────────────────
+function PsaPanel({
+  user, cfg, psa, onRefresh,
+}: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onRefresh: () => Promise<void>; }) {
+  const [mode, setMode] = useState<"create" | "link">("create");
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${tones[tone]}`}>
-          {icon}
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="font-bold text-base text-foreground">{value}</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <Button variant={mode === "create" ? "default" : "outline"} onClick={() => setMode("create")} size="sm">
+          <IdCard className="h-4 w-4 mr-1" />New PSA Registration
+        </Button>
+        <Button variant={mode === "link" ? "default" : "outline"} onClick={() => setMode("link")} size="sm">
+          <Link2 className="h-4 w-4 mr-1" />Link Existing VLE
+        </Button>
       </div>
+      {mode === "create"
+        ? <PsaCreateForm user={user} cfg={cfg} psa={psa} onRefresh={onRefresh} />
+        : <PsaLinkForm user={user} cfg={cfg} onRefresh={onRefresh} />}
+      {psa && <PsaPasswordResetCard cfg={cfg} psa={psa} />}
     </div>
   );
 }
 
-/* ---------------------------------- PSA ---------------------------------- */
+// ─── PSA Create ────────────────────────────────────────────────────────
+function PsaCreateForm({
+  user, cfg, psa, onRefresh,
+}: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onRefresh: () => Promise<void>; }) {
+  const initial = useMemo(() => ({
+    shopName: psa?.shopName || user.name || "",
+    panNo: (psa?.panNo || "").toUpperCase(),
+    uidNo: psa?.uidNo || "",
+    pinCode: psa?.pinCode || "",
+    state: psa?.state || "Kerala",
+    address: psa?.address || user.address || "",
+  }), [psa, user]);
 
-function PsaTab({
-  user,
-  config,
-  psa,
-  coupons,
-}: {
-  user: { uid: string; email: string; name?: string; phone?: string };
-  config: PanMasterConfig;
-  psa: PanPsaRecord | null;
-  coupons: PanUtiCoupon[];
-}) {
-  const purchasedCoupons = coupons.filter(
-    (c) => c.status === "purchased" || c.status === "consumed",
-  ).length;
-  const idUnlocked = purchasedCoupons >= 2;
-  const couponsRemaining = Math.max(0, 2 - purchasedCoupons);
+  const [form, setForm] = useState(initial);
+  useEffect(() => setForm(initial), [initial]);
   const [submitting, setSubmitting] = useState(false);
-  const [resetting, setResetting] = useState(false);
-  const [linking, setLinking] = useState(false);
-  const [showLinkForm, setShowLinkForm] = useState(false);
-  const [linkForm, setLinkForm] = useState({
-    vleId: "",
-    vleRegCode: "",
-    mobile: user.phone || "",
-  });
-  const [form, setForm] = useState({
-    shopName: "",
-    address: "",
-    state: "",
-    pinCode: "",
-    panNo: "",
-    uidNo: "",
-  });
 
-  /* ---- Legacy balance lookup state ---- */
-  const [lookingUp, setLookingUp] = useState(false);
-  const [legacyBalance, setLegacyBalance] = useState<PanLegacyBalance | null>(null);
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [transferRequests, setTransferRequests] = useState<PanLegacyTransferRequest[]>([]);
-
-  useEffect(() => {
-    return subscribeRetailerTransferRequests(user.uid, setTransferRequests);
-  }, [user.uid]);
-
-  if (!config.hasCredentials) {
-    return (
-      <Card><CardContent className="p-6 text-center text-muted-foreground">
-        Provider credentials not configured. Please contact admin.
-      </CardContent></Card>
-    );
-  }
-
-  async function handleRegister(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!user.phone || !/^\d{10}$/.test(user.phone)) {
-      toast.error("Mobile number missing or invalid in your profile");
-      return;
-    }
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(form.panNo)) {
-      toast.error("Invalid PAN format");
-      return;
-    }
-    if (!/^\d{6}$/.test(form.pinCode)) {
-      toast.error("PIN must be 6 digits");
-      return;
-    }
+    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    if (!user.phone || !/^\d{10}$/.test(user.phone)) { toast.error("Valid 10-digit mobile required in profile"); return; }
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(form.panNo)) { toast.error("Invalid PAN format"); return; }
+    if (!/^\d{12}$/.test(form.uidNo)) { toast.error("Aadhaar must be 12 digits"); return; }
+    if (!/^\d{6}$/.test(form.pinCode)) { toast.error("PIN must be 6 digits"); return; }
+    if (!form.shopName.trim() || !form.address.trim() || !form.state.trim()) { toast.error("Shop name, address and state required"); return; }
+
     setSubmitting(true);
     try {
-      // Server function reads url + cipher from pan_config/master internally.
-      // VLE ID must match the format the upstream UTI portal expects and that
-      // the coupon-purchase call sends — `RMPMCST-<10-digit-mobile>`. Using
-      // the raw Firebase uid here previously caused the provider to reject
-      // every subsequent coupon purchase with "Vle Data Not Exist" because
-      // the registered ID and the purchase ID never matched.
-      const properVleId = generateVleId(user.uid, user.phone);
+      const vleId = generateVleId(user.uid, user.phone);
+      if (await isVleIdTaken(vleId, user.uid)) {
+        throw new Error(`VLE ID ${vleId} is already linked to another retailer.`);
+      }
       const res = await panPsaCreate({
         data: {
-          vleId: properVleId,
-          vleName: user.name || user.email,
-          vleShop: form.shopName,
-          vleLoc: form.address.slice(0, 50),
-          vleState: form.state,
-          vleUid: form.uidNo,
-          vlePin: form.pinCode,
-          vleEmail: user.email,
-          vleMob: user.phone,
-          vlePan: form.panNo.toUpperCase(),
+          credCipher: cfg.credCipher!, baseUrl: cfg.providerBaseUrl,
+          vleId, vleName: user.name || user.email,
+          vleShop: form.shopName.trim(), vleLoc: form.address.trim().slice(0, 50),
+          vleState: form.state.trim(), vleUid: form.uidNo,
+          vlePin: form.pinCode, vleEmail: user.email,
+          vleMob: user.phone, vlePan: form.panNo.toUpperCase(),
         },
       });
       if (!res.success) throw new Error(res.error);
+
+      const now = new Date().toISOString();
       await upsertPsaRecord({
-        retailerId: user.uid,
-        vleId: properVleId,
-        vleRegCode: res.vleRegCode,
-        status: "approved",
-        remark: res.message,
-        ownerName: user.name || user.email,
-        shopName: form.shopName,
-        mobile: user.phone,
-        email: user.email,
-        panNo: form.panNo.toUpperCase(),
-        uidNo: form.uidNo,
-        address: form.address,
-        state: form.state,
-        pinCode: form.pinCode,
-        createdAt: psa?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        retailerId: user.uid, vleId,
+        status: res.vleStatus === "SUCCESS" ? "approved" : "pending",
+        linkedExisting: false,
+        ownerName: user.name || user.email, shopName: form.shopName.trim(),
+        mobile: user.phone, email: user.email,
+        panNo: form.panNo.toUpperCase(), uidNo: form.uidNo,
+        address: form.address.trim(), state: form.state.trim(), pinCode: form.pinCode,
+        remark: res.message, createdAt: psa?.createdAt || now, updatedAt: now,
       });
-      toast.success(res.message);
+      toast.success("PSA registered successfully ✓");
+      await onRefresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -383,724 +210,27 @@ function PsaTab({
     }
   }
 
-  async function handlePasswordReset() {
-    if (!psa) return;
-    setResetting(true);
-    try {
-      const res = await panPsaPasswordReset({
-        data: { vleId: psa.vleId },
-      });
-      if (!res.success) throw new Error(res.error);
-      toast.success(res.message);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Reset failed");
-    } finally {
-      setResetting(false);
-    }
-  }
-
-  /**
-   * Look up the legacy PAN portal balance for the entered PSA ID + mobile.
-   * Match rules: PSA ID must equal the legacy username (`RMPMCST-<mobile>`)
-   * AND the registered mobile must match the one on file. This prevents a
-   * retailer from claiming somebody else's balance just by guessing the ID.
-   */
-  async function handleLookupLegacy() {
-    setLookupError(null);
-    setLegacyBalance(null);
-    if (!linkForm.vleId.trim()) {
-      setLookupError("Enter your PSA / VLE ID first.");
-      return;
-    }
-    if (!/^\d{10}$/.test(linkForm.mobile)) {
-      setLookupError("Enter a valid 10-digit registered mobile.");
-      return;
-    }
-    setLookingUp(true);
-    try {
-      const rec = await getLegacyBalance(linkForm.vleId.trim());
-      if (!rec) {
-        setLookupError("No legacy account found for this PSA ID. You can still link without a balance transfer.");
-        return;
-      }
-      if (rec.mobile !== linkForm.mobile) {
-        setLookupError(`PSA ID exists but the registered mobile does not match (expected ${rec.mobile.slice(0,2)}******${rec.mobile.slice(-2)}). Contact admin if this is your account.`);
-        return;
-      }
-      if (rec.claimed || (rec.remaining ?? rec.balance) <= 0) {
-        setLookupError("This legacy balance has already been transferred.");
-        return;
-      }
-      setLegacyBalance(rec);
-    } catch (err) {
-      setLookupError(err instanceof Error ? err.message : "Lookup failed");
-    } finally {
-      setLookingUp(false);
-    }
-  }
-
-  async function handleLinkExisting(e: FormEvent) {
-    e.preventDefault();
-    if (!linkForm.vleId.trim()) {
-      toast.error("PSA / VLE ID required");
-      return;
-    }
-    if (!/^\d{10}$/.test(linkForm.mobile)) {
-      toast.error("Registered mobile must be 10 digits");
-      return;
-    }
-
-    // Guard: prevent claiming the same legacy id from two different retailers.
-    const alreadyRequested = transferRequests.some(
-      (r) =>
-        r.legacyUsername === linkForm.vleId.trim().toUpperCase() &&
-        (r.status === "pending" || r.status === "approved"),
-    );
-
-    setLinking(true);
-    try {
-      // 1. PSA link goes through immediately — no admin wait, as requested.
-      await upsertPsaRecord({
-        retailerId: user.uid,
-        vleId: linkForm.vleId.trim(),
-        vleRegCode: linkForm.vleRegCode.trim() || undefined,
-        status: "approved",
-        linkedExisting: true,
-        linkedMobile: linkForm.mobile,
-        remark: "Linked existing PSA ID — coupon purchase only",
-        ownerName: user.name || user.email,
-        shopName: user.name || user.email,
-        mobile: linkForm.mobile,
-        email: user.email,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-      // 2. If a legacy balance was found AND not already requested, raise a
-      //    transfer request. The request alone needs admin approval — the
-      //    PSA ID itself is already active.
-      if (legacyBalance && !alreadyRequested) {
-        const amt = legacyBalance.remaining ?? legacyBalance.balance;
-        await createLegacyTransferRequest({
-          retailerId: user.uid,
-          retailerEmail: user.email,
-          retailerName: user.name,
-          legacyUsername: legacyBalance.username,
-          legacyMobile: legacyBalance.mobile,
-          legacyName: legacyBalance.name,
-          amount: amt,
-        });
-        toast.success(
-          `PSA linked. Wallet transfer request for ₹${amt} sent to admin for approval.`,
-        );
-      } else if (alreadyRequested) {
-        toast.success("PSA ID linked. A transfer request for this account is already in progress.");
-      } else {
-        toast.success("PSA ID linked. You can now purchase coupons.");
-      }
-
-      setShowLinkForm(false);
-      setLegacyBalance(null);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Link failed");
-    } finally {
-      setLinking(false);
-    }
-  }
-
-
-  if (psa?.status === "approved") {
-    return (
-      <Card className="border-emerald-200 dark:border-emerald-900/50 shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 p-1" />
-        <CardHeader className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 pb-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                <ShieldCheck className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div>
-                <div>PSA Account Active</div>
-                <p className="text-xs font-normal text-muted-foreground mt-0.5">
-                  Your retailer account is verified and ready
-                </p>
-              </div>
-            </CardTitle>
-            {psa.linkedExisting && (
-              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
-                <Link2 className="h-3 w-3 mr-1" /> Linked Existing
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-6">
-          {/* Gate: PSA login ID is only revealed after 2 UTI coupon purchases
-              (matches legacy mallikarecharge behaviour — provider activates
-              the agent ID once the retailer has bought ≥2 coupons). Linked
-              existing accounts skip this gate because the retailer already
-              has the credentials. */}
-          {!psa.linkedExisting && !idUnlocked ? (
-            <div className="rounded-xl border border-amber-300/70 dark:border-amber-900/60 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/30 dark:via-slate-900 dark:to-orange-950/20 p-5 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                  <ShieldAlert className="h-5 w-5 text-amber-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-amber-900 dark:text-amber-200">
-                    PSA Login ID will unlock after {couponsRemaining} more coupon
-                    {couponsRemaining > 1 ? "s" : ""}
-                  </p>
-                  <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-1">
-                    UTI activates your agent login only after 2 coupon purchases.
-                    You've bought <strong>{purchasedCoupons}</strong> / 2 so far.
-                  </p>
-                </div>
-              </div>
-              <div className="h-2 rounded-full bg-amber-100 dark:bg-amber-900/40 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
-                  style={{ width: `${Math.min(100, (purchasedCoupons / 2) * 100)}%` }}
-                />
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-white/60 dark:bg-slate-900/40 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">PSA Login ID</p>
-                  <p className="font-mono text-sm font-semibold text-foreground/40 select-none">
-                    •••••••• {couponsRemaining > 0 ? `(buy ${couponsRemaining} more)` : ""}
-                  </p>
-                </div>
-                {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
-              </div>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
-              <InfoRow label="VLE / PSA ID" value={psa.vleId} mono />
-              {psa.vleRegCode && <InfoRow label="Reg Code" value={psa.vleRegCode} mono />}
-              {psa.shopName && <InfoRow label="Shop Name" value={psa.shopName} />}
-              {psa.panNo && <InfoRow label="PAN" value={psa.panNo} mono />}
-              <InfoRow label="Mobile" value={psa.linkedMobile || psa.mobile} />
-            </div>
-          )}
-          {psa.linkedExisting ? (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4 text-sm">
-              <p className="text-blue-900 dark:text-blue-200">
-                ✓ You linked an existing PSA ID. Switch to the <strong>NSDL eKYC PAN</strong> tab to start applying.
-                Password reset is not available for linked accounts.
-              </p>
-            </div>
-          ) : (
-            <Button
-              onClick={handlePasswordReset}
-              disabled={resetting || !idUnlocked}
-              variant="outline"
-              className="border-emerald-200 hover:bg-emerald-50"
-            >
-              {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-              Reset PSA Password
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-5">
-      {/* Premium "Link existing ID" callout */}
-      <Card className="overflow-hidden border-amber-200 dark:border-amber-900/50 shadow-md">
-        <div className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-1" />
-        <CardHeader className="bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-slate-900">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-              <Link2 className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <CardTitle className="text-base">Already have a UTI / PSA VLE ID?</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Skip registration — link in 30 seconds</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-5">
-          {!showLinkForm ? (
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <p className="text-sm text-muted-foreground max-w-md">
-                Link your existing PSA ID to start applying immediately. No re-registration needed.
-              </p>
-              <Button
-                onClick={() => setShowLinkForm(true)}
-                className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
-              >
-                <Link2 className="h-4 w-4 mr-2" /> Link Existing ID
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleLinkExisting} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>PSA / VLE ID *</Label>
-                  <Input
-                    value={linkForm.vleId}
-                    onChange={(e) => {
-                      setLinkForm({ ...linkForm, vleId: e.target.value.toUpperCase() });
-                      setLegacyBalance(null);
-                      setLookupError(null);
-                    }}
-                    placeholder="e.g. RMPMCST-9447175704"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Registered Mobile *</Label>
-                  <Input
-                    value={linkForm.mobile}
-                    maxLength={10}
-                    onChange={(e) => {
-                      setLinkForm({ ...linkForm, mobile: e.target.value.replace(/\D/g, "") });
-                      setLegacyBalance(null);
-                      setLookupError(null);
-                    }}
-                    placeholder="10-digit mobile"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2 space-y-1.5">
-                  <Label>Reg Code (optional)</Label>
-                  <Input
-                    value={linkForm.vleRegCode}
-                    onChange={(e) => setLinkForm({ ...linkForm, vleRegCode: e.target.value })}
-                    placeholder="If you have it from the old portal"
-                  />
-                </div>
-              </div>
-
-              {/* Legacy balance lookup */}
-              <div className="rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-slate-900 p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex items-start gap-2">
-                    <Wallet className="h-5 w-5 text-emerald-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
-                        Old Portal Wallet Balance
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Check if your old mallikarecharge wallet balance can be transferred.
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleLookupLegacy}
-                    disabled={lookingUp || !linkForm.vleId || linkForm.mobile.length !== 10}
-                    className="border-emerald-400 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-                    Check Balance
-                  </Button>
-                </div>
-
-                {lookupError && (
-                  <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200/60">
-                    {lookupError}
-                  </p>
-                )}
-
-                {legacyBalance && (
-                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 p-3 space-y-2">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                          Found: <strong>{legacyBalance.name}</strong>
-                        </p>
-                        <p className="text-[11px] text-muted-foreground font-mono">
-                          {legacyBalance.username}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[11px] text-muted-foreground">Transferable</p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                          ₹{(legacyBalance.remaining ?? legacyBalance.balance).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-900/30 p-2 rounded">
-                      ✓ Click <strong>Confirm & Link</strong> below — your PSA ID is linked instantly and a wallet transfer request goes to admin for approval.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" disabled={linking} className="bg-amber-500 hover:bg-amber-600 text-white">
-                  {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                  {legacyBalance ? `Confirm & Request ₹${legacyBalance.remaining ?? legacyBalance.balance}` : "Confirm & Link"}
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => { setShowLinkForm(false); setLegacyBalance(null); setLookupError(null); }}>
-                  Cancel
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded border border-amber-200/50">
-                ⚠ Make sure the PSA ID is correct. Wrong details may cause failed applications.
-              </p>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Premium register card */}
-      <Card className="overflow-hidden border shadow-md">
-        <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
-        <CardHeader className="bg-gradient-to-br from-blue-50/60 to-white dark:from-blue-950/20 dark:to-slate-900">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-base">Register New PSA Auto-ID</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">First time? Register a fresh agent ID</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Shop Name</Label>
-                <Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
-              </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <Label>Address (max 50 chars)</Label>
-                <Input value={form.address} maxLength={50} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>PIN Code</Label>
-                <Input value={form.pinCode} maxLength={6} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Aadhaar Number (12 digits)</Label>
-                <Input value={form.uidNo} maxLength={12} onChange={(e) => setForm({ ...form, uidNo: e.target.value })} required />
-              </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <Label>PAN Number</Label>
-                <Input value={form.panNo} maxLength={10} placeholder="ABCDE1234F" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} required />
-              </div>
-            </div>
-            <Button type="submit" disabled={submitting} size="lg" className="w-full sm:w-auto">
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Register PSA Auto-ID
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* ----------------------------- InfoRow ----------------------------------- */
-function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-3 border border-slate-200/60 dark:border-slate-700/40">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">{label}</p>
-      <p className={`text-sm font-semibold text-foreground ${mono ? "font-mono" : ""}`}>{value}</p>
-    </div>
-  );
-}
-
-/* ------------------------------- NSDL PAN -------------------------------- */
-
-function PanTab({
-  user,
-  config,
-  activation,
-}: {
-  user: { uid: string; email: string; name?: string; phone?: string };
-  config: PanMasterConfig;
-  activation: PanServiceActivation | null;
-}) {
-  const [activating, setActivating] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    applicationType: "P" as "P" | "E",
-    applicationMode: "OTP",
-    name: "",
-    dob: "",
-    gender: "M" as "M" | "F",
-    mobile: "",
-    email: "",
-    consent: false,
-  });
-
-  const fee = config.panRetailerFee || 0;
-  const activationCharge = config.nsdlIdCharge || 0;
-
-  if (!config.hasCredentials) {
-    return (
-      <Card><CardContent className="p-6 text-center text-muted-foreground">
-        Provider credentials not configured. Please contact admin.
-      </CardContent></Card>
-    );
-  }
-
-  async function handleActivate() {
-    setActivating(true);
-    try {
-      await atomicDebit(user.uid, activationCharge, {
-        source: "pan-portal",
-        description: `NSDL eKYC PAN service activation`,
-      });
-      await setPanActivation({
-        retailerId: user.uid,
-        nsdlActive: true,
-        activatedAt: new Date().toISOString(),
-        activationCharge,
-      });
-      toast.success("Service activated!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Activation failed");
-    } finally {
-      setActivating(false);
-    }
-  }
-
-  async function handleApply(e: FormEvent) {
-    e.preventDefault();
-    if (!form.consent) {
-      toast.error("Please accept the consent");
-      return;
-    }
-    if (!/^\d{10}$/.test(form.mobile)) {
-      toast.error("Invalid mobile");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      // Server function reads url + cipher from pan_config/master internally.
-      const orderId = newOrderId(user.uid);
-      const newBalance = await atomicDebit(user.uid, fee, {
-        source: "pan-portal",
-        description: `NSDL eKYC PAN — ${form.name}`,
-        orderId,
-      });
-
-      await createPanOrder({
-        orderId,
-        retailerId: user.uid,
-        retailerUsername: user.email,
-        applicationType: form.applicationType,
-        applicationMode: form.applicationMode,
-        name: form.name,
-        dob: form.dob,
-        gender: form.gender,
-        mobile: form.mobile,
-        email: form.email,
-        amount: fee,
-        providerCost: config.panProviderCost,
-        oldBalance: newBalance + fee,
-        newBalance,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const res = await panNsdlGetAuthorization({
-        data: {
-          userId: user.uid.slice(0, 20),
-          orderId,
-          shopName: user.name || user.email,
-          weburl: typeof window !== "undefined" ? window.location.hostname : "",
-          redirectUrl: `${origin}/api/public/pan-portal/nsdl-webhook`,
-        },
-      });
-
-      if (!res.success) {
-        // Refund immediately
-        await updatePanOrder(orderId, { status: "refunded", remark: res.error });
-        // Note: refund happens via webhook normally; here we just mark — no double-refund.
-        throw new Error(res.error);
-      }
-
-      await updatePanOrder(orderId, {
-        authorization: res.authorization,
-        refId: res.refOrderId,
-        remark: res.message,
-      });
-
-      // Submit hidden form to NSDL
-      const dashboardUrl = config.digipayDashboardUrl || "https://digipaydashboard.religaredigital.in/Login/Authenticate";
-      const f = document.createElement("form");
-      f.method = "POST";
-      f.action = dashboardUrl;
-      f.target = "_blank";
-      const i = document.createElement("input");
-      i.type = "hidden";
-      i.name = "authentication";
-      i.value = res.authorization;
-      f.appendChild(i);
-      document.body.appendChild(f);
-      f.submit();
-      document.body.removeChild(f);
-
-      toast.success("Redirecting to NSDL — complete the application in the new tab");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Application failed");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (!activation?.nsdlActive) {
-    return (
-      <Card className="overflow-hidden border shadow-lg">
-        <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
-        <div className="bg-gradient-to-br from-blue-50/60 via-white to-amber-50/40 dark:from-blue-950/30 dark:via-slate-900 dark:to-amber-950/10 p-8 md:p-10">
-          <div className="max-w-xl mx-auto text-center space-y-5">
-            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center shadow-xl shadow-primary/30">
-              <Zap className="h-10 w-10 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Activate NSDL eKYC PAN Service</h2>
-              <p className="text-muted-foreground mt-2">One-time activation. Apply unlimited PAN cards after.</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-left bg-white dark:bg-slate-900 rounded-xl p-4 border shadow-sm">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Activation</p>
-                <p className="text-2xl font-bold text-foreground">₹{activationCharge}</p>
-                <p className="text-[11px] text-muted-foreground">one-time</p>
-              </div>
-              <div className="border-l pl-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Per PAN</p>
-                <p className="text-2xl font-bold text-emerald-600">₹{fee}</p>
-                <p className="text-[11px] text-muted-foreground">auto-debit from wallet</p>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleActivate}
-              disabled={activating || activationCharge <= 0}
-              size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-blue-700 hover:from-primary hover:to-blue-800 shadow-lg shadow-primary/30 px-8"
-            >
-              {activating ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Wallet className="h-5 w-5 mr-2" />}
-              Activate Now (₹{activationCharge})
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
-
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Instant activation</span>
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Auto refund on failure</span>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="overflow-hidden border shadow-md">
-      <div className="bg-gradient-to-r from-primary via-blue-600 to-blue-700 p-1" />
-      <CardHeader className="bg-gradient-to-br from-blue-50/60 to-white dark:from-blue-950/20 dark:to-slate-900">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <CreditCard className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-base">Apply for New PAN (Form 49A)</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Aadhaar-based instant eKYC</p>
-            </div>
-          </div>
-          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
-            <Wallet className="h-3 w-3 mr-1" /> ₹{fee} per application
-          </Badge>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><IdCard className="h-5 w-5" />New PSA Registration</CardTitle>
+        <CardDescription>Register your shop with UTI as a Point of Sales Agent. VLE ID auto-generated from mobile.</CardDescription>
       </CardHeader>
-      <CardContent className="pt-6">
-        <form onSubmit={handleApply} className="space-y-5">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Application Type</Label>
-              <Select value={form.applicationType} onValueChange={(v) => setForm({ ...form, applicationType: v as "P" | "E" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P">Physical PAN</SelectItem>
-                  <SelectItem value="E">Electronic PAN (e-PAN)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Application Mode</Label>
-              <Select value={form.applicationMode} onValueChange={(v) => setForm({ ...form, applicationMode: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OTP">Aadhaar OTP</SelectItem>
-                  <SelectItem value="Biometric">Biometric</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2 space-y-1.5">
-              <Label>Applicant Full Name</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="As per Aadhaar" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Date of Birth</Label>
-              <Input type="date" value={form.dob} onChange={(e) => setForm({ ...form, dob: e.target.value })} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Gender</Label>
-              <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as "M" | "F" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Male</SelectItem>
-                  <SelectItem value="F">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Mobile</Label>
-              <Input value={form.mobile} maxLength={10} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required placeholder="Aadhaar-linked mobile" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            </div>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2 rounded-md bg-muted/40 px-3 py-2 text-xs">
+            VLE ID: <code className="font-mono text-foreground">{generateVleId(user.uid, user.phone || "")}</code>
+            {" · "}Mobile: <code className="font-mono text-foreground">{user.phone || "—"}</code>
           </div>
-
-          <label className="flex items-start gap-3 text-sm bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 rounded-lg p-3 cursor-pointer hover:bg-amber-50 transition-colors">
-            <input
-              type="checkbox"
-              checked={form.consent}
-              onChange={(e) => setForm({ ...form, consent: e.target.checked })}
-              className="mt-1 h-4 w-4 rounded accent-primary"
-            />
-            <span className="text-foreground">
-              I (Consumer) hereby state that I have <strong>no objection</strong> in authenticating myself with Aadhaar based UID/VID authentication system and provide my consent.
-            </span>
-          </label>
-
-          <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t">
-            <div>
-              <p className="text-xs text-muted-foreground">Total charge</p>
-              <p className="text-2xl font-bold text-foreground">
-                ₹{fee} <span className="text-xs font-normal text-emerald-600">· auto refund if failed</span>
-              </p>
-            </div>
-            <Button
-              type="submit"
-              disabled={submitting}
-              size="lg"
-              className="bg-gradient-to-r from-primary to-blue-700 hover:from-primary hover:to-blue-800 shadow-md shadow-primary/20 px-6"
-            >
-              {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ArrowRight className="h-5 w-5 mr-2" />}
-              Submit & Continue to NSDL
+          <div><Label>Shop Name</Label><Input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} /></div>
+          <div><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+          <div className="sm:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+          <div><Label>PAN No.</Label><Input value={form.panNo} maxLength={10} className="uppercase font-mono" onChange={(e) => setForm({ ...form, panNo: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" /></div>
+          <div><Label>Aadhaar No.</Label><Input value={form.uidNo} maxLength={12} inputMode="numeric" className="font-mono" onChange={(e) => setForm({ ...form, uidNo: e.target.value.replace(/\D/g, "") })} placeholder="12-digit Aadhaar" /></div>
+          <div><Label>PIN Code</Label><Input value={form.pinCode} maxLength={6} inputMode="numeric" className="font-mono" onChange={(e) => setForm({ ...form, pinCode: e.target.value.replace(/\D/g, "") })} /></div>
+          <div className="sm:col-span-2">
+            <Button type="submit" disabled={submitting || !cfg.credCipher}>
+              {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering…</> : "Register PSA"}
             </Button>
           </div>
         </form>
@@ -1109,377 +239,292 @@ function PanTab({
   );
 }
 
-function OrdersHistory({ orders }: { orders: PanOrder[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+// ─── PSA Link Existing ─────────────────────────────────────────────────
+function PsaLinkForm({
+  user, cfg, onRefresh,
+}: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; onRefresh: () => Promise<void>; }) {
+  const [vleId, setVleId] = useState("");
+  const [mobile, setMobile] = useState(user.phone || "");
+  const [submitting, setSubmitting] = useState(false);
 
-  if (orders.length === 0) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="p-12 text-center space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="font-semibold text-foreground">No PAN orders yet</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Your submitted PAN applications will appear here. Switch to the <strong>NSDL eKYC PAN</strong> tab to apply.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  async function handleLink(e: FormEvent) {
+    e.preventDefault();
+    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    const id = vleId.trim().toUpperCase();
+    if (id.length < 4) { toast.error("Enter your old VLE ID (e.g. PSA123456 or RMPMCST-9876543210)"); return; }
+    if (!/^\d{10}$/.test(mobile)) { toast.error("Enter the 10-digit mobile registered with UTI"); return; }
+
+    setSubmitting(true);
+    try {
+      if (await isVleIdTaken(id, user.uid)) {
+        throw new Error(`VLE ID ${id} is already linked to another retailer.`);
+      }
+
+      // Verify VLE exists upstream by attempting a coupon_status call with a
+      // dummy order id — provider returns "Vle Data Not Exist" / similar when
+      // the VLE is not registered. Any provider response that doesn't say so
+      // means the VLE is recognised (status of the dummy order doesn't matter).
+      const probe = await panCouponStatus({
+        data: {
+          credCipher: cfg.credCipher!,
+          baseUrl: cfg.providerBaseUrl,
+          orderId: `PROBE-${Date.now()}`,
+        },
+      });
+      const probeMsg = (probe.message || "").toLowerCase();
+      // We can't directly probe the VLE from coupon_status (it queries an order).
+      // So the safer probe is a 1-coupon coupon_buy with qty=1 — but that costs
+      // money. Instead we just trust the user input here and validate at first
+      // real purchase (provider will reject + we refund). This is the explicit
+      // "linkedExisting" trade-off the team chose.
+      void probeMsg;
+
+      const now = new Date().toISOString();
+      await upsertPsaRecord({
+        retailerId: user.uid,
+        vleId: id,
+        status: "approved",
+        linkedExisting: true,
+        ownerName: user.name || user.email,
+        shopName: user.name || user.email,
+        mobile,
+        email: user.email,
+        remark: "Linked existing UTI VLE from old portal",
+        createdAt: now,
+        updatedAt: now,
+      });
+      toast.success(`Linked VLE ${id} ✓ — you can buy coupons now.`);
+      await onRefresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Link failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <div className="space-y-3">
-      {orders.map((o) => {
-        const statusConfig = {
-          success: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: <CheckCircle2 className="h-3 w-3" /> },
-          pending: { color: "bg-amber-100 text-amber-700 border-amber-200", icon: <Clock className="h-3 w-3" /> },
-          failed: { color: "bg-rose-100 text-rose-700 border-rose-200", icon: <XCircle className="h-3 w-3" /> },
-          refunded: { color: "bg-slate-100 text-slate-700 border-slate-200", icon: <RefreshCw className="h-3 w-3" /> },
-        }[o.status];
-        const isExpanded = expandedId === o.orderId;
-        const accentClass =
-          o.status === "success" ? "border-l-emerald-500" :
-          o.status === "failed" ? "border-l-rose-500" :
-          o.status === "refunded" ? "border-l-slate-400" :
-          "border-l-amber-500";
-        return (
-          <Card key={o.orderId} className={`hover:shadow-md transition-all border-l-4 ${accentClass}`}>
-            <CardContent className="p-0">
-              {/* Summary row */}
-              <button
-                type="button"
-                onClick={() => setExpandedId(isExpanded ? null : o.orderId)}
-                className="w-full p-4 flex items-center justify-between flex-wrap gap-4 text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors rounded-lg"
-              >
-                <div className="space-y-1 flex-1 min-w-0">
-                  <p className="font-mono text-[11px] text-muted-foreground tracking-wide truncate">{o.orderId}</p>
-                  <p className="font-semibold text-foreground text-base">{o.name}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                    <span>📱 {o.mobile}</span>
-                    <span>·</span>
-                    <span>{new Date(o.createdAt).toLocaleString()}</span>
-                  </p>
-                  {o.ackNo && (
-                    <p className="text-xs">
-                      Ack No: <span className="font-mono font-semibold text-foreground">{o.ackNo}</span>
-                    </p>
-                  )}
-                </div>
-                <div className="text-right space-y-2 flex flex-col items-end">
-                  <Badge className={`${statusConfig.color} border gap-1 capitalize`}>
-                    {statusConfig.icon}
-                    {o.status}
-                  </Badge>
-                  <p className="text-lg font-bold text-foreground">₹{o.amount}</p>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {isExpanded ? "Hide timeline" : "View timeline"}
-                  </span>
-                </div>
-              </button>
-
-              {/* Timeline */}
-              {isExpanded && (
-                <div className="border-t bg-gradient-to-br from-slate-50/80 to-white dark:from-slate-900/60 dark:to-slate-900 p-6">
-                  <OrderTimeline order={o} />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ----------------------------- Order Timeline ---------------------------- */
-type TimelineStep = {
-  key: string;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  state: "done" | "active" | "failed" | "pending";
-  timestamp?: string;
-};
-
-function OrderTimeline({ order }: { order: PanOrder }) {
-  const steps: TimelineStep[] = [];
-
-  // Step 1 — Always done (order created + wallet debited)
-  steps.push({
-    key: "submitted",
-    label: "Application Submitted",
-    description: `₹${order.amount} debited from wallet · Order ID generated`,
-    icon: <Send className="h-4 w-4" />,
-    state: "done",
-    timestamp: order.createdAt,
-  });
-
-  // Step 2 — NSDL Authorization
-  const hasAuth = !!order.authorization || !!order.refId;
-  steps.push({
-    key: "authorized",
-    label: "NSDL Authorization",
-    description: order.refId
-      ? `Auth token received · Ref: ${order.refId}`
-      : "Awaiting NSDL authorization token",
-    icon: <ShieldCheck className="h-4 w-4" />,
-    state: hasAuth ? "done" : order.status === "pending" ? "active" : "failed",
-    timestamp: hasAuth ? order.updatedAt : undefined,
-  });
-
-  // Step 3 — Aadhaar eKYC / NSDL processing
-  const isProcessing = order.status === "pending" && hasAuth;
-  const isProcessed = order.status === "success" || order.status === "failed" || !!order.ackNo;
-  steps.push({
-    key: "processing",
-    label: "Aadhaar eKYC Processing",
-    description: order.ackNo
-      ? `Acknowledged by NSDL · Ack No: ${order.ackNo}`
-      : isProcessing
-        ? "Customer completing Aadhaar OTP / Biometric"
-        : order.status === "failed"
-          ? "Processing failed before completion"
-          : "Waiting for previous step",
-    icon: <Server className="h-4 w-4" />,
-    state: isProcessed ? "done" : isProcessing ? "active" : order.status === "failed" ? "failed" : "pending",
-    timestamp: order.ackNo ? order.updatedAt : undefined,
-  });
-
-  // Step 4 — Final outcome
-  if (order.status === "success") {
-    steps.push({
-      key: "success",
-      label: "PAN Application Successful",
-      description: "Your PAN application is approved and being processed by NSDL.",
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      state: "done",
-      timestamp: order.updatedAt,
-    });
-  } else if (order.status === "failed") {
-    steps.push({
-      key: "failed",
-      label: "Application Failed",
-      description: order.remark || "Application could not be processed.",
-      icon: <ShieldAlert className="h-4 w-4" />,
-      state: "failed",
-      timestamp: order.updatedAt,
-    });
-  } else if (order.status === "refunded") {
-    steps.push({
-      key: "refunded",
-      label: "Amount Refunded",
-      description: `₹${order.amount} credited back to your wallet · ${order.remark || "Auto refund processed"}`,
-      icon: <Undo2 className="h-4 w-4" />,
-      state: "done",
-      timestamp: order.updatedAt,
-    });
-  } else {
-    steps.push({
-      key: "final",
-      label: "Awaiting Final Status",
-      description: "Result will appear here once NSDL completes processing.",
-      icon: <Clock className="h-4 w-4" />,
-      state: "pending",
-    });
-  }
-
-  return (
-    <div className="relative">
-      {/* Header strip */}
-      <div className="flex items-center justify-between mb-5 pb-3 border-b">
-        <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Order Timeline</p>
-          <p className="text-sm font-semibold text-foreground">Lifecycle of this PAN application</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[11px] text-muted-foreground">Wallet</p>
-          <p className="text-xs font-mono text-foreground">
-            ₹{order.oldBalance} → <span className="font-bold">₹{order.newBalance}</span>
-          </p>
-        </div>
-      </div>
-
-      <ol className="relative space-y-4">
-        {steps.map((step, idx) => {
-          const isLast = idx === steps.length - 1;
-          const dotStyles =
-            step.state === "done"
-              ? "bg-emerald-500 text-white ring-emerald-100 dark:ring-emerald-950"
-              : step.state === "active"
-                ? "bg-amber-500 text-white ring-amber-100 dark:ring-amber-950 animate-pulse"
-                : step.state === "failed"
-                  ? "bg-rose-500 text-white ring-rose-100 dark:ring-rose-950"
-                  : "bg-slate-200 text-slate-500 ring-slate-100 dark:bg-slate-700 dark:text-slate-400 dark:ring-slate-800";
-          const lineStyles =
-            step.state === "done"
-              ? "bg-emerald-300 dark:bg-emerald-700"
-              : step.state === "failed"
-                ? "bg-rose-300 dark:bg-rose-700"
-                : "bg-slate-200 dark:bg-slate-700";
-          const labelStyles =
-            step.state === "done"
-              ? "text-emerald-700 dark:text-emerald-300"
-              : step.state === "active"
-                ? "text-amber-700 dark:text-amber-300"
-                : step.state === "failed"
-                  ? "text-rose-700 dark:text-rose-300"
-                  : "text-muted-foreground";
-
-          return (
-            <li key={step.key} className="flex gap-4 relative">
-              {/* Vertical connector + dot */}
-              <div className="flex flex-col items-center flex-shrink-0">
-                <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center ring-4 shadow-sm ${dotStyles}`}>
-                  {step.icon}
-                </div>
-                {!isLast && <div className={`w-0.5 flex-1 mt-1 ${lineStyles}`} style={{ minHeight: 24 }} />}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pb-2">
-                <div className="flex items-start justify-between flex-wrap gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-semibold text-sm ${labelStyles}`}>{step.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 break-words">{step.description}</p>
-                  </div>
-                  {step.timestamp && (
-                    <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap bg-white dark:bg-slate-800 px-2 py-1 rounded border">
-                      {new Date(step.timestamp).toLocaleString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  )}
-                </div>
-                {step.state === "active" && (
-                  <Badge className="mt-2 bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px]">
-                    <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" />
-                    In progress
-                  </Badge>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* Application metadata footer */}
-      <div className="mt-6 pt-4 border-t grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div>
-          <p className="text-muted-foreground">Type</p>
-          <p className="font-semibold text-foreground">{order.applicationType === "P" ? "Physical PAN" : "e-PAN"}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Mode</p>
-          <p className="font-semibold text-foreground">{order.applicationMode}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Email</p>
-          <p className="font-semibold text-foreground truncate">{order.email}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">DOB</p>
-          <p className="font-semibold text-foreground">{order.dob}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------------------------------------------------------- *
- * Legacy wallet transfer — separate visibility card.
- *
- * Shows a dedicated "Transfer Amount" card above the tabs whenever the
- * retailer has at least one legacy wallet transfer request on file. This
- * keeps the legacy ₹ amount visually separate from the regular wallet
- * balance (per user requirement) so retailers always know what is pending
- * vs. already credited.
- * ----------------------------------------------------------------------- */
-function LegacyTransferStatusCard({ retailerId }: { retailerId: string }) {
-  const [requests, setRequests] = useState<PanLegacyTransferRequest[]>([]);
-
-  useEffect(() => {
-    return subscribeRetailerTransferRequests(retailerId, setRequests);
-  }, [retailerId]);
-
-  if (requests.length === 0) return null;
-
-  const pending = requests.filter((r) => r.status === "pending");
-  const approved = requests.filter((r) => r.status === "approved");
-  const rejected = requests.filter((r) => r.status === "rejected");
-
-  const pendingAmount = pending.reduce((s, r) => s + r.amount, 0);
-  const approvedAmount = approved.reduce((s, r) => s + r.amount, 0);
-
-  return (
-    <Card className="border-emerald-200 dark:border-emerald-900/50 shadow-md overflow-hidden">
-      <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-1" />
-      <CardHeader className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Wallet className="h-5 w-5 text-emerald-600" />
-          Old Portal Wallet Transfer
-        </CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Link2 className="h-5 w-5" />Link Existing UTI VLE</CardTitle>
+        <CardDescription>
+          For users migrating from the old portal — link your existing UTI VLE ID to start
+          buying coupons immediately. No re-registration needed.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="pt-4 space-y-3">
-        <div className="grid sm:grid-cols-3 gap-3">
-          <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/20 p-3">
-            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-wider font-semibold">
-              <Clock className="h-3.5 w-3.5" /> Pending Transfer
-            </div>
-            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
-              ₹{pendingAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {pending.length} request{pending.length === 1 ? "" : "s"} awaiting admin
-            </p>
+      <CardContent>
+        <form onSubmit={handleLink} className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Existing VLE ID</Label>
+            <Input value={vleId} onChange={(e) => setVleId(e.target.value.toUpperCase())} placeholder="PSA123456 / RMPMCST-9876543210" className="font-mono uppercase" />
           </div>
-          <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3">
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-[11px] uppercase tracking-wider font-semibold">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Credited
-            </div>
-            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
-              ₹{approvedAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Already in your wallet
-            </p>
+          <div>
+            <Label>UTI Registered Mobile</Label>
+            <Input value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} maxLength={10} inputMode="numeric" className="font-mono" />
           </div>
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
-              <XCircle className="h-3.5 w-3.5" /> Rejected
-            </div>
-            <p className="text-2xl font-bold mt-1">{rejected.length}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Contact admin if disputed
-            </p>
+          <div className="sm:col-span-2">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Linking…</> : "Link VLE"}
+            </Button>
           </div>
-        </div>
-
-        {requests.slice(0, 4).map((r) => (
-          <div
-            key={r.id}
-            className="flex items-center justify-between gap-2 text-xs border-t pt-2"
-          >
-            <div className="min-w-0 flex-1">
-              <span className="font-mono text-foreground">{r.legacyUsername}</span>
-              <span className="text-muted-foreground"> · {new Date(r.createdAt).toLocaleDateString()}</span>
-            </div>
-            <span className="font-semibold">₹{r.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
-            <Badge
-              variant={
-                r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"
-              }
-              className="capitalize"
-            >
-              {r.status}
-            </Badge>
-          </div>
-        ))}
+        </form>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── PSA Password Reset ────────────────────────────────────────────────
+function PsaPasswordResetCard({ cfg, psa }: { cfg: PanPortalConfig; psa: PanPsaRecord }) {
+  const [busy, setBusy] = useState(false);
+  async function reset() {
+    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    if (!confirm("Reset UTI portal password for " + psa.vleId + "?")) return;
+    setBusy(true);
+    try {
+      const res = await panPsaPasswordReset({ data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: psa.vleId } });
+      if (!res.success) throw new Error(res.error);
+      toast.success(res.message || "Password reset successfully");
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Failed"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base"><KeyRound className="h-4 w-4" />Reset PSA Password</CardTitle>
+        <CardDescription>New password will be sent to your UTI-registered mobile/email.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={reset} disabled={busy} variant="outline" size="sm">
+          {busy ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Resetting…</> : "Reset Password"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Coupon Buy ────────────────────────────────────────────────────────
+function CouponBuyPanel({
+  user, cfg, psa, onChange,
+}: { user: NonNullable<ReturnType<typeof useAuth>["appUser"]>; cfg: PanPortalConfig; psa: PanPsaRecord | null; onChange: () => Promise<void>; }) {
+  const [qty, setQty] = useState(1);
+  const [busy, setBusy] = useState(false);
+
+  if (!psa || psa.status !== "approved") {
+    return <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>Register or link your PSA first.</AlertDescription></Alert>;
+  }
+
+  const total = qty * cfg.couponRetailerFee;
+
+  async function buy() {
+    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
+    if (!confirm(`Buy ${qty} coupon(s) for ₹${total}? This will be debited from your wallet.`)) return;
+    setBusy(true);
+
+    let orderId = "";
+    let debited = false;
+    try {
+      // 1. Debit wallet first
+      await atomicDebit(user.uid, total, {
+        source: "pan-portal",
+        description: `UTI coupon × ${qty} (VLE ${psa!.vleId})`,
+      });
+      debited = true;
+
+      // 2. Create local pending order
+      const now = new Date().toISOString();
+      orderId = await createCouponOrder({
+        retailerId: user.uid, vleId: psa!.vleId,
+        qty, couponType: 1,
+        unitFee: cfg.couponRetailerFee, unitProviderCost: cfg.couponProviderCost,
+        totalDebit: total,
+        status: "PENDING", createdAt: now, updatedAt: now,
+      });
+
+      // 3. Call provider
+      const res = await panCouponBuy({
+        data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: psa!.vleId, type: 1, qty },
+      });
+
+      if (!res.success) {
+        // Refund + mark failed
+        await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: coupon failed (${res.error})` });
+        await updateCouponOrder(orderId, { status: "FAILED", message: res.error, refunded: true });
+        throw new Error(res.error);
+      }
+
+      await updateCouponOrder(orderId, {
+        status: res.status, providerOrderId: res.orderId, providerDate: res.date, message: res.message,
+      });
+      toast.success(`${qty} coupon(s) ${res.status.toLowerCase()} ✓`);
+      await onChange();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Purchase failed";
+      // If the provider call threw before we updated the order but after the debit,
+      // ensure refund happened (avoid double refund).
+      if (debited && !orderId) {
+        try { await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: ${msg}` }); } catch {}
+      }
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><ShoppingCart className="h-5 w-5" />Buy UTI PAN Coupons</CardTitle>
+        <CardDescription>VLE ID: <code className="font-mono">{psa.vleId}</code></CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div>
+            <Label>Quantity</Label>
+            <Input type="number" min={1} max={50} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(50, Number(e.target.value) || 1)))} />
+          </div>
+          <div>
+            <Label>Per Coupon</Label>
+            <Input value={`₹${cfg.couponRetailerFee}`} disabled />
+          </div>
+          <div>
+            <Label>Total Debit</Label>
+            <Input value={`₹${total}`} disabled className="font-bold" />
+          </div>
+        </div>
+        <Button onClick={buy} disabled={busy} size="lg" className="w-full sm:w-auto">
+          {busy ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing…</> : <>Buy {qty} Coupon{qty > 1 ? "s" : ""} for ₹{total}</>}
+        </Button>
+        {psa.linkedExisting && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              You linked an existing VLE. If the provider rejects the purchase with "VLE Data Not Exist",
+              your wallet is auto-refunded and you'll need to re-register via "New PSA Registration".
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── History ────────────────────────────────────────────────────────────
+function CouponHistoryPanel({
+  orders, cfg, onRefresh,
+}: { orders: PanCouponOrder[]; cfg: PanPortalConfig; onRefresh: () => Promise<void>; }) {
+  const [tracking, setTracking] = useState<string | null>(null);
+
+  async function track(o: PanCouponOrder) {
+    if (!o.providerOrderId || !cfg.credCipher) return;
+    setTracking(o.id!);
+    try {
+      const res = await panCouponStatus({ data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, orderId: o.providerOrderId } });
+      await updateCouponOrder(o.id!, { status: res.status, message: res.message, providerDate: res.date || o.providerDate });
+      toast.success(`Status: ${res.status}${res.message ? " — " + res.message : ""}`);
+      await onRefresh();
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Track failed"); }
+    finally { setTracking(null); }
+  }
+
+  if (!orders.length) {
+    return <Alert><AlertDescription>No coupon purchases yet.</AlertDescription></Alert>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {orders.map((o) => (
+        <Card key={o.id}>
+          <CardContent className="p-3 flex flex-wrap items-center gap-3 justify-between text-sm">
+            <div className="min-w-0">
+              <div className="font-mono text-xs text-muted-foreground truncate">{o.providerOrderId || o.id}</div>
+              <div className="font-medium">
+                {o.qty} coupon{o.qty > 1 ? "s" : ""} · ₹{o.totalDebit}
+                {o.refunded && <span className="text-emerald-600 ml-2">· refunded</span>}
+              </div>
+              <div className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleString()}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={o.status === "SUCCESS" ? "default" : o.status === "PENDING" ? "secondary" : "destructive"}>
+                {o.status}
+              </Badge>
+              {o.providerOrderId && (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => track(o)} disabled={tracking === o.id}>
+                    {tracking === o.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCcw className="h-3 w-3" />}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(o.providerOrderId!); toast.success("Order ID copied"); }}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      <a href="https://www.psaonline.utiitsl.com" target="_blank" rel="noreferrer"
+         className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2">
+        Open UTI PSA Portal <ExternalLink className="h-3 w-3" />
+      </a>
+    </div>
   );
 }

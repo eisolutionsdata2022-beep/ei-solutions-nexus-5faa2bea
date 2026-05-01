@@ -92,9 +92,7 @@ import { Route as AdminServiceActivationsConfigRouteImport } from './routes/admi
 import { Route as AdminServiceActivationsRouteImport } from './routes/admin.service-activations'
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
-import { Route as AdminPanRefundRepairRouteImport } from './routes/admin.pan-refund-repair'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
-import { Route as AdminPanLegacyBalancesRouteImport } from './routes/admin.pan-legacy-balances'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -122,7 +120,6 @@ import { Route as RetailerJobsJobIdRouteImport } from './routes/retailer.jobs.$j
 import { Route as ApiPublicPaytmCallbackRouteImport } from './routes/api.public.paytm-callback'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api.email.unsubscribe'
 import { Route as ApiEmailOpenRouteImport } from './routes/api.email.open'
-import { Route as ApiPublicPanPortalNsdlWebhookRouteImport } from './routes/api.public.pan-portal.nsdl-webhook'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -540,19 +537,9 @@ const AdminPaytmSettingsRoute = AdminPaytmSettingsRouteImport.update({
   path: '/paytm-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPanRefundRepairRoute = AdminPanRefundRepairRouteImport.update({
-  id: '/pan-refund-repair',
-  path: '/pan-refund-repair',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   id: '/pan-portal-settings',
   path: '/pan-portal-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPanLegacyBalancesRoute = AdminPanLegacyBalancesRouteImport.update({
-  id: '/pan-legacy-balances',
-  path: '/pan-legacy-balances',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
@@ -691,12 +678,6 @@ const ApiEmailOpenRoute = ApiEmailOpenRouteImport.update({
   path: '/api/email/open',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPanPortalNsdlWebhookRoute =
-  ApiPublicPanPortalNsdlWebhookRouteImport.update({
-    id: '/api/public/pan-portal/nsdl-webhook',
-    path: '/api/public/pan-portal/nsdl-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -737,9 +718,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
-  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -812,7 +791,6 @@ export interface FileRoutesByFullPath {
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
-  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -846,9 +824,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
-  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -921,7 +897,6 @@ export interface FileRoutesByTo {
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
-  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -963,9 +938,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-legacy-balances': typeof AdminPanLegacyBalancesRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
-  '/admin/pan-refund-repair': typeof AdminPanRefundRepairRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
   '/admin/service-activations': typeof AdminServiceActivationsRoute
@@ -1038,7 +1011,6 @@ export interface FileRoutesById {
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/public/paytm-callback': typeof ApiPublicPaytmCallbackRoute
   '/retailer/jobs/$jobId': typeof RetailerJobsJobIdRoute
-  '/api/public/pan-portal/nsdl-webhook': typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1081,9 +1053,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
-    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1156,7 +1126,6 @@ export interface FileRouteTypes {
     | '/api/email/unsubscribe'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
-    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1190,9 +1159,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
-    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1265,7 +1232,6 @@ export interface FileRouteTypes {
     | '/api/email/unsubscribe'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
-    | '/api/public/pan-portal/nsdl-webhook'
   id:
     | '__root__'
     | '/'
@@ -1306,9 +1272,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-legacy-balances'
     | '/admin/pan-portal-settings'
-    | '/admin/pan-refund-repair'
     | '/admin/paytm-settings'
     | '/admin/referrals'
     | '/admin/service-activations'
@@ -1381,7 +1345,6 @@ export interface FileRouteTypes {
     | '/api/email/unsubscribe'
     | '/api/public/paytm-callback'
     | '/retailer/jobs/$jobId'
-    | '/api/public/pan-portal/nsdl-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1404,7 +1367,6 @@ export interface RootRouteChildren {
   ApiEmailOpenRoute: typeof ApiEmailOpenRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiPublicPaytmCallbackRoute: typeof ApiPublicPaytmCallbackRoute
-  ApiPublicPanPortalNsdlWebhookRoute: typeof ApiPublicPanPortalNsdlWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1990,25 +1952,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaytmSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/pan-refund-repair': {
-      id: '/admin/pan-refund-repair'
-      path: '/pan-refund-repair'
-      fullPath: '/admin/pan-refund-repair'
-      preLoaderRoute: typeof AdminPanRefundRepairRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/pan-portal-settings': {
       id: '/admin/pan-portal-settings'
       path: '/pan-portal-settings'
       fullPath: '/admin/pan-portal-settings'
       preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pan-legacy-balances': {
-      id: '/admin/pan-legacy-balances'
-      path: '/pan-legacy-balances'
-      fullPath: '/admin/pan-legacy-balances'
-      preLoaderRoute: typeof AdminPanLegacyBalancesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/notices': {
@@ -2200,13 +2148,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailOpenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/pan-portal/nsdl-webhook': {
-      id: '/api/public/pan-portal/nsdl-webhook'
-      path: '/api/public/pan-portal/nsdl-webhook'
-      fullPath: '/api/public/pan-portal/nsdl-webhook'
-      preLoaderRoute: typeof ApiPublicPanPortalNsdlWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -2234,9 +2175,7 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
-  AdminPanLegacyBalancesRoute: typeof AdminPanLegacyBalancesRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
-  AdminPanRefundRepairRoute: typeof AdminPanRefundRepairRoute
   AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
   AdminServiceActivationsRoute: typeof AdminServiceActivationsRoute
@@ -2283,9 +2222,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
-  AdminPanLegacyBalancesRoute: AdminPanLegacyBalancesRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
-  AdminPanRefundRepairRoute: AdminPanRefundRepairRoute,
   AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
   AdminServiceActivationsRoute: AdminServiceActivationsRoute,
@@ -2493,7 +2430,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEmailOpenRoute: ApiEmailOpenRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiPublicPaytmCallbackRoute: ApiPublicPaytmCallbackRoute,
-  ApiPublicPanPortalNsdlWebhookRoute: ApiPublicPanPortalNsdlWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CRMDashboard } from "@/components/crm/CRMDashboard";
-import { UtiTrainingPdfCard } from "@/components/pan-portal/UtiTrainingPdfCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Users, ArrowRight } from "lucide-react";
 
@@ -52,8 +51,6 @@ function StaffHome() {
         </div>
       </section>
 
-      {/* Quick reference — same UTI PAN training PDF retailers see */}
-      <UtiTrainingPdfCard />
       <CRMDashboard />
     </div>
   );
