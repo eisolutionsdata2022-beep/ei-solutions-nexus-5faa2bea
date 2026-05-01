@@ -46,9 +46,11 @@ interface WalletTxn {
 interface Props {
   retailerId: string;
   coupons: PanUtiCoupon[];
+  onTrack?: (couponId: string, ackNo?: string) => void | Promise<void>;
+  trackingId?: string | null;
 }
 
-export function UtiCouponHistoryTable({ retailerId, coupons }: Props) {
+export function UtiCouponHistoryTable({ retailerId, coupons, onTrack, trackingId }: Props) {
   const [walletTxns, setWalletTxns] = useState<WalletTxn[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
