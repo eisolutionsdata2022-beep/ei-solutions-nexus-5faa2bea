@@ -258,8 +258,8 @@ export const panPsaCreate = createServerFn({ method: "POST" })
 /* ----------------------- 3. PSA Auto-ID — password ----------------------- */
 
 const psaPwdInput = z.object({
-  url: z.string().url().max(500),
-  cipher: z.string().min(10).max(2000),
+  url: z.string().url().max(500).optional(),
+  cipher: z.string().min(10).max(2000).optional(),
   vleId: z.string().min(2).max(80),
 });
 
@@ -268,15 +268,19 @@ export const panPsaPasswordReset = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => psaPwdInput.parse(input))
   .handler(async ({ data, context }): Promise<PanPsaResult> => {
     if (!context.authUser) return { success: false, error: "Authentication required" };
+    const cfg = !data.url || !data.cipher ? await readPanMasterConfig() : null;
+    const url = data.url || cfg?.psaPasswordUrl;
+    const cipher = data.cipher || cfg?.cipher;
+    if (!url || !cipher) return { success: false, error: "Provider not configured" };
     let creds: { apiKey: string };
     try {
-      creds = await decryptCreds(data.cipher);
+      creds = await decryptCreds(cipher);
     } catch {
       return { success: false, error: "Provider credentials are corrupted." };
     }
     const body = { api_key: creds.apiKey, vle_id: data.vleId };
     try {
-      const res = await fetch(data.url, {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
