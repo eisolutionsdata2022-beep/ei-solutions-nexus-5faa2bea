@@ -197,10 +197,6 @@ export function subscribeRetailerPendingCaptures(
   cb: (rows: (CaptureRequest & { ippbRequestId: string })[]) => void
 ): Unsubscribe {
   // Single-field where → no composite index required. Status filtered client-side.
-  const q = query(
-    collectionGroup(db, "captureRequests"),
-    where("retailerId", "==", retailerId)
-  );
   // If a previous attempt for this retailer was denied (rules / no index),
   // do NOT attach another listener — repeated permission-denied snapshots
   // poison the Firestore SDK and crash unrelated pages.
