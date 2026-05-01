@@ -492,6 +492,24 @@ export function UtiCouponTab({ user, config, psa, coupons }: Props) {
 
       {/* Premium history table with wallet transactions */}
       <UtiCouponHistoryTable retailerId={user.uid} coupons={coupons} />
+
+      {/* Auto-VLE-registration dialog — opens when upstream returns
+          "Vle Data Not Exist" so legacy-linked PSAs migrate seamlessly. */}
+      <VleAutoRegisterDialog
+        open={autoRegOpen}
+        onOpenChange={(o) => {
+          setAutoRegOpen(o);
+          if (!o) setPendingRetryQty(null);
+        }}
+        user={user}
+        psa={psa}
+        onRegistered={() => {
+          const qtyToRetry = pendingRetryQty ?? Math.max(2, quantity);
+          setPendingRetryQty(null);
+          // Small delay so the upstream registration is fully visible before retry.
+          setTimeout(() => { void handlePurchase(qtyToRetry); }, 600);
+        }}
+      />
     </div>
   );
 }
