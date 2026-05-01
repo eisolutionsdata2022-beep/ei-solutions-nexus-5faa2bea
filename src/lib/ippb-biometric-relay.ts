@@ -13,14 +13,23 @@ import {
   collection,
   collectionGroup,
   doc,
+  getDocs,
   onSnapshot,
   query,
   runTransaction,
   serverTimestamp,
   where,
+  limit,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
+
+// Module-level cache: once we know the retailer can't read the IPPB
+// collection-group, never try again — every failed snapshot listener
+// can corrupt the Firestore SDK internal state and trigger
+// "INTERNAL ASSERTION FAILED (ve:-1)", which silently breaks every other
+// Firestore call in the app (blank pages, hung loaders, etc.).
+const ippbReadDeniedFor = new Set<string>();
 
 export type CaptureStatus =
   | "requested" // staff asked for capture
