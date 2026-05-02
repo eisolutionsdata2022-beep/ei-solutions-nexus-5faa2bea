@@ -120,6 +120,9 @@ async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
     message?: string;
   };
   try {
+    // IMPORTANT: /getAccessToken is NOT versioned. All other billpay APIs use
+    // /V2/billpay/*. Do NOT add a /V2 prefix here — the provider returns 404
+    // (or HTML 503 in some envs) if you do.
     json = await callBbps<typeof json>(
       "/getAccessToken",
       { clientId, clientSecret },
