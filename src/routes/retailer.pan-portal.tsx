@@ -175,9 +175,20 @@ function PanPortalPage() {
               </div>
             </div>
           </div>
-          {psa && (
-            <Badge variant={hasPsa ? "default" : "secondary"} className="capitalize">{psa.status}</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            <a
+              href="https://www.psaonline.utiitsl.com/psapanservices/forms/login.html/loginHome"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-gov-blue text-white text-xs font-semibold hover:bg-gov-blue/90 transition"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              UTI Login
+            </a>
+            {psa && (
+              <Badge variant={hasPsa ? "default" : "secondary"} className="capitalize">{psa.status}</Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
 
