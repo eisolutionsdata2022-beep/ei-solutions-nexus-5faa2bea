@@ -113,6 +113,33 @@ function looksLikeHtmlNotFound(raw: string, status: number): boolean {
   return status === 404 || text.includes("<!doctype html") || text.includes("<html") || text.includes("page not found");
 }
 
+function looksLikeProviderStub(raw: string): boolean {
+  const text = raw.trim().toLowerCase();
+  return text === "test" || text === '"test"';
+}
+
+function looksLikeLoginGate(raw: string): boolean {
+  const text = raw.toLowerCase();
+  return (
+    (text.includes("user name") && text.includes("password") && text.includes("forgot password")) ||
+    text.includes("portallogin/login") ||
+    text.includes("new on our platform?")
+  );
+}
+
+function shouldRetryProviderResponse(raw: string, status: number): boolean {
+  return looksLikeHtmlNotFound(raw, status) || looksLikeProviderStub(raw) || looksLikeLoginGate(raw);
+}
+
+function encodeForm(body: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(body)) {
+    if (value === undefined || value === null) continue;
+    params.set(key, String(value));
+  }
+  return params.toString();
+}
+
 async function providerPost(
   baseUrl: string,
   path: string,
@@ -121,28 +148,38 @@ async function providerPost(
   let last: { ok: boolean; status: number; json: any; raw: string; url: string } | null = null;
 
   for (const url of candidateProviderUrls(baseUrl, path)) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(45_000),
-      });
-      const raw = await res.text();
-      let json: any = {};
-      try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
-      const result = { ok: res.ok, status: res.status, json, raw, url };
-      last = result;
-      if (!looksLikeHtmlNotFound(raw, res.status)) {
-        return result;
+    for (const variant of [
+      {
+        name: "json",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        requestBody: JSON.stringify(body),
+      },
+      {
+        name: "form",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", Accept: "application/json, text/html;q=0.9, */*;q=0.8" },
+        requestBody: encodeForm(body),
+      },
+    ]) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: variant.headers,
+          body: variant.requestBody,
+          signal: AbortSignal.timeout(45_000),
+        });
+        const raw = await res.text();
+        let json: any = {};
+        try { json = JSON.parse(raw); } catch { json = { status: "FAILED", message: raw.slice(0, 300) }; }
+        const result = { ok: res.ok, status: res.status, json, raw, url };
+        last = result;
+        if (!shouldRetryProviderResponse(raw, res.status)) {
+          return result;
+        }
+        console.warn("[PAN] provider path miss, trying fallback:", url, "variant=", variant.name, "status=", res.status, "body=", raw.slice(0, 120));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        last = { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg, url };
       }
-      console.warn("[PAN] provider path miss, trying fallback:", url, "status=", res.status);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      last = { ok: false, status: 0, json: { status: "FAILED", message: msg }, raw: msg, url };
     }
   }
 
@@ -328,11 +365,17 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     const finalize = (r: { status: number; json: any; raw: string; url: string }) => {
       const status = normalizeStatus(r.json?.status);
       const results = r.json?.results || r.json?.result || {};
-      if (status === "SUCCESS" || status === "PENDING") {
+      const message = String(r.json?.message || results?.message || "");
+      const messageLower = message.toLowerCase();
+      const acceptedByMessage =
+        messageLower.includes("coupon request submit successfully") ||
+        messageLower.includes("request submit successfully") ||
+        messageLower.includes("request submitted successfully");
+      if (status === "SUCCESS" || status === "PENDING" || acceptedByMessage) {
         return {
           success: true as const,
-          status: status as "SUCCESS" | "PENDING",
-          message: r.json?.message || results?.message || "Coupon purchase submitted",
+          status: (status === "FAILED" ? "PENDING" : status) as "SUCCESS" | "PENDING",
+          message: message || "Coupon purchase submitted",
           orderId: String(results?.txn_no || results?.utr_no || results?.order_id || utrNo),
           date: String(results?.date || results?.txn_date || ""),
           vleId: String(results?.vle_id || results?.vleid || data.vleId),
@@ -356,16 +399,19 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     }
 
     for (const apiKey of apiKeyCandidates) {
-      const r = await providerGet(data.baseUrl, "coupon_buy", {
-        api_key: apiKey,
-        vle_id: data.vleId,
-        type: data.type,
-        qty: data.qty,
-      });
-      console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
-      const ok = finalize(r);
-      if (ok) return ok;
-      lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
+      const queryVariants: Array<Record<string, string | number>> = [
+        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty },
+        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, weburl: "eisoluions.xyz" },
+        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty },
+        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty, weburl: "eisoluions.xyz" },
+      ];
+      for (const query of queryVariants) {
+        const r = await providerGet(data.baseUrl, "coupon_buy", query);
+        console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
+        const ok = finalize(r);
+        if (ok) return ok;
+        lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
+      }
     }
 
     return { success: false as const, error: lastError };
