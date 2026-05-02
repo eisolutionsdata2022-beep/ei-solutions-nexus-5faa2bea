@@ -120,10 +120,13 @@ async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
     message?: string;
   };
   try {
+    // IMPORTANT: /getAccessToken is NOT versioned. All other billpay APIs use
+    // /V2/billpay/*. The endpoint path passed here must stay "/getAccessToken"
+    // (no /V2 prefix), regardless of how billpay endpoints are versioned.
     json = await callBbps<typeof json>(
       "/getAccessToken",
       { clientId, clientSecret },
-      { skipAuth: true },
+      { skipAuth: true, unversioned: true },
     );
   } catch (err) {
     // Make sure a stale/failed token never lingers in the cache.
