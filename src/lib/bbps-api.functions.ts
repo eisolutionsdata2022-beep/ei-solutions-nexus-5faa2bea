@@ -387,15 +387,16 @@ async function callBbps<T>(
 
 export const bbpsGetCategories = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
+  .handler(async ({ context }): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       return { success: true, categories: MOCK_CATEGORIES, mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
         "/V2/billpay/bill-category",
         { agent: cfg.agentId },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return { success: true, categories: json.data ?? [] };
     } catch (err) {
@@ -441,15 +442,16 @@ function normalizeBiller(raw: Partial<BbpsBiller>): BbpsBiller {
 export const bbpsGetBillers = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       return { success: true, billers: mockBillersFor(data.category), mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
         "/V2/billpay/biller-info",
         { agent: cfg.agentId, category: data.category },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return {
         success: true,
@@ -471,7 +473,7 @@ const paramsInputSchema = z.object({
 export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof paramsInputSchema>) => paramsInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       // Find category from biller code via mock catalogue.
       const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
@@ -481,10 +483,11 @@ export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
       return { success: true, params, mode, mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
         "/V2/billpay/customer-params",
         { agent: cfg.agentId, billerid: data.billerId },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return { success: true, params: json.param ?? [], mode: json.mode ?? null };
     } catch (err) {
@@ -507,7 +510,7 @@ function formatProviderParamList(values: string[]): string {
 export const bbpsFetchBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
       const biller = allMockBillers.find((b) => b.id === data.billerId);
@@ -515,7 +518,7 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
       return { success: true, bill: mockBillFor(data.billerId, cat, data.paramValues), mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const paramName = formatProviderParamList(data.paramNames);
       const paramValue = formatProviderParamList(data.paramValues);
       const json = await callBbps<{
@@ -533,7 +536,7 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
         billerid: data.billerId,
         paramName,
         paramValue,
-      });
+      }, { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg });
       if (!json.success) return { success: false, message: json.message ?? "Bill not found" };
       return {
         success: true,
@@ -565,9 +568,9 @@ const validateInputSchema = z.object({
 export const bbpsValidateBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof validateInputSchema>) => validateInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const paramName = formatProviderParamList(data.paramNames);
       const paramValue = formatProviderParamList(data.paramValues);
       const body: Record<string, unknown> = {
@@ -587,7 +590,7 @@ export const bbpsValidateBill = createServerFn({ method: "POST" })
         billNumber: string;
         message: string;
         requestId: string;
-      }>("/V2/billpay/bill-validation", body);
+      }>("/V2/billpay/bill-validation", body, { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg });
       if (!json.success) return { success: false, message: json.message ?? "Validation failed" };
       return {
         success: true,
