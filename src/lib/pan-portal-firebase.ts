@@ -45,6 +45,30 @@ export async function savePanConfig(
 // ─── PSA records ───────────────────────────────────────────────────────
 const PSA_REF = (retailerId: string) => doc(db, "pan_psa_records", retailerId);
 
+function cleanVleId(value?: string): string {
+  return value?.trim() || "";
+}
+
+function isGeneratedVleId(value: string): boolean {
+  return /^RMPMCST-\d{10}$/i.test(value);
+}
+
+function resolvePrimaryVleId(psa: Pick<PanPsaRecord, "vleId" | "linkedExisting" | "vleRegCode">): string {
+  const primary = cleanVleId(psa.vleId);
+  const secondary = cleanVleId(psa.vleRegCode);
+
+  if (!psa.linkedExisting) {
+    return primary || secondary;
+  }
+
+  if (primary && secondary) {
+    if (isGeneratedVleId(primary) && !isGeneratedVleId(secondary)) return secondary;
+    if (!isGeneratedVleId(primary) && isGeneratedVleId(secondary)) return primary;
+  }
+
+  return primary || secondary;
+}
+
 export async function loadPsaRecord(retailerId: string): Promise<PanPsaRecord | null> {
   const snap = await getDoc(PSA_REF(retailerId));
   if (!snap.exists()) return null;
@@ -56,16 +80,13 @@ export async function loadPsaRecord(retailerId: string): Promise<PanPsaRecord | 
 
   return {
     ...raw,
-    vleId: raw.linkedExisting ? raw.vleRegCode?.trim() || raw.vleId : raw.vleId,
+    vleId: resolvePrimaryVleId(raw),
     mobile: raw.linkedMobile?.trim() || raw.mobile,
   };
 }
 
 export function getPsaPrimaryVleId(psa: Pick<PanPsaRecord, "vleId" | "linkedExisting" | "vleRegCode">): string {
-  if (psa.linkedExisting) {
-    return psa.vleRegCode?.trim() || psa.vleId;
-  }
-  return psa.vleId;
+  return resolvePrimaryVleId(psa);
 }
 
 export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
