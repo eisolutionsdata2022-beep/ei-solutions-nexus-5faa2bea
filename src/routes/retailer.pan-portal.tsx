@@ -572,6 +572,17 @@ function CouponBuyPanel({
 
     let orderId = "";
     let debited = false;
+    let refunded = false;
+    // Helper: idempotent refund — guarantees wallet is made whole on any failure path,
+    // even if an earlier refund attempt threw before completing.
+    const ensureRefund = async (reason: string) => {
+      if (!debited || refunded) return;
+      await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: ${reason}` });
+      refunded = true;
+      if (orderId) {
+        try { await updateCouponOrder(orderId, { status: "FAILED", message: reason, refunded: true }); } catch {}
+      }
+    };
     try {
       let effectivePsa: PanPsaRecord = currentPsa;
       let effectiveVleId = getPsaPrimaryVleId(currentPsa);
