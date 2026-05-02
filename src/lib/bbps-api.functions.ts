@@ -18,7 +18,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
   doc,
-  getDoc,
   collection,
   addDoc,
   updateDoc,
@@ -55,6 +54,24 @@ interface TokenCache {
   accessCode: string;
   expiresAt: number; // epoch ms
 }
+
+interface ProviderConfig {
+  baseUrl: string;
+  agentId: string;
+  defaultFee: number;
+  feeByCategory: Record<string, number>;
+}
+
+interface FirestoreValue {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  nullValue?: null;
+  mapValue?: { fields?: Record<string, FirestoreValue> };
+  arrayValue?: { values?: FirestoreValue[] };
+}
+
 let tokenCache: TokenCache | null = null;
 let hasLoggedBbpsConfigReadFailure = false;
 
@@ -63,29 +80,57 @@ function isFirestorePermissionError(err: unknown): boolean {
   return /missing or insufficient permissions/i.test(message);
 }
 
-async function getProviderConfig(): Promise<{
-  baseUrl: string;
-  agentId: string;
-  defaultFee: number;
-  feeByCategory: Record<string, number>;
-}> {
+function decodeFirestoreValue(value: FirestoreValue | undefined): unknown {
+  if (!value) return undefined;
+  if (typeof value.stringValue === "string") return value.stringValue;
+  if (typeof value.booleanValue === "boolean") return value.booleanValue;
+  if (typeof value.integerValue === "string") return Number(value.integerValue);
+  if (typeof value.doubleValue === "number") return value.doubleValue;
+  if (value.nullValue === null) return null;
+  if (value.arrayValue?.values) return value.arrayValue.values.map((item) => decodeFirestoreValue(item));
+  if (value.mapValue?.fields) {
+    return Object.fromEntries(
+      Object.entries(value.mapValue.fields).map(([key, child]) => [key, decodeFirestoreValue(child)]),
+    );
+  }
+  return undefined;
+}
+
+async function readBbpsConfigAsSignedInUser(firebaseIdToken: string): Promise<Partial<typeof DEFAULT_BBPS_CONFIG>> {
+  const projectId = db.app.options.projectId;
+  if (!projectId) return {};
+  const res = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/bbps_config/master`,
+    {
+      headers: { Authorization: `Bearer ${firebaseIdToken}` },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+
+  if (res.status === 404 || res.status === 401 || res.status === 403) return {};
+  if (!res.ok) throw new Error(`Firestore config read failed (${res.status} ${res.statusText})`);
+
+  const json = (await res.json()) as { fields?: Record<string, FirestoreValue> };
+  return (decodeFirestoreValue({ mapValue: { fields: json.fields ?? {} } }) ?? {}) as Partial<typeof DEFAULT_BBPS_CONFIG>;
+}
+
+async function getProviderConfig(firebaseIdToken?: string): Promise<ProviderConfig> {
   const envAgent = process.env.BBPS_AGENT_ID;
   const envBase = process.env.BBPS_BASE_URL;
-  // Try to read overrides from Firestore, but never fail the whole request if
-  // rules block the read (the server uses the unauthenticated client SDK).
   let data: Partial<typeof DEFAULT_BBPS_CONFIG> = {};
-  try {
-    const snap = await getDoc(doc(db, "bbps_config/master"));
-    if (snap.exists()) data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
-  } catch (err) {
+  if (firebaseIdToken) {
+    try {
+      data = await readBbpsConfigAsSignedInUser(firebaseIdToken);
+    } catch (err) {
     if (!isFirestorePermissionError(err) && !hasLoggedBbpsConfigReadFailure) {
       hasLoggedBbpsConfigReadFailure = true;
       console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
     }
+    }
   }
   return {
     baseUrl: data.baseUrl ?? envBase ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: envAgent ?? data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
+    agentId: data.agentId ?? envAgent ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
   };
@@ -104,7 +149,7 @@ function jwtExpiryMs(jwt: string): number | null {
   return null;
 }
 
-async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
+async function getAccessToken(providerConfig: ProviderConfig): Promise<TokenCache> {
   // Use cached token if still valid for ≥60s.
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
     return tokenCache;
@@ -135,7 +180,7 @@ async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
     json = await callBbps<typeof json>(
       "/getAccessToken",
       { clientId, clientSecret },
-      { skipAuth: true },
+      { skipAuth: true, providerConfig },
     );
   } catch (err) {
     // Make sure a stale/failed token never lingers in the cache.
@@ -192,9 +237,9 @@ async function hmacHex(secret: string, message: string): Promise<string> {
 async function callBbps<T>(
   endpoint: string,
   body: Record<string, unknown>,
-  opts: { skipAuth?: boolean } = {},
+  opts: { skipAuth?: boolean; firebaseIdToken?: string; providerConfig?: ProviderConfig } = {},
 ): Promise<T> {
-  const cfg = await getProviderConfig();
+  const cfg = opts.providerConfig ?? await getProviderConfig(opts.firebaseIdToken);
   // Provider supplies the apiKey as a long pre-encrypted token — send it
   // verbatim in the `apiKey` header (no per-request re-encryption needed).
   const headers: Record<string, string> = {
@@ -203,7 +248,7 @@ async function callBbps<T>(
   };
   const payload: Record<string, unknown> = { ...body };
   if (!opts.skipAuth) {
-    const tok = await getAccessToken(cfg.baseUrl);
+    const tok = await getAccessToken(cfg);
     headers.Authorization = `Bearer ${tok.accessToken}`;
     headers.authorization = `Bearer ${tok.accessToken}`;
     headers.accessToken = tok.accessToken;
