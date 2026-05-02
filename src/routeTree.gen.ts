@@ -93,6 +93,7 @@ import { Route as AdminServiceActivationsRouteImport } from './routes/admin.serv
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
+import { Route as AdminPanCouponAuditRouteImport } from './routes/admin.pan-coupon-audit'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -542,6 +543,11 @@ const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   path: '/pan-portal-settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPanCouponAuditRoute = AdminPanCouponAuditRouteImport.update({
+  id: '/pan-coupon-audit',
+  path: '/pan-coupon-audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -718,6 +724,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -824,6 +831,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -938,6 +946,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -1053,6 +1062,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1159,6 +1169,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1272,6 +1283,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
+    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1959,6 +1971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pan-coupon-audit': {
+      id: '/admin/pan-coupon-audit'
+      path: '/pan-coupon-audit'
+      fullPath: '/admin/pan-coupon-audit'
+      preLoaderRoute: typeof AdminPanCouponAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/notices': {
       id: '/admin/notices'
       path: '/notices'
@@ -2175,6 +2194,7 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
+  AdminPanCouponAuditRoute: typeof AdminPanCouponAuditRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
   AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
@@ -2222,6 +2242,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
+  AdminPanCouponAuditRoute: AdminPanCouponAuditRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
   AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,

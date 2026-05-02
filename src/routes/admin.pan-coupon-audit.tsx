@@ -93,7 +93,7 @@ function PanCouponAudit() {
           getDoc(doc(db, "users", uid)),
           getDoc(doc(db, "wallets", uid)),
         ]);
-        const txs: WalletTx[] = txSnap.docs.map((d) => ({ id: d.id, ...(d.data() as WalletTx) }));
+        const txs: WalletTx[] = txSnap.docs.map((d) => ({ ...(d.data() as WalletTx), id: d.id }));
         txByUser.set(uid, txs);
         if (userSnap.exists()) {
           const u = userSnap.data() as any;
