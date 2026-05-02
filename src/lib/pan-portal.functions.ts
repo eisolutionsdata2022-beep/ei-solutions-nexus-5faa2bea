@@ -399,12 +399,13 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     }
 
     for (const apiKey of apiKeyCandidates) {
-      for (const query of [
+      const queryVariants: Array<Record<string, string | number>> = [
         { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty },
         { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, weburl: "eisoluions.xyz" },
         { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty },
         { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty, weburl: "eisoluions.xyz" },
-      ]) {
+      ];
+      for (const query of queryVariants) {
         const r = await providerGet(data.baseUrl, "coupon_buy", query);
         console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
         const ok = finalize(r);
