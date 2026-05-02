@@ -203,7 +203,7 @@ function PanPortalPage() {
           <TabsTrigger value="psa" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
             <IdCard className="h-4 w-4 mr-1.5" />PSA
           </TabsTrigger>
-          <TabsTrigger value="buy" disabled={!hasPsa} className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
+          <TabsTrigger value="buy" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
             <ShoppingCart className="h-4 w-4 mr-1.5" />Buy Coupons
           </TabsTrigger>
           <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
