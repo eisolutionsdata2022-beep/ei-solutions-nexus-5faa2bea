@@ -398,20 +398,32 @@ export const panCouponBuy = createServerFn({ method: "POST" })
       lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
     }
 
-    for (const apiKey of apiKeyCandidates) {
-      const queryVariants: Array<Record<string, string | number>> = [
-        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty },
-        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, weburl: "eisoluions.xyz" },
-        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty },
-        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty, weburl: "eisoluions.xyz" },
-      ];
-      for (const query of queryVariants) {
-        const r = await providerGet(data.baseUrl, "coupon_buy", query);
-        console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
-        const ok = finalize(r);
-        if (ok) return ok;
-        lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
-      }
+    const queryVariants = [
+      ...authCandidates.flatMap((auth) => [
+        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 },
+        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107, weburl: "eisoluions.xyz" },
+        { api_key: auth.api_key, bot_id: auth.bot_id, vleid: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 },
+        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount },
+      ]),
+      ...apiKeyCandidates.flatMap((apiKey) => [
+        { api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107 },
+        { api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107, weburl: "eisoluions.xyz" },
+        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, amount },
+      ]),
+    ].filter((query, index, arr) => arr.findIndex((candidate) => JSON.stringify(candidate) === JSON.stringify(query)) === index);
+
+    for (const query of queryVariants) {
+      const getResult = await providerGet(data.baseUrl, "coupon_buy", query);
+      console.log("[PAN][CouponBuy][docs:get] ← url=", getResult.url, "status=", getResult.status, "body=", getResult.raw.slice(0, 300));
+      const getOk = finalize(getResult);
+      if (getOk) return getOk;
+      lastError = getResult.json?.message || `Provider error (HTTP ${getResult.status})`;
+
+      const postResult = await providerPost(data.baseUrl, "coupon_buy", query);
+      console.log("[PAN][CouponBuy][docs:post] ← url=", postResult.url, "status=", postResult.status, "body=", postResult.raw.slice(0, 300));
+      const postOk = finalize(postResult);
+      if (postOk) return postOk;
+      lastError = postResult.json?.message || `Provider error (HTTP ${postResult.status})`;
     }
 
     return { success: false as const, error: lastError };
