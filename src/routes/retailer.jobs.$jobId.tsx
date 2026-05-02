@@ -393,38 +393,129 @@ function JobDetail() {
       </ServiceSectionCard>
 
       {/* Action buttons */}
-      <div className="flex gap-2 flex-wrap">
-        {!isUploader && isOpen && (
-          <Button onClick={() => setBidOpen(true)}>Place a Bid</Button>
-        )}
-        {isWorker && (job.status === "assigned" || job.status === "doc_requested") && (
-          <>
-            <Button variant="outline" onClick={() => setDocRequestOpen(true)}>Request Documents</Button>
-            <Button onClick={() => setSubmitOpen(true)}>Submit Completed Work</Button>
-          </>
-        )}
-        {isUploader && job.status === "doc_requested" && (
-          <Button onClick={() => setDocUploadOpen(true)}>Upload Documents</Button>
-        )}
-        {isUploader && job.status === "submitted" && (
-          <>
-            <Button onClick={handleComplete} disabled={busy}>Approve Work (Submit for Admin Payout)</Button>
-            <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
-              <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
+      <ServiceSectionCard title="Actions" icon={Sparkles} accent="from-indigo-500 to-purple-600">
+        <div className="flex gap-2 flex-wrap">
+          {!isUploader && isOpen && (
+            <Button onClick={() => setBidOpen(true)} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 shadow-md">
+              <Sparkles className="w-4 h-4 mr-1" /> Place a Bid
             </Button>
-          </>
-        )}
-        {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
-          <Button onClick={() => setRatingOpen(true)} variant="default">
-            <Star className="w-4 h-4 mr-1" /> Rate Worker
-          </Button>
-        )}
-        {isUploader && job.status === "completed" && hasRated && (
-          <Badge variant="outline" className="px-3 py-1.5"><Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" /> Rated</Badge>
-        )}
-        {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && job.status !== "pending_admin_approval" && (
-          <Button variant="destructive" onClick={handleReject} disabled={busy}>Cancel Job</Button>
-        )}
+          )}
+          {isWorker && (job.status === "assigned" || job.status === "doc_requested") && (
+            <>
+              <Button variant="outline" onClick={() => setDocRequestOpen(true)}>
+                <FileCheck2 className="w-4 h-4 mr-1" /> Request Documents
+              </Button>
+              <Button onClick={() => setSubmitOpen(true)} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 shadow-md">
+                <Send className="w-4 h-4 mr-1" /> Submit Completed Work
+              </Button>
+            </>
+          )}
+          {isUploader && job.status === "doc_requested" && (
+            <Button onClick={() => setDocUploadOpen(true)} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:opacity-95 shadow-md">
+              <FileCheck2 className="w-4 h-4 mr-1" /> Upload Documents
+            </Button>
+          )}
+          {isUploader && job.status === "submitted" && (
+            <>
+              <Button onClick={handleComplete} disabled={busy} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 shadow-md">
+                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve Work
+              </Button>
+              <Button variant="destructive" onClick={() => setDisputeOpen(true)} disabled={busy}>
+                <AlertTriangle className="w-4 h-4 mr-1" /> Reject & Raise Dispute
+              </Button>
+            </>
+          )}
+          {isUploader && job.status === "completed" && !hasRated && job.assignedWorkerId && (
+            <Button onClick={() => setRatingOpen(true)} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 shadow-md">
+              <Star className="w-4 h-4 mr-1" /> Rate Worker
+            </Button>
+          )}
+          {isUploader && job.status === "completed" && hasRated && (
+            <Badge variant="outline" className="px-3 py-1.5 border-amber-300 bg-amber-50 text-amber-800">
+              <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400" /> Rated
+            </Badge>
+          )}
+          {isUploader && job.status !== "completed" && job.status !== "rejected" && job.status !== "disputed" && job.status !== "submitted" && job.status !== "pending_admin_approval" && (
+            <Button variant="destructive" onClick={handleReject} disabled={busy}>
+              <XCircle className="w-4 h-4 mr-1" /> Cancel Job
+            </Button>
+          )}
+          {(!isUploader && !isWorker && !isOpen) && (
+            <p className="text-xs text-muted-foreground">No actions available for this job state.</p>
+          )}
+        </div>
+      </ServiceSectionCard>
+
+      {/* Bids panel (uploader only) */}
+      {isUploader && (
+        <ServiceSectionCard
+          title="Bids"
+          icon={Users}
+          accent="from-blue-500 to-cyan-600"
+          right={<Badge variant="secondary" className="text-[10px]">{bids.length}</Badge>}
+        >
+          {bids.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4 text-center">No bids yet — workers will appear here as they submit offers.</p>
+          ) : (
+            <div className="space-y-2">
+              {bids.map((b) => (
+                <div key={b.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-slate-900/40 dark:to-blue-950/20 hover:shadow-sm transition">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      <Link to="/worker/$workerId" params={{ workerId: b.workerId }} className="hover:underline">{b.workerName}</Link>
+                      <span className="text-muted-foreground"> — </span>
+                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">₹{b.amount}</span>
+                    </p>
+                    {b.message && <p className="text-xs text-muted-foreground truncate">{b.message}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <ServiceTag tone={b.status === "accepted" ? "success" : b.status === "rejected" ? "danger" : "info"}>
+                      {b.status}
+                    </ServiceTag>
+                    {b.status === "pending" && isOpen && (
+                      <Button size="sm" onClick={() => handleAccept(b.id)} disabled={busy} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95">
+                        Accept
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ServiceSectionCard>
+      )}
+
+      {/* Messages thread */}
+      {canSeePrivate && (
+        <ServiceSectionCard
+          title="Communication"
+          icon={MessageSquare}
+          accent="from-violet-500 to-fuchsia-600"
+          right={<Badge variant="secondary" className="text-[10px]">{messages.length}</Badge>}
+        >
+          {messages.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4 text-center">No messages yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {messages.map((m) => (
+                <div key={m.id} className="p-3 rounded-xl border bg-card text-sm hover:shadow-sm transition">
+                  <div className="flex items-center justify-between mb-1.5 gap-2">
+                    <p className="font-semibold text-xs flex items-center gap-2 min-w-0">
+                      <span className="truncate">{m.fromUserName}</span>
+                      <ServiceTag tone="neutral">{m.type}</ServiceTag>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground shrink-0">{new Date(m.createdAt).toLocaleString()}</p>
+                  </div>
+                  <p className="whitespace-pre-wrap text-foreground/90">{m.text}</p>
+                  {((m.files && m.files.length > 0) || (m.fileUrls && m.fileUrls.length > 0)) && (
+                    <div className="mt-2"><FilePreviewList files={m.files} urls={m.fileUrls} /></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </ServiceSectionCard>
+      )}
       </div>
 
       {/* Bids panel (uploader only) */}
