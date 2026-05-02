@@ -27,6 +27,7 @@ import {
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { generateVleId } from "@/lib/vle-id";
 import { DEFAULT_PAN_CONFIG, type PanCouponOrder, type PanPortalConfig, type PanPsaRecord } from "@/lib/pan-portal-types";
+import { ServicePageShell } from "@/components/ServicePageShell";
 
 function looksLikeMissingVleError(message: string | undefined) {
   const text = (message || "").toLowerCase();
