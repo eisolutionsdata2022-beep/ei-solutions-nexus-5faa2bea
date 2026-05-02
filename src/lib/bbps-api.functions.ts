@@ -257,22 +257,33 @@ async function callBbps<T>(
     };
     if (!res.ok || wrappedJson.success === false) {
       // Surface as much detail as possible to the caller.
-      const upstreamMsg =
+      const rawBody =
         typeof wrappedJson.body === "string"
-          ? wrappedJson.body.slice(0, 300)
+          ? wrappedJson.body
           : typeof wrappedJson.body === "object" && wrappedJson.body
-            ? ((wrappedJson.body as { message?: string; error?: string }).message ??
-                (wrappedJson.body as { error?: string }).error ??
-                JSON.stringify(wrappedJson.body).slice(0, 300))
-            : undefined;
-      const httpInfo = `HTTP ${wrappedJson.status ?? res.status}${
+            ? JSON.stringify(wrappedJson.body)
+            : "";
+      // Strip HTML tags so the UI doesn't show raw <html>503</html> markup.
+      const cleanedBody = rawBody.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+      const upstreamMsg =
+        typeof wrappedJson.body === "object" && wrappedJson.body
+          ? ((wrappedJson.body as { message?: string; error?: string }).message ??
+              (wrappedJson.body as { error?: string }).error ??
+              cleanedBody)
+          : cleanedBody || undefined;
+      const upstreamStatus = wrappedJson.status ?? res.status;
+      const httpInfo = `HTTP ${upstreamStatus}${
         wrappedJson.statusText ? ` ${wrappedJson.statusText}` : ""
       }`;
+      // Friendlier message for common upstream outages.
+      const isOutage = upstreamStatus === 502 || upstreamStatus === 503 || upstreamStatus === 504;
       const finalMsg = wrappedJson.error
         ? `Bridge: ${wrappedJson.error}`
-        : upstreamMsg
-          ? `Provider ${httpInfo}: ${upstreamMsg}`
-          : `Bridge ${httpInfo} (no body) — likely IP not whitelisted by provider yet`;
+        : isOutage
+          ? `Bharat Connect provider is temporarily unavailable (${httpInfo}). Please try again in a few minutes.`
+          : upstreamMsg
+            ? `Provider ${httpInfo}: ${upstreamMsg}`
+            : `Bridge ${httpInfo} (no body) — likely IP not whitelisted by provider yet`;
       console.error("[BBPS] bridge error:", JSON.stringify({
         endpoint,
         httpStatus: res.status,
