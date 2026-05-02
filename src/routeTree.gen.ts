@@ -77,6 +77,7 @@ import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
 import { Route as AdminWhatsappRouteImport } from './routes/admin.whatsapp'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
+import { Route as AdminWalletDashboardRouteImport } from './routes/admin.wallet-dashboard'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
@@ -462,6 +463,11 @@ const AdminWalletRequestsRoute = AdminWalletRequestsRouteImport.update({
   path: '/wallet-requests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminWalletDashboardRoute = AdminWalletDashboardRouteImport.update({
+  id: '/wallet-dashboard',
+  path: '/wallet-dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -741,6 +747,7 @@ export interface FileRoutesByFullPath {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -848,6 +855,7 @@ export interface FileRoutesByTo {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -963,6 +971,7 @@ export interface FileRoutesById {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -1079,6 +1088,7 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1186,6 +1196,7 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1300,6 +1311,7 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
+    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1859,6 +1871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWalletRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/wallet-dashboard': {
+      id: '/admin/wallet-dashboard'
+      path: '/wallet-dashboard'
+      fullPath: '/admin/wallet-dashboard'
+      preLoaderRoute: typeof AdminWalletDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -2211,6 +2230,7 @@ interface AdminRouteChildren {
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
   AdminTrainingsRoute: typeof AdminTrainingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletDashboardRoute: typeof AdminWalletDashboardRoute
   AdminWalletRequestsRoute: typeof AdminWalletRequestsRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
   AdminWhatsappRoute: typeof AdminWhatsappRoute
@@ -2259,6 +2279,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
   AdminTrainingsRoute: AdminTrainingsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWalletDashboardRoute: AdminWalletDashboardRoute,
   AdminWalletRequestsRoute: AdminWalletRequestsRoute,
   AdminWalletsRoute: AdminWalletsRoute,
   AdminWhatsappRoute: AdminWhatsappRoute,
