@@ -647,7 +647,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     const retailerId = context.authUser.uid;
     const retailerEmail = context.authUser.email ?? "";
 
-    const cfg = await getProviderConfig();
+    const cfg = await getProviderConfig(context.firebaseIdToken);
     const fee = cfg.feeByCategory[data.categoryName] ?? cfg.defaultFee;
     const totalDebit = data.amount + fee;
 
@@ -749,6 +749,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
         billermode: data.billerMode ?? 1,
         ...(data.mobileNo ? { mobileno: data.mobileNo } : {}),
       },
+      { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
     ).then(
       (json) => ({ ok: true as const, json }),
       (err: unknown) => ({ ok: false as const, err }),
@@ -822,7 +823,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
  */
 export const bbpsTestConnection = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{
+  .handler(async ({ context }): Promise<{
     ok: boolean;
     stage: string;
     bridgeReachable?: boolean;
@@ -870,7 +871,7 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
       };
     }
 
-    const cfg = await getProviderConfig();
+    const cfg = await getProviderConfig(context.firebaseIdToken);
     const headersSent = {
       "Content-Type": "application/json",
       apiKey: mask(apiKey),
