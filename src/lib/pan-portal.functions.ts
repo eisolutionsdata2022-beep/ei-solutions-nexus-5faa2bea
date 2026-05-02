@@ -140,6 +140,10 @@ function encodeForm(body: Record<string, unknown>): string {
   return params.toString();
 }
 
+function compactParams(body: Record<string, string | number | undefined>): Record<string, string | number> {
+  return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined)) as Record<string, string | number>;
+}
+
 async function providerPost(
   baseUrl: string,
   path: string,
@@ -240,6 +244,16 @@ function normalizeStatus(raw: unknown): "SUCCESS" | "PENDING" | "FAILED" {
   if (s === "SUCCESS" || s === "SUCCESSFUL" || s === "OK" || s === "1" || s === "TRUE") return "SUCCESS";
   if (s === "PENDING" || s === "PROCESSING" || s === "INPROGRESS") return "PENDING";
   return "FAILED";
+}
+
+function scoreProviderError(message: string): number {
+  const text = message.toLowerCase();
+  if (!text || text.includes("provider request failed")) return 0;
+  if (text.includes("too many redirects") || text === "test") return 0;
+  if (text.includes("invalid api key")) return 1;
+  if (text.includes("missing or invalid parameter")) return 2;
+  if (text.includes("internal processing error")) return 4;
+  return 3;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -387,6 +401,15 @@ export const panCouponBuy = createServerFn({ method: "POST" })
     };
 
     let lastError = "Provider request failed";
+    let lastErrorScore = 0;
+    const captureError = (message: string) => {
+      const next = message || "Provider request failed";
+      const nextScore = scoreProviderError(next);
+      if (nextScore >= lastErrorScore) {
+        lastError = next;
+        lastErrorScore = nextScore;
+      }
+    };
 
     for (const auth of authCandidates) {
       const payload = { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount };
@@ -395,23 +418,35 @@ export const panCouponBuy = createServerFn({ method: "POST" })
       console.log("[PAN][CouponBuy][legacy] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
       const ok = finalize(r);
       if (ok) return ok;
-      lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
+      captureError(r.json?.message || `Provider error (HTTP ${r.status})`);
     }
 
-    for (const apiKey of apiKeyCandidates) {
-      const queryVariants: Array<Record<string, string | number>> = [
-        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty },
-        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, weburl: "eisoluions.xyz" },
-        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty },
-        { api_key: apiKey, vle_id: data.vleId, type: "p-coupon", qty: data.qty, weburl: "eisoluions.xyz" },
-      ];
-      for (const query of queryVariants) {
-        const r = await providerGet(data.baseUrl, "coupon_buy", query);
-        console.log("[PAN][CouponBuy][docs] ← url=", r.url, "status=", r.status, "body=", r.raw.slice(0, 300));
-        const ok = finalize(r);
-        if (ok) return ok;
-        lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
-      }
+    const queryVariants: Array<Record<string, string | number>> = [
+      ...authCandidates.flatMap((auth) => [
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107, weburl: "eisoluions.xyz" }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vleid: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount }),
+      ]),
+      ...apiKeyCandidates.flatMap((apiKey) => [
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107 }),
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107, weburl: "eisoluions.xyz" }),
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, amount }),
+      ]),
+    ].filter((query, index, arr) => arr.findIndex((candidate) => JSON.stringify(candidate) === JSON.stringify(query)) === index);
+
+    for (const query of queryVariants) {
+      const postResult = await providerPost(data.baseUrl, "coupon_buy", query);
+      console.log("[PAN][CouponBuy][docs:post] ← url=", postResult.url, "status=", postResult.status, "body=", postResult.raw.slice(0, 300));
+      const postOk = finalize(postResult);
+      if (postOk) return postOk;
+      captureError(postResult.json?.message || `Provider error (HTTP ${postResult.status})`);
+
+      const getResult = await providerGet(data.baseUrl, "coupon_buy", query);
+      console.log("[PAN][CouponBuy][docs:get] ← url=", getResult.url, "status=", getResult.status, "body=", getResult.raw.slice(0, 300));
+      const getOk = finalize(getResult);
+      if (getOk) return getOk;
+      captureError(getResult.json?.message || `Provider error (HTTP ${getResult.status})`);
     }
 
     return { success: false as const, error: lastError };
