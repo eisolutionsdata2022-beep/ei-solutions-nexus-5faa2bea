@@ -628,6 +628,6 @@ function JobDetail() {
           onSubmitted={() => setHasRated(true)}
         />
       )}
-    </div>
+    </ServicePageShell>
   );
 }
