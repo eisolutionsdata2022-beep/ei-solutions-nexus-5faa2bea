@@ -56,6 +56,12 @@ interface TokenCache {
   expiresAt: number; // epoch ms
 }
 let tokenCache: TokenCache | null = null;
+let hasLoggedBbpsConfigReadFailure = false;
+
+function isFirestorePermissionError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return /missing or insufficient permissions/i.test(message);
+}
 
 async function getProviderConfig(): Promise<{
   baseUrl: string;
@@ -72,7 +78,10 @@ async function getProviderConfig(): Promise<{
     const snap = await getDoc(doc(db, "bbps_config/master"));
     if (snap.exists()) data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
   } catch (err) {
-    console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
+    if (!isFirestorePermissionError(err) && !hasLoggedBbpsConfigReadFailure) {
+      hasLoggedBbpsConfigReadFailure = true;
+      console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
+    }
   }
   return {
     baseUrl: data.baseUrl ?? envBase ?? DEFAULT_BBPS_CONFIG.baseUrl,
@@ -316,6 +325,9 @@ async function callBbps<T>(
   try {
     parsed = text ? JSON.parse(text) : {};
   } catch {
+    if ([502, 503, 504].includes(res.status)) {
+      throw new Error(`Bharat Connect provider is temporarily unavailable (HTTP ${res.status} ${res.statusText}). Please try again in a few minutes.`);
+    }
     throw new Error(`Bharat Connect returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
   }
 
