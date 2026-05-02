@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Send, Star, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Star, AlertTriangle, Briefcase, IndianRupee, CalendarDays, Layers, Sparkles, CheckCircle2, Hourglass, FileCheck2, Lock, XCircle, MessageSquare, Users } from "lucide-react";
+import { ServicePageShell, ServiceSectionCard, ServiceTag } from "@/components/ServicePageShell";
 import {
   type BidDoc,
   type JobDoc,
