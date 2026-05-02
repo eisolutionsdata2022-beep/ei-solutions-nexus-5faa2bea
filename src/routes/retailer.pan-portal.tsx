@@ -580,7 +580,24 @@ function CouponBuyPanel({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!psa || psa.status !== "approved") {
-    return <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>Register or link your PSA first.</AlertDescription></Alert>;
+    return (
+      <Card className="border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5">
+        <CardContent className="p-8 text-center space-y-4">
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-amber-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold">PSA Not Active</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {psa
+                ? `Your PSA status is "${psa.status}". You can buy coupons only after PSA is approved.`
+                : "You need to register a new UTI PSA or link your existing VLE ID first."}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">Switch to the <strong>PSA</strong> tab above to continue.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const total = qty * cfg.couponRetailerFee;
