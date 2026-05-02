@@ -254,91 +254,143 @@ function JobDetail() {
     }
   };
 
-  if (!job) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
-
-  if (!canViewJob) {
+  if (!job) {
     return (
-      <div className="max-w-md mx-auto mt-12 text-center space-y-3">
-        <AlertTriangle className="w-10 h-10 mx-auto text-amber-500" />
-        <h2 className="text-lg font-semibold">No Access</h2>
-        <p className="text-sm text-muted-foreground">
-          This job is private. Only the uploader, the assigned worker, the admin, and bidders can view its details.
-        </p>
-        <Button variant="outline" onClick={() => navigate({ to: "/retailer/work" })}>Browse Open Jobs</Button>
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading job…
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/retailer/jobs" })}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+  if (!canViewJob) {
+    return (
+      <ServicePageShell
+        icon={Lock}
+        title="Private Job"
+        subtitle="Only participants can view this job"
+        eyebrow="Restricted"
+        gradient="from-slate-700 via-slate-800 to-slate-900"
+      >
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <AlertTriangle className="w-12 h-12 mx-auto text-amber-500" />
+            <h2 className="text-lg font-semibold">No Access</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              This job is private. Only the uploader, the assigned worker, the admin, and bidders can view its details.
+            </p>
+            <Button variant="outline" onClick={() => navigate({ to: "/retailer/work" })}>Browse Open Jobs</Button>
+          </CardContent>
+        </Card>
+      </ServicePageShell>
+    );
+  }
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between flex-wrap gap-2">
-            <div>
-              <CardTitle>{job.title}</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                {job.category} • Posted by {job.uploaderName}
-                {job.assignedWorkerId && (
-                  <> • Worker: <Link to="/worker/$workerId" params={{ workerId: job.assignedWorkerId }} className="text-primary underline">{job.assignedWorkerName}</Link></>
-                )}
-              </p>
-            </div>
-            <Badge variant={job.status === "completed" ? "default" : job.status === "rejected" ? "destructive" : "secondary"}>{job.status}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm whitespace-pre-wrap">{job.description}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div><p className="text-xs text-muted-foreground">Budget</p><p className="font-bold">₹{job.budget}</p></div>
-            <div><p className="text-xs text-muted-foreground">Deadline</p><p className="font-semibold">{job.deadline}</p></div>
-            {job.pages ? <div><p className="text-xs text-muted-foreground">Pages</p><p className="font-semibold">{job.pages}</p></div> : null}
-            {job.finalBidAmount ? <div><p className="text-xs text-muted-foreground">Accepted Bid</p><p className="font-bold text-primary">₹{job.finalBidAmount}</p></div> : null}
-          </div>
+  // status meta for header
+  const statusGradient: Record<string, string> = {
+    open: "from-blue-600 via-indigo-600 to-purple-700",
+    assigned: "from-amber-600 via-orange-600 to-red-600",
+    doc_requested: "from-cyan-600 via-sky-600 to-blue-700",
+    submitted: "from-violet-600 via-fuchsia-600 to-purple-700",
+    pending_admin_approval: "from-amber-600 via-yellow-600 to-orange-700",
+    completed: "from-emerald-600 via-teal-600 to-green-700",
+    rejected: "from-red-600 via-rose-600 to-pink-700",
+    cancelled: "from-slate-600 via-gray-700 to-zinc-800",
+    disputed: "from-amber-700 via-red-700 to-rose-800",
+  };
+  const statusIcon: Record<string, any> = {
+    open: Sparkles, assigned: Hourglass, doc_requested: FileCheck2,
+    submitted: FileCheck2, pending_admin_approval: Lock,
+    completed: CheckCircle2, rejected: XCircle, cancelled: XCircle,
+    disputed: AlertTriangle,
+  };
+  const HeroIcon = statusIcon[job.status as string] || Briefcase;
+  const heroGradient = statusGradient[job.status as string] || "from-orange-600 via-red-600 to-rose-700";
+
+  return (
+    <ServicePageShell
+      icon={HeroIcon}
+      title={job.title}
+      subtitle={`${job.category} • Posted by ${job.uploaderName}`}
+      eyebrow={(job.status as string).replace(/_/g, " ").toUpperCase()}
+      gradient={heroGradient}
+      headerAction={
+        <Button
+          size="sm"
+          variant="secondary"
+          className="bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl"
+          onClick={() => navigate({ to: "/retailer/jobs" })}
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> All Jobs
+        </Button>
+      }
+      stats={[
+        { icon: IndianRupee, label: "Budget", value: `₹${job.budget}`, accent: "from-emerald-400 to-teal-400" },
+        { icon: CalendarDays, label: "Deadline", value: job.deadline, accent: "from-blue-400 to-cyan-400" },
+        ...(job.pages ? [{ icon: Layers, label: "Pages", value: job.pages, accent: "from-violet-400 to-fuchsia-400" }] : []),
+        ...(job.finalBidAmount ? [{ icon: CheckCircle2, label: "Accepted Bid", value: `₹${job.finalBidAmount}`, accent: "from-amber-400 to-orange-400" }] : []),
+      ]}
+    >
+      <div className="space-y-5">
+      <ServiceSectionCard title="Job Details" icon={Briefcase} accent="from-orange-500 to-red-600">
+        <div className="space-y-3">
+          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">{job.description}</p>
           {job.requiredDocs && (
-            <div className="bg-muted/50 p-2 rounded text-xs"><strong>Required docs:</strong> {job.requiredDocs}</div>
+            <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/20 p-3 text-xs">
+              <strong className="text-amber-900 dark:text-amber-200">Required documents:</strong>
+              <span className="text-amber-800 dark:text-amber-300"> {job.requiredDocs}</span>
+            </div>
           )}
           {job.referenceFiles && job.referenceFiles.length > 0 && (
-            <div className="border rounded p-2 bg-muted/20">
-              <p className="text-xs font-semibold mb-1">📎 Reference files from uploader (download to start work):</p>
+            <div className="rounded-xl border bg-muted/30 p-3">
+              <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                📎 Reference files from uploader
+              </p>
               <FilePreviewList files={job.referenceFiles} />
             </div>
           )}
           {job.status === "completed" && (
-            <div className="bg-green-50 border border-green-200 p-3 rounded text-sm space-y-1">
-              <p>✅ Worker received: <strong>₹{job.workerNet}</strong></p>
-              <p>💼 Admin commission: <strong>₹{job.adminCommission}</strong></p>
-              {(job.uploaderRefund || 0) > 0 && <p>💰 You were refunded: <strong>₹{job.uploaderRefund}</strong></p>}
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 p-4 text-sm space-y-1.5">
+              <p className="flex items-center gap-2 font-semibold text-emerald-900 dark:text-emerald-200">
+                <CheckCircle2 className="w-4 h-4" /> Job Completed Successfully
+              </p>
+              <p className="text-emerald-800 dark:text-emerald-300">Worker received: <strong>₹{job.workerNet}</strong></p>
+              <p className="text-emerald-800 dark:text-emerald-300">Admin commission: <strong>₹{job.adminCommission}</strong></p>
+              {(job.uploaderRefund || 0) > 0 && (
+                <p className="text-emerald-800 dark:text-emerald-300">You were refunded: <strong>₹{job.uploaderRefund}</strong></p>
+              )}
               {job.disputeResolution && (
-                <p className="pt-1 border-t mt-1">⚖️ Resolved via dispute: <strong>{job.disputeResolution}</strong></p>
+                <p className="pt-1 border-t border-emerald-200 dark:border-emerald-800 mt-1 text-emerald-800 dark:text-emerald-300">
+                  ⚖️ Resolved via dispute: <strong>{job.disputeResolution}</strong>
+                </p>
               )}
             </div>
           )}
           {job.status === "pending_admin_approval" && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm space-y-1">
-              <p className="font-semibold text-blue-900">⏳ Awaiting Admin Approval</p>
-              <p className="text-xs text-blue-800">
-                Uploader has approved the work. Admin will review and release the payout to the worker.
+            <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 p-4 text-sm space-y-1.5">
+              <p className="font-semibold text-blue-900 dark:text-blue-200 flex items-center gap-2">
+                <Hourglass className="w-4 h-4" /> Awaiting Admin Approval
+              </p>
+              <p className="text-xs text-blue-800 dark:text-blue-300">
+                Uploader has approved the work. Admin will review and release payout to the worker.
               </p>
               {job.uploaderApprovedAt && (
-                <p className="text-xs text-blue-700">Approved on: {new Date(job.uploaderApprovedAt).toLocaleString()}</p>
+                <p className="text-xs text-blue-700 dark:text-blue-400">Approved on: {new Date(job.uploaderApprovedAt).toLocaleString()}</p>
               )}
             </div>
           )}
           {job.status === "disputed" && (
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm space-y-1">
-              <p className="font-semibold flex items-center gap-1 text-amber-900">
+            <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 p-4 text-sm space-y-1.5">
+              <p className="font-semibold flex items-center gap-2 text-amber-900 dark:text-amber-200">
                 <AlertTriangle className="w-4 h-4" /> Under Dispute — Awaiting Admin Review
               </p>
               {job.disputeReason && (
-                <p className="text-xs text-amber-800"><strong>Reason:</strong> {job.disputeReason}</p>
+                <p className="text-xs text-amber-800 dark:text-amber-300"><strong>Reason:</strong> {job.disputeReason}</p>
               )}
-              <p className="text-xs text-amber-700">Funds remain held in escrow. Admin will decide payout.</p>
+              <p className="text-xs text-amber-700 dark:text-amber-400">Funds remain held in escrow. Admin will decide payout.</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </ServiceSectionCard>
 
       {/* Action buttons */}
       <div className="flex gap-2 flex-wrap">
