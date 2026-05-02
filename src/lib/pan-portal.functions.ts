@@ -140,6 +140,10 @@ function encodeForm(body: Record<string, unknown>): string {
   return params.toString();
 }
 
+function compactParams(body: Record<string, string | number | undefined>): Record<string, string | number> {
+  return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined)) as Record<string, string | number>;
+}
+
 async function providerPost(
   baseUrl: string,
   path: string,
@@ -400,15 +404,15 @@ export const panCouponBuy = createServerFn({ method: "POST" })
 
     const queryVariants: Array<Record<string, string | number>> = [
       ...authCandidates.flatMap((auth) => [
-        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 },
-        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107, weburl: "eisoluions.xyz" },
-        { api_key: auth.api_key, bot_id: auth.bot_id, vleid: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 },
-        { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount },
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107, weburl: "eisoluions.xyz" }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vleid: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 }),
+        compactParams({ api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount }),
       ]),
       ...apiKeyCandidates.flatMap((apiKey) => [
-        { api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107 },
-        { api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107, weburl: "eisoluions.xyz" },
-        { api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, amount },
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107 }),
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: "p_coupon", qty: data.qty, amount, rate: 107, weburl: "eisoluions.xyz" }),
+        compactParams({ api_key: apiKey, vle_id: data.vleId, type: data.type, qty: data.qty, amount }),
       ]),
     ].filter((query, index, arr) => arr.findIndex((candidate) => JSON.stringify(candidate) === JSON.stringify(query)) === index);
 
