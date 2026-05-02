@@ -18,7 +18,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
   doc,
-  getDoc,
   collection,
   addDoc,
   updateDoc,
@@ -55,28 +54,83 @@ interface TokenCache {
   accessCode: string;
   expiresAt: number; // epoch ms
 }
-let tokenCache: TokenCache | null = null;
 
-async function getProviderConfig(): Promise<{
+interface ProviderConfig {
   baseUrl: string;
   agentId: string;
   defaultFee: number;
   feeByCategory: Record<string, number>;
-}> {
+}
+
+interface FirestoreValue {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  nullValue?: null;
+  mapValue?: { fields?: Record<string, FirestoreValue> };
+  arrayValue?: { values?: FirestoreValue[] };
+}
+
+let tokenCache: TokenCache | null = null;
+let hasLoggedBbpsConfigReadFailure = false;
+
+function isFirestorePermissionError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return /missing or insufficient permissions/i.test(message);
+}
+
+function decodeFirestoreValue(value: FirestoreValue | undefined): unknown {
+  if (!value) return undefined;
+  if (typeof value.stringValue === "string") return value.stringValue;
+  if (typeof value.booleanValue === "boolean") return value.booleanValue;
+  if (typeof value.integerValue === "string") return Number(value.integerValue);
+  if (typeof value.doubleValue === "number") return value.doubleValue;
+  if (value.nullValue === null) return null;
+  if (value.arrayValue?.values) return value.arrayValue.values.map((item) => decodeFirestoreValue(item));
+  if (value.mapValue?.fields) {
+    return Object.fromEntries(
+      Object.entries(value.mapValue.fields).map(([key, child]) => [key, decodeFirestoreValue(child)]),
+    );
+  }
+  return undefined;
+}
+
+async function readBbpsConfigAsSignedInUser(firebaseIdToken: string): Promise<Partial<typeof DEFAULT_BBPS_CONFIG>> {
+  const projectId = db.app.options.projectId;
+  if (!projectId) return {};
+  const res = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/bbps_config/master`,
+    {
+      headers: { Authorization: `Bearer ${firebaseIdToken}` },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+
+  if (res.status === 404 || res.status === 401 || res.status === 403) return {};
+  if (!res.ok) throw new Error(`Firestore config read failed (${res.status} ${res.statusText})`);
+
+  const json = (await res.json()) as { fields?: Record<string, FirestoreValue> };
+  return (decodeFirestoreValue({ mapValue: { fields: json.fields ?? {} } }) ?? {}) as Partial<typeof DEFAULT_BBPS_CONFIG>;
+}
+
+async function getProviderConfig(firebaseIdToken?: string): Promise<ProviderConfig> {
   const envAgent = process.env.BBPS_AGENT_ID;
   const envBase = process.env.BBPS_BASE_URL;
-  // Try to read overrides from Firestore, but never fail the whole request if
-  // rules block the read (the server uses the unauthenticated client SDK).
   let data: Partial<typeof DEFAULT_BBPS_CONFIG> = {};
-  try {
-    const snap = await getDoc(doc(db, "bbps_config/master"));
-    if (snap.exists()) data = snap.data() as Partial<typeof DEFAULT_BBPS_CONFIG>;
-  } catch (err) {
-    console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
+  if (firebaseIdToken) {
+    try {
+      data = await readBbpsConfigAsSignedInUser(firebaseIdToken);
+    } catch (err) {
+    if (!isFirestorePermissionError(err) && !hasLoggedBbpsConfigReadFailure) {
+      hasLoggedBbpsConfigReadFailure = true;
+      console.warn("[BBPS] bbps_config/master read failed (using env defaults):", err instanceof Error ? err.message : err);
+    }
+    }
   }
   return {
     baseUrl: data.baseUrl ?? envBase ?? DEFAULT_BBPS_CONFIG.baseUrl,
-    agentId: envAgent ?? data.agentId ?? DEFAULT_BBPS_CONFIG.agentId,
+    agentId: data.agentId ?? envAgent ?? DEFAULT_BBPS_CONFIG.agentId,
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
   };
@@ -95,7 +149,7 @@ function jwtExpiryMs(jwt: string): number | null {
   return null;
 }
 
-async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
+async function getAccessToken(providerConfig: ProviderConfig): Promise<TokenCache> {
   // Use cached token if still valid for ≥60s.
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
     return tokenCache;
@@ -126,7 +180,7 @@ async function getAccessToken(_baseUrl: string): Promise<TokenCache> {
     json = await callBbps<typeof json>(
       "/getAccessToken",
       { clientId, clientSecret },
-      { skipAuth: true },
+      { skipAuth: true, providerConfig },
     );
   } catch (err) {
     // Make sure a stale/failed token never lingers in the cache.
@@ -183,9 +237,9 @@ async function hmacHex(secret: string, message: string): Promise<string> {
 async function callBbps<T>(
   endpoint: string,
   body: Record<string, unknown>,
-  opts: { skipAuth?: boolean } = {},
+  opts: { skipAuth?: boolean; firebaseIdToken?: string; providerConfig?: ProviderConfig } = {},
 ): Promise<T> {
-  const cfg = await getProviderConfig();
+  const cfg = opts.providerConfig ?? await getProviderConfig(opts.firebaseIdToken);
   // Provider supplies the apiKey as a long pre-encrypted token — send it
   // verbatim in the `apiKey` header (no per-request re-encryption needed).
   const headers: Record<string, string> = {
@@ -194,7 +248,7 @@ async function callBbps<T>(
   };
   const payload: Record<string, unknown> = { ...body };
   if (!opts.skipAuth) {
-    const tok = await getAccessToken(cfg.baseUrl);
+    const tok = await getAccessToken(cfg);
     headers.Authorization = `Bearer ${tok.accessToken}`;
     headers.authorization = `Bearer ${tok.accessToken}`;
     headers.accessToken = tok.accessToken;
@@ -316,6 +370,9 @@ async function callBbps<T>(
   try {
     parsed = text ? JSON.parse(text) : {};
   } catch {
+    if ([502, 503, 504].includes(res.status)) {
+      throw new Error(`Bharat Connect provider is temporarily unavailable (HTTP ${res.status} ${res.statusText}). Please try again in a few minutes.`);
+    }
     throw new Error(`Bharat Connect returned non-JSON (HTTP ${res.status}): ${text.slice(0, 200)}`);
   }
 
@@ -330,15 +387,16 @@ async function callBbps<T>(
 
 export const bbpsGetCategories = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
+  .handler(async ({ context }): Promise<{ success: boolean; categories: BbpsCategory[]; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       return { success: true, categories: MOCK_CATEGORIES, mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; data: BbpsCategory[] }>(
         "/V2/billpay/bill-category",
         { agent: cfg.agentId },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return { success: true, categories: json.data ?? [] };
     } catch (err) {
@@ -384,15 +442,16 @@ function normalizeBiller(raw: Partial<BbpsBiller>): BbpsBiller {
 export const bbpsGetBillers = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof billersInputSchema>) => billersInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; billers: BbpsBiller[]; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       return { success: true, billers: mockBillersFor(data.category), mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; biller: BbpsBiller[] }>(
         "/V2/billpay/biller-info",
         { agent: cfg.agentId, category: data.category },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return {
         success: true,
@@ -414,7 +473,7 @@ const paramsInputSchema = z.object({
 export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof paramsInputSchema>) => paramsInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; params: BbpsCustomerParam[]; mode: number | null; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       // Find category from biller code via mock catalogue.
       const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
@@ -424,10 +483,11 @@ export const bbpsGetCustomerParams = createServerFn({ method: "POST" })
       return { success: true, params, mode, mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const json = await callBbps<{ success: boolean; param: BbpsCustomerParam[]; mode: number }>(
         "/V2/billpay/customer-params",
         { agent: cfg.agentId, billerid: data.billerId },
+        { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
       );
       return { success: true, params: json.param ?? [], mode: json.mode ?? null };
     } catch (err) {
@@ -450,7 +510,7 @@ function formatProviderParamList(values: string[]): string {
 export const bbpsFetchBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof fetchInputSchema>) => fetchInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; mock?: boolean; message?: string }> => {
     if (isMockMode()) {
       const allMockBillers = MOCK_CATEGORIES.flatMap((c) => mockBillersFor(c.name));
       const biller = allMockBillers.find((b) => b.id === data.billerId);
@@ -458,7 +518,7 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
       return { success: true, bill: mockBillFor(data.billerId, cat, data.paramValues), mock: true };
     }
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const paramName = formatProviderParamList(data.paramNames);
       const paramValue = formatProviderParamList(data.paramValues);
       const json = await callBbps<{
@@ -476,7 +536,7 @@ export const bbpsFetchBill = createServerFn({ method: "POST" })
         billerid: data.billerId,
         paramName,
         paramValue,
-      });
+      }, { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg });
       if (!json.success) return { success: false, message: json.message ?? "Bill not found" };
       return {
         success: true,
@@ -508,9 +568,9 @@ const validateInputSchema = z.object({
 export const bbpsValidateBill = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
   .inputValidator((input: z.infer<typeof validateInputSchema>) => validateInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
+  .handler(async ({ data, context }): Promise<{ success: boolean; bill?: BbpsBillFetchResult; message?: string }> => {
     try {
-      const cfg = await getProviderConfig();
+      const cfg = await getProviderConfig(context.firebaseIdToken);
       const paramName = formatProviderParamList(data.paramNames);
       const paramValue = formatProviderParamList(data.paramValues);
       const body: Record<string, unknown> = {
@@ -530,7 +590,7 @@ export const bbpsValidateBill = createServerFn({ method: "POST" })
         billNumber: string;
         message: string;
         requestId: string;
-      }>("/V2/billpay/bill-validation", body);
+      }>("/V2/billpay/bill-validation", body, { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg });
       if (!json.success) return { success: false, message: json.message ?? "Validation failed" };
       return {
         success: true,
@@ -587,7 +647,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
     const retailerId = context.authUser.uid;
     const retailerEmail = context.authUser.email ?? "";
 
-    const cfg = await getProviderConfig();
+    const cfg = await getProviderConfig(context.firebaseIdToken);
     const fee = cfg.feeByCategory[data.categoryName] ?? cfg.defaultFee;
     const totalDebit = data.amount + fee;
 
@@ -689,6 +749,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
         billermode: data.billerMode ?? 1,
         ...(data.mobileNo ? { mobileno: data.mobileNo } : {}),
       },
+      { firebaseIdToken: context.firebaseIdToken, providerConfig: cfg },
     ).then(
       (json) => ({ ok: true as const, json }),
       (err: unknown) => ({ ok: false as const, err }),
@@ -762,7 +823,7 @@ export const bbpsPayBill = createServerFn({ method: "POST" })
  */
 export const bbpsTestConnection = createServerFn({ method: "POST" })
   .middleware([firebaseAuthMiddleware])
-  .handler(async (): Promise<{
+  .handler(async ({ context }): Promise<{
     ok: boolean;
     stage: string;
     bridgeReachable?: boolean;
@@ -810,7 +871,7 @@ export const bbpsTestConnection = createServerFn({ method: "POST" })
       };
     }
 
-    const cfg = await getProviderConfig();
+    const cfg = await getProviderConfig(context.firebaseIdToken);
     const headersSent = {
       "Content-Type": "application/json",
       apiKey: mask(apiKey),
