@@ -183,7 +183,7 @@ async function hmacHex(secret: string, message: string): Promise<string> {
 async function callBbps<T>(
   endpoint: string,
   body: Record<string, unknown>,
-  opts: { skipAuth?: boolean; unversioned?: boolean } = {},
+  opts: { skipAuth?: boolean } = {},
 ): Promise<T> {
   const cfg = await getProviderConfig();
   // Provider supplies the apiKey as a long pre-encrypted token — send it
