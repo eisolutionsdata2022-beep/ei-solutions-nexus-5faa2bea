@@ -398,7 +398,7 @@ export const panCouponBuy = createServerFn({ method: "POST" })
       lastError = r.json?.message || `Provider error (HTTP ${r.status})`;
     }
 
-    const queryVariants = [
+    const queryVariants: Array<Record<string, string | number>> = [
       ...authCandidates.flatMap((auth) => [
         { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107 },
         { api_key: auth.api_key, bot_id: auth.bot_id, vle_id: data.vleId, utr_no: utrNo, amount, qty: data.qty, type: "p_coupon", rate: 107, weburl: "eisoluions.xyz" },
