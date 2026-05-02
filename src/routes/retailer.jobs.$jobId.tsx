@@ -518,61 +518,6 @@ function JobDetail() {
       )}
       </div>
 
-      {/* Bids panel (uploader only) */}
-      {isUploader && (
-        <Card>
-          <CardHeader><CardTitle>Bids ({bids.length})</CardTitle></CardHeader>
-          <CardContent>
-            {bids.length === 0 ? <p className="text-muted-foreground text-sm">No bids yet.</p> : (
-              <div className="space-y-2">
-                {bids.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between p-3 border rounded">
-                    <div>
-                      <p className="font-semibold">
-                        <Link to="/worker/$workerId" params={{ workerId: b.workerId }} className="hover:underline">{b.workerName}</Link>
-                        {" — "}<span className="text-primary">₹{b.amount}</span>
-                      </p>
-                      {b.message && <p className="text-xs text-muted-foreground">{b.message}</p>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={b.status === "accepted" ? "default" : b.status === "rejected" ? "destructive" : "secondary"}>{b.status}</Badge>
-                      {b.status === "pending" && isOpen && (
-                        <Button size="sm" onClick={() => handleAccept(b.id)} disabled={busy}>Accept</Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Messages thread — only participants & admin */}
-      {canSeePrivate && (
-        <Card>
-          <CardHeader><CardTitle>Communication ({messages.length})</CardTitle></CardHeader>
-          <CardContent>
-            {messages.length === 0 ? <p className="text-muted-foreground text-sm">No messages yet.</p> : (
-              <div className="space-y-2">
-                {messages.map((m) => (
-                  <div key={m.id} className="p-3 border rounded text-sm">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-xs">{m.fromUserName} <Badge variant="outline" className="ml-2">{m.type}</Badge></p>
-                      <p className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString()}</p>
-                    </div>
-                    <p className="whitespace-pre-wrap">{m.text}</p>
-                    {((m.files && m.files.length > 0) || (m.fileUrls && m.fileUrls.length > 0)) && (
-                      <FilePreviewList files={m.files} urls={m.fileUrls} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Bid dialog */}
       <Dialog open={bidOpen} onOpenChange={setBidOpen}>
         <DialogContent>
