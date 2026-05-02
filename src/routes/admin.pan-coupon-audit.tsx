@@ -15,7 +15,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  collection, getDocs, query, where, orderBy, limit, doc, getDoc,
+  collection, getDocs, query, where, limit, doc, getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
