@@ -8,7 +8,6 @@ import {
   where,
   addDoc,
   updateDoc,
-  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -51,6 +50,7 @@ function EiPayPage() {
   const [balance, setBalance] = useState(0);
   const [config, setConfig] = useState<CscMasterConfig | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
+  const [configAccessError, setConfigAccessError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<CscTransaction[]>([]);
   const [active, setActive] = useState<(CscService & { fee: number }) | null>(null);
 
@@ -69,11 +69,13 @@ function EiPayPage() {
       doc(db, "csc_config", "master"),
       (snap) => {
         setConfig(snap.exists() ? (snap.data() as CscMasterConfig) : null);
+        setConfigAccessError(null);
         setConfigLoaded(true);
       },
       (error) => {
         console.warn("[EI Pay] config listener skipped:", error.message);
         setConfig(null);
+        setConfigAccessError(error.message);
         setConfigLoaded(true);
       },
     );
@@ -110,7 +112,7 @@ function EiPayPage() {
     }));
   }, [config]);
 
-  const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
+  const bridgeReady = !configLoaded || !!configAccessError || !!config?.cipher;
 
   return (
     <ServicePageShell
@@ -127,7 +129,7 @@ function EiPayPage() {
     >
 
       {/* Bridge readiness banner */}
-      {configLoaded && !bridgeReady && (
+      {configLoaded && !configAccessError && !config?.cipher && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
           <CardContent className="flex items-start gap-3 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
@@ -305,7 +307,6 @@ function EiPayPage() {
       <ServiceExecutionDialog
         service={active}
         onClose={() => setActive(null)}
-        config={config}
         balance={balance}
         retailerId={appUser?.uid ?? ""}
         retailerEmail={appUser?.email ?? ""}
@@ -335,7 +336,6 @@ function StatusBadge({ status }: { status: CscTransaction["status"] }) {
 function ServiceExecutionDialog({
   service,
   onClose,
-  config,
   balance,
   retailerId,
   retailerEmail,
@@ -343,7 +343,6 @@ function ServiceExecutionDialog({
 }: {
   service: (CscService & { fee: number }) | null;
   onClose: () => void;
-  config: CscMasterConfig | null;
   balance: number;
   retailerId: string;
   retailerEmail: string;
@@ -364,8 +363,8 @@ function ServiceExecutionDialog({
   const insufficient = amount > 0 && total > balance;
 
   const submit = async () => {
-    if (!bridgeReady || !config) {
-      toast.error("Service not configured. Contact admin.");
+    if (!retailerId || !retailerEmail) {
+      toast.error("Login required");
       return;
     }
     // Field validation
@@ -409,23 +408,13 @@ function ServiceExecutionDialog({
       } satisfies Omit<CscTransaction, "id">);
       txDocId = txRef.id;
 
-      // 3. Re-read config to get latest cipher/url/secret (admin may have updated)
-      const cfgSnap = await getDoc(doc(db, "csc_config", "master"));
-      const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string; hmacSecret: string }) | undefined;
-      if (!cfg?.cipher || !cfg.bridgeUrl || !cfg.hmacSecret) {
-        throw new Error("Bridge configuration missing");
-      }
-
-      // 4. Call bridge
+      // 3. Call bridge (server falls back to latest CSC config when client read is blocked)
       const result = await executeCscService({
         data: {
           serviceKey: service.key,
           serviceName: service.name,
           fields: values,
           amount,
-          credCipher: cfg.cipher,
-          bridgeUrl: cfg.bridgeUrl,
-          hmacSecret: cfg.hmacSecret,
         },
       });
 
