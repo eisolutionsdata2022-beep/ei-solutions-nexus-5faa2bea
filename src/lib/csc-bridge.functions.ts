@@ -20,6 +20,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
+import { db } from "./firebase";
 
 // --------------------------------------------------------------------------
 // Encryption helpers — AES-GCM via Web Crypto. Key derived from LOVABLE_API_KEY.
@@ -81,6 +82,61 @@ async function hmacSha256(secret: string, message: string): Promise<string> {
     .join("");
 }
 
+interface FirestoreValue {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  nullValue?: null;
+  mapValue?: { fields?: Record<string, FirestoreValue> };
+  arrayValue?: { values?: FirestoreValue[] };
+}
+
+function decodeFirestoreValue(value: FirestoreValue | undefined): unknown {
+  if (!value) return undefined;
+  if (typeof value.stringValue === "string") return value.stringValue;
+  if (typeof value.booleanValue === "boolean") return value.booleanValue;
+  if (typeof value.integerValue === "string") return Number(value.integerValue);
+  if (typeof value.doubleValue === "number") return value.doubleValue;
+  if (value.nullValue === null) return null;
+  if (value.arrayValue?.values) return value.arrayValue.values.map((item) => decodeFirestoreValue(item));
+  if (value.mapValue?.fields) {
+    return Object.fromEntries(
+      Object.entries(value.mapValue.fields).map(([key, child]) => [key, decodeFirestoreValue(child)]),
+    );
+  }
+  return undefined;
+}
+
+function normalizeBridgeUrl(rawUrl: string): string {
+  const url = new URL(rawUrl);
+  if (url.pathname === "/csc/execute" || url.pathname === "/csc/execute/") {
+    url.pathname = "/execute";
+  }
+  return url.toString();
+}
+
+async function readCscConfigAsSignedInUser(firebaseIdToken: string): Promise<Record<string, unknown>> {
+  const projectId = db.app.options.projectId;
+  if (!projectId || !firebaseIdToken) return {};
+
+  const res = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/csc_config/master`,
+    {
+      headers: { Authorization: `Bearer ${firebaseIdToken}` },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+
+  if (res.status === 401 || res.status === 403 || res.status === 404) return {};
+  if (!res.ok) {
+    throw new Error(`CSC config read failed (${res.status} ${res.statusText})`);
+  }
+
+  const json = (await res.json()) as { fields?: Record<string, FirestoreValue> };
+  return (decodeFirestoreValue({ mapValue: { fields: json.fields ?? {} } }) ?? {}) as Record<string, unknown>;
+}
+
 // --------------------------------------------------------------------------
 // Server fn: encrypt admin-supplied master CSC credentials.
 // Returns the encrypted blob — the admin client then writes it to Firestore.
@@ -122,11 +178,11 @@ const executeInput = z.object({
   fields: z.record(z.string().min(1).max(60), z.union([z.string().max(500), z.number()])),
   amount: z.number().positive().max(1_000_000),
   /** Encrypted credential blob loaded from Firestore by the client. */
-  credCipher: z.string().min(10).max(2000),
+  credCipher: z.string().min(10).max(2000).optional(),
   /** Bridge URL from Firestore master config. */
-  bridgeUrl: z.string().url().max(500),
+  bridgeUrl: z.string().url().max(500).optional(),
   /** HMAC secret from Firestore master config. */
-  hmacSecret: z.string().min(8).max(200),
+  hmacSecret: z.string().min(8).max(200).optional(),
 });
 
 export type CscExecuteResult =
