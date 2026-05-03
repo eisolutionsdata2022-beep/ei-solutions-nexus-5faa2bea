@@ -307,7 +307,6 @@ function EiPayPage() {
       <ServiceExecutionDialog
         service={active}
         onClose={() => setActive(null)}
-        config={config}
         balance={balance}
         retailerId={appUser?.uid ?? ""}
         retailerEmail={appUser?.email ?? ""}
