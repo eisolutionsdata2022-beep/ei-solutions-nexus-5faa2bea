@@ -293,6 +293,56 @@ function AdminWalletDashboard() {
         </CardContent>
       </Card>
 
+      {/* PAN Coupon Stats */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupons Purchased</p>
+          {loading ? <Skeleton className="h-9 w-24 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">{panStats.totalCoupons.toLocaleString("en-IN")}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">{panStats.totalOrders} successful orders</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupon Revenue</p>
+          {loading ? <Skeleton className="h-9 w-32 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">₹{Math.round(panStats.totalAmount).toLocaleString("en-IN")}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">For selected period</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Avg Coupons / Order</p>
+          {loading ? <Skeleton className="h-9 w-20 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">
+              {panStats.totalOrders ? (panStats.totalCoupons / panStats.totalOrders).toFixed(1) : "0"}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Bundle size</p>
+        </div>
+      </div>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Ticket className="w-4 h-4 text-primary" /> PAN Coupons — Daily (last 14 days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? <Skeleton className="h-[260px] w-full" /> : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={panStats.daily}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis dataKey="label" fontSize={11} />
+                <YAxis fontSize={11} allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="coupons" name="Coupons" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="orders" name="Orders" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Chart + Service breakdown */}
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3 border-border/60">
