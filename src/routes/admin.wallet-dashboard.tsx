@@ -168,6 +168,36 @@ function AdminWalletDashboard() {
   const chartData = serviceRows.slice(0, 8).map((r) => ({ name: r.name, Revenue: r.revenue }));
   const recentTx = filtered.slice(0, 12);
 
+  // PAN coupon stats (from pan_coupon_orders, success only)
+  const panStats = useMemo(() => {
+    const success = panOrders.filter((o) => (o.status || "").toUpperCase() === "SUCCESS");
+    const filteredSuccess = success.filter((o) => inPeriod(o.createdAt, period));
+    const totalCoupons = filteredSuccess.reduce((s, o) => s + (o.qty || 0), 0);
+    const totalOrders = filteredSuccess.length;
+    const totalAmount = filteredSuccess.reduce((s, o) => s + (o.totalDebit || 0), 0);
+
+    // Last 14 days daily breakdown
+    const days: { key: string; label: string; coupons: number; orders: number }[] = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      days.push({
+        key: d.toISOString().slice(0, 10),
+        label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        coupons: 0, orders: 0,
+      });
+    }
+    const map = new Map(days.map((d) => [d.key, d]));
+    success.forEach((o) => {
+      if (!o.createdAt) return;
+      const key = new Date(o.createdAt).toISOString().slice(0, 10);
+      const row = map.get(key);
+      if (row) { row.coupons += o.qty || 0; row.orders += 1; }
+    });
+    return { totalCoupons, totalOrders, totalAmount, daily: days };
+  }, [panOrders, period]);
+
+
   const cards = [
     { label: "Opening Balance", value: stats.openingBalance, icon: Wallet, grad: "from-slate-500 to-slate-700" },
     { label: "Closing Balance", value: stats.closingBalance, icon: IndianRupee, grad: "from-emerald-500 to-teal-600" },
