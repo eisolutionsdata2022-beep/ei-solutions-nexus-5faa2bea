@@ -80,24 +80,29 @@ function inPeriod(iso: string | undefined, period: Period): boolean {
   return true;
 }
 
+type PanOrder = { id: string; qty?: number; status?: string; totalDebit?: number; createdAt?: string };
+
 function AdminWalletDashboard() {
   const [txs, setTxs] = useState<Tx[]>([]);
   const [walletTotal, setWalletTotal] = useState(0);
+  const [panOrders, setPanOrders] = useState<PanOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("all");
 
   useEffect(() => {
     (async () => {
       try {
-        const [txSnap, walletSnap] = await Promise.all([
+        const [txSnap, walletSnap, panSnap] = await Promise.all([
           getDocs(collection(db, "transactions")),
           getDocs(collection(db, "wallets")),
+          getDocs(collection(db, "pan_coupon_orders")),
         ]);
         const list: Tx[] = txSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
         list.sort((a, b) => (a.createdAt || "") < (b.createdAt || "") ? 1 : -1);
         setTxs(list);
         const total = walletSnap.docs.reduce((sum, d) => sum + (d.data().balance || 0), 0);
         setWalletTotal(total);
+        setPanOrders(panSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
       } catch (e) {
         console.error("wallet dashboard load failed", e);
       } finally {
@@ -162,6 +167,36 @@ function AdminWalletDashboard() {
 
   const chartData = serviceRows.slice(0, 8).map((r) => ({ name: r.name, Revenue: r.revenue }));
   const recentTx = filtered.slice(0, 12);
+
+  // PAN coupon stats (from pan_coupon_orders, success only)
+  const panStats = useMemo(() => {
+    const success = panOrders.filter((o) => (o.status || "").toUpperCase() === "SUCCESS");
+    const filteredSuccess = success.filter((o) => inPeriod(o.createdAt, period));
+    const totalCoupons = filteredSuccess.reduce((s, o) => s + (o.qty || 0), 0);
+    const totalOrders = filteredSuccess.length;
+    const totalAmount = filteredSuccess.reduce((s, o) => s + (o.totalDebit || 0), 0);
+
+    // Last 14 days daily breakdown
+    const days: { key: string; label: string; coupons: number; orders: number }[] = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      days.push({
+        key: d.toISOString().slice(0, 10),
+        label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        coupons: 0, orders: 0,
+      });
+    }
+    const map = new Map(days.map((d) => [d.key, d]));
+    success.forEach((o) => {
+      if (!o.createdAt) return;
+      const key = new Date(o.createdAt).toISOString().slice(0, 10);
+      const row = map.get(key);
+      if (row) { row.coupons += o.qty || 0; row.orders += 1; }
+    });
+    return { totalCoupons, totalOrders, totalAmount, daily: days };
+  }, [panOrders, period]);
+
 
   const cards = [
     { label: "Opening Balance", value: stats.openingBalance, icon: Wallet, grad: "from-slate-500 to-slate-700" },
@@ -255,6 +290,56 @@ function AdminWalletDashboard() {
               <Link to="/admin/commission-center"><BarChart3 className="w-4 h-4 mr-1" /> Commission Center</Link>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* PAN Coupon Stats */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupons Purchased</p>
+          {loading ? <Skeleton className="h-9 w-24 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">{panStats.totalCoupons.toLocaleString("en-IN")}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">{panStats.totalOrders} successful orders</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupon Revenue</p>
+          {loading ? <Skeleton className="h-9 w-32 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">₹{Math.round(panStats.totalAmount).toLocaleString("en-IN")}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">For selected period</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Avg Coupons / Order</p>
+          {loading ? <Skeleton className="h-9 w-20 mt-2" /> : (
+            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">
+              {panStats.totalOrders ? (panStats.totalCoupons / panStats.totalOrders).toFixed(1) : "0"}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Bundle size</p>
+        </div>
+      </div>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Ticket className="w-4 h-4 text-primary" /> PAN Coupons — Daily (last 14 days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? <Skeleton className="h-[260px] w-full" /> : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={panStats.daily}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis dataKey="label" fontSize={11} />
+                <YAxis fontSize={11} allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="coupons" name="Coupons" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="orders" name="Orders" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
