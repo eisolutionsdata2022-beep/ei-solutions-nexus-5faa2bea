@@ -18,6 +18,10 @@ service cloud.firestore {
     // These MUST come before the catch-all and the catch-all MUST NOT
     // grant access to these paths (handled by removing wildcard write).
     // -----------------------------------------------------------------
+    // csc_config/master holds bridge URL, HMAC secret and an AES-GCM
+    // encrypted credential cipher. Authenticated retailers need to read it
+    // to call the EI Pay bridge (server fn validates the signed request).
+    match /csc_config/master { allow read: if isAuthed(); allow write: if isAdmin(); }
     match /csc_config/{doc}  { allow read, write: if isAdmin(); }
     // pan_config/master holds non-secret settings (URLs, fees, enabled flags)
     // and an AES-GCM-encrypted credential cipher (key stored only in
