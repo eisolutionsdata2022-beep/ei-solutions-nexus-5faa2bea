@@ -4,7 +4,6 @@ import {
   collection,
   doc,
   onSnapshot,
-  orderBy,
   query,
   where,
   addDoc,
@@ -66,10 +65,18 @@ function EiPayPage() {
 
   // Master config (read once + listen)
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "csc_config", "master"), (snap) => {
-      setConfig(snap.exists() ? (snap.data() as CscMasterConfig) : null);
-      setConfigLoaded(true);
-    });
+    const unsub = onSnapshot(
+      doc(db, "csc_config", "master"),
+      (snap) => {
+        setConfig(snap.exists() ? (snap.data() as CscMasterConfig) : null);
+        setConfigLoaded(true);
+      },
+      (error) => {
+        console.warn("[EI Pay] config listener skipped:", error.message);
+        setConfig(null);
+        setConfigLoaded(true);
+      },
+    );
     return unsub;
   }, []);
 
@@ -77,15 +84,16 @@ function EiPayPage() {
   useEffect(() => {
     if (!appUser) return;
     const unsub = onSnapshot(
-      query(
-        collection(db, "csc_transactions"),
-        where("retailerId", "==", appUser.uid),
-        orderBy("createdAt", "desc"),
-      ),
+      query(collection(db, "csc_transactions"), where("retailerId", "==", appUser.uid)),
       (snap) => {
         const list: CscTransaction[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...(d.data() as CscTransaction) }));
+        list.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || ""));
         setTransactions(list.slice(0, 25));
+      },
+      (error) => {
+        console.warn("[EI Pay] transactions listener skipped:", error.message);
+        setTransactions([]);
       },
     );
     return unsub;
