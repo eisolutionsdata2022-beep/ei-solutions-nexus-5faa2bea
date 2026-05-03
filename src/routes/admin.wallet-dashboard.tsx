@@ -170,21 +170,40 @@ function AdminWalletDashboard() {
 
   // PAN coupon stats (from pan_coupon_orders, success only)
   const panStats = useMemo(() => {
-    const success = panOrders.filter((o) => (o.status || "").toUpperCase() === "SUCCESS");
+    const isSuccess = (o: PanOrder) => (o.status || "").toUpperCase() === "SUCCESS";
+    const isRejected = (o: PanOrder) => {
+      const s = (o.status || "").toUpperCase();
+      return s === "FAILED" || s === "REJECTED" || s === "CANCELLED" || s === "CANCELED" || s === "ERROR";
+    };
+
+    const success = panOrders.filter(isSuccess);
+    const rejected = panOrders.filter(isRejected);
+
     const filteredSuccess = success.filter((o) => inPeriod(o.createdAt, period));
+    const filteredRejected = rejected.filter((o) => inPeriod(o.createdAt, period));
+
     const totalCoupons = filteredSuccess.reduce((s, o) => s + (o.qty || 0), 0);
     const totalOrders = filteredSuccess.length;
     const totalAmount = filteredSuccess.reduce((s, o) => s + (o.totalDebit || 0), 0);
 
-    // Last 14 days daily breakdown
-    const days: { key: string; label: string; coupons: number; orders: number }[] = [];
+    const rejectedCoupons = filteredRejected.reduce((s, o) => s + (o.qty || 0), 0);
+    const rejectedOrders = filteredRejected.length;
+    const rejectedAmount = filteredRejected.reduce((s, o) => s + (o.totalDebit || 0), 0);
+
+    // Last 14 days daily breakdown — success vs rejected
+    const days: {
+      key: string; label: string;
+      successCoupons: number; successOrders: number;
+      rejectedCoupons: number; rejectedOrders: number;
+    }[] = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today); d.setDate(d.getDate() - i);
       days.push({
         key: d.toISOString().slice(0, 10),
         label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
-        coupons: 0, orders: 0,
+        successCoupons: 0, successOrders: 0,
+        rejectedCoupons: 0, rejectedOrders: 0,
       });
     }
     const map = new Map(days.map((d) => [d.key, d]));
@@ -192,9 +211,19 @@ function AdminWalletDashboard() {
       if (!o.createdAt) return;
       const key = new Date(o.createdAt).toISOString().slice(0, 10);
       const row = map.get(key);
-      if (row) { row.coupons += o.qty || 0; row.orders += 1; }
+      if (row) { row.successCoupons += o.qty || 0; row.successOrders += 1; }
     });
-    return { totalCoupons, totalOrders, totalAmount, daily: days };
+    rejected.forEach((o) => {
+      if (!o.createdAt) return;
+      const key = new Date(o.createdAt).toISOString().slice(0, 10);
+      const row = map.get(key);
+      if (row) { row.rejectedCoupons += o.qty || 0; row.rejectedOrders += 1; }
+    });
+    return {
+      totalCoupons, totalOrders, totalAmount,
+      rejectedCoupons, rejectedOrders, rejectedAmount,
+      daily: days,
+    };
   }, [panOrders, period]);
 
 
@@ -293,30 +322,66 @@ function AdminWalletDashboard() {
         </CardContent>
       </Card>
 
-      {/* PAN Coupon Stats */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupons Purchased</p>
-          {loading ? <Skeleton className="h-9 w-24 mt-2" /> : (
-            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">{panStats.totalCoupons.toLocaleString("en-IN")}</p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">{panStats.totalOrders} successful orders</p>
+      {/* PAN Coupon Stats — Success vs Rejected */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Success block */}
+        <div className="rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Successful PAN Coupons</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Coupons</p>
+              {loading ? <Skeleton className="h-7 w-16 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{panStats.totalCoupons.toLocaleString("en-IN")}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Orders</p>
+              {loading ? <Skeleton className="h-7 w-12 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{panStats.totalOrders.toLocaleString("en-IN")}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</p>
+              {loading ? <Skeleton className="h-7 w-20 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">₹{Math.round(panStats.totalAmount).toLocaleString("en-IN")}</p>
+              )}
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Avg {panStats.totalOrders ? (panStats.totalCoupons / panStats.totalOrders).toFixed(1) : "0"} coupons / order · selected period
+          </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">PAN Coupon Revenue</p>
-          {loading ? <Skeleton className="h-9 w-32 mt-2" /> : (
-            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">₹{Math.round(panStats.totalAmount).toLocaleString("en-IN")}</p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">For selected period</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Avg Coupons / Order</p>
-          {loading ? <Skeleton className="h-9 w-20 mt-2" /> : (
-            <p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">
-              {panStats.totalOrders ? (panStats.totalCoupons / panStats.totalOrders).toFixed(1) : "0"}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">Bundle size</p>
+
+        {/* Rejected block */}
+        <div className="rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50 to-white dark:from-rose-950/30 dark:to-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Ticket className="w-4 h-4 text-rose-600" />
+            <p className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Rejected / Failed PAN Coupons</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Coupons</p>
+              {loading ? <Skeleton className="h-7 w-16 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{panStats.rejectedCoupons.toLocaleString("en-IN")}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Orders</p>
+              {loading ? <Skeleton className="h-7 w-12 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{panStats.rejectedOrders.toLocaleString("en-IN")}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Amount</p>
+              {loading ? <Skeleton className="h-7 w-20 mt-1" /> : (
+                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">₹{Math.round(panStats.rejectedAmount).toLocaleString("en-IN")}</p>
+              )}
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3">Refunded / not charged · selected period</p>
         </div>
       </div>
 
@@ -335,8 +400,8 @@ function AdminWalletDashboard() {
                 <YAxis fontSize={11} allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="coupons" name="Coupons" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="orders" name="Orders" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="successCoupons" name="Success Coupons" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="rejectedCoupons" name="Rejected Coupons" fill="#f43f5e" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
