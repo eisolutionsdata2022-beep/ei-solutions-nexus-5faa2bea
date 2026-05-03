@@ -206,9 +206,35 @@ export const executeCscService = createServerFn({ method: "POST" })
       return { success: false, error: "Authentication required", stage: "auth" };
     }
 
+    let storedConfig: Record<string, unknown> = {};
+    if ((!data.credCipher || !data.bridgeUrl || !data.hmacSecret) && context.firebaseIdToken) {
+      try {
+        storedConfig = await readCscConfigAsSignedInUser(context.firebaseIdToken);
+      } catch (err) {
+        console.error("[CSC] config read failed:", err);
+      }
+    }
+
+    const credCipher =
+      data.credCipher ?? (typeof storedConfig.cipher === "string" ? storedConfig.cipher : undefined);
+    const bridgeUrl =
+      data.bridgeUrl ?? (typeof storedConfig.bridgeUrl === "string" ? storedConfig.bridgeUrl : undefined);
+    const hmacSecret =
+      data.hmacSecret ?? (typeof storedConfig.hmacSecret === "string" ? storedConfig.hmacSecret : undefined);
+
+    if (!credCipher || !bridgeUrl || !hmacSecret) {
+      return {
+        success: false,
+        error: "Bridge configuration missing. Ask admin to re-save CSC bridge settings.",
+        stage: "validate",
+      };
+    }
+
+    const normalizedBridgeUrl = normalizeBridgeUrl(bridgeUrl);
+
     let creds: { username: string; password: string };
     try {
-      creds = await decryptCreds(data.credCipher);
+      creds = await decryptCreds(credCipher);
     } catch (err) {
       console.error("[CSC] decrypt failed:", err);
       return { success: false, error: "Master credentials are corrupted. Re-save them.", stage: "decrypt" };
@@ -225,10 +251,10 @@ export const executeCscService = createServerFn({ method: "POST" })
       ts: Date.now(),
     };
     const body = JSON.stringify(payload);
-    const signature = await hmacSha256(data.hmacSecret, body);
+    const signature = await hmacSha256(hmacSecret, body);
 
     try {
-      const res = await fetch(data.bridgeUrl, {
+      const res = await fetch(normalizedBridgeUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
