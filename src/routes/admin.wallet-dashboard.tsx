@@ -170,21 +170,40 @@ function AdminWalletDashboard() {
 
   // PAN coupon stats (from pan_coupon_orders, success only)
   const panStats = useMemo(() => {
-    const success = panOrders.filter((o) => (o.status || "").toUpperCase() === "SUCCESS");
+    const isSuccess = (o: PanOrder) => (o.status || "").toUpperCase() === "SUCCESS";
+    const isRejected = (o: PanOrder) => {
+      const s = (o.status || "").toUpperCase();
+      return s === "FAILED" || s === "REJECTED" || s === "CANCELLED" || s === "CANCELED" || s === "ERROR";
+    };
+
+    const success = panOrders.filter(isSuccess);
+    const rejected = panOrders.filter(isRejected);
+
     const filteredSuccess = success.filter((o) => inPeriod(o.createdAt, period));
+    const filteredRejected = rejected.filter((o) => inPeriod(o.createdAt, period));
+
     const totalCoupons = filteredSuccess.reduce((s, o) => s + (o.qty || 0), 0);
     const totalOrders = filteredSuccess.length;
     const totalAmount = filteredSuccess.reduce((s, o) => s + (o.totalDebit || 0), 0);
 
-    // Last 14 days daily breakdown
-    const days: { key: string; label: string; coupons: number; orders: number }[] = [];
+    const rejectedCoupons = filteredRejected.reduce((s, o) => s + (o.qty || 0), 0);
+    const rejectedOrders = filteredRejected.length;
+    const rejectedAmount = filteredRejected.reduce((s, o) => s + (o.totalDebit || 0), 0);
+
+    // Last 14 days daily breakdown — success vs rejected
+    const days: {
+      key: string; label: string;
+      successCoupons: number; successOrders: number;
+      rejectedCoupons: number; rejectedOrders: number;
+    }[] = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today); d.setDate(d.getDate() - i);
       days.push({
         key: d.toISOString().slice(0, 10),
         label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
-        coupons: 0, orders: 0,
+        successCoupons: 0, successOrders: 0,
+        rejectedCoupons: 0, rejectedOrders: 0,
       });
     }
     const map = new Map(days.map((d) => [d.key, d]));
@@ -192,9 +211,19 @@ function AdminWalletDashboard() {
       if (!o.createdAt) return;
       const key = new Date(o.createdAt).toISOString().slice(0, 10);
       const row = map.get(key);
-      if (row) { row.coupons += o.qty || 0; row.orders += 1; }
+      if (row) { row.successCoupons += o.qty || 0; row.successOrders += 1; }
     });
-    return { totalCoupons, totalOrders, totalAmount, daily: days };
+    rejected.forEach((o) => {
+      if (!o.createdAt) return;
+      const key = new Date(o.createdAt).toISOString().slice(0, 10);
+      const row = map.get(key);
+      if (row) { row.rejectedCoupons += o.qty || 0; row.rejectedOrders += 1; }
+    });
+    return {
+      totalCoupons, totalOrders, totalAmount,
+      rejectedCoupons, rejectedOrders, rejectedAmount,
+      daily: days,
+    };
   }, [panOrders, period]);
 
 
