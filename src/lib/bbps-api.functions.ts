@@ -62,6 +62,15 @@ interface ProviderConfig {
   feeByCategory: Record<string, number>;
 }
 
+interface BridgeResponseEnvelope {
+  success?: boolean;
+  status?: number;
+  statusText?: string;
+  upstreamBaseUrl?: string;
+  body?: unknown;
+  error?: string;
+}
+
 interface FirestoreValue {
   stringValue?: string;
   integerValue?: string;
@@ -134,6 +143,60 @@ async function getProviderConfig(firebaseIdToken?: string): Promise<ProviderConf
     defaultFee: data.defaultFee ?? DEFAULT_BBPS_CONFIG.defaultFee,
     feeByCategory: data.feeByCategory ?? {},
   };
+}
+
+function parseBridgeEnvelope(text: string): BridgeResponseEnvelope {
+  try {
+    return text ? (JSON.parse(text) as BridgeResponseEnvelope) : {};
+  } catch {
+    return { body: text };
+  }
+}
+
+function stripHtmlSnippet(value: string): string {
+  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function formatBridgeFailure(endpoint: string, bridgeHttpStatus: number, wrappedJson: BridgeResponseEnvelope, wrappedText: string): Error {
+  const rawBody =
+    typeof wrappedJson.body === "string"
+      ? wrappedJson.body
+      : typeof wrappedJson.body === "object" && wrappedJson.body
+        ? JSON.stringify(wrappedJson.body)
+        : "";
+  const cleanedBody = stripHtmlSnippet(rawBody).slice(0, 260);
+  const upstreamMsg =
+    typeof wrappedJson.body === "object" && wrappedJson.body
+      ? ((wrappedJson.body as { message?: string; error?: string }).message ??
+          (wrappedJson.body as { error?: string }).error ??
+          cleanedBody)
+      : cleanedBody || undefined;
+  const upstreamStatus = wrappedJson.status ?? bridgeHttpStatus;
+  const httpInfo = `HTTP ${upstreamStatus}${wrappedJson.statusText ? ` ${wrappedJson.statusText}` : ""}`;
+  const targetInfo = wrappedJson.upstreamBaseUrl ? ` via ${wrappedJson.upstreamBaseUrl}` : "";
+  const isOutage = upstreamStatus === 502 || upstreamStatus === 503 || upstreamStatus === 504;
+  const finalMsg = wrappedJson.error
+    ? `Bridge: ${wrappedJson.error}`
+    : isOutage
+      ? `Bharat Connect provider is temporarily unavailable (${httpInfo}${targetInfo}). Please try again in a few minutes.`
+      : upstreamMsg
+        ? `Provider ${httpInfo}${targetInfo}: ${upstreamMsg}`
+        : `Bridge ${httpInfo}${targetInfo} (no body) — likely IP not whitelisted by provider yet`;
+
+  console.error("[BBPS] bridge error:", JSON.stringify({
+    endpoint,
+    bridgeHttpStatus,
+    upstreamStatus: wrappedJson.status,
+    upstreamStatusText: wrappedJson.statusText,
+    upstreamBaseUrl: wrappedJson.upstreamBaseUrl,
+    bridgeError: wrappedJson.error,
+    wrappedText: wrappedText.slice(0, 500),
+    body: typeof wrappedJson.body === "string"
+      ? wrappedJson.body.slice(0, 500)
+      : wrappedJson.body,
+  }));
+
+  return new Error(finalMsg);
 }
 
 /** Decode JWT exp without verifying the signature (provider issues, we just read). */
@@ -283,7 +346,7 @@ async function callBbps<T>(
   if (!direct && bridgeBase && bridgeSecret) {
     // Route via VPS bridge — provider sees the bridge's static IP.
     const apiPath = endpoint.replace(/^\/+/, "");
-    const wrapped = JSON.stringify({ __headers: headers, __payload: payload });
+    const wrapped = JSON.stringify({ __baseUrl: cfg.baseUrl, __headers: headers, __payload: payload });
     const ts = Date.now();
     const signature = await hmacHex(bridgeSecret, wrapped);
     const url = `${bridgeBase.replace(/\/+$/, "")}/provider/${apiPath}`;
@@ -299,60 +362,9 @@ async function callBbps<T>(
     });
     // Bridge wraps the upstream body — unwrap before returning.
     const wrappedText = await res.text();
-    const wrappedJson = ((() => {
-      try {
-        return wrappedText ? JSON.parse(wrappedText) : {};
-      } catch {
-        return { body: wrappedText };
-      }
-    })()) as {
-      success?: boolean;
-      status?: number;
-      statusText?: string;
-      body?: unknown;
-      error?: string;
-    };
+    const wrappedJson = parseBridgeEnvelope(wrappedText);
     if (!res.ok || wrappedJson.success === false) {
-      // Surface as much detail as possible to the caller.
-      const rawBody =
-        typeof wrappedJson.body === "string"
-          ? wrappedJson.body
-          : typeof wrappedJson.body === "object" && wrappedJson.body
-            ? JSON.stringify(wrappedJson.body)
-            : "";
-      // Strip HTML tags so the UI doesn't show raw <html>503</html> markup.
-      const cleanedBody = rawBody.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
-      const upstreamMsg =
-        typeof wrappedJson.body === "object" && wrappedJson.body
-          ? ((wrappedJson.body as { message?: string; error?: string }).message ??
-              (wrappedJson.body as { error?: string }).error ??
-              cleanedBody)
-          : cleanedBody || undefined;
-      const upstreamStatus = wrappedJson.status ?? res.status;
-      const httpInfo = `HTTP ${upstreamStatus}${
-        wrappedJson.statusText ? ` ${wrappedJson.statusText}` : ""
-      }`;
-      // Friendlier message for common upstream outages.
-      const isOutage = upstreamStatus === 502 || upstreamStatus === 503 || upstreamStatus === 504;
-      const finalMsg = wrappedJson.error
-        ? `Bridge: ${wrappedJson.error}`
-        : isOutage
-          ? `Bharat Connect provider is temporarily unavailable (${httpInfo}). Please try again in a few minutes.`
-          : upstreamMsg
-            ? `Provider ${httpInfo}: ${upstreamMsg}`
-            : `Bridge ${httpInfo} (no body) — likely IP not whitelisted by provider yet`;
-      console.error("[BBPS] bridge error:", JSON.stringify({
-        endpoint,
-        httpStatus: res.status,
-        upstreamStatus: wrappedJson.status,
-        upstreamStatusText: wrappedJson.statusText,
-        bridgeError: wrappedJson.error,
-        wrappedText: wrappedText.slice(0, 500),
-        body: typeof wrappedJson.body === "string"
-          ? wrappedJson.body.slice(0, 500)
-          : wrappedJson.body,
-      }));
-      throw new Error(finalMsg);
+      throw formatBridgeFailure(endpoint, res.status, wrappedJson, wrappedText);
     }
     return (wrappedJson.body ?? {}) as T;
   }
