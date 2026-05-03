@@ -80,24 +80,29 @@ function inPeriod(iso: string | undefined, period: Period): boolean {
   return true;
 }
 
+type PanOrder = { id: string; qty?: number; status?: string; totalDebit?: number; createdAt?: string };
+
 function AdminWalletDashboard() {
   const [txs, setTxs] = useState<Tx[]>([]);
   const [walletTotal, setWalletTotal] = useState(0);
+  const [panOrders, setPanOrders] = useState<PanOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("all");
 
   useEffect(() => {
     (async () => {
       try {
-        const [txSnap, walletSnap] = await Promise.all([
+        const [txSnap, walletSnap, panSnap] = await Promise.all([
           getDocs(collection(db, "transactions")),
           getDocs(collection(db, "wallets")),
+          getDocs(collection(db, "pan_coupon_orders")),
         ]);
         const list: Tx[] = txSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
         list.sort((a, b) => (a.createdAt || "") < (b.createdAt || "") ? 1 : -1);
         setTxs(list);
         const total = walletSnap.docs.reduce((sum, d) => sum + (d.data().balance || 0), 0);
         setWalletTotal(total);
+        setPanOrders(panSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
       } catch (e) {
         console.error("wallet dashboard load failed", e);
       } finally {
