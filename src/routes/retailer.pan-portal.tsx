@@ -463,7 +463,7 @@ function PsaLinkForm({
 
   async function handleLink(e: FormEvent) {
     e.preventDefault();
-    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    // Note: provider creds not required to LINK — only needed when buying coupons.
     const id = vleId.trim().toUpperCase();
     if (id.length < 4) { toast.error("Enter your old VLE ID (e.g. PSA123456 or RMPMCST-9876543210)"); return; }
     if (!/^\d{10}$/.test(mobile)) { toast.error("Enter the 10-digit mobile registered with UTI"); return; }
