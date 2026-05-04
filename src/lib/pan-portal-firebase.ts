@@ -133,3 +133,18 @@ export async function listCouponOrders(retailerId: string): Promise<PanCouponOrd
   const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as PanCouponOrder) }));
   return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
+
+export async function getLastWorkingCouponVleId(
+  retailerId: string,
+  excludeVleId?: string,
+): Promise<string | null> {
+  const excluded = cleanVleId(excludeVleId).toUpperCase();
+  const orders = await listCouponOrders(retailerId);
+  const match = orders.find((order) => {
+    const vleId = cleanVleId(order.vleId).toUpperCase();
+    if (!vleId || vleId === excluded) return false;
+    if (order.refunded) return false;
+    return order.status === "SUCCESS" || order.status === "PENDING";
+  });
+  return match ? cleanVleId(match.vleId) : null;
+}
