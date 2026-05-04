@@ -724,11 +724,12 @@ function CouponBuyPanel({
           </Alert>
         )}
         {legacySyncMissingFields.length > 0 && (
-          <Alert variant="destructive">
+          <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              ഈ linked VLE sync ചെയ്യാൻ <strong>{legacySyncMissingFields.join(", ")}</strong> details missing ആണ്.
-              ആദ്യം PSA tab-ൽ update/sync ചെയ്തു ശേഷം coupon buy ചെയ്യൂ.
+              Heads-up: <strong>{legacySyncMissingFields.join(", ")}</strong> details PSA-യിൽ missing ആണ്.
+              VLE provider-ൽ already exist ചെയ്യുന്നുവെങ്കിൽ purchase നടക്കും.
+              "VLE Data Not Exist" error വന്നാൽ മാത്രം PSA tab-ൽ details fill ചെയ്ത് വീണ്ടും try ചെയ്യുക.
             </AlertDescription>
           </Alert>
         )}
