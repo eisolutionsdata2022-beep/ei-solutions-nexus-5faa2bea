@@ -612,17 +612,6 @@ function CouponBuyPanel({
 
     let orderId = "";
     let debited = false;
-    let refunded = false;
-    // Helper: idempotent refund — guarantees wallet is made whole on any failure path,
-    // even if an earlier refund attempt threw before completing.
-    const ensureRefund = async (reason: string) => {
-      if (!debited || refunded) return;
-      await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: ${reason}` });
-      refunded = true;
-      if (orderId) {
-        try { await updateCouponOrder(orderId, { status: "FAILED", message: reason, refunded: true }); } catch {}
-      }
-    };
     try {
       let effectivePsa: PanPsaRecord = currentPsa;
       let effectiveVleId = getPsaPrimaryVleId(currentPsa);
@@ -668,13 +657,20 @@ function CouponBuyPanel({
             data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
           });
         } else if (syncResult.reason === "missing_profile") {
-          await ensureRefund("Legacy VLE needs PAN/Aadhaar/address details before sync");
+          await atomicCredit(user.uid, total, { source: "pan-portal", description: "Refund: linked VLE needs PAN/Aadhaar/address details before sync" });
+          await updateCouponOrder(orderId, {
+            status: "FAILED",
+            message: "Legacy VLE needs PAN, Aadhaar, address, PIN and email details before UTI sync can complete.",
+            refunded: true,
+          });
           throw new Error("ഈ പഴയ VLE upstream sync ചെയ്യാൻ PAN, Aadhaar, address, PIN, email details വേണം. PSA tab-ൽ details update ചെയ്ത ശേഷം വീണ്ടും try ചെയ്യൂ.");
         }
       }
 
       if (!res.success) {
-        await ensureRefund(`coupon failed (${res.error})`);
+        // Refund + mark failed
+        await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: coupon failed (${res.error})` });
+        await updateCouponOrder(orderId, { status: "FAILED", message: res.error, refunded: true });
         throw new Error(res.error);
       }
 
@@ -685,11 +681,10 @@ function CouponBuyPanel({
       await onChange();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Purchase failed";
-      // Idempotent safety net: ensure wallet is refunded on ANY uncaught failure
-      // (e.g. provider call threw, order create threw, earlier refund attempt threw).
-      try { await ensureRefund(msg); } catch (refundErr) {
-        console.error("CRITICAL: refund failed after debit", { uid: user.uid, total, orderId, refundErr });
-        toast.error("Refund failed — please contact admin with this order ID: " + (orderId || "n/a"));
+      // If the provider call threw before we updated the order but after the debit,
+      // ensure refund happened (avoid double refund).
+      if (debited && !orderId) {
+        try { await atomicCredit(user.uid, total, { source: "pan-portal", description: `Refund: ${msg}` }); } catch {}
       }
       toast.error(msg);
     } finally {
