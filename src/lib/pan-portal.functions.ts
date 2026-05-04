@@ -22,10 +22,30 @@ import { z } from "zod";
 import { firebaseAuthMiddleware } from "./firebase-auth.middleware";
 
 // ─── Crypto helpers (AES-GCM) ──────────────────────────────────────────
-async function getCryptoKey(): Promise<CryptoKey> {
-  const seed = process.env.LOVABLE_API_KEY || "ei-pan-portal-default-seed-do-not-use";
+// Primary seed is PAN_CRED_SEED — a stable, dedicated secret that we control.
+// We keep LOVABLE_API_KEY as a *legacy fallback* so any cred blobs encrypted
+// before this fix can still be decrypted on first use, then transparently
+// re-encrypted with the primary seed (see decryptBlob's needsReencrypt flag).
+async function deriveKey(seed: string): Promise<CryptoKey> {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("pan-cred|" + seed));
   return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+function getPrimarySeed(): string {
+  return process.env.PAN_CRED_SEED || process.env.LOVABLE_API_KEY || "ei-pan-portal-default-seed-do-not-use";
+}
+
+function getLegacySeeds(): string[] {
+  // Legacy fallbacks tried in order if primary fails.
+  const seeds: string[] = [];
+  if (process.env.LOVABLE_API_KEY && process.env.PAN_CRED_SEED && process.env.LOVABLE_API_KEY !== process.env.PAN_CRED_SEED) {
+    seeds.push(process.env.LOVABLE_API_KEY);
+  }
+  return seeds;
+}
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  return deriveKey(getPrimarySeed());
 }
 
 function b64encode(buf: ArrayBuffer | Uint8Array): string {
