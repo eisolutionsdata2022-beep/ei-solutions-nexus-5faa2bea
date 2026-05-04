@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
-  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken, getPsaPrimaryVleId,
+  loadPanConfig, loadPsaRecord, upsertPsaRecord, isVleIdTaken, getPsaPrimaryVleId, getLastWorkingCouponVleId,
   createCouponOrder, updateCouponOrder, listCouponOrders,
 } from "@/lib/pan-portal-firebase";
 import {
@@ -130,6 +130,31 @@ async function trySilentLegacyVleSync({
   });
 
   return { synced: true as const, vleId };
+}
+
+async function tryRestoreWorkingLinkedVle({
+  user,
+  psa,
+}: {
+  user: NonNullable<ReturnType<typeof useAuth>["appUser"]>;
+  psa: PanPsaRecord;
+}) {
+  if (!psa.linkedExisting) return { restored: false as const };
+
+  const restoredVleId = await getLastWorkingCouponVleId(user.uid, getPsaPrimaryVleId(psa));
+  if (!restoredVleId) return { restored: false as const };
+
+  const now = new Date().toISOString();
+  await upsertPsaRecord({
+    ...psa,
+    vleId: restoredVleId,
+    vleRegCode: restoredVleId,
+    linkedExisting: true,
+    updatedAt: now,
+    remark: `Restored previous working linked VLE ${restoredVleId}`,
+  });
+
+  return { restored: true as const, vleId: restoredVleId };
 }
 
 export const Route = createFileRoute("/retailer/pan-portal")({
@@ -634,6 +659,27 @@ function CouponBuyPanel({
       let res = await panCouponBuy({
         data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: effectiveVleId, type: 1, qty },
       });
+
+      if (!res.success && effectivePsa.linkedExisting && looksLikeMissingVleError(res.error)) {
+        const restored = await tryRestoreWorkingLinkedVle({ user, psa: effectivePsa });
+
+        if (restored.restored) {
+          effectiveVleId = restored.vleId;
+          effectivePsa = {
+            ...effectivePsa,
+            vleId: restored.vleId,
+            vleRegCode: restored.vleId,
+            linkedExisting: true,
+          };
+          await updateCouponOrder(orderId, {
+            vleId: restored.vleId,
+            message: `Current linked VLE was not recognised by provider. Retrying with previous working VLE ${restored.vleId}…`,
+          });
+          res = await panCouponBuy({
+            data: { credCipher: cfg.credCipher, baseUrl: cfg.providerBaseUrl, vleId: restored.vleId, type: 1, qty },
+          });
+        }
+      }
 
       if (!res.success && effectivePsa.linkedExisting && looksLikeMissingVleError(res.error)) {
         const syncResult = await trySilentLegacyVleSync({ user, cfg, psa: effectivePsa });
