@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, ShieldCheck, KeyRound, Settings, IndianRupee, BarChart3, Search, Download, Link2 } from "lucide-react";
+import { Loader2, ShieldCheck, KeyRound, Settings, IndianRupee, BarChart3, Search, Download, Link2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { loadPanConfig, savePanConfig, loadPanCouponReport, type PanRetailerCouponSummary } from "@/lib/pan-portal-firebase";
+import { loadPanConfig, savePanConfig, loadPanCouponReport, adminPatchPsaVleLink, type PanRetailerCouponSummary } from "@/lib/pan-portal-firebase";
 import { encryptPanCredentials } from "@/lib/pan-portal.functions";
 import { DEFAULT_PAN_CONFIG, type PanPortalConfig } from "@/lib/pan-portal-types";
 
