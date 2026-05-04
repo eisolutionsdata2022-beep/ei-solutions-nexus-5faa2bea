@@ -27,7 +27,6 @@ import {
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
 import { generateVleId } from "@/lib/vle-id";
 import { DEFAULT_PAN_CONFIG, type PanCouponOrder, type PanPortalConfig, type PanPsaRecord } from "@/lib/pan-portal-types";
-import { ServicePageShell } from "@/components/ServicePageShell";
 
 function looksLikeMissingVleError(message: string | undefined) {
   const text = (message || "").toLowerCase();
@@ -139,33 +138,17 @@ function PanPortalPage() {
   const credsMissing = !cfg.credCipher;
   const hasPsa = psa && psa.status === "approved";
 
-  const totalCoupons = orders.reduce((sum, o) => sum + (o.status === "SUCCESS" ? (o.qty || 0) : 0), 0);
-  const successOrders = orders.filter((o) => o.status === "SUCCESS").length;
-
   return (
-    <ServicePageShell
-      icon={IdCard}
-      title="PAN Portal (UTI)"
-      subtitle="PSA registration & coupon purchase via UTI authorised provider."
-      eyebrow="UTI PSA Service"
-      gradient="from-indigo-600 via-blue-600 to-cyan-600"
-      stats={[
-        { icon: ShieldCheck, label: "PSA Status", value: hasPsa ? "Active" : (psa ? psa.status : "—"), accent: "from-emerald-400 to-teal-400" },
-        { icon: ShoppingCart, label: "Coupons Bought", value: totalCoupons, accent: "from-amber-400 to-orange-400" },
-        { icon: History, label: "Orders", value: successOrders, accent: "from-violet-400 to-fuchsia-400" },
-      ]}
-      headerAction={
-        <a
-          href="https://www.psaonline.utiitsl.com/psapanservices/forms/login.html/loginHome"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 text-white text-xs font-semibold transition"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          UTI Login
-        </a>
-      }
-    >
+    <div className="max-w-5xl mx-auto p-3 md:p-6 space-y-4">
+      <header className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <IdCard className="h-7 w-7 text-primary" /> PAN Portal (UTI)
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          PSA registration & coupon purchase via UTI authorised provider.
+        </p>
+      </header>
+
       {credsMissing && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -175,19 +158,19 @@ function PanPortalPage() {
       )}
 
       {/* PSA status banner */}
-      <Card className={`border-2 shadow-sm ${hasPsa ? "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-teal-500/5" : "border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5"}`}>
+      <Card className={hasPsa ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"}>
         <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
           <div className="flex items-center gap-3">
-            <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${hasPsa ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}>
-              {hasPsa ? <ShieldCheck className="h-6 w-6" /> : <AlertTriangle className="h-6 w-6" />}
-            </div>
+            {hasPsa
+              ? <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              : <AlertTriangle className="h-6 w-6 text-amber-600" />}
             <div>
-              <div className="font-semibold text-base">
+              <div className="font-semibold">
                 {hasPsa ? "PSA Active" : psa ? `PSA ${psa.status}` : "PSA not registered"}
               </div>
               <div className="text-xs text-muted-foreground">
                 {psa
-                  ? <>VLE ID: <code className="font-mono text-foreground">{psa.vleId}</code>{psa.linkedExisting && " · linked from old portal"}</>
+                  ? <>VLE ID: <code className="font-mono">{psa.vleId}</code>{psa.linkedExisting && " · linked from old portal"}</>
                   : "Register a new PSA or link your existing UTI VLE ID below."}
               </div>
             </div>
@@ -199,16 +182,10 @@ function PanPortalPage() {
       </Card>
 
       <Tabs defaultValue={hasPsa ? "buy" : "psa"} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/60 backdrop-blur rounded-xl">
-          <TabsTrigger value="psa" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
-            <IdCard className="h-4 w-4 mr-1.5" />PSA
-          </TabsTrigger>
-          <TabsTrigger value="buy" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
-            <ShoppingCart className="h-4 w-4 mr-1.5" />Buy Coupons
-          </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md">
-            <History className="h-4 w-4 mr-1.5" />History
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="psa"><IdCard className="h-4 w-4 mr-1" />PSA</TabsTrigger>
+          <TabsTrigger value="buy" disabled={!hasPsa}><ShoppingCart className="h-4 w-4 mr-1" />Buy Coupons</TabsTrigger>
+          <TabsTrigger value="history"><History className="h-4 w-4 mr-1" />History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="psa">
@@ -221,7 +198,7 @@ function PanPortalPage() {
           <CouponHistoryPanel orders={orders} cfg={cfg} onRefresh={refresh} />
         </TabsContent>
       </Tabs>
-    </ServicePageShell>
+    </div>
   );
 }
 
@@ -580,24 +557,7 @@ function CouponBuyPanel({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!psa || psa.status !== "approved") {
-    return (
-      <Card className="border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5">
-        <CardContent className="p-8 text-center space-y-4">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-amber-500/15 flex items-center justify-center">
-            <AlertTriangle className="h-8 w-8 text-amber-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold">PSA Not Active</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {psa
-                ? `Your PSA status is "${psa.status}". You can buy coupons only after PSA is approved.`
-                : "You need to register a new UTI PSA or link your existing VLE ID first."}
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground">Switch to the <strong>PSA</strong> tab above to continue.</p>
-        </CardContent>
-      </Card>
-    );
+    return <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>Register or link your PSA first.</AlertDescription></Alert>;
   }
 
   const total = qty * cfg.couponRetailerFee;
