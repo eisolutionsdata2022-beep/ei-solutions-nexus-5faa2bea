@@ -463,7 +463,7 @@ function PsaLinkForm({
 
   async function handleLink(e: FormEvent) {
     e.preventDefault();
-    if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
+    // Note: provider creds not required to LINK — only needed when buying coupons.
     const id = vleId.trim().toUpperCase();
     if (id.length < 4) { toast.error("Enter your old VLE ID (e.g. PSA123456 or RMPMCST-9876543210)"); return; }
     if (!/^\d{10}$/.test(mobile)) { toast.error("Enter the 10-digit mobile registered with UTI"); return; }
@@ -474,24 +474,8 @@ function PsaLinkForm({
         throw new Error(`VLE ID ${id} is already linked to another retailer.`);
       }
 
-      // Verify VLE exists upstream by attempting a coupon_status call with a
-      // dummy order id — provider returns "Vle Data Not Exist" / similar when
-      // the VLE is not registered. Any provider response that doesn't say so
-      // means the VLE is recognised (status of the dummy order doesn't matter).
-      const probe = await panCouponStatus({
-        data: {
-          credCipher: cfg.credCipher!,
-          baseUrl: cfg.providerBaseUrl,
-          orderId: `PROBE-${Date.now()}`,
-        },
-      });
-      const probeMsg = (probe.message || "").toLowerCase();
-      // We can't directly probe the VLE from coupon_status (it queries an order).
-      // So the safer probe is a 1-coupon coupon_buy with qty=1 — but that costs
-      // money. Instead we just trust the user input here and validate at first
-      // real purchase (provider will reject + we refund). This is the explicit
-      // "linkedExisting" trade-off the team chose.
-      void probeMsg;
+      // Trust-based link: no upstream probe (UTI has no VLE-lookup endpoint).
+      // First coupon purchase will validate; on "VLE Data Not Exist" we auto-refund.
 
       const now = new Date().toISOString();
       await upsertPsaRecord({
