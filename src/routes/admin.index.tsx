@@ -29,7 +29,6 @@ import {
   ClipboardList,
   Settings,
   ChevronRight,
-  Server,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -429,13 +428,6 @@ const SERVICE_TILES: ServiceTile[] = [
     subtitle: "Paytm gateway & QR",
     icon: CreditCard,
     gradient: "from-sky-500 to-indigo-600",
-  },
-  {
-    to: "/admin/csc-settings",
-    title: "EI Pay (CSC) Settings",
-    subtitle: "Bridge URL, HMAC & master creds",
-    icon: Server,
-    gradient: "from-green-500 to-emerald-600",
   },
   {
     to: "/admin/services",

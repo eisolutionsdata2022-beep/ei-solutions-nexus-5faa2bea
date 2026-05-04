@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Badge } from "@/components/ui/badge";
@@ -28,17 +28,12 @@ function RetailerTransactions() {
   useEffect(() => {
     if (!appUser) return;
     const unsub = onSnapshot(
-      query(collection(db, "transactions"), where("userId", "==", appUser.uid)),
+      query(collection(db, "transactions"), where("userId", "==", appUser.uid), orderBy("createdAt", "desc")),
       (snap) => {
         const list: Transaction[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Transaction));
-        list.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || ""));
         setTransactions(list);
-      },
-      (error) => {
-        console.warn("[RetailerTransactions] listener skipped:", error.message);
-        setTransactions([]);
-      },
+      }
     );
     return unsub;
   }, [appUser]);

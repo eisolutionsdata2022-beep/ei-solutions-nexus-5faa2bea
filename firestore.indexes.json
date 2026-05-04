@@ -9,14 +9,6 @@
       ]
     },
     {
-      "collectionGroup": "csc_transactions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "retailerId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "pan_transactions",
       "queryScope": "COLLECTION",
       "fields": [

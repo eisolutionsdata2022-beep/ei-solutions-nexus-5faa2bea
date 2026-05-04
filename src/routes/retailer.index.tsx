@@ -108,22 +108,22 @@ function RetailerDashboard() {
     getDocs(query(
       collection(db, "serviceRequests"),
       where("userId", "==", appUser.uid),
+      orderBy("createdAt", "desc"),
       limit(10)
     )).then((snap) => {
       const list: ServiceRequest[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ServiceRequest));
-      list.sort((a, b) => Date.parse((b as any).createdAt || "") - Date.parse((a as any).createdAt || ""));
       setApplications(list);
     }).catch(() => {});
 
     getDocs(query(
       collection(db, "transactions"),
       where("userId", "==", appUser.uid),
+      orderBy("createdAt", "desc"),
       limit(5)
     )).then((snap) => {
       const list: Transaction[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Transaction));
-      list.sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || ""));
       setRecentTx(list);
     }).catch(() => {});
 

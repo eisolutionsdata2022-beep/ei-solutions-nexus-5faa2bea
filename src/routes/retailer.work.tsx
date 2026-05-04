@@ -44,16 +44,11 @@ function WorkerDashboard() {
 
   useEffect(() => {
     const unsub = onSnapshot(
-      query(collection(db, "jobs"), where("status", "==", "open")),
+      query(collection(db, "jobs"), where("status", "==", "open"), orderBy("createdAt", "desc")),
       (snap) => {
         const list: JobDoc[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
-        // Client-side ordering to avoid composite index requirement
-        list.sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
         setOpenJobs(list);
-      },
-      (err) => {
-        console.error("[retailer.work] open jobs listener error:", err);
       }
     );
     return unsub;

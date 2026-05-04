@@ -265,30 +265,14 @@ function AdminCscSettings() {
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-2">
-                HMAC Shared Secret
-                {config?.hmacSecret ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    ✓ Configured ({config.hmacSecret.length} chars)
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    ⚠ Not set
-                  </span>
-                )}
-              </Label>
+              <Label>HMAC Shared Secret</Label>
               <Input
                 type="password"
                 value={hmacSecret}
                 onChange={(e) => setHmacSecret(e.target.value)}
-                placeholder={config?.hmacSecret ? "Enter new secret to replace existing" : "Paste HMAC secret from VPS .env"}
+                placeholder="Enter to update (write-only)"
                 autoComplete="new-password"
               />
-              {config?.updatedAt && (
-                <p className="text-xs text-muted-foreground">
-                  Last updated: {new Date(config.updatedAt).toLocaleString()} by {config.updatedBy ?? "—"}
-                </p>
-              )}
             </div>
             <Button type="submit" disabled={savingBridge}>
               {savingBridge ? (

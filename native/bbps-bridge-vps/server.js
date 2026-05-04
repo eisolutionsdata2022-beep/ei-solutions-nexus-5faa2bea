@@ -31,17 +31,6 @@ const MAX_SKEW = Number(process.env.HMAC_MAX_SKEW_SEC || 300);
 const BASE_URL = (process.env.BBPS_BASE_URL || 'https://aceneobank.dev.acepe.co.in/apiService').replace(/\/+$/, '');
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS || 45_000);
 
-function resolveProviderBaseUrl(candidate) {
-  if (typeof candidate !== 'string' || !candidate.trim()) return BASE_URL;
-  try {
-    const parsed = new URL(candidate.trim());
-    if (!/^https?:$/.test(parsed.protocol)) return BASE_URL;
-    return parsed.toString().replace(/\/+$/, '');
-  } catch {
-    return BASE_URL;
-  }
-}
-
 if (!HMAC_SECRET || HMAC_SECRET.length < 16) {
   console.error('[fatal] HMAC_SECRET missing or too short. Set it in .env');
   process.exit(1);
@@ -129,16 +118,15 @@ app.post('/provider/*', verifyHmac, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid path' });
   }
 
-  const { __baseUrl, __headers = {}, __payload = {} } = req.body || {};
-  const upstreamBaseUrl = resolveProviderBaseUrl(__baseUrl);
-  const url = `${upstreamBaseUrl}/${apiPath.replace(/^\/+/, '')}`;
+  const { __headers = {}, __payload = {} } = req.body || {};
+  const url = `${BASE_URL}/${apiPath.replace(/^\/+/, '')}`;
   const outboundBody = JSON.stringify(__payload);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
 
   try {
-    console.log(`[bbps] → ${apiPath} via ${upstreamBaseUrl} (${outboundBody.length}b)`);
+    console.log(`[bbps] → ${apiPath} (${outboundBody.length}b)`);
     const upstream = await fetch(url, {
       method: 'POST',
       headers: {
@@ -154,13 +142,12 @@ app.post('/provider/*', verifyHmac, async (req, res) => {
     let parsed = null;
     try { parsed = JSON.parse(text); } catch { /* not json */ }
 
-    console.log(`[bbps] ← ${apiPath} ${upstream.status} via ${upstreamBaseUrl} (${text.length}b)`);
+    console.log(`[bbps] ← ${apiPath} ${upstream.status} (${text.length}b)`);
 
     res.status(200).json({
       success: upstream.ok,
       status: upstream.status,
       statusText: upstream.statusText,
-      upstreamBaseUrl,
       body: parsed ?? text,
     });
   } catch (err) {

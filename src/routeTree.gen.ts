@@ -77,7 +77,6 @@ import { Route as AdminWorkBadgesRouteImport } from './routes/admin.work-badges'
 import { Route as AdminWhatsappRouteImport } from './routes/admin.whatsapp'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminWalletRequestsRouteImport } from './routes/admin.wallet-requests'
-import { Route as AdminWalletDashboardRouteImport } from './routes/admin.wallet-dashboard'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingsRouteImport } from './routes/admin.trainings'
 import { Route as AdminTrainingSettingsRouteImport } from './routes/admin.training-settings'
@@ -94,7 +93,6 @@ import { Route as AdminServiceActivationsRouteImport } from './routes/admin.serv
 import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
 import { Route as AdminPaytmSettingsRouteImport } from './routes/admin.paytm-settings'
 import { Route as AdminPanPortalSettingsRouteImport } from './routes/admin.pan-portal-settings'
-import { Route as AdminPanCouponAuditRouteImport } from './routes/admin.pan-coupon-audit'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminMatrimonyRouteImport } from './routes/admin.matrimony'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -463,11 +461,6 @@ const AdminWalletRequestsRoute = AdminWalletRequestsRouteImport.update({
   path: '/wallet-requests',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminWalletDashboardRoute = AdminWalletDashboardRouteImport.update({
-  id: '/wallet-dashboard',
-  path: '/wallet-dashboard',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -547,11 +540,6 @@ const AdminPaytmSettingsRoute = AdminPaytmSettingsRouteImport.update({
 const AdminPanPortalSettingsRoute = AdminPanPortalSettingsRouteImport.update({
   id: '/pan-portal-settings',
   path: '/pan-portal-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPanCouponAuditRoute = AdminPanCouponAuditRouteImport.update({
-  id: '/pan-coupon-audit',
-  path: '/pan-coupon-audit',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
@@ -730,7 +718,6 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -747,7 +734,6 @@ export interface FileRoutesByFullPath {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -838,7 +824,6 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -855,7 +840,6 @@ export interface FileRoutesByTo {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -954,7 +938,6 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/matrimony': typeof AdminMatrimonyRoute
   '/admin/notices': typeof AdminNoticesRoute
-  '/admin/pan-coupon-audit': typeof AdminPanCouponAuditRoute
   '/admin/pan-portal-settings': typeof AdminPanPortalSettingsRoute
   '/admin/paytm-settings': typeof AdminPaytmSettingsRoute
   '/admin/referrals': typeof AdminReferralsRoute
@@ -971,7 +954,6 @@ export interface FileRoutesById {
   '/admin/training-settings': typeof AdminTrainingSettingsRoute
   '/admin/trainings': typeof AdminTrainingsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/wallet-dashboard': typeof AdminWalletDashboardRoute
   '/admin/wallet-requests': typeof AdminWalletRequestsRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/whatsapp': typeof AdminWhatsappRoute
@@ -1071,7 +1053,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1088,7 +1069,6 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
-    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1179,7 +1159,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1196,7 +1175,6 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
-    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1294,7 +1272,6 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/matrimony'
     | '/admin/notices'
-    | '/admin/pan-coupon-audit'
     | '/admin/pan-portal-settings'
     | '/admin/paytm-settings'
     | '/admin/referrals'
@@ -1311,7 +1288,6 @@ export interface FileRouteTypes {
     | '/admin/training-settings'
     | '/admin/trainings'
     | '/admin/users'
-    | '/admin/wallet-dashboard'
     | '/admin/wallet-requests'
     | '/admin/wallets'
     | '/admin/whatsapp'
@@ -1871,13 +1847,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWalletRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/wallet-dashboard': {
-      id: '/admin/wallet-dashboard'
-      path: '/wallet-dashboard'
-      fullPath: '/admin/wallet-dashboard'
-      preLoaderRoute: typeof AdminWalletDashboardRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -1988,13 +1957,6 @@ declare module '@tanstack/react-router' {
       path: '/pan-portal-settings'
       fullPath: '/admin/pan-portal-settings'
       preLoaderRoute: typeof AdminPanPortalSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pan-coupon-audit': {
-      id: '/admin/pan-coupon-audit'
-      path: '/pan-coupon-audit'
-      fullPath: '/admin/pan-coupon-audit'
-      preLoaderRoute: typeof AdminPanCouponAuditRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/notices': {
@@ -2213,7 +2175,6 @@ interface AdminRouteChildren {
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminMatrimonyRoute: typeof AdminMatrimonyRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
-  AdminPanCouponAuditRoute: typeof AdminPanCouponAuditRoute
   AdminPanPortalSettingsRoute: typeof AdminPanPortalSettingsRoute
   AdminPaytmSettingsRoute: typeof AdminPaytmSettingsRoute
   AdminReferralsRoute: typeof AdminReferralsRoute
@@ -2230,7 +2191,6 @@ interface AdminRouteChildren {
   AdminTrainingSettingsRoute: typeof AdminTrainingSettingsRoute
   AdminTrainingsRoute: typeof AdminTrainingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AdminWalletDashboardRoute: typeof AdminWalletDashboardRoute
   AdminWalletRequestsRoute: typeof AdminWalletRequestsRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
   AdminWhatsappRoute: typeof AdminWhatsappRoute
@@ -2262,7 +2222,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketingRoute: AdminMarketingRoute,
   AdminMatrimonyRoute: AdminMatrimonyRoute,
   AdminNoticesRoute: AdminNoticesRoute,
-  AdminPanCouponAuditRoute: AdminPanCouponAuditRoute,
   AdminPanPortalSettingsRoute: AdminPanPortalSettingsRoute,
   AdminPaytmSettingsRoute: AdminPaytmSettingsRoute,
   AdminReferralsRoute: AdminReferralsRoute,
@@ -2279,7 +2238,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTrainingSettingsRoute: AdminTrainingSettingsRoute,
   AdminTrainingsRoute: AdminTrainingsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AdminWalletDashboardRoute: AdminWalletDashboardRoute,
   AdminWalletRequestsRoute: AdminWalletRequestsRoute,
   AdminWalletsRoute: AdminWalletsRoute,
   AdminWhatsappRoute: AdminWhatsappRoute,

@@ -62,7 +62,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Create User", to: "/admin/create-user", icon: UserPlus },
     { label: "Staff User Creation", to: "/admin/staff-created-users", icon: BarChart3, hint: "How many users each staff has registered" },
     { label: "CRM Reports", to: "/admin/crm-reports", icon: BarChart3 },
-    { label: "💼 Wallet Dashboard", to: "/admin/wallet-dashboard", icon: Wallet, tag: "new", hint: "Revenue, balances & service breakdown" },
     { label: "Wallets", to: "/admin/wallets", icon: Wallet },
     { label: "Activations Log", to: "/admin/service-activations", icon: BarChart3 },
     { label: "Bill Payment Txns", to: "/admin/bbps-transactions", icon: ArrowLeftRight },
