@@ -92,14 +92,19 @@ function PanPortalSettings() {
       </div>
 
       <Tabs defaultValue="report" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="report" className="gap-2"><BarChart3 className="h-4 w-4" />Coupon Report</TabsTrigger>
+          <TabsTrigger value="bulk" className="gap-2"><Upload className="h-4 w-4" />Bulk Link</TabsTrigger>
           <TabsTrigger value="creds" className="gap-2"><KeyRound className="h-4 w-4" />Credentials</TabsTrigger>
           <TabsTrigger value="fees" className="gap-2"><IndianRupee className="h-4 w-4" />Fees & URL</TabsTrigger>
         </TabsList>
 
         <TabsContent value="report" className="mt-4">
           <PanCouponReportTab />
+        </TabsContent>
+
+        <TabsContent value="bulk" className="mt-4">
+          <BulkLinkTab adminUid={appUser.uid} />
         </TabsContent>
 
         <TabsContent value="creds" className="mt-4">
