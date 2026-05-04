@@ -291,6 +291,7 @@ function PanCouponReportTab() {
                   <th className="text-right p-2">Refunded</th>
                   <th className="text-right p-2">Spent (₹)</th>
                   <th className="text-left p-2">Last Buy</th>
+                  <th className="text-right p-2">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -321,6 +322,11 @@ function PanCouponReportTab() {
                     <td className="p-2 text-xs text-muted-foreground">
                       {r.lastPurchaseAt ? new Date(r.lastPurchaseAt).toLocaleString("en-IN") : "—"}
                     </td>
+                    <td className="p-2 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(r)} className="h-7 px-2">
+                        <Pencil className="h-3 w-3 mr-1" />Edit VLE
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -328,7 +334,93 @@ function PanCouponReportTab() {
           </div>
         )}
       </CardContent>
+      <EditVleDialog
+        row={editing}
+        adminUid={appUser?.uid || ""}
+        onClose={() => setEditing(null)}
+        onSaved={async () => { setEditing(null); await reload(); }}
+      />
     </Card>
+  );
+}
+
+function EditVleDialog({
+  row, adminUid, onClose, onSaved,
+}: {
+  row: PanRetailerCouponSummary | null;
+  adminUid: string;
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const [vleId, setVleId] = useState("");
+  const [vleRegCode, setVleRegCode] = useState("");
+  const [linkedExisting, setLinkedExisting] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (row) {
+      setVleId(row.vleId || "");
+      setVleRegCode(row.vleRegCode || "");
+      setLinkedExisting(!!row.linkedExisting);
+    }
+  }, [row]);
+
+  async function handleSave() {
+    if (!row) return;
+    if (!vleId.trim()) { toast.error("VLE ID is required"); return; }
+    if (!adminUid) { toast.error("Admin session required"); return; }
+    setSaving(true);
+    try {
+      await adminPatchPsaVleLink(
+        row.retailerId,
+        { vleId: vleId.trim(), vleRegCode: vleRegCode.trim() || undefined, linkedExisting },
+        adminUid,
+      );
+      toast.success("VLE link updated ✓");
+      await onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit VLE Link</DialogTitle>
+          <DialogDescription>
+            {row?.retailerName} <span className="text-muted-foreground">({row?.retailerEmail || row?.retailerMobile || row?.retailerId})</span>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="ed-vleid">Active VLE ID (sent to provider)</Label>
+            <Input id="ed-vleid" value={vleId} onChange={(e) => setVleId(e.target.value)} className="font-mono" placeholder="MALL355-..." />
+            <p className="text-xs text-muted-foreground mt-1">Use the exact UTI/provider-recognised ID (e.g. <code>MALL355-XXXX</code>).</p>
+          </div>
+          <div>
+            <Label htmlFor="ed-regcode">Old/Reg Code (alt, optional)</Label>
+            <Input id="ed-regcode" value={vleRegCode} onChange={(e) => setVleRegCode(e.target.value)} className="font-mono" placeholder="RMPMCST-... or RMPBCST-..." />
+            <p className="text-xs text-muted-foreground mt-1">The auto-generated/legacy code. Kept as backup; not sent to provider.</p>
+          </div>
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div>
+              <div className="text-sm font-medium">Linked from old portal</div>
+              <div className="text-xs text-muted-foreground">ON = trust-based legacy VLE. OFF = registered upstream.</div>
+            </div>
+            <Switch checked={linkedExisting} onCheckedChange={setLinkedExisting} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</> : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
