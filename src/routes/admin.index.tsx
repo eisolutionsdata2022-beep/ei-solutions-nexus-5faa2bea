@@ -402,6 +402,13 @@ const SERVICE_TILES: ServiceTile[] = [
     gradient: "from-sky-500 to-indigo-600",
   },
   {
+    to: "/admin/pan-portal-settings",
+    title: "PAN VLE Editor",
+    subtitle: "Edit retailer VLE links from coupon report",
+    icon: Settings,
+    gradient: "from-orange-500 to-red-600",
+  },
+  {
     to: "/admin/trainings",
     title: "Trainings",
     subtitle: "Sessions & schedules",
