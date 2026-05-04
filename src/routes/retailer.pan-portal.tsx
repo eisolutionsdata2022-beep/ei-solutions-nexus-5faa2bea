@@ -465,7 +465,11 @@ function PsaLinkForm({
     e.preventDefault();
     // Note: provider creds not required to LINK — only needed when buying coupons.
     const id = vleId.trim().toUpperCase();
-    if (id.length < 4) { toast.error("Enter your old VLE ID (e.g. PSA123456 or RMPMCST-9876543210)"); return; }
+    if (id.length < 4) { toast.error("Enter your MALL355 VLE ID (e.g. MALL355-PSAXXXX)"); return; }
+    if (!/^MALL355[-\s]?/i.test(id)) {
+      toast.error("⚠️ Enter the MALL355-XXXX ID issued by UTI provider — RMPMCST usernames will not work for coupon purchase.");
+      return;
+    }
     if (!/^\d{10}$/.test(mobile)) { toast.error("Enter the 10-digit mobile registered with UTI"); return; }
 
     setSubmitting(true);
@@ -507,15 +511,17 @@ function PsaLinkForm({
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Link2 className="h-5 w-5" />Link Existing UTI VLE</CardTitle>
         <CardDescription>
-          For users migrating from the old portal — link your existing UTI VLE ID to start
-          buying coupons immediately. No re-registration needed.
+          പഴയ portal-ൽ നിന്ന് migrate ചെയ്യുന്നവർ: നിങ്ങളുടെ <b>MALL355-XXXX</b> VLE ID ഇവിടെ link ചെയ്യുക —
+          ഉടൻ coupon purchase ചെയ്യാം. <span className="text-destructive font-semibold">RMPMCST username use ചെയ്യരുത്</span> —
+          provider അത് സ്വീകരിക്കില്ല. UTI portal login ചെയ്ത് Profile-ൽ നിന്ന് MALL355 ID കണ്ടെത്താം.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLink} className="grid sm:grid-cols-2 gap-3">
           <div>
-            <Label>Existing VLE ID</Label>
-            <Input value={vleId} onChange={(e) => setVleId(e.target.value.toUpperCase())} placeholder="PSA123456 / RMPMCST-9876543210" className="font-mono uppercase" />
+            <Label>UTI VLE ID (MALL355 format)</Label>
+            <Input value={vleId} onChange={(e) => setVleId(e.target.value.toUpperCase())} placeholder="MALL355-PSAXXXX" className="font-mono uppercase" />
+            <p className="text-xs text-muted-foreground mt-1">Provider-issued ID. Starts with <code>MALL355-</code></p>
           </div>
           <div>
             <Label>UTI Registered Mobile</Label>
