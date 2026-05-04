@@ -33,6 +33,35 @@ function looksLikeMissingVleError(message: string | undefined) {
   return text.includes("vle data not exist") || text.includes("vle not exist") || text.includes("vle does not exist");
 }
 
+function getLegacySyncMissingFields({
+  user,
+  psa,
+}: {
+  user: NonNullable<ReturnType<typeof useAuth>["appUser"]>;
+  psa: PanPsaRecord;
+}) {
+  if (!psa.linkedExisting) return [] as string[];
+
+  const missing: string[] = [];
+  const mobile = (psa.linkedMobile || psa.mobile || user.phone || "").trim();
+  const email = (psa.email || user.email || "").trim();
+  const address = (psa.address || user.address || "").trim();
+  const state = (psa.state || "").trim();
+  const pinCode = (psa.pinCode || "").trim();
+  const uidNo = (psa.uidNo || "").trim();
+  const panNo = (psa.panNo || "").trim().toUpperCase();
+
+  if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(panNo)) missing.push("PAN");
+  if (!/^\d{12}$/.test(uidNo)) missing.push("Aadhaar");
+  if (!address) missing.push("address");
+  if (!state) missing.push("state");
+  if (!/^\d{6}$/.test(pinCode)) missing.push("PIN");
+  if (!email) missing.push("email");
+  if (!/^\d{10}$/.test(mobile)) missing.push("mobile");
+
+  return missing;
+}
+
 async function trySilentLegacyVleSync({
   user,
   cfg,
@@ -561,6 +590,7 @@ function CouponBuyPanel({
   }
 
   const total = qty * cfg.couponRetailerFee;
+  const legacySyncMissingFields = psa.linkedExisting ? getLegacySyncMissingFields({ user, psa }) : [];
 
   async function buy() {
     setConfirmOpen(false);
@@ -568,6 +598,13 @@ function CouponBuyPanel({
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
     const currentPsa = psa;
     if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
+    if (currentPsa.linkedExisting) {
+      const missing = getLegacySyncMissingFields({ user, psa: currentPsa });
+      if (missing.length) {
+        toast.error(`Linked VLE sync-ിനു ${missing.join(", ")} details വേണം. PSA tab-ൽ update ചെയ്ത് വീണ്ടും try ചെയ്യൂ.`);
+        return;
+      }
+    }
     setBusy(true);
 
     let orderId = "";
@@ -684,6 +721,15 @@ function CouponBuyPanel({
               the system now tries a silent upstream sync and retries the purchase automatically.
               Only if your PAN/Aadhaar/address details are missing will the order be refunded and you’ll need
               the <strong>PSA → Sync Linked VLE with UTI</strong> form.
+            </AlertDescription>
+          </Alert>
+        )}
+        {legacySyncMissingFields.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              ഈ linked VLE sync ചെയ്യാൻ <strong>{legacySyncMissingFields.join(", ")}</strong> details missing ആണ്.
+              ആദ്യം PSA tab-ൽ update/sync ചെയ്തു ശേഷം coupon buy ചെയ്യൂ.
             </AlertDescription>
           </Alert>
         )}
