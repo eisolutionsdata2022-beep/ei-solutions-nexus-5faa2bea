@@ -93,6 +93,40 @@ export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
   await setDoc(PSA_REF(rec.retailerId), rec, { merge: true });
 }
 
+/** Admin-only: patch the VLE link fields directly on a retailer's PSA record. */
+export async function adminPatchPsaVleLink(
+  retailerId: string,
+  patch: { vleId: string; vleRegCode?: string; linkedExisting: boolean },
+  adminUid: string,
+): Promise<void> {
+  const ref = PSA_REF(retailerId);
+  const snap = await getDoc(ref);
+  const now = new Date().toISOString();
+  if (!snap.exists()) {
+    // Create a minimal stub PSA so the retailer can immediately use the linked VLE
+    await setDoc(ref, {
+      retailerId,
+      vleId: patch.vleId.trim(),
+      vleRegCode: (patch.vleRegCode || "").trim() || patch.vleId.trim(),
+      linkedExisting: patch.linkedExisting,
+      status: "approved",
+      createdAt: now,
+      updatedAt: now,
+      remark: `Admin-created VLE link (${adminUid})`,
+    }, { merge: true });
+    return;
+  }
+  await updateDoc(ref, {
+    vleId: patch.vleId.trim(),
+    vleRegCode: (patch.vleRegCode || "").trim(),
+    linkedExisting: patch.linkedExisting,
+    status: "approved",
+    updatedAt: now,
+    updatedBy: adminUid,
+    remark: `VLE link edited by admin (${adminUid})`,
+  });
+}
+
 /** Ensures a VLE id is not already linked to another retailer. */
 export async function isVleIdTaken(vleId: string, exceptRetailerId: string): Promise<boolean> {
   const q = query(
