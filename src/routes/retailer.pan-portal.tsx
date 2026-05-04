@@ -33,6 +33,16 @@ function looksLikeMissingVleError(message: string | undefined) {
   return text.includes("vle data not exist") || text.includes("vle not exist") || text.includes("vle does not exist");
 }
 
+function normalizePanVleId(value: string) {
+  const raw = value.trim().toUpperCase();
+  if (!raw) return "";
+  const compact = raw.replace(/\s+/g, "");
+  if (/^MALL[-\s]*355/i.test(raw)) {
+    return compact.replace(/^MALL[-\s]*355[-\s]*/i, "MALL355-");
+  }
+  return compact;
+}
+
 function getLegacySyncMissingFields({
   user,
   psa,
@@ -464,7 +474,7 @@ function PsaLinkForm({
   async function handleLink(e: FormEvent) {
     e.preventDefault();
     // Note: provider creds not required to LINK — only needed when buying coupons.
-    const id = vleId.trim().toUpperCase();
+    const id = normalizePanVleId(vleId);
     if (id.length < 4) { toast.error("Enter your MALL355 VLE ID (e.g. MALL355-PSAXXXX)"); return; }
     if (!/^MALL355[-\s]?/i.test(id)) {
       toast.error("⚠️ Enter the MALL355-XXXX ID issued by UTI provider — RMPMCST usernames will not work for coupon purchase.");
@@ -586,7 +596,8 @@ function CouponBuyPanel({
     setConfirmOpen(false);
     if (!cfg.credCipher) { toast.error("Provider not configured"); return; }
     if (qty < 1 || qty > 50) { toast.error("Quantity must be 1-50"); return; }
-    const currentPsa = psa;
+    const latestPsa = await loadPsaRecord(user.uid).catch(() => psa);
+    const currentPsa = latestPsa;
     if (!currentPsa) { toast.error("Register or link your PSA first."); return; }
     // NOTE: We no longer pre-block linked-existing VLEs for missing profile fields.
     // The provider call is attempted directly — if provider already recognises
