@@ -85,7 +85,7 @@ function PanPortalSettings() {
   if (loading) return <div className="p-6 flex items-center gap-2"><Loader2 className="animate-spin h-5 w-5" />Loading…</div>;
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto p-4 md:p-6">
+    <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Settings className="h-6 w-6" />PAN Portal Settings</h1>
         <p className="text-muted-foreground text-sm">UTI PSA registration & coupon purchase via mallikacyberzone.com</p>
