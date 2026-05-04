@@ -73,12 +73,22 @@ async function encryptBlob(apiKey: string, secret: string): Promise<string> {
 }
 
 async function decryptBlob(cipher: string): Promise<{ apiKey: string; secret: string }> {
-  const key = await getCryptoKey();
   const data = b64decode(cipher);
   const iv = data.slice(0, 12);
   const ct = data.slice(12);
-  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-  return JSON.parse(new TextDecoder().decode(pt));
+  // Try primary seed, then any legacy seeds.
+  const seeds = [getPrimarySeed(), ...getLegacySeeds()];
+  let lastErr: unknown;
+  for (const seed of seeds) {
+    try {
+      const key = await deriveKey(seed);
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+      return JSON.parse(new TextDecoder().decode(pt));
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("decrypt failed");
 }
 
 /**
