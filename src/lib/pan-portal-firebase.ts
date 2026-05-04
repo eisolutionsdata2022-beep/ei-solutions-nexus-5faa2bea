@@ -45,8 +45,20 @@ export async function savePanConfig(
 // ─── PSA records ───────────────────────────────────────────────────────
 const PSA_REF = (retailerId: string) => doc(db, "pan_psa_records", retailerId);
 
+function normalizePanVleId(value?: string): string {
+  const raw = value?.trim().toUpperCase() || "";
+  if (!raw) return "";
+
+  const compact = raw.replace(/\s+/g, "");
+  if (/^MALL[-\s]*355/i.test(raw)) {
+    return compact.replace(/^MALL[-\s]*355[-\s]*/i, "MALL355-");
+  }
+
+  return compact;
+}
+
 function cleanVleId(value?: string): string {
-  return value?.trim() || "";
+  return normalizePanVleId(value);
 }
 
 function isGeneratedVleId(value: string): boolean {
@@ -90,7 +102,11 @@ export function getPsaPrimaryVleId(psa: Pick<PanPsaRecord, "vleId" | "linkedExis
 }
 
 export async function upsertPsaRecord(rec: PanPsaRecord): Promise<void> {
-  await setDoc(PSA_REF(rec.retailerId), rec, { merge: true });
+  await setDoc(PSA_REF(rec.retailerId), {
+    ...rec,
+    vleId: normalizePanVleId(rec.vleId),
+    vleRegCode: rec.vleRegCode ? normalizePanVleId(rec.vleRegCode) : rec.vleRegCode,
+  }, { merge: true });
 }
 
 /** Admin-only: patch the VLE link fields directly on a retailer's PSA record. */
@@ -102,12 +118,14 @@ export async function adminPatchPsaVleLink(
   const ref = PSA_REF(retailerId);
   const snap = await getDoc(ref);
   const now = new Date().toISOString();
+  const normalizedVleId = normalizePanVleId(patch.vleId);
+  const normalizedRegCode = normalizePanVleId(patch.vleRegCode || "") || normalizedVleId;
   if (!snap.exists()) {
     // Create a minimal stub PSA so the retailer can immediately use the linked VLE
     await setDoc(ref, {
       retailerId,
-      vleId: patch.vleId.trim(),
-      vleRegCode: (patch.vleRegCode || "").trim() || patch.vleId.trim(),
+      vleId: normalizedVleId,
+      vleRegCode: normalizedRegCode,
       linkedExisting: patch.linkedExisting,
       status: "approved",
       createdAt: now,
@@ -117,8 +135,8 @@ export async function adminPatchPsaVleLink(
     return;
   }
   await updateDoc(ref, {
-    vleId: patch.vleId.trim(),
-    vleRegCode: (patch.vleRegCode || "").trim(),
+    vleId: normalizedVleId,
+    vleRegCode: patch.vleRegCode ? normalizedRegCode : "",
     linkedExisting: patch.linkedExisting,
     status: "approved",
     updatedAt: now,
@@ -188,7 +206,7 @@ export async function bulkLinkVleByMobile(
 
   for (const row of rows) {
     const mob = normalizeMobile(row.mobile);
-    const vle = row.vleId.trim();
+    const vle = normalizePanVleId(row.vleId);
 
     if (!vle || !mob || mob.length !== 10) {
       results.push({ input: row, status: "error", message: "Invalid VLE ID or mobile" });
@@ -262,13 +280,13 @@ export async function bulkLinkVleByMobile(
 
 /** Ensures a VLE id is not already linked to another retailer. */
 export async function isVleIdTaken(vleId: string, exceptRetailerId: string): Promise<boolean> {
-  const q = query(
-    collection(db, "pan_psa_records"),
-    where("vleId", "==", vleId),
-    limit(2),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.some((d) => d.id !== exceptRetailerId);
+  const normalized = normalizePanVleId(vleId);
+  const snap = await getDocs(collection(db, "pan_psa_records"));
+  return snap.docs.some((d) => {
+    if (d.id === exceptRetailerId) return false;
+    const raw = d.data() as PanPsaRecord;
+    return resolvePrimaryVleId(raw) === normalized || cleanVleId(raw.vleRegCode) === normalized;
+  });
 }
 
 // ─── Coupon orders ─────────────────────────────────────────────────────
