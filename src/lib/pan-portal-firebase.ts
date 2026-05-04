@@ -127,6 +127,139 @@ export async function adminPatchPsaVleLink(
   });
 }
 
+// ─── Bulk link (admin) ─────────────────────────────────────────────────
+export interface BulkLinkInputRow {
+  vleId: string;
+  name?: string;
+  mobile: string;
+  email?: string;
+}
+
+export interface BulkLinkResultRow {
+  input: BulkLinkInputRow;
+  status: "linked" | "skipped_already_linked" | "no_user_match" | "duplicate_in_input" | "vle_taken" | "error";
+  retailerId?: string;
+  retailerName?: string;
+  message?: string;
+}
+
+function normalizeMobile(raw: string): string {
+  const digits = (raw || "").replace(/\D/g, "");
+  return digits.slice(-10);
+}
+
+/**
+ * Bulk-link old UTI VLE IDs to retailers, matching by mobile (last 10 digits).
+ * Skips retailers that already have a linked PSA record. Skips VLE IDs already
+ * linked to another retailer.
+ */
+export async function bulkLinkVleByMobile(
+  rows: BulkLinkInputRow[],
+  adminUid: string,
+): Promise<BulkLinkResultRow[]> {
+  const usersSnap = await getDocs(collection(db, "users"));
+  // mobile (10-digit) → { uid, name }
+  const mobileIndex = new Map<string, { uid: string; name: string }>();
+  usersSnap.docs.forEach((d) => {
+    const u = d.data() as { mobile?: string; phone?: string; fullName?: string; ownerName?: string; shopName?: string; role?: string };
+    const mob = normalizeMobile(u.mobile || u.phone || "");
+    if (!mob || mob.length !== 10) return;
+    // Prefer retailer role if collision
+    const existing = mobileIndex.get(mob);
+    if (existing && u.role !== "retailer") return;
+    mobileIndex.set(mob, { uid: d.id, name: u.fullName || u.ownerName || u.shopName || "—" });
+  });
+
+  // Existing PSA records → which retailers already linked, and which VLE IDs are taken
+  const psaSnap = await getDocs(collection(db, "pan_psa_records"));
+  const linkedRetailers = new Set<string>();
+  const takenVleIds = new Map<string, string>(); // vleId → retailerId
+  psaSnap.docs.forEach((d) => {
+    const raw = d.data() as PanPsaRecord;
+    const primary = resolvePrimaryVleId(raw);
+    if (primary) {
+      linkedRetailers.add(d.id);
+      takenVleIds.set(primary.toUpperCase(), d.id);
+    }
+  });
+
+  const seenInputMobiles = new Set<string>();
+  const results: BulkLinkResultRow[] = [];
+
+  for (const row of rows) {
+    const mob = normalizeMobile(row.mobile);
+    const vle = row.vleId.trim();
+
+    if (!vle || !mob || mob.length !== 10) {
+      results.push({ input: row, status: "error", message: "Invalid VLE ID or mobile" });
+      continue;
+    }
+    if (seenInputMobiles.has(mob)) {
+      results.push({ input: row, status: "duplicate_in_input", message: "Mobile appears earlier in list" });
+      continue;
+    }
+    seenInputMobiles.add(mob);
+
+    const user = mobileIndex.get(mob);
+    if (!user) {
+      results.push({ input: row, status: "no_user_match", message: "No retailer signed up with this mobile" });
+      continue;
+    }
+
+    if (linkedRetailers.has(user.uid)) {
+      results.push({
+        input: row,
+        status: "skipped_already_linked",
+        retailerId: user.uid,
+        retailerName: user.name,
+        message: "Retailer already has a linked PSA record",
+      });
+      continue;
+    }
+
+    const vleOwner = takenVleIds.get(vle.toUpperCase());
+    if (vleOwner && vleOwner !== user.uid) {
+      results.push({
+        input: row,
+        status: "vle_taken",
+        retailerId: user.uid,
+        retailerName: user.name,
+        message: `VLE ID already linked to another retailer (${vleOwner})`,
+      });
+      continue;
+    }
+
+    try {
+      await adminPatchPsaVleLink(
+        user.uid,
+        { vleId: vle, vleRegCode: vle, linkedExisting: true },
+        adminUid,
+      );
+      // Also stamp the linked mobile so retailer-side resolver picks it up
+      await updateDoc(PSA_REF(user.uid), { linkedMobile: mob }).catch(() => {});
+      linkedRetailers.add(user.uid);
+      takenVleIds.set(vle.toUpperCase(), user.uid);
+      results.push({
+        input: row,
+        status: "linked",
+        retailerId: user.uid,
+        retailerName: user.name,
+        message: "Linked successfully",
+      });
+    } catch (e) {
+      results.push({
+        input: row,
+        status: "error",
+        retailerId: user.uid,
+        retailerName: user.name,
+        message: e instanceof Error ? e.message : "Link failed",
+      });
+    }
+  }
+
+  return results;
+}
+
 /** Ensures a VLE id is not already linked to another retailer. */
 export async function isVleIdTaken(vleId: string, exceptRetailerId: string): Promise<boolean> {
   const q = query(
