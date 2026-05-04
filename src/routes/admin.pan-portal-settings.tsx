@@ -439,3 +439,179 @@ function SummaryStat({ label, value, tone }: { label: string; value: string | nu
     </div>
   );
 }
+
+// ─── Bulk Link Tab ──────────────────────────────────────────────────────
+function parseBulkInput(text: string): { vleId: string; name?: string; mobile: string; email?: string }[] {
+  const rows: { vleId: string; name?: string; mobile: string; email?: string }[] = [];
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    // Skip header
+    if (/^username\b/i.test(line)) continue;
+    // Split on tab, comma, or 2+ spaces
+    const parts = line.split(/\t|,|\s{2,}/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length < 2) continue;
+    // Heuristic: find a 10-digit mobile in the row
+    const mobile = parts.find((p) => /^\+?\d[\d\s-]{8,14}$/.test(p) && p.replace(/\D/g, "").length >= 10) || "";
+    // VLE ID: starts with RMPMCST or contains - and digits
+    const vleId = parts.find((p) => /^RMPMCST/i.test(p)) || parts[0];
+    const email = parts.find((p) => /@/.test(p));
+    const name = parts.find((p) => p !== vleId && p !== mobile && p !== email && /[A-Za-z]/.test(p));
+    rows.push({ vleId: vleId.trim(), mobile: mobile.trim(), name, email });
+  }
+  return rows;
+}
+
+function BulkLinkTab({ adminUid }: { adminUid: string }) {
+  const [text, setText] = useState("");
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState<BulkLinkResultRow[] | null>(null);
+
+  const parsed = useMemo(() => parseBulkInput(text), [text]);
+
+  const summary = useMemo(() => {
+    if (!results) return null;
+    const c = { linked: 0, skipped: 0, no_user: 0, taken: 0, dup: 0, error: 0 };
+    results.forEach((r) => {
+      if (r.status === "linked") c.linked++;
+      else if (r.status === "skipped_already_linked") c.skipped++;
+      else if (r.status === "no_user_match") c.no_user++;
+      else if (r.status === "vle_taken") c.taken++;
+      else if (r.status === "duplicate_in_input") c.dup++;
+      else c.error++;
+    });
+    return c;
+  }, [results]);
+
+  async function handleRun() {
+    if (!parsed.length) {
+      toast.error("Paste some rows first");
+      return;
+    }
+    setRunning(true);
+    setResults(null);
+    try {
+      const res = await bulkLinkVleByMobile(parsed, adminUid);
+      setResults(res);
+      const linked = res.filter((r) => r.status === "linked").length;
+      toast.success(`Bulk link done · ${linked} linked / ${res.length} processed`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bulk link failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function exportResultsCsv() {
+    if (!results) return;
+    const header = ["VLE ID", "Name (input)", "Mobile", "Email (input)", "Status", "Retailer UID", "Retailer Name", "Message"];
+    const lines = [header.join(",")];
+    results.forEach((r) => {
+      const row = [
+        r.input.vleId, r.input.name || "", r.input.mobile, r.input.email || "",
+        r.status, r.retailerId || "", r.retailerName || "", r.message || "",
+      ].map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`);
+      lines.push(row.join(","));
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pan-bulk-link-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5" />Bulk Link Old VLE IDs</CardTitle>
+        <CardDescription>
+          Paste rows from the old portal export (Username, Name, Mobile, Email). System matches retailers by <b>mobile (last 10 digits)</b>.
+          Already-linked retailers are <b>skipped</b> (not overwritten). Unmatched mobiles are listed for follow-up.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="bulk-input">Paste rows (TSV / CSV / space-separated)</Label>
+          <Textarea
+            id="bulk-input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={"RMPMCST-9446265689\tSREEKALA V\t9446265689\tSREEKALAV1963@GMAIL.COM\n..."}
+            className="font-mono text-xs h-40"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Detected <b>{parsed.length}</b> row{parsed.length === 1 ? "" : "s"}. Header row is auto-skipped.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleRun} disabled={running || !parsed.length}>
+            {running ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Linking…</> : <><Link2 className="h-4 w-4 mr-2" />Run Bulk Link</>}
+          </Button>
+          {results && (
+            <Button variant="outline" onClick={exportResultsCsv}>
+              <Download className="h-4 w-4 mr-2" />Export Results CSV
+            </Button>
+          )}
+        </div>
+
+        {summary && (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+            <SummaryStat label="Linked ✓" value={summary.linked} tone="success" />
+            <SummaryStat label="Skipped (already)" value={summary.skipped} />
+            <SummaryStat label="No user match" value={summary.no_user} tone="warn" />
+            <SummaryStat label="VLE taken" value={summary.taken} tone="warn" />
+            <SummaryStat label="Dup in input" value={summary.dup} />
+            <SummaryStat label="Errors" value={summary.error} tone="warn" />
+          </div>
+        )}
+
+        {results && results.length > 0 && (
+          <div className="overflow-x-auto rounded-md border max-h-[500px]">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50 sticky top-0">
+                <tr>
+                  <th className="text-left p-2">VLE ID</th>
+                  <th className="text-left p-2">Mobile</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Retailer</th>
+                  <th className="text-left p-2">Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="p-2 font-mono">{r.input.vleId}</td>
+                    <td className="p-2 font-mono">{r.input.mobile}</td>
+                    <td className="p-2">
+                      <Badge
+                        variant={
+                          r.status === "linked" ? "default"
+                          : r.status === "skipped_already_linked" ? "secondary"
+                          : "destructive"
+                        }
+                        className="text-[10px]"
+                      >
+                        {r.status}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      {r.retailerName ? (
+                        <>
+                          <div>{r.retailerName}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{r.retailerId}</div>
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="p-2 text-muted-foreground">{r.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
