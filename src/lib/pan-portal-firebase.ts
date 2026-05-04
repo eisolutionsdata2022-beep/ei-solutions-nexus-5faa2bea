@@ -122,6 +122,118 @@ export async function updateCouponOrder(
   });
 }
 
+/** All coupon orders + all PSA records — admin report aggregator. */
+export interface PanRetailerCouponSummary {
+  retailerId: string;
+  retailerName: string;
+  retailerEmail: string;
+  retailerMobile: string;
+  vleId: string;
+  linkedExisting: boolean;
+  vleRegCode?: string;
+  totalOrders: number;
+  totalCoupons: number;
+  successCoupons: number;
+  failedCoupons: number;
+  refundedCoupons: number;
+  totalSpent: number;     // sum of totalDebit for SUCCESS only
+  totalRefunded: number;  // sum of totalDebit where refunded
+  lastPurchaseAt?: string;
+}
+
+export async function loadPanCouponReport(): Promise<PanRetailerCouponSummary[]> {
+  const [ordersSnap, psaSnap, usersSnap] = await Promise.all([
+    getDocs(collection(db, "pan_coupon_orders")),
+    getDocs(collection(db, "pan_psa_records")),
+    getDocs(collection(db, "users")),
+  ]);
+
+  const psaMap = new Map<string, PanPsaRecord>();
+  psaSnap.docs.forEach((d) => {
+    const raw = d.data() as PanPsaRecord;
+    psaMap.set(d.id, { ...raw, vleId: resolvePrimaryVleId(raw) });
+  });
+
+  const userMap = new Map<string, { name: string; email: string; mobile: string }>();
+  usersSnap.docs.forEach((d) => {
+    const u = d.data() as { fullName?: string; ownerName?: string; shopName?: string; email?: string; mobile?: string; phone?: string };
+    userMap.set(d.id, {
+      name: u.fullName || u.ownerName || u.shopName || "—",
+      email: u.email || "",
+      mobile: u.mobile || u.phone || "",
+    });
+  });
+
+  const grouped = new Map<string, PanRetailerCouponSummary>();
+  ordersSnap.docs.forEach((d) => {
+    const o = d.data() as PanCouponOrder;
+    const rid = o.retailerId;
+    let row = grouped.get(rid);
+    if (!row) {
+      const psa = psaMap.get(rid);
+      const user = userMap.get(rid);
+      row = {
+        retailerId: rid,
+        retailerName: user?.name || psa?.ownerName || "—",
+        retailerEmail: user?.email || psa?.email || "",
+        retailerMobile: user?.mobile || psa?.mobile || "",
+        vleId: psa?.vleId || o.vleId || "—",
+        linkedExisting: !!psa?.linkedExisting,
+        vleRegCode: psa?.vleRegCode,
+        totalOrders: 0,
+        totalCoupons: 0,
+        successCoupons: 0,
+        failedCoupons: 0,
+        refundedCoupons: 0,
+        totalSpent: 0,
+        totalRefunded: 0,
+      };
+      grouped.set(rid, row);
+    }
+    row.totalOrders += 1;
+    row.totalCoupons += o.qty || 0;
+    if (o.status === "SUCCESS") {
+      row.successCoupons += o.qty || 0;
+      if (!o.refunded) row.totalSpent += o.totalDebit || 0;
+    } else if (o.status === "FAILED") {
+      row.failedCoupons += o.qty || 0;
+    }
+    if (o.refunded) {
+      row.refundedCoupons += o.qty || 0;
+      row.totalRefunded += o.totalDebit || 0;
+    }
+    if (!row.lastPurchaseAt || o.createdAt > row.lastPurchaseAt) {
+      row.lastPurchaseAt = o.createdAt;
+    }
+  });
+
+  // include PSA-only retailers (registered, never bought) so admin can see them too
+  psaMap.forEach((psa, rid) => {
+    if (grouped.has(rid)) return;
+    const user = userMap.get(rid);
+    grouped.set(rid, {
+      retailerId: rid,
+      retailerName: user?.name || psa.ownerName || "—",
+      retailerEmail: user?.email || psa.email || "",
+      retailerMobile: user?.mobile || psa.mobile || "",
+      vleId: psa.vleId || "—",
+      linkedExisting: !!psa.linkedExisting,
+      vleRegCode: psa.vleRegCode,
+      totalOrders: 0,
+      totalCoupons: 0,
+      successCoupons: 0,
+      failedCoupons: 0,
+      refundedCoupons: 0,
+      totalSpent: 0,
+      totalRefunded: 0,
+    });
+  });
+
+  return Array.from(grouped.values()).sort((a, b) =>
+    (b.lastPurchaseAt || "").localeCompare(a.lastPurchaseAt || ""),
+  );
+}
+
 export async function listCouponOrders(retailerId: string): Promise<PanCouponOrder[]> {
   // Client-side ordering to avoid composite index requirement.
   const q = query(
