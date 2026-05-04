@@ -171,16 +171,25 @@ function PanPortalSettings() {
 }
 
 function PanCouponReportTab() {
+  const { appUser } = useAuth();
   const [rows, setRows] = useState<PanRetailerCouponSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<PanRetailerCouponSummary | null>(null);
 
-  useEffect(() => {
-    loadPanCouponReport()
-      .then(setRows)
-      .catch((e) => toast.error(e instanceof Error ? e.message : "Failed to load"))
-      .finally(() => setLoading(false));
-  }, []);
+  async function reload() {
+    setLoading(true);
+    try {
+      const data = await loadPanCouponReport();
+      setRows(data);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { reload(); }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
