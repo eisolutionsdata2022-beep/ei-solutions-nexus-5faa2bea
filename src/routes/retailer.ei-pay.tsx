@@ -199,7 +199,7 @@ function EiPayPage() {
         description: `${tx.serviceName} (customer fee)`,
         serviceKey: tx.serviceKey,
       });
-      await updateDoc(doc(db, "csc_transactions", tx.id), {
+      await updateDoc(doc(db, "csc_transactions", tx.id!), {
         status: "success",
         totalDebited: tx.amount,
         bridgeRef: `T2W${Date.now()}`,
