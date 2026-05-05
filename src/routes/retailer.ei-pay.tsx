@@ -454,6 +454,28 @@ function EiPayPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">₹{tx.amount}</span>
                     <StatusBadge status={tx.status} />
+                    {tx.status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => completePendingTransaction(tx)}
+                          title="Mark complete and debit wallet"
+                        >
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Complete & Debit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-destructive"
+                          onClick={() => cancelPendingTransaction(tx)}
+                          title="Cancel without debit"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
                     {tx.status === "success" && (
                       <Button
                         size="sm"
