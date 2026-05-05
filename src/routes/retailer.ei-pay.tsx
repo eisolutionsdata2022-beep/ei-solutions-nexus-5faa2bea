@@ -216,7 +216,7 @@ function EiPayPage() {
     const ok = window.confirm(`Cancel pending ${tx.serviceName}? No amount will be debited.`);
     if (!ok) return;
     try {
-      await updateDoc(doc(db, "csc_transactions", tx.id), {
+      await updateDoc(doc(db, "csc_transactions", tx.id!), {
         status: "failed",
         errorMessage: "Cancelled by retailer",
         completedAt: new Date().toISOString(),
