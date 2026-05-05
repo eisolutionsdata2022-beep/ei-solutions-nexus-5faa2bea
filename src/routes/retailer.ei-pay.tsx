@@ -184,7 +184,58 @@ function EiPayPage() {
       </div>
 
 
-      {/* Redirect services (CSC portal) */}
+      {/* Tax2win paid-redirect services */}
+      {services.some((s) => s.mode === "paid-redirect") && (
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground">📋 Tax2win Services</h2>
+            <Badge className="bg-emerald-600 text-[10px] text-white hover:bg-emerald-700">Customer fee debited</Badge>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Collect customer fee → wallet debited → Tax2win CSC portal opens in new tab to complete the application.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {services.filter((s) => s.mode === "paid-redirect").map((svc) => {
+              const Icon = svc.icon;
+              return (
+                <button
+                  key={svc.key}
+                  disabled={svc.disabled}
+                  onClick={() => handlePaidRedirect(svc)}
+                  className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
+                    svc.disabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                  }`}
+                >
+                  <div
+                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${svc.gradient} text-white shadow`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-semibold leading-tight text-foreground">{svc.name}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    {svc.description}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">₹{svc.fee}</span>
+                    <span className="flex items-center gap-1 text-[10px] text-primary">
+                      <ExternalLink className="h-3 w-3" /> Open
+                    </span>
+                  </div>
+                  {svc.disabled && (
+                    <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
+                      Disabled
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
       {services.some((s) => s.mode === "redirect") && (
         <div>
           <div className="mb-3 flex items-center gap-2">
