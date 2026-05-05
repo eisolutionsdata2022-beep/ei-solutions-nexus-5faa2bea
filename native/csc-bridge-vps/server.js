@@ -84,6 +84,48 @@ async function ensureCscLogin(page, username, password) {
   console.log('[csc] login OK');
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function resolvePartnerSsoUrl(page, service, targetUrl) {
+  console.log('[sso-resolve]', service, '→', targetUrl);
+  await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 60_000 });
+  await sleep(1200);
+
+  const initialUrl = page.url();
+  const initialHost = new URL(initialUrl).hostname;
+  const isTax2win = initialHost.includes('tax2win.biz');
+
+  if (isTax2win) {
+    const hasLoginLink = await page.$('#login_url, a[href*="csc_login_redirect"]');
+
+    if (hasLoginLink) {
+      console.log('[sso-resolve]', service, 'starting Tax2win CSC SSO');
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60_000 }).catch(() => null),
+        page.click('#login_url, a[href*="csc_login_redirect"]'),
+      ]);
+      await sleep(1500);
+    }
+  }
+
+  const finalUrl = page.url();
+  if (!finalUrl || finalUrl.includes('connect.csc.gov.in/account/login')) {
+    throw new Error('SSO redirect did not complete (still on CSC login)');
+  }
+
+  if (isTax2win) {
+    const finalPath = new URL(finalUrl).pathname;
+    const stillOnLanding = finalUrl === initialUrl || finalPath === '/csc/csc_login_redirect';
+    if (stillOnLanding) {
+      throw new Error('Tax2win login page opened, but CSC SSO did not continue');
+    }
+  }
+
+  return finalUrl;
+}
+
 // ─── Service handlers ─────────────────────────────────────────────────
 // Each handler must return { success: true, ref, message }.
 // Throw to signal failure (the framework refunds the wallet).
@@ -183,19 +225,7 @@ app.post('/sso-resolve', verifyHmac, async (req, res) => {
     const browser = await getBrowser();
     page = await browser.newPage();
     await ensureCscLogin(page, cscUsername, cscPassword);
-
-    // Navigate to the partner/service URL on CSC. CSC will redirect through
-    // its SSO flow and land on the partner page with auth params in the URL.
-    console.log('[sso-resolve]', service, '→', targetUrl);
-    await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 60_000 });
-
-    // Wait briefly for any final redirect to settle.
-    await new Promise((r) => setTimeout(r, 1500));
-    const finalUrl = page.url();
-
-    if (!finalUrl || finalUrl.includes('connect.csc.gov.in/account/login')) {
-      throw new Error('SSO redirect did not complete (still on CSC login)');
-    }
+    const finalUrl = await resolvePartnerSsoUrl(page, service, targetUrl);
 
     res.json({
       success: true,
