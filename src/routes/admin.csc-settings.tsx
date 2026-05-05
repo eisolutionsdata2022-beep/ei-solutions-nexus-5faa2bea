@@ -42,7 +42,7 @@ function AdminCscSettings() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [bridgeUrl, setBridgeUrl] = useState("");
-  const [, setHmacSecret] = useState("");
+  const [hmacSecret, setHmacSecret] = useState("");
   const [savingCreds, setSavingCreds] = useState(false);
   const [savingBridge, setSavingBridge] = useState(false);
 
@@ -111,24 +111,23 @@ function AdminCscSettings() {
   const saveBridge = async (e: FormEvent) => {
     e.preventDefault();
     if (!appUser) return;
-    if (!bridgeUrl) {
-      toast.error("Bridge URL is required");
+    if (!bridgeUrl || !hmacSecret) {
+      toast.error("Bridge URL and HMAC secret are required");
       return;
     }
     setSavingBridge(true);
     try {
-      // Strip any legacy plaintext hmacSecret previously stored
       await setDoc(
         doc(db, "csc_config", "master"),
         {
           bridgeUrl,
-          hmacSecret: null,
+          hmacSecret,
           updatedAt: new Date().toISOString(),
           updatedBy: appUser.email,
         },
         { merge: true },
       );
-      toast.success("Bridge URL saved");
+      toast.success("Bridge configuration saved");
       setHmacSecret("");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to save bridge config");
@@ -265,10 +264,15 @@ function AdminCscSettings() {
                 <code className="mx-1 font-mono">X-Signature</code>HMAC-SHA256 header.
               </p>
             </div>
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-              🔒 The HMAC signing secret is now stored as the server environment variable
-              <code className="mx-1 font-mono">CSC_BRIDGE_HMAC_SECRET</code> for security.
-              To rotate it, update the secret in Lovable + the VPS <code className="font-mono">.env</code> together.
+            <div className="space-y-1.5">
+              <Label>HMAC Shared Secret</Label>
+              <Input
+                type="password"
+                value={hmacSecret}
+                onChange={(e) => setHmacSecret(e.target.value)}
+                placeholder="Enter to update (write-only)"
+                autoComplete="new-password"
+              />
             </div>
             <Button type="submit" disabled={savingBridge}>
               {savingBridge ? (

@@ -102,7 +102,7 @@ function EiPayPage() {
     }));
   }, [config]);
 
-  const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl);
+  const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
 
   return (
     <ServicePageShell
@@ -403,12 +403,12 @@ function ServiceExecutionDialog({
 
       // 3. Re-read config to get latest cipher/url/secret (admin may have updated)
       const cfgSnap = await getDoc(doc(db, "csc_config", "master"));
-      const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string }) | undefined;
-      if (!cfg?.cipher || !cfg.bridgeUrl) {
+      const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string; hmacSecret: string }) | undefined;
+      if (!cfg?.cipher || !cfg.bridgeUrl || !cfg.hmacSecret) {
         throw new Error("Bridge configuration missing");
       }
 
-      // 4. Call bridge (HMAC secret comes from server env, not Firestore)
+      // 4. Call bridge
       const result = await executeCscService({
         data: {
           serviceKey: service.key,
@@ -417,6 +417,7 @@ function ServiceExecutionDialog({
           amount,
           credCipher: cfg.cipher,
           bridgeUrl: cfg.bridgeUrl,
+          hmacSecret: cfg.hmacSecret,
         },
       });
 
