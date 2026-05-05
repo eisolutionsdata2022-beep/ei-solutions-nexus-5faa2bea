@@ -136,7 +136,7 @@ function EiPayPage() {
         const r = await resolveCscSsoUrl({
           data: {
             serviceKey: svc.key,
-            targetUrl: svc.cscUrl,
+            targetUrl: finalUrl,
             credCipher: cfg!.cipher,
             bridgeUrl: cfg!.bridgeUrl!,
             hmacSecret: cfg!.hmacSecret!,
