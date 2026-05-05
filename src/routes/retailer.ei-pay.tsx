@@ -521,14 +521,8 @@ function ServiceExecutionDialog({
     setSubmitting(true);
     let txDocId: string | null = null;
     try {
-      // 1. Debit wallet first (atomic)
-      await atomicDebit(retailerId, total, {
-        source: "ei-pay",
-        description: `${service.name} (incl. ₹${fee} fee)`,
-        serviceKey: service.key,
-      });
-
-      // 2. Create transaction record (processing)
+      // 1. Create transaction record (processing) — NO wallet debit yet.
+      //    Wallet is only charged AFTER the CSC bridge confirms success.
       const txRef = await addDoc(collection(db, "csc_transactions"), {
         retailerId,
         retailerEmail,
@@ -537,20 +531,20 @@ function ServiceExecutionDialog({
         fields: values,
         amount,
         fee,
-        totalDebited: total,
+        totalDebited: 0,
         status: "processing",
         createdAt: new Date().toISOString(),
       } satisfies Omit<CscTransaction, "id">);
       txDocId = txRef.id;
 
-      // 3. Re-read config to get latest cipher/url/secret (admin may have updated)
+      // 2. Re-read config to get latest cipher/url/secret (admin may have updated)
       const cfgSnap = await getDoc(doc(db, "csc_config", "master"));
       const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string; hmacSecret: string }) | undefined;
       if (!cfg?.cipher || !cfg.bridgeUrl || !cfg.hmacSecret) {
         throw new Error("Bridge configuration missing");
       }
 
-      // 4. Call bridge
+      // 3. Call bridge — login + submit on CSC portal.
       const result = await executeCscService({
         data: {
           serviceKey: service.key,
@@ -564,22 +558,40 @@ function ServiceExecutionDialog({
       });
 
       if (result.success) {
+        // 4. ONLY debit wallet now that CSC submission is confirmed complete.
+        try {
+          await atomicDebit(retailerId, total, {
+            source: "ei-pay",
+            description: `${service.name} (incl. ₹${fee} fee)`,
+            serviceKey: service.key,
+            bridgeRef: result.bridgeRef,
+          });
+        } catch (debitErr: unknown) {
+          // Submission succeeded on CSC but wallet couldn't be charged
+          // (e.g. balance dropped between check and debit). Mark for admin review.
+          const dmsg = debitErr instanceof Error ? debitErr.message : "Debit failed";
+          await updateDoc(doc(db, "csc_transactions", txRef.id), {
+            status: "success",
+            bridgeRef: result.bridgeRef,
+            errorMessage: `Submitted on CSC but wallet debit failed: ${dmsg}`,
+            completedAt: new Date().toISOString(),
+          });
+          toast.error(`Submitted on CSC but wallet debit failed: ${dmsg}. Contact admin.`);
+          return;
+        }
+
         await updateDoc(doc(db, "csc_transactions", txRef.id), {
           status: "success",
           bridgeRef: result.bridgeRef,
+          totalDebited: total,
           completedAt: new Date().toISOString(),
         });
-        toast.success(`${service.name} successful · Ref ${result.bridgeRef}`);
+        toast.success(`${service.name} successful · ₹${total} debited · Ref ${result.bridgeRef}`);
         onClose();
       } else {
-        // Refund on failure
-        await atomicCredit(retailerId, total, {
-          source: "ei-pay-refund",
-          description: `Refund: ${service.name} failed`,
-          serviceKey: service.key,
-        });
+        // Failed on bridge — no debit happened, just mark failed. No refund needed.
         await updateDoc(doc(db, "csc_transactions", txRef.id), {
-          status: "refunded",
+          status: "failed",
           errorMessage: result.error,
           completedAt: new Date().toISOString(),
         });
@@ -587,16 +599,10 @@ function ServiceExecutionDialog({
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
-      // If we created the tx record but the bridge call itself threw, mark failed.
       if (txDocId) {
         try {
-          await atomicCredit(retailerId, total, {
-            source: "ei-pay-refund",
-            description: `Refund: ${service.name} error`,
-            serviceKey: service.key,
-          });
           await updateDoc(doc(db, "csc_transactions", txDocId), {
-            status: "refunded",
+            status: "failed",
             errorMessage: msg,
             completedAt: new Date().toISOString(),
           });
