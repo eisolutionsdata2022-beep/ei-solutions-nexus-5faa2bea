@@ -104,6 +104,52 @@ function EiPayPage() {
 
   const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
 
+  const handlePaidRedirect = async (svc: CscService & { fee: number; disabled?: boolean }) => {
+    if (!appUser) return;
+    if (svc.disabled) return;
+    const fee = svc.fee;
+    if (fee <= 0) {
+      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (balance < fee) {
+      toast.error(`Insufficient balance. Need ₹${fee}, have ₹${balance.toFixed(2)}`);
+      return;
+    }
+    const ok = window.confirm(
+      `Collect ₹${fee} from the customer for ${svc.name}.\n\nThis will debit ₹${fee} from your EI Solutions wallet and open the CSC portal in a new tab to complete the application.\n\nProceed?`,
+    );
+    if (!ok) return;
+
+    try {
+      await atomicDebit(appUser.uid, fee, {
+        source: "ei-pay",
+        description: `${svc.name} (Tax2win customer fee)`,
+        serviceKey: svc.key,
+      });
+      const txRef = await addDoc(collection(db, "csc_transactions"), {
+        retailerId: appUser.uid,
+        retailerEmail: appUser.email ?? "",
+        serviceKey: svc.key,
+        serviceName: svc.name,
+        fields: {},
+        amount: fee,
+        fee: 0,
+        totalDebited: fee,
+        status: "success",
+        bridgeRef: `T2W${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      } satisfies Omit<CscTransaction, "id">);
+      toast.success(`₹${fee} debited · Opening Tax2win portal…`);
+      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
+      void txRef;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Debit failed";
+      toast.error(msg);
+    }
+  };
+
   return (
     <ServicePageShell
       icon={CreditCard}
