@@ -130,7 +130,7 @@ function EiPayPage() {
 
     try {
       // 1. Resolve auto-login URL via VPS bridge (if configured).
-      let finalUrl = svc.cscUrl;
+      let finalUrl: string = svc.cscUrl ?? "https://digitalseva.csc.gov.in/";
       if (canAutoSso) {
         setResolvingKey(svc.key);
         const r = await resolveCscSsoUrl({
