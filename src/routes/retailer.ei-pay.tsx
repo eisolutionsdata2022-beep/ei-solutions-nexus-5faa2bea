@@ -113,6 +113,7 @@ function EiPayPage() {
       gradient="from-cyan-600 via-sky-600 to-blue-700"
       stats={[
         { icon: CheckCircle2, label: "Auto-Pay", value: services.filter((s) => s.mode === "bridge" && !s.disabled).length, accent: "from-cyan-400 to-sky-400" },
+        { icon: ScrollText, label: "Tax2win", value: services.filter((s) => s.mode === "paid-redirect" && !s.disabled).length, accent: "from-emerald-400 to-green-500" },
         { icon: Globe, label: "CSC Portal", value: services.filter((s) => s.mode === "redirect" && !s.disabled).length, accent: "from-violet-400 to-fuchsia-400" },
         { icon: Receipt, label: "Transactions", value: transactions.length, accent: "from-emerald-400 to-teal-400" },
       ]}
