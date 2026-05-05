@@ -409,6 +409,13 @@ const SERVICE_TILES: ServiceTile[] = [
     gradient: "from-orange-500 to-red-600",
   },
   {
+    to: "/admin/csc-settings",
+    title: "EI SOLUTIONS PAY",
+    subtitle: "CSC master credentials & fees",
+    icon: CreditCard,
+    gradient: "from-indigo-500 to-purple-600",
+  },
+  {
     to: "/admin/trainings",
     title: "Trainings",
     subtitle: "Sessions & schedules",
