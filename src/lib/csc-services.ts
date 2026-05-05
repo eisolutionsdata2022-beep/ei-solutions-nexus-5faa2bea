@@ -48,7 +48,7 @@ export type CscServiceCategory =
   | "government"
   | "other";
 
-export type CscServiceMode = "bridge" | "redirect";
+export type CscServiceMode = "bridge" | "redirect" | "paid-redirect";
 
 export interface CscService {
   /** Stable key used for routing/logging — never rename. */
@@ -192,6 +192,44 @@ export const CSC_SERVICES: CscService[] = [
       { key: "accountNumber", label: "Account / CA Number", type: "text", required: true },
       { key: "amount", label: "Amount (₹)", type: "number", required: true },
     ],
+  },
+
+  // ─────────────── PAID-REDIRECT (Tax2win partner — wallet debit + CSC SSO) ───────────────
+  {
+    key: "gst-registration-tax2win",
+    name: "GST Registration",
+    category: "government",
+    description: "New GSTIN in 3 days — Tax2win CA team handles end-to-end. ₹999 customer fee.",
+    defaultFee: 999,
+    icon: ScrollText,
+    gradient: "from-emerald-600 to-green-700",
+    mode: "paid-redirect",
+    cscUrl: "https://tax2win.biz/compliance-services/gst_registration/csc",
+    fields: [],
+  },
+  {
+    key: "gst-return-tax2win",
+    name: "GST Return Filing",
+    category: "government",
+    description: "Monthly/Quarterly GST return filing by Tax2win CA team. From ₹500.",
+    defaultFee: 500,
+    icon: FileText,
+    gradient: "from-teal-600 to-emerald-700",
+    mode: "paid-redirect",
+    cscUrl: "https://tax2win.biz/compliance-services/gst_return/csc",
+    fields: [],
+  },
+  {
+    key: "itr-tax2win",
+    name: "Income Tax Return (ITR)",
+    category: "government",
+    description: "ITR filing by Tax2win CA team. Starting ₹399.",
+    defaultFee: 399,
+    icon: ScrollText,
+    gradient: "from-blue-600 to-indigo-700",
+    mode: "paid-redirect",
+    cscUrl: "https://tax2win.biz/itr/csc",
+    fields: [],
   },
 
   // ─────────────── REDIRECT (PIN required → CSC portal) ───────────────

@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, CreditCard, ExternalLink, Globe } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Receipt, Download, CreditCard, ExternalLink, Globe, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { ServicePageShell } from "@/components/ServicePageShell";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
@@ -104,6 +104,52 @@ function EiPayPage() {
 
   const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
 
+  const handlePaidRedirect = async (svc: CscService & { fee: number; disabled?: boolean }) => {
+    if (!appUser) return;
+    if (svc.disabled) return;
+    const fee = svc.fee;
+    if (fee <= 0) {
+      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (balance < fee) {
+      toast.error(`Insufficient balance. Need ₹${fee}, have ₹${balance.toFixed(2)}`);
+      return;
+    }
+    const ok = window.confirm(
+      `Collect ₹${fee} from the customer for ${svc.name}.\n\nThis will debit ₹${fee} from your EI Solutions wallet and open the CSC portal in a new tab to complete the application.\n\nProceed?`,
+    );
+    if (!ok) return;
+
+    try {
+      await atomicDebit(appUser.uid, fee, {
+        source: "ei-pay",
+        description: `${svc.name} (Tax2win customer fee)`,
+        serviceKey: svc.key,
+      });
+      const txRef = await addDoc(collection(db, "csc_transactions"), {
+        retailerId: appUser.uid,
+        retailerEmail: appUser.email ?? "",
+        serviceKey: svc.key,
+        serviceName: svc.name,
+        fields: {},
+        amount: fee,
+        fee: 0,
+        totalDebited: fee,
+        status: "success",
+        bridgeRef: `T2W${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      } satisfies Omit<CscTransaction, "id">);
+      toast.success(`₹${fee} debited · Opening Tax2win portal…`);
+      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
+      void txRef;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Debit failed";
+      toast.error(msg);
+    }
+  };
+
   return (
     <ServicePageShell
       icon={CreditCard}
@@ -113,6 +159,7 @@ function EiPayPage() {
       gradient="from-cyan-600 via-sky-600 to-blue-700"
       stats={[
         { icon: CheckCircle2, label: "Auto-Pay", value: services.filter((s) => s.mode === "bridge" && !s.disabled).length, accent: "from-cyan-400 to-sky-400" },
+        { icon: ScrollText, label: "Tax2win", value: services.filter((s) => s.mode === "paid-redirect" && !s.disabled).length, accent: "from-emerald-400 to-green-500" },
         { icon: Globe, label: "CSC Portal", value: services.filter((s) => s.mode === "redirect" && !s.disabled).length, accent: "from-violet-400 to-fuchsia-400" },
         { icon: Receipt, label: "Transactions", value: transactions.length, accent: "from-emerald-400 to-teal-400" },
       ]}
@@ -183,7 +230,58 @@ function EiPayPage() {
       </div>
 
 
-      {/* Redirect services (CSC portal) */}
+      {/* Tax2win paid-redirect services */}
+      {services.some((s) => s.mode === "paid-redirect") && (
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground">📋 Tax2win Services</h2>
+            <Badge className="bg-emerald-600 text-[10px] text-white hover:bg-emerald-700">Customer fee debited</Badge>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Collect customer fee → wallet debited → Tax2win CSC portal opens in new tab to complete the application.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {services.filter((s) => s.mode === "paid-redirect").map((svc) => {
+              const Icon = svc.icon;
+              return (
+                <button
+                  key={svc.key}
+                  disabled={svc.disabled}
+                  onClick={() => handlePaidRedirect(svc)}
+                  className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
+                    svc.disabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                  }`}
+                >
+                  <div
+                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${svc.gradient} text-white shadow`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-semibold leading-tight text-foreground">{svc.name}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    {svc.description}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">₹{svc.fee}</span>
+                    <span className="flex items-center gap-1 text-[10px] text-primary">
+                      <ExternalLink className="h-3 w-3" /> Open
+                    </span>
+                  </div>
+                  {svc.disabled && (
+                    <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
+                      Disabled
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
       {services.some((s) => s.mode === "redirect") && (
         <div>
           <div className="mb-3 flex items-center gap-2">
