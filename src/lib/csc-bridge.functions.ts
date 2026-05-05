@@ -125,8 +125,6 @@ const executeInput = z.object({
   credCipher: z.string().min(10).max(2000),
   /** Bridge URL from Firestore master config. */
   bridgeUrl: z.string().url().max(500),
-  /** HMAC secret from Firestore master config. */
-  hmacSecret: z.string().min(8).max(200),
 });
 
 export type CscExecuteResult =
@@ -150,6 +148,12 @@ export const executeCscService = createServerFn({ method: "POST" })
       return { success: false, error: "Authentication required", stage: "auth" };
     }
 
+    const hmacSecret = process.env.CSC_BRIDGE_HMAC_SECRET;
+    if (!hmacSecret || hmacSecret.length < 16) {
+      console.error("[CSC] CSC_BRIDGE_HMAC_SECRET missing or too short");
+      return { success: false, error: "Bridge HMAC secret not configured on server", stage: "auth" };
+    }
+
     let creds: { username: string; password: string };
     try {
       creds = await decryptCreds(data.credCipher);
@@ -169,7 +173,7 @@ export const executeCscService = createServerFn({ method: "POST" })
       ts: Date.now(),
     };
     const body = JSON.stringify(payload);
-    const signature = await hmacSha256(data.hmacSecret, body);
+    const signature = await hmacSha256(hmacSecret, body);
 
     try {
       const res = await fetch(data.bridgeUrl, {
