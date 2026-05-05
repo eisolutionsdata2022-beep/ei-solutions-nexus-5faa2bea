@@ -499,6 +499,71 @@ function EiPayPage() {
         retailerEmail={appUser?.email ?? ""}
         bridgeReady={bridgeReady}
       />
+
+      {/* In-app embedded portal viewer */}
+      {embedded && (
+        <Dialog open={true} onOpenChange={(o) => !o && setEmbedded(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[95vw] h-[90vh] p-0 flex flex-col gap-0">
+            <DialogHeader className="border-b px-4 py-2 shrink-0">
+              <DialogTitle className="flex items-center justify-between gap-2 text-base">
+                <span className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" /> {embedded.name}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => window.open(embedded.url, "_blank", "noopener,noreferrer")}
+                    title="If portal blocks embedding, open in new tab"
+                  >
+                    <ExternalLink className="mr-1 h-3 w-3" /> Open in new tab
+                  </Button>
+                  {embedded.txId && embedded.fee > 0 && (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700"
+                      onClick={async () => {
+                        const tx = transactions.find((t) => t.id === embedded.txId);
+                        if (tx) {
+                          await completePendingTransaction(tx);
+                          setEmbedded(null);
+                        }
+                      }}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Complete & Debit ₹{embedded.fee}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-destructive"
+                    onClick={async () => {
+                      if (embedded.txId) {
+                        const tx = transactions.find((t) => t.id === embedded.txId);
+                        if (tx) await cancelPendingTransaction(tx);
+                      }
+                      setEmbedded(null);
+                    }}
+                  >
+                    <XCircle className="mr-1 h-3 w-3" /> Close
+                  </Button>
+                </div>
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Complete the customer's work below. Some government portals may refuse to load
+                inside the app — use "Open in new tab" if the area below stays blank.
+              </DialogDescription>
+            </DialogHeader>
+            <iframe
+              src={embedded.url}
+              title={embedded.name}
+              className="flex-1 w-full border-0"
+              sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </ServicePageShell>
   );
 }
