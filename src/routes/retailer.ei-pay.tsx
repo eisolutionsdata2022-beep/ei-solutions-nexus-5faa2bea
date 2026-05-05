@@ -119,13 +119,12 @@ function EiPayPage() {
     }
     const ok = window.confirm(
       fee > 0
-        ? `Collect ₹${fee} from the customer for ${svc.name}.\n\n₹${fee} will be debited from your wallet and the Tax2win portal will open ${canAutoSso ? "automatically logged in" : "(you may need to log in)"}.\n\nProceed?`
+        ? `Open ${svc.name} portal ${canAutoSso ? "(auto-login)" : "(manual login)"}?\n\n₹${fee} will NOT be debited yet.\nAfter completing the customer's work on the partner site, return here and click "Mark Complete & Debit ₹${fee}" on the pending transaction.`
         : `Open ${svc.name} now?`,
     );
     if (!ok) return;
 
-    // Pre-open a tab synchronously (required so the popup blocker allows it
-    // — async work happens after the user click).
+    // Pre-open a tab synchronously (popup-blocker friendly).
     const newTab = window.open("about:blank", "_blank", "noopener,noreferrer");
 
     try {
@@ -145,19 +144,15 @@ function EiPayPage() {
         if (r.success) {
           finalUrl = r.ssoUrl;
         } else {
-          toast.warning(`Auto-login failed: ${r.error}. Opening normal portal — you'll need to log in.`);
+          toast.warning(`Auto-login failed: ${r.error}. Opening normal portal — log in manually.`);
         }
       } else {
-        toast.message("Auto-login not configured. Opening CSC portal — log in manually.");
+        toast.message("Auto-login not configured. Log in manually on the portal.");
       }
 
-      // 2. Debit wallet (only after we know we have a URL to send them to).
+      // 2. Create a PENDING transaction — NO wallet debit yet.
+      //    Retailer must mark it complete after finishing on the partner site.
       if (fee > 0) {
-        await atomicDebit(appUser.uid, fee, {
-          source: "ei-pay",
-          description: `${svc.name} (Tax2win customer fee)`,
-          serviceKey: svc.key,
-        });
         await addDoc(collection(db, "csc_transactions"), {
           retailerId: appUser.uid,
           retailerEmail: appUser.email ?? "",
@@ -166,13 +161,11 @@ function EiPayPage() {
           fields: {},
           amount: fee,
           fee: 0,
-          totalDebited: fee,
-          status: "success",
-          bridgeRef: `T2W${Date.now()}`,
+          totalDebited: 0,
+          status: "pending",
           createdAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
         } satisfies Omit<CscTransaction, "id">);
-        toast.success(`₹${fee} debited · Opening Tax2win portal…`);
+        toast.info(`Portal opening · Mark complete after finishing to debit ₹${fee}`);
       }
 
       // 3. Navigate the pre-opened tab.
@@ -189,6 +182,51 @@ function EiPayPage() {
       setResolvingKey(null);
     }
   };
+
+  const completePendingTransaction = async (tx: CscTransaction) => {
+    if (!appUser) return;
+    if (balance < tx.amount) {
+      toast.error(`Insufficient balance. Need ₹${tx.amount}, have ₹${balance.toFixed(2)}`);
+      return;
+    }
+    const ok = window.confirm(
+      `Confirm: ${tx.serviceName} completed for the customer?\n\n₹${tx.amount} will be debited from your wallet.`,
+    );
+    if (!ok) return;
+    try {
+      await atomicDebit(appUser.uid, tx.amount, {
+        source: "ei-pay",
+        description: `${tx.serviceName} (customer fee)`,
+        serviceKey: tx.serviceKey,
+      });
+      await updateDoc(doc(db, "csc_transactions", tx.id!), {
+        status: "success",
+        totalDebited: tx.amount,
+        bridgeRef: `T2W${Date.now()}`,
+        completedAt: new Date().toISOString(),
+      });
+      toast.success(`₹${tx.amount} debited · Transaction completed`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to complete";
+      toast.error(msg);
+    }
+  };
+
+  const cancelPendingTransaction = async (tx: CscTransaction) => {
+    const ok = window.confirm(`Cancel pending ${tx.serviceName}? No amount will be debited.`);
+    if (!ok) return;
+    try {
+      await updateDoc(doc(db, "csc_transactions", tx.id!), {
+        status: "failed",
+        errorMessage: "Cancelled by retailer",
+        completedAt: new Date().toISOString(),
+      });
+      toast.message("Pending transaction cancelled");
+    } catch (err) {
+      toast.error("Failed to cancel");
+    }
+  };
+
 
   return (
     <ServicePageShell
@@ -416,6 +454,28 @@ function EiPayPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">₹{tx.amount}</span>
                     <StatusBadge status={tx.status} />
+                    {tx.status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => completePendingTransaction(tx)}
+                          title="Mark complete and debit wallet"
+                        >
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Complete & Debit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-destructive"
+                          onClick={() => cancelPendingTransaction(tx)}
+                          title="Cancel without debit"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
                     {tx.status === "success" && (
                       <Button
                         size="sm"
