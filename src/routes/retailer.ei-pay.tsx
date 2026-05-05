@@ -39,7 +39,7 @@ import { ServicePageShell } from "@/components/ServicePageShell";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
-import { executeCscService } from "@/lib/csc-bridge.functions";
+import { executeCscService, resolveCscSsoUrl } from "@/lib/csc-bridge.functions";
 import { downloadCscReceipt } from "@/lib/csc-receipt-pdf";
 
 export const Route = createFileRoute("/retailer/ei-pay")({
@@ -104,49 +104,89 @@ function EiPayPage() {
 
   const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
 
+  const [resolvingKey, setResolvingKey] = useState<string | null>(null);
+
   const handlePaidRedirect = async (svc: CscService & { fee: number; disabled?: boolean }) => {
     if (!appUser) return;
     if (svc.disabled) return;
     const fee = svc.fee;
-    if (fee <= 0) {
-      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (balance < fee) {
+    const cfg = config as (CscMasterConfig & { bridgeUrl?: string; hmacSecret?: string }) | null;
+    const canAutoSso = !!(cfg?.cipher && cfg?.bridgeUrl && cfg?.hmacSecret);
+
+    if (fee > 0 && balance < fee) {
       toast.error(`Insufficient balance. Need ₹${fee}, have ₹${balance.toFixed(2)}`);
       return;
     }
     const ok = window.confirm(
-      `Collect ₹${fee} from the customer for ${svc.name}.\n\nThis will debit ₹${fee} from your EI Solutions wallet and open the CSC portal in a new tab to complete the application.\n\nProceed?`,
+      fee > 0
+        ? `Collect ₹${fee} from the customer for ${svc.name}.\n\n₹${fee} will be debited from your wallet and the Tax2win portal will open ${canAutoSso ? "automatically logged in" : "(you may need to log in)"}.\n\nProceed?`
+        : `Open ${svc.name} now?`,
     );
     if (!ok) return;
 
+    // Pre-open a tab synchronously (required so the popup blocker allows it
+    // — async work happens after the user click).
+    const newTab = window.open("about:blank", "_blank", "noopener,noreferrer");
+
     try {
-      await atomicDebit(appUser.uid, fee, {
-        source: "ei-pay",
-        description: `${svc.name} (Tax2win customer fee)`,
-        serviceKey: svc.key,
-      });
-      const txRef = await addDoc(collection(db, "csc_transactions"), {
-        retailerId: appUser.uid,
-        retailerEmail: appUser.email ?? "",
-        serviceKey: svc.key,
-        serviceName: svc.name,
-        fields: {},
-        amount: fee,
-        fee: 0,
-        totalDebited: fee,
-        status: "success",
-        bridgeRef: `T2W${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
-      } satisfies Omit<CscTransaction, "id">);
-      toast.success(`₹${fee} debited · Opening Tax2win portal…`);
-      window.open(svc.cscUrl, "_blank", "noopener,noreferrer");
-      void txRef;
+      // 1. Resolve auto-login URL via VPS bridge (if configured).
+      let finalUrl: string = svc.cscUrl ?? "https://digitalseva.csc.gov.in/";
+      if (canAutoSso) {
+        setResolvingKey(svc.key);
+        const r = await resolveCscSsoUrl({
+          data: {
+            serviceKey: svc.key,
+            targetUrl: finalUrl,
+            credCipher: cfg!.cipher,
+            bridgeUrl: cfg!.bridgeUrl!,
+            hmacSecret: cfg!.hmacSecret!,
+          },
+        });
+        if (r.success) {
+          finalUrl = r.ssoUrl;
+        } else {
+          toast.warning(`Auto-login failed: ${r.error}. Opening normal portal — you'll need to log in.`);
+        }
+      } else {
+        toast.message("Auto-login not configured. Opening CSC portal — log in manually.");
+      }
+
+      // 2. Debit wallet (only after we know we have a URL to send them to).
+      if (fee > 0) {
+        await atomicDebit(appUser.uid, fee, {
+          source: "ei-pay",
+          description: `${svc.name} (Tax2win customer fee)`,
+          serviceKey: svc.key,
+        });
+        await addDoc(collection(db, "csc_transactions"), {
+          retailerId: appUser.uid,
+          retailerEmail: appUser.email ?? "",
+          serviceKey: svc.key,
+          serviceName: svc.name,
+          fields: {},
+          amount: fee,
+          fee: 0,
+          totalDebited: fee,
+          status: "success",
+          bridgeRef: `T2W${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+        } satisfies Omit<CscTransaction, "id">);
+        toast.success(`₹${fee} debited · Opening Tax2win portal…`);
+      }
+
+      // 3. Navigate the pre-opened tab.
+      if (newTab) {
+        newTab.location.href = finalUrl;
+      } else {
+        window.open(finalUrl, "_blank", "noopener,noreferrer");
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Debit failed";
+      const msg = err instanceof Error ? err.message : "Operation failed";
       toast.error(msg);
+      if (newTab) newTab.close();
+    } finally {
+      setResolvingKey(null);
     }
   };
 
@@ -246,7 +286,7 @@ function EiPayPage() {
               return (
                 <button
                   key={svc.key}
-                  disabled={svc.disabled}
+                  disabled={svc.disabled || resolvingKey === svc.key}
                   onClick={() => handlePaidRedirect(svc)}
                   className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
                     svc.disabled
@@ -266,7 +306,11 @@ function EiPayPage() {
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">₹{svc.fee}</span>
                     <span className="flex items-center gap-1 text-[10px] text-primary">
-                      <ExternalLink className="h-3 w-3" /> Open
+                      {resolvingKey === svc.key ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Logging in…</>
+                      ) : (
+                        <><ExternalLink className="h-3 w-3" /> Open</>
+                      )}
                     </span>
                   </div>
                   {svc.disabled && (
