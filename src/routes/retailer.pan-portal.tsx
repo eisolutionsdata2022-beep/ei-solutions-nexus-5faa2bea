@@ -188,6 +188,33 @@ function PanPortalPage() {
         </p>
       </header>
 
+      {/* UTI Quick Links */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ExternalLink className="h-4 w-4 text-primary" /> UTI Quick Links
+          </CardTitle>
+          <CardDescription>Direct shortcuts to UTIITSL portals.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-3 gap-2">
+          <a href="https://www.psaonline.utiitsl.com/psapanservices/forms/login.html/loginHome" target="_blank" rel="noopener noreferrer"
+             className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted/60 transition">
+            <span className="font-medium">UTI LOGIN</span>
+            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+          </a>
+          <a href="https://www.trackpan.utiitsl.com/PANONLINE/forms/TrackPan/trackApp" target="_blank" rel="noopener noreferrer"
+             className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted/60 transition">
+            <span className="font-medium">trackpan</span>
+            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+          </a>
+          <a href="https://pan.utiitsl.com/PAN_ONLINE/ePANCardHome" target="_blank" rel="noopener noreferrer"
+             className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted/60 transition">
+            <span className="font-medium">e-PAN Card downloaded</span>
+            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+          </a>
+        </CardContent>
+      </Card>
+
       {credsMissing && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
