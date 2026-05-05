@@ -218,3 +218,88 @@ export const executeCscService = createServerFn({ method: "POST" })
       };
     }
   });
+
+// --------------------------------------------------------------------------
+// Server fn: resolve a CSC SSO redirect URL via the VPS bridge.
+// The VPS logs in with master CSC credentials, clicks the target service link,
+// and captures the final signed Tax2win/partner URL (with code+state). The
+// retailer's browser then opens that URL directly — no CSC password prompt.
+// --------------------------------------------------------------------------
+
+const ssoResolveInput = z.object({
+  serviceKey: z.string().min(1).max(60),
+  targetUrl: z.string().url().max(500),
+  credCipher: z.string().min(10).max(2000),
+  bridgeUrl: z.string().url().max(500),
+  hmacSecret: z.string().min(8).max(200),
+});
+
+export type CscSsoResolveResult =
+  | { success: true; ssoUrl: string; expiresInSec: number }
+  | { success: false; error: string };
+
+export const resolveCscSsoUrl = createServerFn({ method: "POST" })
+  .middleware([firebaseAuthMiddleware])
+  .inputValidator((input: unknown) => ssoResolveInput.parse(input))
+  .handler(async ({ data, context }): Promise<CscSsoResolveResult> => {
+    if (!context.authUser) {
+      return { success: false, error: "Authentication required" };
+    }
+
+    let creds: { username: string; password: string };
+    try {
+      creds = await decryptCreds(data.credCipher);
+    } catch {
+      return { success: false, error: "Master credentials are corrupted. Re-save them." };
+    }
+
+    // Bridge endpoint: <bridgeUrl>/sso-resolve  (or replace last path segment)
+    const base = data.bridgeUrl.replace(/\/+$/, "");
+    const ssoEndpoint = base.endsWith("/sso-resolve") ? base : `${base.replace(/\/[^/]*$/, "")}/sso-resolve`;
+
+    const payload = {
+      service: data.serviceKey,
+      targetUrl: data.targetUrl,
+      retailerId: context.authUser.uid,
+      cscUsername: creds.username,
+      cscPassword: creds.password,
+      ts: Date.now(),
+    };
+    const body = JSON.stringify(payload);
+    const signature = await hmacSha256(data.hmacSecret, body);
+
+    try {
+      const res = await fetch(ssoEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Signature": signature,
+          "X-Timestamp": String(payload.ts),
+        },
+        body,
+        signal: AbortSignal.timeout(45_000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        return { success: false, error: `Bridge ${res.status}: ${text.slice(0, 200) || res.statusText}` };
+      }
+      const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (json.success === false || typeof json.ssoUrl !== "string") {
+        return {
+          success: false,
+          error: typeof json.error === "string" ? json.error : "Bridge could not resolve SSO URL",
+        };
+      }
+      return {
+        success: true,
+        ssoUrl: json.ssoUrl,
+        expiresInSec: typeof json.expiresInSec === "number" ? json.expiresInSec : 30,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Bridge unreachable";
+      return {
+        success: false,
+        error: msg.includes("timeout") ? "Bridge timed out (>45s). Try again." : `Bridge unreachable: ${msg}`,
+      };
+    }
+  });
