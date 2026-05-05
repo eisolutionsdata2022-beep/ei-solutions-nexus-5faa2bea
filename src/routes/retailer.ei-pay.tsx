@@ -306,7 +306,11 @@ function EiPayPage() {
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">₹{svc.fee}</span>
                     <span className="flex items-center gap-1 text-[10px] text-primary">
-                      <ExternalLink className="h-3 w-3" /> Open
+                      {resolvingKey === svc.key ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Logging in…</>
+                      ) : (
+                        <><ExternalLink className="h-3 w-3" /> Open</>
+                      )}
                     </span>
                   </div>
                   {svc.disabled && (
