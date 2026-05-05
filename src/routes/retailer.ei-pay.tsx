@@ -286,7 +286,7 @@ function EiPayPage() {
               return (
                 <button
                   key={svc.key}
-                  disabled={svc.disabled}
+                  disabled={svc.disabled || resolvingKey === svc.key}
                   onClick={() => handlePaidRedirect(svc)}
                   className={`group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all ${
                     svc.disabled
