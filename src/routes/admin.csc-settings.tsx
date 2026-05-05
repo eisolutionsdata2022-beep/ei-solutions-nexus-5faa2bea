@@ -42,7 +42,7 @@ function AdminCscSettings() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [bridgeUrl, setBridgeUrl] = useState("");
-  const [hmacSecret, setHmacSecret] = useState("");
+  const [, setHmacSecret] = useState("");
   const [savingCreds, setSavingCreds] = useState(false);
   const [savingBridge, setSavingBridge] = useState(false);
 
