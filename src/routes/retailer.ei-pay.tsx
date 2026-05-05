@@ -102,7 +102,7 @@ function EiPayPage() {
     }));
   }, [config]);
 
-  const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl && (config as any)?.hmacSecret);
+  const bridgeReady = !!(config?.cipher && (config as any)?.bridgeUrl);
 
   return (
     <ServicePageShell
