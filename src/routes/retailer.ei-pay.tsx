@@ -120,13 +120,10 @@ function EiPayPage() {
     }
     const ok = window.confirm(
       fee > 0
-        ? `Open ${svc.name} portal ${canAutoSso ? "(auto-login)" : "(manual login)"}?\n\n₹${fee} will NOT be debited yet.\nAfter completing the customer's work on the partner site, return here and click "Mark Complete & Debit ₹${fee}" on the pending transaction.`
+        ? `Open ${svc.name} ${canAutoSso ? "(auto-login)" : "(manual login)"} inside the app?\n\n₹${fee} will NOT be debited yet.\nAfter completing the customer's work, click "Mark Complete & Debit ₹${fee}".`
         : `Open ${svc.name} now?`,
     );
     if (!ok) return;
-
-    // Pre-open a tab synchronously (popup-blocker friendly).
-    const newTab = window.open("about:blank", "_blank", "noopener,noreferrer");
 
     try {
       // 1. Resolve auto-login URL via VPS bridge (if configured).
@@ -145,16 +142,16 @@ function EiPayPage() {
         if (r.success) {
           finalUrl = r.ssoUrl;
         } else {
-          toast.warning(`Auto-login failed: ${r.error}. Opening normal portal — log in manually.`);
+          toast.warning(`Auto-login failed: ${r.error}. Loading portal — log in manually.`);
         }
       } else {
         toast.message("Auto-login not configured. Log in manually on the portal.");
       }
 
       // 2. Create a PENDING transaction — NO wallet debit yet.
-      //    Retailer must mark it complete after finishing on the partner site.
+      let txId: string | undefined;
       if (fee > 0) {
-        await addDoc(collection(db, "csc_transactions"), {
+        const ref = await addDoc(collection(db, "csc_transactions"), {
           retailerId: appUser.uid,
           retailerEmail: appUser.email ?? "",
           serviceKey: svc.key,
@@ -166,19 +163,15 @@ function EiPayPage() {
           status: "pending",
           createdAt: new Date().toISOString(),
         } satisfies Omit<CscTransaction, "id">);
-        toast.info(`Portal opening · Mark complete after finishing to debit ₹${fee}`);
+        txId = ref.id;
+        toast.info(`Portal opening in-app · Mark complete after finishing to debit ₹${fee}`);
       }
 
-      // 3. Navigate the pre-opened tab.
-      if (newTab) {
-        newTab.location.href = finalUrl;
-      } else {
-        window.open(finalUrl, "_blank", "noopener,noreferrer");
-      }
+      // 3. Open in-app embedded viewer (iframe).
+      setEmbedded({ url: finalUrl, name: svc.name, txId, fee });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Operation failed";
       toast.error(msg);
-      if (newTab) newTab.close();
     } finally {
       setResolvingKey(null);
     }
