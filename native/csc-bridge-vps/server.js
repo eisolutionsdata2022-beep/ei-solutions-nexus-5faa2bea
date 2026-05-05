@@ -164,6 +164,55 @@ app.get('/health', (_req, res) => {
   });
 });
 
+/**
+ * SSO resolve — log in with master CSC creds, click the service link, and
+ * capture the final tokenized partner URL (e.g. Tax2win ?code=&state=).
+ * The retailer's browser then opens that URL directly — no CSC login prompt.
+ *
+ * Body: { service, targetUrl, cscUsername, cscPassword, retailerId, ts }
+ * Response: { success: true, ssoUrl, expiresInSec } | { success:false, error }
+ */
+app.post('/sso-resolve', verifyHmac, async (req, res) => {
+  const { service, targetUrl, cscUsername, cscPassword } = req.body || {};
+  if (!service || !targetUrl || !cscUsername || !cscPassword) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  let page;
+  try {
+    const browser = await getBrowser();
+    page = await browser.newPage();
+    await ensureCscLogin(page, cscUsername, cscPassword);
+
+    // Navigate to the partner/service URL on CSC. CSC will redirect through
+    // its SSO flow and land on the partner page with auth params in the URL.
+    console.log('[sso-resolve]', service, '→', targetUrl);
+    await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 60_000 });
+
+    // Wait briefly for any final redirect to settle.
+    await new Promise((r) => setTimeout(r, 1500));
+    const finalUrl = page.url();
+
+    if (!finalUrl || finalUrl.includes('connect.csc.gov.in/account/login')) {
+      throw new Error('SSO redirect did not complete (still on CSC login)');
+    }
+
+    res.json({
+      success: true,
+      ssoUrl: finalUrl,
+      expiresInSec: 60,
+    });
+  } catch (err) {
+    console.error('[sso-resolve]', service, err);
+    res.status(502).json({
+      success: false,
+      error: err?.message || 'SSO resolve failed',
+    });
+  } finally {
+    if (page) await page.close().catch(() => {});
+  }
+});
+
 app.post('/execute', verifyHmac, async (req, res) => {
   const { service, fields, amount, cscUsername, cscPassword } = req.body || {};
   if (!service || !fields || !amount || !cscUsername || !cscPassword) {
