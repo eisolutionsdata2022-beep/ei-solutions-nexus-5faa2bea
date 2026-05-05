@@ -98,14 +98,14 @@ async function resolvePartnerSsoUrl(page, service, targetUrl) {
   const isTax2win = initialHost.includes('tax2win.biz');
 
   if (isTax2win) {
-    const loginHref = await page.evaluate(() => {
-      const link = document.querySelector('#login_url, a[href*="csc_login_redirect"]');
-      return link && link.href ? link.href : null;
-    });
+    const hasLoginLink = await page.$('#login_url, a[href*="csc_login_redirect"]');
 
-    if (loginHref) {
+    if (hasLoginLink) {
       console.log('[sso-resolve]', service, 'starting Tax2win CSC SSO');
-      await page.goto(loginHref, { waitUntil: 'networkidle2', timeout: 60_000 });
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60_000 }).catch(() => null),
+        page.click('#login_url, a[href*="csc_login_redirect"]'),
+      ]);
       await sleep(1500);
     }
   }
