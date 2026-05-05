@@ -39,7 +39,7 @@ import { ServicePageShell } from "@/components/ServicePageShell";
 import { CSC_SERVICES, type CscService } from "@/lib/csc-services";
 import type { CscMasterConfig, CscTransaction } from "@/lib/csc-types";
 import { atomicDebit, atomicCredit } from "@/lib/firebase-transactions";
-import { executeCscService } from "@/lib/csc-bridge.functions";
+import { executeCscService, resolveCscSsoUrl } from "@/lib/csc-bridge.functions";
 import { downloadCscReceipt } from "@/lib/csc-receipt-pdf";
 
 export const Route = createFileRoute("/retailer/ei-pay")({
