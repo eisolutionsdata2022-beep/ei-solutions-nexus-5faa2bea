@@ -48,7 +48,7 @@ export type CscServiceCategory =
   | "government"
   | "other";
 
-export type CscServiceMode = "bridge" | "redirect";
+export type CscServiceMode = "bridge" | "redirect" | "paid-redirect";
 
 export interface CscService {
   /** Stable key used for routing/logging — never rename. */
