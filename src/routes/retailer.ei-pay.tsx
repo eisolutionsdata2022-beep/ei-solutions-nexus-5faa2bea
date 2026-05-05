@@ -403,12 +403,12 @@ function ServiceExecutionDialog({
 
       // 3. Re-read config to get latest cipher/url/secret (admin may have updated)
       const cfgSnap = await getDoc(doc(db, "csc_config", "master"));
-      const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string; hmacSecret: string }) | undefined;
-      if (!cfg?.cipher || !cfg.bridgeUrl || !cfg.hmacSecret) {
+      const cfg = cfgSnap.data() as (CscMasterConfig & { bridgeUrl: string }) | undefined;
+      if (!cfg?.cipher || !cfg.bridgeUrl) {
         throw new Error("Bridge configuration missing");
       }
 
-      // 4. Call bridge
+      // 4. Call bridge (HMAC secret comes from server env, not Firestore)
       const result = await executeCscService({
         data: {
           serviceKey: service.key,
@@ -417,7 +417,6 @@ function ServiceExecutionDialog({
           amount,
           credCipher: cfg.cipher,
           bridgeUrl: cfg.bridgeUrl,
-          hmacSecret: cfg.hmacSecret,
         },
       });
 
